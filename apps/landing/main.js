@@ -150,6 +150,7 @@
       form_sending: 'Đang gửi…',
       form_fail: 'Chưa gửi được, bạn thử lại sau ít phút nhé.',
       form_rate: 'Bạn gửi hơi nhiều lần rồi, đợi một lúc rồi thử lại nhé.',
+      beta_tiktok_follow: 'Theo dõi @ourney.official trên TikTok trong lúc chờ',
       footer_tagline: 'chụp một tấm. giữ một chuỗi. đi cùng nhau.',
       footer_journeys: 'hành trình',
       footer_privacy: 'riêng tư',
@@ -304,6 +305,7 @@
       form_sending: 'Sending…',
       form_fail: 'Couldn’t send that. Please try again in a few minutes.',
       form_rate: 'Too many tries. Please wait a bit and try again.',
+      beta_tiktok_follow: 'Follow @ourney.official on TikTok while you wait',
       footer_tagline: 'snap one photo. keep one streak. go together.',
       footer_journeys: 'journeys',
       footer_privacy: 'privacy',
@@ -997,7 +999,7 @@
     });
   });
 
-  const form = $('beta-form'), msg = $('form-msg'), email = $('email');
+  const form = $('beta-form'), msg = $('form-msg'), email = $('email'), betaFollow = $('beta-follow');
   let formMsgKey = '';
   let announceRaf = 0;
   const announce = (key) => {
@@ -1060,8 +1062,10 @@
       if (submitBtn) submitBtn.disabled = false;
       form.removeAttribute('aria-busy');
       announce(key);
-      if (key === 'form_ok') form.reset();
-      else if (key === 'form_err') {
+      if (key === 'form_ok') {
+        form.reset();
+        if (betaFollow) betaFollow.hidden = false;
+      } else if (key === 'form_err') {
         email.setAttribute('aria-invalid', 'true');
         email.focus();
       }
