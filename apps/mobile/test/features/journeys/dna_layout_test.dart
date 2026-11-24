@@ -70,6 +70,33 @@ void main() {
     },
   );
 
+  testWidgets(
+    'DnaGhostPage renders sample photo under silhouette and fits at 2.0x on 320dp',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 640);
+      addTearDown(tester.view.reset);
+      for (final b in Brightness.values) {
+        await tester.pumpWidget(
+          _host(
+            DnaGhostPage(onLater: () {}),
+            brightness: b,
+            scale: 2.0,
+            locale: const Locale('vi'),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(tester.takeException(), isNull);
+        expect(find.byKey(const ValueKey('dna-ghost-photo')), findsOneWidget);
+        expect(find.byType(Image), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('dna-ghost-silhouette')),
+          findsOneWidget,
+        );
+      }
+    },
+  );
+
   final pages = <String, Widget Function()>{
     for (final t in TemplateId.values)
       for (final q in dnaQuestionsFor(t).where((q) => q.kind == DnaKind.choice))

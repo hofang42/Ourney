@@ -70,30 +70,59 @@ void main() {
       );
     });
 
-    testWidgets('all 6 cards render their skin preview and HUD', (
+    testWidgets('all 6 cards render their skin preview, sample photos and HUD', (
       tester,
     ) async {
       await _open(tester);
       const expected = [
-        ('weight_loss', 'quiet'),
-        ('english_daily', 'squad'),
-        ('workout_30', 'flexer'),
-        ('travel', 'memory'),
-        ('couple', 'couple'),
-        ('custom', 'minimal'),
+        ('weight_loss', 'quiet', ['deck-photo-quiet']),
+        (
+          'english_daily',
+          'squad',
+          ['deck-photo-squad-0', 'deck-photo-squad-1', 'deck-photo-squad-2'],
+        ),
+        ('workout_30', 'flexer', ['deck-photo-flexer']),
+        ('travel', 'memory', ['deck-photo-memory']),
+        ('couple', 'couple', ['deck-photo-couple-0', 'deck-photo-couple-1']),
+        (
+          'custom',
+          'minimal',
+          [
+            'deck-photo-minimal-0',
+            'deck-photo-minimal-1',
+            'deck-photo-minimal-2',
+            'deck-photo-minimal-3',
+          ],
+        ),
       ];
-      for (final (keyName, skinId) in expected) {
+      for (final (keyName, skinId, photoKeys) in expected) {
         final card = _key('template-$keyName');
         expect(card, findsOneWidget);
-        expect(
-          find.descendant(of: card, matching: _key('deck-preview-$skinId')),
-          findsOneWidget,
+        final preview = find.descendant(
+          of: card,
+          matching: _key('deck-preview-$skinId'),
         );
+        expect(preview, findsOneWidget);
+        expect(
+          find.descendant(of: preview, matching: find.byType(Image)),
+          findsNWidgets(photoKeys.length),
+        );
+        for (final pk in photoKeys) {
+          expect(find.descendant(of: preview, matching: _key(pk)), findsOneWidget);
+        }
         expect(
           find.descendant(of: card, matching: _key('deck-hud-$skinId')),
           findsOneWidget,
         );
       }
+      // Memory Polaroid renders the sample photo, not the old trip icon fallback.
+      expect(
+        find.descendant(
+          of: _key('deck-preview-memory'),
+          matching: find.byType(OurneyIcon),
+        ),
+        findsNothing,
+      );
     });
 
     testWidgets(
@@ -117,21 +146,29 @@ void main() {
     );
 
     for (final dark in [false, true]) {
-      testWidgets('fits 320dp at 1.35x (${dark ? 'dark' : 'light'})', (
-        tester,
-      ) async {
-        tester.platformDispatcher.platformBrightnessTestValue = dark
-            ? Brightness.dark
-            : Brightness.light;
-        addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
-        tester.platformDispatcher.textScaleFactorTestValue = 1.35;
-        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-        await _open(tester, size: const Size(320, 640));
-        expect(tester.takeException(), isNull);
-        await tester.tap(_key('create-deck-next'));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-      });
+      for (final scale in [1.35, 2.0]) {
+        testWidgets(
+          'fits 320dp at ${scale}x (${dark ? 'dark' : 'light'})',
+          (tester) async {
+            tester.platformDispatcher.platformBrightnessTestValue = dark
+                ? Brightness.dark
+                : Brightness.light;
+            addTearDown(
+              tester.platformDispatcher.clearPlatformBrightnessTestValue,
+            );
+            tester.platformDispatcher.textScaleFactorTestValue = scale;
+            addTearDown(
+              tester.platformDispatcher.clearTextScaleFactorTestValue,
+            );
+            await _open(tester, size: const Size(320, 640));
+            expect(tester.takeException(), isNull);
+            await tester.ensureVisible(_key('create-deck-next'));
+            await tester.tap(_key('create-deck-next'));
+            await tester.pumpAndSettle();
+            expect(tester.takeException(), isNull);
+          },
+        );
+      }
     }
 
     for (final lang in ['en', 'vi']) {

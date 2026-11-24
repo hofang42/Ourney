@@ -86,12 +86,12 @@ Every screen must render cleanly without overflow across **4 device classes** an
 
 ---
 
-## 5. The 6 Persona UI Styles (Backed by `assets/design_personas/`)
+## 5. The 6 Persona UI Styles (Backed by `docs/assets/design_personas/`)
 
-Each Journey's `TemplateId` maps 1-to-1 to a `PersonaSkinId`. When building or updating any of the 6 persona layouts, match its visual reference asset in `apps/mobile/assets/design_personas/`:
+Each Journey's `TemplateId` maps 1-to-1 to a `PersonaSkinId`. When building or updating any of the 6 persona layouts, match its visual reference asset in `docs/assets/design_personas/`:
 
 ### Persona 1: `PersonaSkinId.quietTransformer` (`TemplateId.weightLoss`)
-- **Reference Image**: `apps/mobile/assets/design_personas/persona_1_quiet_transformer.jpg`
+- **Reference Image**: `docs/assets/design_personas/persona_1_quiet_transformer.jpg`
 - **Palette**:
   - Light: Bg `#EFF3F0`, Surface `#FFFFFF`, Ink `#0F172A`, Primary `#10B981` (Emerald), Secondary `#FF4D6D`
   - Dark: Bg `#0B0F12`, Surface `#151C21`, Ink `#F1F5F9`, Primary `#10B981`, Secondary `#FF6B88`
@@ -101,7 +101,7 @@ Each Journey's `TemplateId` maps 1-to-1 to a `PersonaSkinId`. When building or u
   3. **Archive / Share (`sideBySideArchive`)**: Side-by-side `DAY 01` vs `DAY 21` split comparison frame + `SwitchListTile` for **`Hide Exact Weight: ON (-3.2 KG Transformation)`** + `Export Progress Card` CTA.
 
 ### Persona 2: `PersonaSkinId.accountabilitySquad` (`TemplateId.englishDaily`)
-- **Reference Image**: `apps/mobile/assets/design_personas/persona_2_accountability_squad.jpg`
+- **Reference Image**: `docs/assets/design_personas/persona_2_accountability_squad.jpg`
 - **Palette**:
   - Light: Bg `#F7F1E5`, Surface `#FFFDF9`, Ink `#1E1B18`, Primary `#FF9F1C` (Flame Orange), Secondary `#7556F8` (Squad Violet), `2dp` ink border + `3dp` bottom lip.
   - Dark: Bg `#12131A`, Surface `#1D1F2B`, Ink `#F8FAFC`, Primary `#FFB547`, Secondary `#9D85FF`.
@@ -111,7 +111,7 @@ Each Journey's `TemplateId` maps 1-to-1 to a `PersonaSkinId`. When building or u
   3. **Squad / Share (`squadPolaroidWall`)**: Top progress bar `4/5 CHECKED IN TODAY`, `2x2` Polaroid grid of member check-ins with emoji reaction counters (`🔥 4`, `👏 3`), and a dashed waiting card (`MINH · WAITING`) with a violet `Nudge Minh 👋` button.
 
 ### Persona 3: `PersonaSkinId.memoryCollectors` (`TemplateId.travel`)
-- **Reference Image**: `apps/mobile/assets/design_personas/persona_3_memory_collectors.jpg`
+- **Reference Image**: `docs/assets/design_personas/persona_3_memory_collectors.jpg`
 - **Palette**:
   - Light: Bg `#F4EFE6`, Surface `#FFFFFF`, Ink `#231F1E`, Primary `#CC4A2F` (Terracotta), Secondary `#4A6B53` (Olive Sage).
   - Dark: Bg `#141312`, Surface `#1F1D1B`, Ink `#F5F2EB`, Primary `#E05A47`, Secondary `#658B6E`.
@@ -121,7 +121,7 @@ Each Journey's `TemplateId` maps 1-to-1 to a `PersonaSkinId`. When building or u
   3. **Share (`filmContactSheet`)**: 35mm Kodak film contact sheet mosaic (4x5 or 5x4 grid of trip photos on `#141312` film strip with frame numbers) + Olive Sage `Share Trip Poster` button.
 
 ### Persona 4: `PersonaSkinId.coupleRituals` (`TemplateId.couple`)
-- **Reference Image**: `apps/mobile/assets/design_personas/persona_4_couple_rituals.jpg`
+- **Reference Image**: `docs/assets/design_personas/persona_4_couple_rituals.jpg`
 - **Palette**:
   - Light: Bg `#F9F0EE`, Surface `#FFFFFF`, Ink `#261F22`, Primary `#E15B72` (Rose Coral), Secondary `#9D174D`.
   - Dark: Bg `#171215`, Surface `#241C21`, Ink `#FCE7F3`, Primary `#F472B6`, Secondary `#E15B72`.
@@ -131,7 +131,7 @@ Each Journey's `TemplateId` maps 1-to-1 to a `PersonaSkinId`. When building or u
   3. **Share (`coupleMosaicPoster`)**: `18 DAYS TOGETHER · 36 MOMENTS` woven grid poster + Rose Coral `Share Our Story` button.
 
 ### Persona 5: `PersonaSkinId.aestheticFlexer` (`TemplateId.workout30`)
-- **Reference Image**: `apps/mobile/assets/design_personas/persona_5_aesthetic_flexers.jpg`
+- **Reference Image**: `docs/assets/design_personas/persona_5_aesthetic_flexers.jpg`
 - **Palette**:
   - Dark (Default): Bg `#090A0F`, Surface `#14161F`, Ink `#F8FAFC`, Primary `#FF4D6D` (Electric Coral), Secondary `#3DE88C` (Neon Lime).
   - Light: Bg `#F3F4F6`, Surface `#FFFFFF`, Ink `#090A0F`, Primary `#FF4D6D`, Secondary `#10B981`.
@@ -141,7 +141,7 @@ Each Journey's `TemplateId` maps 1-to-1 to a `PersonaSkinId`. When building or u
   3. **Share (`transparentStorySticker`)**: 9:16 Story export preview with a 21-bar active streak heatmap at bottom (`21 DAYS ACTIVE`) + Electric Coral `Share to Instagram Story` button.
 
 ### Persona 6: `PersonaSkinId.minimalistHabit` (`TemplateId.custom`)
-- **Reference Image**: `apps/mobile/assets/design_personas/persona_6_minimalist_habit.jpg`
+- **Reference Image**: `docs/assets/design_personas/persona_6_minimalist_habit.jpg`
 - **Palette**:
   - Light: Bg `#F5F3EE`, Surface `#FFFFFF`, Ink `#1C1C1E`, Primary `#EA580C` (Braun Coral-Orange), Secondary `#27272A`.
   - Dark: Bg `#0E0E10`, Surface `#18181B`, Ink `#F4F4F5`, Primary `#F97316`, Secondary `#E4E4E7`.

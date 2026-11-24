@@ -83,10 +83,21 @@ void main() {
       expect(_key('journeys-create-flow'), findsOneWidget);
     });
 
-    testWidgets('empty state: sticker card with the one-photo line', (
+    testWidgets('empty state: fanned Polaroid trio with the one-photo line', (
       tester,
     ) async {
       await _pump(tester, empty: true);
+      expect(_key('day-zero-polaroid-trio'), findsOneWidget);
+      for (var i = 0; i < 3; i++) {
+        expect(_key('day-zero-photo-$i'), findsOneWidget);
+      }
+      expect(
+        find.descendant(
+          of: _key('day-zero-polaroid-trio'),
+          matching: find.byType(Image),
+        ),
+        findsNWidgets(3),
+      );
       expect(find.text('no journeys yet.'), findsOneWidget);
       expect(
         find.text('one photo a day keeps the whole road.'),
@@ -106,29 +117,31 @@ void main() {
 
     for (final dark in [false, true]) {
       for (final empty in [false, true]) {
-        testWidgets(
-          '${empty ? 'empty' : 'list'} fits 320dp at 1.35x (${dark ? 'dark' : 'light'})',
-          (tester) async {
-            tester.platformDispatcher.platformBrightnessTestValue = dark
-                ? Brightness.dark
-                : Brightness.light;
-            addTearDown(
-              tester.platformDispatcher.clearPlatformBrightnessTestValue,
-            );
-            tester.platformDispatcher.textScaleFactorTestValue = 1.35;
-            addTearDown(
-              tester.platformDispatcher.clearTextScaleFactorTestValue,
-            );
-            await _pump(
-              tester,
-              offline: true,
-              resume: true,
-              empty: empty,
-              size: const Size(320, 640),
-            );
-            expect(tester.takeException(), isNull);
-          },
-        );
+        for (final scale in [1.35, 2.0]) {
+          testWidgets(
+            '${empty ? 'empty' : 'list'} fits 320dp at ${scale}x (${dark ? 'dark' : 'light'})',
+            (tester) async {
+              tester.platformDispatcher.platformBrightnessTestValue = dark
+                  ? Brightness.dark
+                  : Brightness.light;
+              addTearDown(
+                tester.platformDispatcher.clearPlatformBrightnessTestValue,
+              );
+              tester.platformDispatcher.textScaleFactorTestValue = scale;
+              addTearDown(
+                tester.platformDispatcher.clearTextScaleFactorTestValue,
+              );
+              await _pump(
+                tester,
+                offline: true,
+                resume: true,
+                empty: empty,
+                size: const Size(320, 640),
+              );
+              expect(tester.takeException(), isNull);
+            },
+          );
+        }
       }
     }
   });

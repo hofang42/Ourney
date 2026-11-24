@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart' show durationMax, durationMin;
@@ -238,14 +240,36 @@ class DnaGhostPage extends StatelessWidget {
             child: Container(
               width: 180,
               height: 240,
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: ui.fill,
                 borderRadius: BorderRadius.circular(UiRadius.card),
                 border: Border.all(color: ui.border),
               ),
-              child: CustomPaint(
-                key: const ValueKey('dna-ghost-silhouette'),
-                painter: _SilhouettePainter(ui.inkMuted),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Opacity(
+                    opacity: ui.isDark ? 0.72 : 0.85,
+                    child: Image.asset(
+                      'assets/samples/weight_loss/03.webp',
+                      key: const ValueKey('dna-ghost-photo'),
+                      fit: BoxFit.cover,
+                      cacheWidth: 540,
+                      excludeFromSemantics: true,
+                      errorBuilder: (context, error, stackTrace) =>
+                          ColoredBox(color: ui.fill),
+                    ),
+                  ),
+                  if (ui.isDark)
+                    const IgnorePointer(
+                      child: ColoredBox(color: Color(0x24000000)),
+                    ),
+                  CustomPaint(
+                    key: const ValueKey('dna-ghost-silhouette'),
+                    painter: _SilhouettePainter(ui.ink),
+                  ),
+                ],
               ),
             ),
           ),
@@ -273,18 +297,27 @@ class _SilhouettePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final p = Paint()
-      ..color = color.withValues(alpha: 0.55)
+      ..color = color.withValues(alpha: 0.72)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
+      ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round;
     final w = size.width;
     final h = size.height;
-    canvas.drawCircle(Offset(w / 2, h * 0.28), w * 0.16, p);
-    final body = Path()
+    final path = Path()
+      ..addOval(
+        Rect.fromCircle(center: Offset(w / 2, h * 0.28), radius: w * 0.16),
+      )
       ..moveTo(w * 0.18, h * 0.92)
       ..quadraticBezierTo(w * 0.18, h * 0.55, w * 0.5, h * 0.52)
       ..quadraticBezierTo(w * 0.82, h * 0.55, w * 0.82, h * 0.92);
-    canvas.drawPath(body, p);
+    for (final metric in path.computeMetrics()) {
+      var d = 0.0;
+      while (d < metric.length) {
+        final next = math.min(d + 6, metric.length);
+        canvas.drawPath(metric.extractPath(d, next), p);
+        d += 11;
+      }
+    }
   }
 
   @override
