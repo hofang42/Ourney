@@ -110,7 +110,7 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           GRADLE_OPTS: -Dorg.gradle.workers.max=2
         run: |
-          args=(--release --no-pub --no-android-gradle-daemon --verbose)
+          args=(--release --no-android-gradle-daemon --verbose)
           if [ -n "${DART_DEFINES_FILE:-}" ] && [ -f "$DART_DEFINES_FILE" ]; then
             args+=("--dart-define-from-file=$DART_DEFINES_FILE")
           fi
