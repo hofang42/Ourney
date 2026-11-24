@@ -73,7 +73,7 @@ class _CreateFeatureRequestSheetState
   late FeatureRequestCategory _category;
 
   /// Stable client-generated UUID for idempotent creation retries.
-  late final String _draftId = widget.existing?.id ?? const Uuid().v4();
+  late final String _draftId;
 
   Timer? _similarDebounce;
   List<FeatureRequest> _similar = const [];
@@ -86,11 +86,16 @@ class _CreateFeatureRequestSheetState
     super.initState();
     final existing = widget.existing;
     if (existing != null) {
+      _draftId = existing.id;
       _titleController = TextEditingController(text: existing.title);
       _bodyController = TextEditingController(text: existing.body);
       _category = existing.category;
     } else {
       final savedDraft = ref.read(feedbackDraftProvider);
+      _draftId =
+          (savedDraft?.id != null && savedDraft!.id!.trim().isNotEmpty)
+              ? savedDraft.id!.trim()
+              : const Uuid().v4();
       final prefillTitle =
           (widget.initialTitle != null && widget.initialTitle!.trim().isNotEmpty)
               ? widget.initialTitle!.trim()
@@ -115,6 +120,7 @@ class _CreateFeatureRequestSheetState
   void _persistDraft() {
     if (widget.isEdit || _submittedSuccessfully) return;
     final draft = FeedbackComposeDraft(
+      id: _draftId,
       title: _titleController.text,
       body: _bodyController.text,
       category: _category,
@@ -123,7 +129,12 @@ class _CreateFeatureRequestSheetState
   }
 
   void _onTitleChanged(String value) {
-    if (_error != null) setState(() => _error = null);
+    if (_error != null || _similar.isNotEmpty) {
+      setState(() {
+        _error = null;
+        _similar = const [];
+      });
+    }
     _persistDraft();
     if (widget.isEdit) return;
     _scheduleSimilarSearch(value);
@@ -131,9 +142,11 @@ class _CreateFeatureRequestSheetState
 
   void _scheduleSimilarSearch(String raw) {
     _similarDebounce?.cancel();
+    if (_similar.isNotEmpty) {
+      setState(() => _similar = const []);
+    }
     final trimmed = raw.trim();
     if (trimmed.runes.length < 3) {
-      if (_similar.isNotEmpty) setState(() => _similar = const []);
       return;
     }
     _similarDebounce = Timer(const Duration(milliseconds: 300), () async {
@@ -141,7 +154,7 @@ class _CreateFeatureRequestSheetState
         final matches = await ref
             .read(featureRequestRepositoryProvider)
             .searchSimilar(trimmed, limit: 3);
-        if (!mounted) return;
+        if (!mounted || _titleController.text.trim() != trimmed) return;
         setState(() => _similar = matches.take(3).toList());
       } on Object {
         // Ignore live duplicate search errors (e.g. offline) while typing.
@@ -243,15 +256,18 @@ class _CreateFeatureRequestSheetState
       if (!mounted) return;
       OurneyHaptics.warning();
       final code = feedbackErrorCode(e);
-      if (code == OurneyErrorCode.offline && !widget.isEdit) {
+      if (!widget.isEdit) {
         await ref.read(feedbackDraftProvider.notifier).save(
               FeedbackComposeDraft(
+                id: _draftId,
                 title: title,
                 body: body,
                 category: _category,
               ),
             );
         if (!mounted) return;
+      }
+      if (code == OurneyErrorCode.offline && !widget.isEdit) {
         setState(() => _error = l10n.feedback_errorOfflineDraftSaved);
       } else {
         setState(

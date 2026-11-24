@@ -40,12 +40,23 @@ class FakeFeatureRequestRepository implements FeatureRequestRepository {
   Object? voteError;
 
   final List<String> listCalls = [];
+  final List<String> createdIds = [];
   final List<(String, bool?)> voteCalls = [];
   final List<(String, ReportReason, String?)> reportCalls = [];
   final List<List<String>?> markedSeenCalls = [];
   Completer<FeatureRequestVoteResult>? voteGate;
   Future<FeatureRequestVoteResult> Function(String requestId, bool? voted)?
       onToggleVote;
+  Future<List<FeatureRequest>> Function(String query, int limit)?
+      onSearchSimilar;
+  Future<List<FeatureRequest>> Function(
+    FeatureRequestTab tab,
+    FeatureRequestCategory? category,
+    String? search,
+    bool mineOnly,
+    int limit,
+    int offset,
+  )? onList;
 
   static List<FeatureRequest> _defaultItems() => [
         FeatureRequest(
@@ -114,6 +125,9 @@ class FakeFeatureRequestRepository implements FeatureRequestRepository {
     listCalls.add(
       'tab=${tab.wireName};cat=${category?.wireName};search=$search;mine=$mineOnly;offset=$offset',
     );
+    if (onList != null) {
+      return onList!(tab, category, search, mineOnly, limit, offset);
+    }
     if (listError != null) throw listError!;
 
     final foldedQuery =
@@ -163,6 +177,9 @@ class FakeFeatureRequestRepository implements FeatureRequestRepository {
     String query, {
     int limit = 5,
   }) async {
+    if (onSearchSimilar != null) {
+      return onSearchSimilar!(query, limit);
+    }
     final folded = foldVietnameseDiacritics(query.trim());
     if (folded.length < 3) return const [];
     final tokens = folded
@@ -189,6 +206,7 @@ class FakeFeatureRequestRepository implements FeatureRequestRepository {
     required String body,
     FeatureRequestCategory category = FeatureRequestCategory.other,
   }) async {
+    createdIds.add(id);
     if (createError != null) throw createError!;
     final now = DateTime.utc(2026, 11, 24, 7);
     final created = FeatureRequest(
@@ -1379,6 +1397,555 @@ void main() {
         expect(
           find.byKey(const ValueKey('feedback-detail-screen')),
           findsOneWidget,
+        );
+      },
+    );
+  });
+
+  group('Cubic review regression tests', () {
+    testWidgets(
+      'create sheet clears duplicate suggestions on title change and drops stale search responses (#2)',
+      (tester) async {
+        final repo = FakeFeatureRequestRepository();
+        await _pumpFeedbackRouter(tester, repo: repo);
+
+        await tester.tap(find.byKey(const ValueKey('feedback-create-cta')));
+        await tester.pumpAndSettle();
+
+        // Initial search populates duplicate suggestion card.
+        await tester.enterText(
+          find.byKey(const ValueKey('feedback-title-input')),
+          'man hinh khoa',
+        );
+        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('feedback-similar-card')),
+          findsOneWidget,
+        );
+
+        // Gate subsequent search calls so we can resolve them out of order.
+        final staleCompleter = Completer<List<FeatureRequest>>();
+        final currentCompleter = Completer<List<FeatureRequest>>();
+        repo.onSearchSimilar = (query, _) {
+          if (query == 'man hinh') return staleCompleter.future;
+          return currentCompleter.future;
+        };
+
+        // Changing title clears old suggestions immediately before debounce/network completes.
+        await tester.enterText(
+          find.byKey(const ValueKey('feedback-title-input')),
+          'man hinh',
+        );
+        await tester.pump();
+        expect(
+          find.byKey(const ValueKey('feedback-similar-card')),
+          findsNothing,
+        );
+        // Fire the debounce for 'man hinh' so staleCompleter is in flight.
+        await tester.pump(const Duration(milliseconds: 350));
+
+        // Now change title to 'timelapse' and fire its debounce.
+        await tester.enterText(
+          find.byKey(const ValueKey('feedback-title-input')),
+          'timelapse',
+        );
+        await tester.pump(const Duration(milliseconds: 350));
+
+        // Stale response for 'man hinh' arrives late — must be ignored!
+        staleCompleter.complete([repo.items[0]]);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('feedback-similar-card')),
+          findsNothing,
+        );
+
+        // Response for current query 'timelapse' arrives — applied!
+        currentCompleter.complete([repo.items[1]]);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('feedback-similar-card')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('feedback-similar-vote-req-2')),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'create sheet persists draft request id and reuses it on reopen after failure (#3)',
+      (tester) async {
+        final repo = FakeFeatureRequestRepository()
+          ..createError = const OurneyException(OurneyErrorCode.offline);
+        final container = await _pumpFeedbackRouter(tester, repo: repo);
+
+        await tester.tap(find.byKey(const ValueKey('feedback-create-cta')));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.byKey(const ValueKey('feedback-title-input')),
+          'Đồng bộ lịch tập sang lịch cá nhân',
+        );
+        await tester.enterText(
+          find.byKey(const ValueKey('feedback-body-input')),
+          'Tự động hiển thị các ngày đã check-in trên lịch của điện thoại.',
+        );
+        final submitBtn = find.byKey(const ValueKey('feedback-compose-submit'));
+        await tester.ensureVisible(submitBtn);
+        await tester.pumpAndSettle();
+        await tester.tap(submitBtn);
+        await tester.pumpAndSettle();
+
+        expect(repo.createdIds, hasLength(1));
+        final firstId = repo.createdIds.single;
+        expect(container.read(feedbackDraftProvider)?.id, firstId);
+
+        // Close sheet, go back online, reopen sheet, and retry submit.
+        final cancelBtn = find.byKey(const ValueKey('feedback-compose-cancel'));
+        await tester.ensureVisible(cancelBtn);
+        await tester.pumpAndSettle();
+        await tester.tap(cancelBtn);
+        await tester.pumpAndSettle();
+
+        repo.createError = null;
+        await tester.tap(find.byKey(const ValueKey('feedback-create-cta')));
+        await tester.pumpAndSettle();
+
+        final retrySubmit = find.byKey(
+          const ValueKey('feedback-compose-submit'),
+        );
+        await tester.ensureVisible(retrySubmit);
+        await tester.pumpAndSettle();
+        await tester.tap(retrySubmit);
+        await tester.pumpAndSettle();
+
+        expect(repo.createdIds, [firstId, firstId]);
+        expect(container.read(feedbackDraftProvider), isNull);
+      },
+    );
+
+    testWidgets(
+      'board shows load-more when first page is fully filtered but hasMore is true (#4) and separates card & vote semantics (#6)',
+      (tester) async {
+        final page1 = [
+          for (var i = 0; i < featureRequestPageSize; i++)
+            FeatureRequest(
+              id: 'req-p1-$i',
+              title: 'Ý tưởng trang đầu $i',
+              body: 'Mô tả chi tiết cho ý tưởng trang đầu số $i.',
+              category: FeatureRequestCategory.other,
+              status: FeatureRequestStatus.newRequest,
+              voteCount: 5,
+              votedByMe: false,
+              isMine: false,
+              author: const PersonSummary(
+                userId: 'u-blocked',
+                username: 'blocked_user',
+                displayName: 'Blocked User',
+              ),
+              createdAt: DateTime.utc(2026, 11, 20),
+              updatedAt: DateTime.utc(2026, 11, 20),
+            ),
+        ];
+        final page2Item = FeatureRequest(
+          id: 'req-p2-0',
+          title: 'Ý tưởng trang hai hợp lệ',
+          body: 'Mô tả chi tiết cho ý tưởng ở trang thứ hai.',
+          category: FeatureRequestCategory.design,
+          status: FeatureRequestStatus.planned,
+          voteCount: 15,
+          votedByMe: false,
+          isMine: false,
+          createdAt: DateTime.utc(2026, 11, 21),
+          updatedAt: DateTime.utc(2026, 11, 21),
+        );
+        final repo = FakeFeatureRequestRepository(
+          initial: [...page1, page2Item],
+        );
+        final safety = _FakeSafetyRepository();
+        await _pumpFeedbackRouter(tester, repo: repo, safety: safety);
+
+        // Verify #6: card and vote button have separate button semantics.
+        final cardFinder = find.byKey(const ValueKey('feedback-card-req-p1-0'));
+        final voteFinder = find.byKey(const ValueKey('feedback-vote-req-p1-0'));
+        final cardSemantics = tester.getSemantics(cardFinder);
+        final voteSemantics = tester.getSemantics(voteFinder);
+        expect(cardSemantics, isNot(same(voteSemantics)));
+        expect(
+          cardSemantics,
+          matchesSemantics(
+            label:
+                'Ý tưởng trang đầu 0\nMô tả chi tiết cho ý tưởng trang đầu số 0.\nKhác',
+            isButton: true,
+            isEnabled: true,
+            hasEnabledState: true,
+            hasTapAction: true,
+            hasFocusAction: true,
+            isFocusable: true,
+          ),
+        );
+        expect(
+          voteSemantics,
+          matchesSemantics(
+            label: 'Ý tưởng trang đầu 0, 5 lượt bình chọn, chưa bình chọn',
+            isButton: true,
+            isEnabled: true,
+            hasEnabledState: true,
+            hasSelectedState: true,
+            isSelected: false,
+            hasTapAction: true,
+          ),
+        );
+
+        // Verify #4: block the author of all 30 items on page 1 -> items is empty, hasMore is true.
+        await safety.block('u-blocked');
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey('feedback-empty-popular')),
+          findsNothing,
+        );
+        final loadMoreBtn = find.byKey(const ValueKey('feedback-load-more'));
+        expect(loadMoreBtn, findsOneWidget);
+
+        await tester.tap(loadMoreBtn);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('feedback-card-req-p2-0')),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'inbox marks shipped notifications seen when provider resolves after initial _autoRead without duplicate calls (#7)',
+      (tester) async {
+        final shippedCompleter =
+            Completer<List<ShippedRequestNotification>>();
+        final repo = FakeFeatureRequestRepository();
+        final prefs = await testPrefs({
+          OnboardingComplete.prefsKey: true,
+          SafetyPrefs.eulaAccepted: true,
+        });
+        final safetyRepo = _FakeSafetyRepository();
+
+        final router = GoRouter(
+          routes: [
+            GoRoute(path: '/', builder: (_, _) => const InboxScreen()),
+          ],
+        );
+        addTearDown(router.dispose);
+
+        final container = ProviderContainer(
+          overrides: [
+            appConfigProvider.overrideWithValue(testBackendConfig),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            supabaseClientProvider.overrideWithValue(null),
+            authRepositoryProvider.overrideWithValue(
+              FakeAuthRepository(userId: 'u-me'),
+            ),
+            safetyRepositoryProvider.overrideWithValue(safetyRepo),
+            featureRequestRepositoryProvider.overrideWithValue(repo),
+            shippedRequestNotificationsProvider.overrideWith(
+              (ref) => shippedCompleter.future,
+            ),
+            friendshipsProvider.overrideWith(
+              (ref) => Stream.value([
+                Friendship(
+                  person: const PersonSummary(
+                    userId: 'u-khoa',
+                    username: 'khoa',
+                    displayName: 'Khoa Le',
+                  ),
+                  status: FriendStatus.pending,
+                  direction: FriendDirection.incoming,
+                  source: FriendSource.direct,
+                  createdAt: DateTime.now().toUtc(),
+                ),
+              ]),
+            ),
+            pendingConsentsProvider.overrideWith(
+              (ref) => Stream.value(const <ShareConsent>[]),
+            ),
+            conversationsProvider.overrideWith(
+              (ref) => Stream.value(const <Conversation>[]),
+            ),
+            rawInboxCountsProvider.overrideWith(
+              (ref) => Stream.value(
+                const InboxCounts(
+                  friendRequests: 1,
+                  publicRequests: 0,
+                  newShares: 0,
+                  unreadMessages: 0,
+                  consentRequests: 0,
+                  shippedRequests: 1,
+                ),
+              ),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp.router(
+              theme: buildAppTheme(Brightness.light),
+              locale: const Locale('vi'),
+              localizationsDelegates: ourneyLocalizationsDelegates,
+              supportedLocales: ourneySupportedLocales,
+              routerConfig: router,
+            ),
+          ),
+        );
+        // Pump initial frames so friendshipsProvider resolves and _autoRead becomes true.
+        await tester.pump();
+        await tester.pump();
+        expect(
+          find.byKey(const ValueKey('inbox-request-u-khoa')),
+          findsOneWidget,
+        );
+        expect(repo.markedSeenCalls, isEmpty);
+
+        // Now shippedRequestNotificationsProvider resolves after _autoRead is already true.
+        shippedCompleter.complete([
+          ShippedRequestNotification(
+            requestId: 'req-3',
+            title: 'Chế độ hẹn giờ chụp 3 giây và 10 giây',
+            category: FeatureRequestCategory.camera,
+            adminReply: 'Đã ra mắt trên màn hình Máy ảnh!',
+            isAuthor: false,
+            shippedAt: DateTime.now().toUtc(),
+            createdAt: DateTime.now().toUtc(),
+            seen: false,
+          ),
+        ]);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey('inbox-shipped-request-req-3')),
+          findsOneWidget,
+        );
+        expect(repo.markedSeenCalls, [
+          ['req-3'],
+        ]);
+        // Unread dot on the shipped card is cleared after post-frame markSeen.
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('inbox-shipped-request-req-3')),
+            matching: find.byKey(const ValueKey('unread-dot')),
+          ),
+          findsNothing,
+        );
+
+        // Tapping filter tabs triggers rebuilds but must NOT re-send markShippedSeen for 'req-3'.
+        await tester.tap(find.byKey(const ValueKey('inbox-filter-invites')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('inbox-filter-all')));
+        await tester.pumpAndSettle();
+        expect(repo.markedSeenCalls, [
+          ['req-3'],
+        ]);
+      },
+    );
+
+    testWidgets(
+      'offline detail fallback skips cached request if id is in hiddenFeatureRequestIdsProvider (#8)',
+      (tester) async {
+        final repo = FakeFeatureRequestRepository();
+        final container = await _pumpFeedbackRouter(tester, repo: repo);
+
+        // Cache is populated with req-1 and req-2 from initial board load.
+        expect(
+          container
+              .read(feedbackCacheStoreProvider)
+              .read(mineOnly: false)
+              ?.map((i) => i.id),
+          containsAll(['req-1', 'req-2']),
+        );
+
+        // Hide req-1 locally (as after reporting or deleting) and go offline.
+        container.read(hiddenFeatureRequestIdsProvider.notifier).hide('req-1');
+        repo.detailError = const OurneyException(OurneyErrorCode.offline);
+        repo.listError = const OurneyException(OurneyErrorCode.offline);
+
+        // Unhidden req-2 still resolves from offline cache.
+        final cachedReq2 = await container.read(
+          rawFeatureRequestDetailProvider('req-2').future,
+        );
+        expect(cachedReq2.id, 'req-2');
+
+        // Hidden req-1 skips the cache hit and fails instead of returning cached content.
+        await expectLater(
+          container.read(rawFeatureRequestDetailProvider('req-1').future),
+          throwsA(isA<OurneyException>()),
+        );
+        expect(
+          container.read(featureRequestDetailProvider('req-1')).hasError,
+          isTrue,
+        );
+      },
+    );
+
+    testWidgets(
+      'prependCreated inserts only when matching current FeedbackBoardQuery, else refreshes (#9)',
+      (tester) async {
+        final repo = FakeFeatureRequestRepository();
+        final container = await _pumpFeedbackRouter(tester, repo: repo);
+
+        // Switch to Planned tab.
+        container
+            .read(feedbackQueryProvider.notifier)
+            .setTab(FeatureRequestTab.planned);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('feedback-card-req-1')),
+          findsOneWidget,
+        );
+        final listCallsBefore = repo.listCalls.length;
+
+        final created = FeatureRequest(
+          id: 'req-new-1',
+          title: 'Ý tưởng mới vừa tạo',
+          body: 'Ý tưởng này có trạng thái new nên không thuộc tab Planned.',
+          category: FeatureRequestCategory.design,
+          status: FeatureRequestStatus.newRequest,
+          voteCount: 1,
+          votedByMe: true,
+          isMine: true,
+          createdAt: DateTime.utc(2026, 11, 24, 9),
+          updatedAt: DateTime.utc(2026, 11, 24, 9),
+        );
+
+        // Call prependCreated while on Planned tab -> must NOT insert into Planned list; refreshes instead.
+        container
+            .read(rawFeedbackBoardProvider.notifier)
+            .prependCreated(created);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey('feedback-card-req-new-1')),
+          findsNothing,
+        );
+        expect(repo.listCalls.length, greaterThan(listCallsBefore));
+
+        // Now switch to Popular tab where 'new' requests match -> prependCreated inserts directly.
+        container
+            .read(feedbackQueryProvider.notifier)
+            .setTab(FeatureRequestTab.popular);
+        await tester.pumpAndSettle();
+        final popularCallsBefore = repo.listCalls.length;
+
+        container
+            .read(rawFeedbackBoardProvider.notifier)
+            .prependCreated(created);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey('feedback-card-req-new-1')),
+          findsOneWidget,
+        );
+        expect(repo.listCalls.length, popularCallsBefore);
+      },
+    );
+
+    testWidgets(
+      'loadMore drops stale page results when FeedbackBoardQuery changes during await (#10)',
+      (tester) async {
+        final page1 = [
+          for (var i = 0; i < featureRequestPageSize; i++)
+            FeatureRequest(
+              id: 'req-pop-$i',
+              title: 'Ý tưởng phổ biến $i',
+              body: 'Mô tả chi tiết cho ý tưởng phổ biến số $i.',
+              category: FeatureRequestCategory.design,
+              status: FeatureRequestStatus.newRequest,
+              voteCount: 50 - i,
+              votedByMe: false,
+              isMine: false,
+              createdAt: DateTime.utc(2026, 11, 20),
+              updatedAt: DateTime.utc(2026, 11, 20),
+            ),
+        ];
+        final shippedItem = FeatureRequest(
+          id: 'req-shipped-1',
+          title: 'Tính năng đã ra mắt',
+          body: 'Mô tả tính năng đã ra mắt trên bảng đề xuất.',
+          category: FeatureRequestCategory.camera,
+          status: FeatureRequestStatus.shipped,
+          voteCount: 80,
+          votedByMe: true,
+          isMine: false,
+          shippedAt: DateTime.utc(2026, 11, 23),
+          createdAt: DateTime.utc(2026, 11, 10),
+          updatedAt: DateTime.utc(2026, 11, 23),
+        );
+        final stalePage2Item = FeatureRequest(
+          id: 'req-pop-stale-page2',
+          title: 'Ý tưởng trang 2 cũ',
+          body: 'Không được nối vào tab Shipped khi người dùng đã chuyển tab.',
+          category: FeatureRequestCategory.design,
+          status: FeatureRequestStatus.newRequest,
+          voteCount: 1,
+          votedByMe: false,
+          isMine: false,
+          createdAt: DateTime.utc(2026, 11, 19),
+          updatedAt: DateTime.utc(2026, 11, 19),
+        );
+
+        final repo = FakeFeatureRequestRepository(
+          initial: [...page1, shippedItem],
+        );
+        final page2Completer = Completer<List<FeatureRequest>>();
+        repo.onList = (tab, category, search, mineOnly, limit, offset) async {
+          if (tab == FeatureRequestTab.popular && offset > 0) {
+            return page2Completer.future;
+          }
+          if (tab == FeatureRequestTab.shipped) {
+            return [shippedItem];
+          }
+          return page1;
+        };
+
+        final container = await _pumpFeedbackRouter(tester, repo: repo);
+        expect(
+          container.read(feedbackBoardProvider).asData?.value.hasMore,
+          isTrue,
+        );
+
+        // Start loading page 2 of Popular tab.
+        unawaited(container.read(rawFeedbackBoardProvider.notifier).loadMore());
+        await tester.pump();
+
+        // Change query to Shipped tab while Popular page 2 is still awaiting.
+        container
+            .read(feedbackQueryProvider.notifier)
+            .setTab(FeatureRequestTab.shipped);
+        await tester.pumpAndSettle();
+        expect(
+          container
+              .read(feedbackBoardProvider)
+              .asData
+              ?.value
+              .items
+              .map((i) => i.id),
+          ['req-shipped-1'],
+        );
+
+        // Now complete the stale Popular page 2 request — must be dropped!
+        page2Completer.complete([stalePage2Item]);
+        await tester.pumpAndSettle();
+
+        expect(
+          container
+              .read(feedbackBoardProvider)
+              .asData
+              ?.value
+              .items
+              .map((i) => i.id),
+          ['req-shipped-1'],
         );
       },
     );

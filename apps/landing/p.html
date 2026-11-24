@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="vi" class="hero-settled" data-link-page="journey">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base href="/">
+  <!-- Public journey endpoint & Supabase config (supabase/functions/public-journey). -->
+  <meta name="ourney-supabase-url" content="https://dmgpwpaouiphhrtukcie.supabase.co">
+  <meta name="ourney-supabase-anon-key" content="sb_publishable_YP_EL-U5_VqOKJpMuXexmA_eCQpc5Kt">
+  <meta name="ourney-public-journey-endpoint" content="https://dmgpwpaouiphhrtukcie.supabase.co/functions/v1/public-journey">
+  <title>ourney · hành trình ảnh được chia sẻ trên Ourney</title>
+  <meta name="description" content="Xem trọn chuỗi ngày không bỏ cuộc trên Ourney — nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Ourney">
+  <meta property="og:locale" content="vi_VN" id="meta-og-locale">
+  <meta property="og:locale:alternate" content="en_US" id="meta-og-locale-alt">
+  <meta property="og:url" content="https://ourney.tech/p/" id="meta-og-url">
+  <meta property="og:title" content="Hành trình ảnh được chia sẻ trên Ourney" id="meta-og-title">
+  <meta property="og:description" content="Xem trọn một chuỗi ngày không bỏ cuộc trên Ourney — mở link để xem timeline kỷ niệm hoặc bắt đầu Ngày 1 của riêng bạn." id="meta-og-desc">
+  <meta property="og:image" content="https://ourney.tech/assets/og/og-journey.png" id="meta-og-image">
+  <meta property="og:image:secure_url" content="https://ourney.tech/assets/og/og-journey.png" id="meta-og-image-secure">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Ourney — Hành trình ảnh mỗi ngày được chia sẻ" id="meta-og-image-alt">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://ourney.tech/p/" id="meta-tw-url">
+  <meta name="twitter:title" content="Hành trình ảnh được chia sẻ trên Ourney" id="meta-tw-title">
+  <meta name="twitter:description" content="Xem trọn một chuỗi ngày không bỏ cuộc trên Ourney — mở link để xem timeline kỷ niệm hoặc bắt đầu Ngày 1 của riêng bạn." id="meta-tw-desc">
+  <meta name="twitter:image" content="https://ourney.tech/assets/og/og-journey.png" id="meta-tw-image">
+  <meta name="twitter:image:alt" content="Ourney — Hành trình ảnh mỗi ngày được chia sẻ" id="meta-tw-image-alt">
+  <meta name="theme-color" content="#FFF8EE" id="meta-theme-light" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1B1916" id="meta-theme-dark" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/svg+xml" href="/assets/brand/favicon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preload" href="/assets/fonts/SpaceGrotesk-Variable.woff2" as="font" type="font/woff2" crossorigin>
+  <script>
+    (function () {
+      var d = document.documentElement;
+      try {
+        if (sessionStorage.getItem('ourney-intro-seen') === '1') d.classList.add('intro-seen');
+        var t = localStorage.getItem('ourney-theme');
+        if (t === 'light' || t === 'dark') {
+          d.dataset.theme = t;
+          var m = t === 'dark' ? 'all' : 'not all';
+          var mo = new MutationObserver(function () {
+            var s = d.querySelectorAll('source.src-dark');
+            for (var i = 0; i < s.length; i++) if (s[i].media !== m) s[i].media = m;
+          });
+          mo.observe(d, { childList: true, subtree: true });
+          addEventListener('DOMContentLoaded', function () { mo.disconnect(); }, { once: true });
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="link-body">
+  <svg class="svg-sprite" aria-hidden="true">
+    <defs>
+      <symbol id="i-camera" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z"/>
+        <path class="s-ink" d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z"/>
+        <path d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z" fill="#10B981" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="12" cy="13" r="3.6" fill="#FFF8EE" stroke="#1A1A1A" stroke-width="2"/>
+        <circle cx="12" cy="13" r="1.4" fill="#1A1A1A"/>
+        <circle cx="17" cy="10" r="1" fill="#FFF8EE"/>
+      </symbol>
+      <symbol id="i-flame" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z"/>
+        <path class="s-ink" d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z"/>
+        <path d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z" fill="#E04F33" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M12 18.6c-2 0-3.3-1.2-3.3-3 0-1.4.8-2.5 2-3.6.1 1 .6 1.6 1.2 1.9.2-1.7 1-2.8 2-3.6.1 1.7 1.8 2.8 1.8 5.1 0 2-1.5 3.2-3.7 3.2Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.5" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-squad" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/>
+          <path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6ZM13.5 18.5c.3-3.2 1.8-4.7 4.3-4.5 2.1.2 3.3 1.7 3.6 4.5Z"/>
+        </g>
+        <g class="s-ink">
+          <circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/>
+          <path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6ZM13.5 18.5c.3-3.2 1.8-4.7 4.3-4.5 2.1.2 3.3 1.7 3.6 4.5Z"/>
+        </g>
+        <circle cx="17" cy="9" r="2.5" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2"/>
+        <path d="M13.5 18.5c.3-3.2 1.8-4.7 4.3-4.5 2.1.2 3.3 1.7 3.6 4.5Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="9" cy="8" r="3" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="2"/>
+        <path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6Z" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-book" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M3.5 4.5h6.3c1.3 0 2.2.9 2.2 2.2v13c-.6-.8-1.4-1.2-2.4-1.2H3.5ZM20.5 4.5h-6.3c-1.3 0-2.2.9-2.2 2.2v13c.6-.8 1.4-1.2 2.4-1.2h6.1Z"/>
+        <path class="s-ink" d="M3.5 4.5h6.3c1.3 0 2.2.9 2.2 2.2v13c-.6-.8-1.4-1.2-2.4-1.2H3.5ZM20.5 4.5h-6.3c-1.3 0-2.2.9-2.2 2.2v13c.6-.8 1.4-1.2 2.4-1.2h6.1Z"/>
+        <path d="M3.5 4.5h6.3c1.3 0 2.2.9 2.2 2.2v13c-.6-.8-1.4-1.2-2.4-1.2H3.5Z" fill="#FFF8EE" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M20.5 4.5h-6.3c-1.3 0-2.2.9-2.2 2.2v13c.6-.8 1.4-1.2 2.4-1.2h6.1Z" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M6 9h3.5M6 12.5h3.5M14.5 9H18M14.5 12.5H18" stroke="#1A1A1A" stroke-width="1.9" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="i-workout" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <rect x="2.8" y="9" width="2.8" height="6" rx="1.2"/><rect x="5.6" y="6.5" width="3.2" height="11" rx="1.4"/>
+          <rect x="15.2" y="6.5" width="3.2" height="11" rx="1.4"/><rect x="18.4" y="9" width="2.8" height="6" rx="1.2"/>
+          <path d="M8.8 12h6.4"/>
+        </g>
+        <g class="s-ink">
+          <rect x="2.8" y="9" width="2.8" height="6" rx="1.2"/><rect x="5.6" y="6.5" width="3.2" height="11" rx="1.4"/>
+          <rect x="15.2" y="6.5" width="3.2" height="11" rx="1.4"/><rect x="18.4" y="9" width="2.8" height="6" rx="1.2"/>
+          <path d="M8.8 12h6.4"/>
+        </g>
+        <path d="M8.5 12h7" stroke="#1A1A1A" stroke-width="3.2" stroke-linecap="round"/>
+        <rect x="2.8" y="9" width="2.8" height="6" rx="1.2" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.8"/>
+        <rect x="18.4" y="9" width="2.8" height="6" rx="1.2" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.8"/>
+        <rect x="5.6" y="6.5" width="3.2" height="11" rx="1.4" fill="#A13CC9" stroke="#1A1A1A" stroke-width="2"/>
+        <rect x="15.2" y="6.5" width="3.2" height="11" rx="1.4" fill="#A13CC9" stroke="#1A1A1A" stroke-width="2"/>
+      </symbol>
+      <symbol id="i-trip" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <path d="M9 7V4.5h6V7"/><rect x="5.5" y="7" width="13" height="13" rx="2.4"/>
+          <path d="M8.5 20v1.5M15.5 20v1.5"/>
+        </g>
+        <g class="s-ink">
+          <path d="M9 7V4.5h6V7"/><rect x="5.5" y="7" width="13" height="13" rx="2.4"/>
+          <path d="M8.5 20v1.5M15.5 20v1.5"/>
+        </g>
+        <path d="M9 7V4.5h6V7" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linejoin="round"/>
+        <rect x="5.5" y="7" width="13" height="13" rx="2.4" fill="#E05A47" stroke="#1A1A1A" stroke-width="2"/>
+        <path d="M9 7v13M15 7v13" stroke="#1A1A1A" stroke-width="1.8"/>
+        <rect x="9" y="11.2" width="6" height="3.6" rx="1" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.6"/>
+        <path d="M8.5 20v1.5M15.5 20v1.5" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="i-scales" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <path d="M12 4v15.5M7 20h10M5 7h14M5 7l-2.6 6h5.2ZM19 7l-2.6 6h5.2Z"/>
+        </g>
+        <g class="s-ink">
+          <path d="M12 4v15.5M7 20h10M5 7h14M5 7l-2.6 6h5.2ZM19 7l-2.6 6h5.2Z"/>
+        </g>
+        <path d="M12 4.5v15M7 20h10M5 7h14" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M5 7l-2.6 6h5.2Z" fill="#10B981" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M19 7l-2.6 6h5.2Z" fill="#10B981" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="12" cy="7" r="2.1" fill="#FFF8EE" stroke="#1A1A1A" stroke-width="1.9"/>
+      </symbol>
+      <symbol id="i-couple" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M12 20S4 15.5 4 9.5C4 5 9.5 4 12 8c2.5-4 8-3 8 1.5 0 6-8 10.5-8 10.5Z"/>
+        <path class="s-ink" d="M12 20S4 15.5 4 9.5C4 5 9.5 4 12 8c2.5-4 8-3 8 1.5 0 6-8 10.5-8 10.5Z"/>
+        <path d="M12 20S4 15.5 4 9.5C4 5 9.5 4 12 8c2.5-4 8-3 8 1.5 0 6-8 10.5-8 10.5Z" fill="#FF4D6D" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M7.2 9.2a2.4 2.4 0 0 1 2.4-2" fill="none" stroke="#FFF8EE" stroke-width="1.8" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="i-custom" viewBox="-2 -2 28 28">
+        <path class="s-die" d="m5 16.8-1.2 4.4 4.4-1.2L20 8.2 15.8 4Z"/>
+        <path class="s-ink" d="m5 16.8-1.2 4.4 4.4-1.2L20 8.2 15.8 4Z"/>
+        <path d="m5 16.8-1.2 4.4 4.4-1.2L20 8.2 15.8 4Z" fill="#2AA7E0" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="m13.5 6.3 4.2 4.2" stroke="#1A1A1A" stroke-width="2"/>
+        <path d="m5 16.8 3.2 3.2-4.4 1.2Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.8" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-trophy" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <path d="M7 4h10v5c0 3.5-2 5.5-5 5.5S7 12.5 7 9Z"/>
+          <path d="M7 6H4v2c0 2 1.2 3 3.5 3M17 6h3v2c0 2-1.2 3-3.5 3M12 14.5V19M8 20h8"/>
+        </g>
+        <g class="s-ink">
+          <path d="M7 4h10v5c0 3.5-2 5.5-5 5.5S7 12.5 7 9Z"/>
+          <path d="M7 6H4v2c0 2 1.2 3 3.5 3M17 6h3v2c0 2-1.2 3-3.5 3M12 14.5V19M8 20h8"/>
+        </g>
+        <path d="M7 6H4v2c0 2 1.2 3 3.5 3M17 6h3v2c0 2-1.2 3-3.5 3M12 14.5V19M8 20h8" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M7 4h10v5c0 3.5-2 5.5-5 5.5S7 12.5 7 9Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-check" viewBox="-2 -2 28 28">
+        <circle class="s-die" cx="12" cy="12" r="9.2"/>
+        <circle class="s-ink" cx="12" cy="12" r="9.2"/>
+        <circle cx="12" cy="12" r="9.2" fill="#7EE8A2" stroke="#1A1A1A" stroke-width="2.2"/>
+        <path d="m7.8 12.3 3 3.1 5.6-6.2" fill="none" stroke="#1A1A1A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-lock" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <rect x="6" y="10" width="12" height="10" rx="2.2"/>
+          <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" fill="none"/>
+        </g>
+        <g class="s-ink">
+          <rect x="6" y="10" width="12" height="10" rx="2.2"/>
+          <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" fill="none"/>
+        </g>
+        <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" fill="none" stroke="#1A1A1A" stroke-width="2.4" stroke-linecap="round"/>
+        <rect x="6" y="10" width="12" height="10" rx="2.2" fill="#2AA7E0" stroke="#1A1A1A" stroke-width="2"/>
+        <circle cx="12" cy="14.2" r="1.3" fill="#FFF8EE"/>
+        <path d="M12 15.2v2.2" stroke="#FFF8EE" stroke-width="2" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="i-link" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none"/>
+        <path class="s-ink" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none"/>
+        <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none" stroke="#1A1A1A" stroke-width="4.2" stroke-linecap="round"/>
+        <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none" stroke="#2AA7E0" stroke-width="2.1" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="i-drop" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/>
+        <path class="s-ink" d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/>
+        <path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z" fill="#CF9FFF" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M9.2 14.2a3.2 3.2 0 0 0 2.8 2.8" fill="none" stroke="#FFF8EE" stroke-width="1.8" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="i-sparkle" viewBox="-2 -2 28 28">
+        <path class="s-die" d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8ZM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z"/>
+        <path class="s-ink" d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8ZM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z"/>
+        <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.5" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-star" viewBox="-2 -2 28 28">
+        <path class="s-die" d="m12 3 2.6 5.4 5.9.8-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.8Z"/>
+        <path class="s-ink" d="m12 3 2.6 5.4 5.9.8-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.8Z"/>
+        <path d="m12 3 2.6 5.4 5.9.8-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.8Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.9" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-download" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <path d="M10.2 3.5h3.6v6h3.2L12 14.7 7 9.5h3.2Z"/>
+          <rect x="4" y="16.5" width="16" height="4" rx="1.8"/>
+        </g>
+        <g class="s-ink">
+          <path d="M10.2 3.5h3.6v6h3.2L12 14.7 7 9.5h3.2Z"/>
+          <rect x="4" y="16.5" width="16" height="4" rx="1.8"/>
+        </g>
+        <rect x="4" y="16.5" width="16" height="4" rx="1.8" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2"/>
+        <path d="M10.2 3.5h3.6v6h3.2L12 14.7 7 9.5h3.2Z" fill="#7EE8A2" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <a class="skip" href="#main" data-i18n="skip">Bỏ qua tới nội dung chính</a>
+
+  <header class="nav scrolled">
+    <div class="wrap nav-inner">
+      <a class="brand" href="/" translate="no" aria-label="Ourney, về trang chủ" data-i18n-aria="nav_brand_aria" data-home-link>
+        <img src="/assets/brand/wordmark.png" alt="ourney" width="122" height="45">
+      </a>
+      <div class="nav-actions">
+        <button class="lang-btn" id="lang-toggle" type="button" aria-label="Chuyển ngôn ngữ sang tiếng Anh" data-i18n-aria="nav_lang_aria">
+          <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5h10M9 3v2M6 5c.5 4 3 7 6 8M12 5c-.5 4-3 7-7 9M13 20l4-10 4 10M14.5 17h5"/>
+          </svg>
+          <span class="lang-pill" data-lang-opt="vi">VI</span>
+          <span class="lang-pill" data-lang-opt="en">EN</span>
+        </button>
+        <button class="icon-btn" id="theme-toggle" type="button" aria-label="Đổi giao diện sáng hoặc tối" data-i18n-aria="nav_theme_aria">
+          <svg class="tg-sun" viewBox="0 0 24 24" aria-hidden="true">
+            <g class="o-halo"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></g>
+            <g class="o-fill"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></g>
+          </svg>
+          <svg class="tg-moon" viewBox="0 0 24 24" aria-hidden="true">
+            <g class="o-halo"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/></g>
+            <g class="o-fill"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/></g>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="link-stage link-stage-journey" id="main">
+    <div class="wrap link-wrap link-wrap-wide">
+      <div class="link-layout">
+        <!-- 1. Loading Skeleton State -->
+        <section class="card link-card link-loading-card" id="p-loading-card" aria-live="polite" aria-busy="true">
+          <div class="link-ticket-head">
+            <span class="link-kicker kicker-sky">
+              <svg class="o-sticker" width="20" height="20" aria-hidden="true"><use href="#i-link"/></svg>
+              <span data-i18n="p_kicker">HÀNH TRÌNH ĐƯỢC CHIA SẺ</span>
+            </span>
+          </div>
+          <div class="link-skel-bar skel-lg"></div>
+          <div class="link-skel-bar skel-sm"></div>
+          <div class="link-skel-grid" aria-hidden="true">
+            <div class="link-skel-tile"></div>
+            <div class="link-skel-tile"></div>
+          </div>
+          <p class="muted link-loading-txt" data-i18n="p_loading">Đang tải hành trình…</p>
+        </section>
+
+        <!-- 2. Loaded Public Journey Card -->
+        <section class="card link-card link-journey-card" id="p-journey-card" hidden aria-labelledby="p-title">
+          <div class="link-ticket-head">
+            <span class="link-kicker kicker-sky">
+              <svg class="o-sticker" id="p-template-icon" width="20" height="20" aria-hidden="true"><use id="p-template-use" href="#i-camera"/></svg>
+              <span id="p-eyebrow" data-i18n="p_kicker">HÀNH TRÌNH ĐƯỢC CHIA SẺ</span>
+            </span>
+            <span class="link-pass-tag" id="p-status-tag" translate="no">OURNEY</span>
+          </div>
+
+          <div class="link-journey-header">
+            <h1 class="link-h1" id="p-title">—</h1>
+            <p class="link-owner" id="p-owner" hidden></p>
+            <p class="link-lede link-intro" id="p-intro" hidden></p>
+
+            <!-- Streak / Day Count / Photo Count Chips -->
+            <div class="link-stats-row" id="p-stats-row">
+              <span class="link-stat-pill pill-flame" id="p-streak-pill" hidden>
+                <svg class="o-sticker" width="18" height="18" aria-hidden="true"><use href="#i-flame"/></svg>
+                <b id="p-streak-text">—</b>
+              </span>
+              <span class="link-stat-pill pill-mint" id="p-days-pill">
+                <svg class="o-sticker" width="18" height="18" aria-hidden="true"><use href="#i-camera"/></svg>
+                <b id="p-days-text">—</b>
+              </span>
+              <span class="link-stat-pill pill-study" id="p-duration-pill" hidden>
+                <svg class="o-sticker" width="18" height="18" aria-hidden="true"><use href="#i-trophy"/></svg>
+                <b id="p-duration-text">—</b>
+              </span>
+            </div>
+
+            <div class="link-actions">
+              <a class="btn btn-primary link-btn-block" id="open-app-btn" href="ourney://capture">
+                <svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-camera"/></svg>
+                <span data-i18n="open_in_app">Mở trong app</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Story Lessons (optional) -->
+          <div class="link-lessons-box" id="p-lessons-box" hidden>
+            <div class="link-lessons-head">
+              <svg class="o-sticker" width="20" height="20" aria-hidden="true"><use href="#i-star"/></svg>
+              <strong data-i18n="p_lessons_label">Bài học rút ra</strong>
+            </div>
+            <p id="p-lessons-text"></p>
+          </div>
+
+          <!-- Photo Grid -->
+          <div class="link-grid-wrap" id="p-grid-wrap">
+            <div class="link-grid-head">
+              <h2 class="link-grid-h" data-i18n="p_grid_h">Nhật ký ảnh từng ngày</h2>
+              <span class="link-ttl-note" id="p-ttl-note" data-i18n="p_ttl_note">Ảnh có hiệu lực 10 phút</span>
+            </div>
+            <div class="link-photo-grid" id="p-photo-grid"></div>
+            <p class="link-empty-photos" id="p-empty-photos" hidden data-i18n="p_empty_photos">Hành trình này chưa có ảnh công khai nào.</p>
+          </div>
+        </section>
+
+        <!-- 3. Expired / Invalid / Revoked Link State -->
+        <section class="card link-card link-state-card" id="p-expired-card" hidden aria-labelledby="p-expired-title">
+          <div class="link-sticker-cluster" aria-hidden="true">
+            <span class="link-tile tile-sky"><svg class="o-sticker" width="36" height="36"><use href="#i-lock"/></svg></span>
+          </div>
+          <h1 class="link-h1" id="p-expired-title"><b data-i18n="p_expired_h1">Liên kết không tồn tại hoặc đã thu hồi</b></h1>
+          <p class="link-lede" data-i18n="p_expired_desc">Hành trình này đã chuyển về riêng tư, chủ nhân đã đặt lại liên kết chia sẻ, hoặc địa chỉ không đúng.</p>
+          <div class="link-actions">
+            <a class="btn btn-primary link-btn-block" href="/" data-home-link>
+              <span data-i18n="back_home">Về trang chủ Ourney</span>
+            </a>
+          </div>
+        </section>
+
+        <!-- 4. Network / Server Error State -->
+        <section class="card link-card link-state-card" id="p-error-card" hidden aria-labelledby="p-error-title">
+          <div class="link-sticker-cluster" aria-hidden="true">
+            <span class="link-tile tile-flame"><svg class="o-sticker" width="36" height="36"><use href="#i-link"/></svg></span>
+          </div>
+          <h1 class="link-h1" id="p-error-title"><b data-i18n="p_error_h1">Chưa tải được hành trình</b></h1>
+          <p class="link-lede" data-i18n="p_error_desc">Kết nối tạm thời bị gián đoạn. Bạn thử tải lại hoặc mở trực tiếp trong ứng dụng Ourney.</p>
+          <div class="link-actions link-actions-split">
+            <button class="btn btn-primary link-btn-grow" id="p-retry-btn" type="button">
+              <span data-i18n="p_retry">Thử lại</span>
+            </button>
+            <a class="btn btn-secondary" href="/" data-home-link>
+              <span data-i18n="back_home">Về trang chủ Ourney</span>
+            </a>
+          </div>
+        </section>
+
+        <!-- Fallbacks: Android APK, iOS TestFlight / Waitlist, Desktop QR Code -->
+        <aside class="card link-fallback-card" aria-labelledby="fallback-heading">
+          <div class="link-fallback-main">
+            <p class="link-fallback-kicker" id="fallback-heading" data-i18n="fallback_title">Bắt đầu Ngày 1 của riêng bạn trên Ourney</p>
+            <div class="link-fallback-btns">
+              <a class="btn btn-secondary link-fallback-btn" id="fallback-android" href="/Ourney.apk" download="Ourney.apk">
+                <svg class="o-sticker" width="22" height="22" aria-hidden="true"><use href="#i-download"/></svg>
+                <span data-i18n="fallback_android">Tải APK</span>
+                <span class="link-plat-badge" translate="no">Android</span>
+              </a>
+              <a class="btn btn-secondary link-fallback-btn" id="fallback-ios" href="/#beta-waitlist-box" data-waitlist-link>
+                <svg class="o-sticker" width="22" height="22" aria-hidden="true"><use href="#i-sparkle"/></svg>
+                <span data-i18n="fallback_ios">Tham gia beta TestFlight / waitlist</span>
+                <span class="link-plat-badge" translate="no">iOS</span>
+              </a>
+            </div>
+            <p class="link-fallback-note" data-i18n="fallback_note">Chụp một tấm mỗi ngày, giữ một chuỗi, đi một mình hoặc cùng hội bạn thân.</p>
+          </div>
+
+          <div class="link-qr-panel" id="qr-panel">
+            <div class="link-qr-frame" id="qr-box" role="img" aria-label="Mã QR của liên kết hiện tại" data-i18n-aria="qr_aria"></div>
+            <div class="link-qr-copy">
+              <strong data-i18n="qr_heading">Mở trên điện thoại</strong>
+              <p data-i18n="qr_desc">Quét mã QR bằng camera điện thoại để mở trực tiếp trang này trên iOS hoặc Android.</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer link-footer">
+    <div class="wrap footer-inner">
+      <a class="brand" href="/" translate="no" data-home-link>
+        <img src="/assets/brand/wordmark.png" alt="ourney" width="98" height="36">
+      </a>
+      <p class="muted" data-i18n="footer_tagline">chụp một tấm. giữ một chuỗi. đi cùng nhau.</p>
+      <ul>
+        <li><a href="/" data-home-link data-i18n="footer_home">trang chủ</a></li>
+        <li><a href="/#beta-waitlist-box" data-waitlist-link data-i18n="footer_beta">nhận lời mời</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script src="/link.js" defer></script>
+  <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6accad2341fb415da9961f1d8b70f8e6"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

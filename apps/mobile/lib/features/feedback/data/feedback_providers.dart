@@ -69,18 +69,23 @@ abstract final class FeedbackPrefs {
 @immutable
 class FeedbackComposeDraft {
   const FeedbackComposeDraft({
+    this.id,
     this.title = '',
     this.body = '',
     this.category = FeatureRequestCategory.other,
   });
 
-  factory FeedbackComposeDraft.fromJson(Map<String, dynamic> json) =>
-      FeedbackComposeDraft(
-        title: json['title'] as String? ?? '',
-        body: json['body'] as String? ?? '',
-        category: FeatureRequestCategory.fromWire(json['category'] as String?),
-      );
+  factory FeedbackComposeDraft.fromJson(Map<String, dynamic> json) {
+    final rawId = (json['id'] as String?)?.trim();
+    return FeedbackComposeDraft(
+      id: (rawId == null || rawId.isEmpty) ? null : rawId,
+      title: json['title'] as String? ?? '',
+      body: json['body'] as String? ?? '',
+      category: FeatureRequestCategory.fromWire(json['category'] as String?),
+    );
+  }
 
+  final String? id;
   final String title;
   final String body;
   final FeatureRequestCategory category;
@@ -88,6 +93,7 @@ class FeedbackComposeDraft {
   bool get isEmpty => title.trim().isEmpty && body.trim().isEmpty;
 
   Map<String, dynamic> toJson() => {
+        if (id != null && id!.isNotEmpty) 'id': id,
         'title': title,
         'body': body,
         'category': category.wireName,
@@ -514,6 +520,7 @@ final feedbackQueryProvider =
 );
 
 class FeedbackBoardController extends AsyncNotifier<FeedbackBoardData> {
+  int _buildEpoch = 0;
   List<FeatureRequest> _rawItems = const [];
   bool _hasMore = false;
   bool _isOfflineCached = false;
@@ -521,6 +528,8 @@ class FeedbackBoardController extends AsyncNotifier<FeedbackBoardData> {
 
   @override
   Future<FeedbackBoardData> build() async {
+    final epoch = ++_buildEpoch;
+    _isLoadingMore = false;
     final query = ref.watch(feedbackQueryProvider);
     final repo = ref.watch(featureRequestRepositoryProvider);
     final cache = ref.read(feedbackCacheStoreProvider);
@@ -534,10 +543,12 @@ class FeedbackBoardController extends AsyncNotifier<FeedbackBoardData> {
         limit: featureRequestPageSize,
         offset: 0,
       );
-      _rawItems = fetched;
-      _hasMore = fetched.length >= featureRequestPageSize;
-      _isOfflineCached = false;
-      _isLoadingMore = false;
+      if (epoch == _buildEpoch) {
+        _rawItems = fetched;
+        _hasMore = fetched.length >= featureRequestPageSize;
+        _isOfflineCached = false;
+        _isLoadingMore = false;
+      }
       ref.read(feedbackVoteOverlayProvider.notifier).reconcileServerItems(
             fetched,
           );
@@ -545,20 +556,22 @@ class FeedbackBoardController extends AsyncNotifier<FeedbackBoardData> {
         unawaited(cache.write(mineOnly: query.mineOnly, items: fetched));
       }
       return FeedbackBoardData(
-        items: _rawItems,
-        hasMore: _hasMore,
+        items: fetched,
+        hasMore: fetched.length >= featureRequestPageSize,
       );
     } on Object catch (e) {
       if (feedbackErrorCode(e) == OurneyErrorCode.offline) {
         final cached = _readMergedCache(cache, mineOnly: query.mineOnly);
         if (cached != null && cached.isNotEmpty) {
           final filtered = _filterCached(cached, query);
-          _rawItems = filtered;
-          _hasMore = false;
-          _isOfflineCached = true;
-          _isLoadingMore = false;
+          if (epoch == _buildEpoch) {
+            _rawItems = filtered;
+            _hasMore = false;
+            _isOfflineCached = true;
+            _isLoadingMore = false;
+          }
           return FeedbackBoardData(
-            items: _rawItems,
+            items: filtered,
             hasMore: false,
             isOfflineCached: true,
           );
@@ -590,15 +603,10 @@ class FeedbackBoardController extends AsyncNotifier<FeedbackBoardData> {
     List<FeatureRequest> cached,
     FeedbackBoardQuery query,
   ) {
-    final foldedSearch = foldVietnameseDiacritics(query.search.trim());
+    final hidden = ref.read(hiddenFeatureRequestIdsProvider);
     final matches = <FeatureRequest>[
       for (final item in cached)
-        if (_matchesCachedTab(item, query) &&
-            (query.category == null || item.category == query.category) &&
-            (foldedSearch.isEmpty ||
-                foldVietnameseDiacritics(item.title).contains(foldedSearch) ||
-                foldVietnameseDiacritics(item.body).contains(foldedSearch)))
-          item,
+        if (!hidden.contains(item.id) && _matchesQuery(item, query)) item,
     ];
     if (query.mineOnly) {
       matches.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -630,6 +638,20 @@ class FeedbackBoardController extends AsyncNotifier<FeedbackBoardData> {
     return matches;
   }
 
+  bool _matchesQuery(FeatureRequest item, FeedbackBoardQuery query) {
+    if (!_matchesCachedTab(item, query)) return false;
+    if (query.category != null && item.category != query.category) {
+      return false;
+    }
+    final foldedSearch = foldVietnameseDiacritics(query.search.trim());
+    if (foldedSearch.isNotEmpty &&
+        !foldVietnameseDiacritics(item.title).contains(foldedSearch) &&
+        !foldVietnameseDiacritics(item.body).contains(foldedSearch)) {
+      return false;
+    }
+    return true;
+  }
+
   bool _matchesCachedTab(FeatureRequest item, FeedbackBoardQuery query) {
     if (query.mineOnly) return item.isMine;
     if (item.duplicateOf != null || item.isDeclined) return false;
@@ -647,10 +669,12 @@ class FeedbackBoardController extends AsyncNotifier<FeedbackBoardData> {
     final current = state.asData?.value;
     if (current == null) return;
 
+    final epoch = _buildEpoch;
+    final query = ref.read(feedbackQueryProvider);
+    final offset = _rawItems.length;
     _isLoadingMore = true;
     state = AsyncData(current.copyWith(isLoadingMore: true));
     try {
-      final query = ref.read(feedbackQueryProvider);
       final repo = ref.read(featureRequestRepositoryProvider);
       final next = await repo.list(
         tab: query.tab,
@@ -658,8 +682,11 @@ class FeedbackBoardController extends AsyncNotifier<FeedbackBoardData> {
         search: query.search.trim().isEmpty ? null : query.search.trim(),
         mineOnly: query.mineOnly,
         limit: featureRequestPageSize,
-        offset: _rawItems.length,
+        offset: offset,
       );
+      if (epoch != _buildEpoch || ref.read(feedbackQueryProvider) != query) {
+        return;
+      }
       ref.read(feedbackVoteOverlayProvider.notifier).reconcileServerItems(next);
       final existingIds = {for (final i in _rawItems) i.id};
       _rawItems = [
@@ -677,8 +704,12 @@ class FeedbackBoardController extends AsyncNotifier<FeedbackBoardData> {
         ),
       );
     } on Object {
+      if (epoch != _buildEpoch || ref.read(feedbackQueryProvider) != query) {
+        return;
+      }
       _isLoadingMore = false;
-      state = AsyncData(current.copyWith(isLoadingMore: false));
+      final latest = state.asData?.value ?? current;
+      state = AsyncData(latest.copyWith(isLoadingMore: false));
     }
   }
 
@@ -686,6 +717,11 @@ class FeedbackBoardController extends AsyncNotifier<FeedbackBoardData> {
     ref.read(feedbackVoteOverlayProvider.notifier).reconcileServerItems([
       created,
     ]);
+    final query = ref.read(feedbackQueryProvider);
+    if (!_matchesQuery(created, query)) {
+      ref.invalidateSelf();
+      return;
+    }
     _rawItems = [
       created,
       for (final item in _rawItems)
@@ -793,28 +829,27 @@ final rawFeatureRequestDetailProvider = FutureProvider.autoDispose
     } on Object catch (e) {
       if (feedbackErrorCode(e) == OurneyErrorCode.offline) {
         final hidden = ref.read(hiddenFeatureRequestIdsProvider);
-        if (hidden.contains(id)) {
-          throw const OurneyException(OurneyErrorCode.notFound);
-        }
-        final blocked =
-            ref.read(blockedUserIdsProvider).asData?.value ?? const {};
-        final cache = ref.read(feedbackCacheStoreProvider);
-        final boardItems = ref.exists(rawFeedbackBoardProvider)
-            ? ref.read(rawFeedbackBoardProvider).asData?.value.items
-            : null;
-        for (final list in [
-          boardItems,
-          cache.read(mineOnly: false),
-          cache.read(mineOnly: true),
-        ]) {
-          if (list == null) continue;
-          for (final item in list) {
-            if (item.id == id) {
-              if (item.authorUserId != null &&
-                  blocked.contains(item.authorUserId)) {
-                throw const OurneyException(OurneyErrorCode.notFound);
+        if (!hidden.contains(id)) {
+          final blocked =
+              ref.read(blockedUserIdsProvider).asData?.value ?? const {};
+          final cache = ref.read(feedbackCacheStoreProvider);
+          final boardItems = ref.exists(rawFeedbackBoardProvider)
+              ? ref.read(rawFeedbackBoardProvider).asData?.value.items
+              : null;
+          for (final list in [
+            boardItems,
+            cache.read(mineOnly: false),
+            cache.read(mineOnly: true),
+          ]) {
+            if (list == null) continue;
+            for (final item in list) {
+              if (item.id == id && !hidden.contains(item.id)) {
+                if (item.authorUserId != null &&
+                    blocked.contains(item.authorUserId)) {
+                  throw const OurneyException(OurneyErrorCode.notFound);
+                }
+                return item;
               }
-              return item;
             }
           }
         }

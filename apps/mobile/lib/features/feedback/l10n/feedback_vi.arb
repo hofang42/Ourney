@@ -202,7 +202,7 @@
   "@feedback_editSheetTitle": {
     "description": "Title of the edit request bottom sheet."
   },
-  "feedback_createSheetSub": "Đề xuất được hiển thị công khai để mọi người cùng bình chọn.",
+  "feedback_createSheetSub": "Đề xuất chỉ hiển thị với người dùng đã đăng nhập để cộng đồng cùng bình chọn.",
   "@feedback_createSheetSub": {
     "description": "Subtitle of the create/edit sheet."
   },
