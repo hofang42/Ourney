@@ -1,7 +1,7 @@
 -- Security baseline: RLS everywhere, fixed search_path, no anon access, private bucket.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(15);
+select plan(17);
 
 select tables_are(
   'public',
@@ -37,10 +37,10 @@ select is(
 select is(
   (select count(*)::int
      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public' and p.prosecdef
+    where n.nspname in ('public', 'private') and p.prosecdef
       and not coalesce(exists (select 1 from unnest(p.proconfig) c where c like 'search_path=%'), false)),
   0,
-  'every SECURITY DEFINER function pins search_path'
+  'every SECURITY DEFINER function in public and private pins search_path'
 );
 
 select is(
@@ -113,6 +113,20 @@ select is(
   (select count(*)::int from storage.buckets where id = 'media'),
   1,
   'storage bucket media exists'
+);
+
+select is(
+  (select public from storage.buckets where id = 'messages'),
+  false,
+  'storage bucket messages is private'
+);
+
+select is(
+  (select count(*)::int from pg_policy
+    where polrelid = 'storage.objects'::regclass
+      and polname in ('messages_select', 'messages_insert', 'messages_update', 'messages_delete')),
+  4,
+  'storage bucket messages has select, insert, update and delete policies'
 );
 
 select * from finish();
