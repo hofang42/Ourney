@@ -43,7 +43,29 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
   );
   final FocusNode _focus = FocusNode();
   bool _busy = false;
+  late bool _initialInvalid =
+      (widget.initialCode?.trim().isNotEmpty ?? false) &&
+      !isValidInviteCode(parseInviteInput(widget.initialCode!));
   String? _error;
+
+  Future<void> _pasteCode() async {
+    final l10n = GroupsL10n.of(context);
+    final raw = await ref.read(groupClipboardReaderProvider)();
+    if (!mounted) return;
+    final parsed = parseInviteInput(raw ?? '');
+    if (!isValidInviteCode(parsed)) {
+      showGroupSnack(context, l10n.groups_pasteNoCode);
+      return;
+    }
+    _code.value = TextEditingValue(
+      text: parsed,
+      selection: TextSelection.collapsed(offset: parsed.length),
+    );
+    setState(() {
+      _initialInvalid = false;
+      _error = null;
+    });
+  }
 
   @override
   void dispose() {
@@ -237,16 +259,31 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
             controller: _code,
             focusNode: _focus,
             enabled: !_busy,
-            onChanged: () => setState(() => _error = null),
+            onChanged: () => setState(() {
+              _initialInvalid = false;
+              _error = null;
+            }),
             onSubmitted: _join,
+          ),
+          const SizedBox(height: UiSpace.sm),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: UiButton.secondary(
+              key: const ValueKey('groups-join-paste'),
+              label: l10n.groups_pasteCode,
+              glyph: const OurneyIcon(name: 'copy', size: 17),
+              compact: true,
+              expand: false,
+              onPressed: _busy ? null : _pasteCode,
+            ),
           ),
           const SizedBox(height: UiSpace.md),
           _previewSection(context, async),
-          if (_error != null) ...[
+          if (_error != null || _initialInvalid) ...[
             const SizedBox(height: UiSpace.lg),
             UiInlineError(
               key: const ValueKey('groups-join-error'),
-              message: _error!,
+              message: _error ?? l10n.groups_joinInvalidCode,
             ),
           ],
           const SizedBox(height: UiSpace.xl),
@@ -352,18 +389,19 @@ class _CodeBoxes extends StatelessWidget {
                       autocorrect: false,
                       enableSuggestions: false,
                       showCursor: false,
-                      enableInteractiveSelection: false,
+                      enableInteractiveSelection: true,
                       textCapitalization: TextCapitalization.characters,
                       textInputAction: TextInputAction.done,
                       inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp('[A-Za-z0-9]'),
-                        ),
-                        LengthLimitingTextInputFormatter(inviteCodeLength),
-                        TextInputFormatter.withFunction(
-                          (old, value) =>
-                              value.copyWith(text: value.text.toUpperCase()),
-                        ),
+                        TextInputFormatter.withFunction((old, value) {
+                          final parsed = parseInviteInput(value.text);
+                          return TextEditingValue(
+                            text: parsed,
+                            selection: TextSelection.collapsed(
+                              offset: parsed.length,
+                            ),
+                          );
+                        }),
                       ],
                       decoration: const InputDecoration(
                         border: InputBorder.none,

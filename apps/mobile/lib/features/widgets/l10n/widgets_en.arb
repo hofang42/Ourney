@@ -13,7 +13,7 @@
   "widgets_previewStreakDays": "{count}-day streak",
   "widgets_previewSnapCta": "Snap now",
   "widgets_previewDoneBadge": "Checked in today",
-  "widgets_previewAtRiskBadge": "Streak at risk · before 24:00",
+  "widgets_previewAtRiskBadge": "Streak at risk · before midnight",
   "widgets_previewPendingBadge": "Not checked in yet",
   "widgets_previewSquadCount": "{done}/{total} checked in today",
   "widgets_previewPhotoHiddenNote": "Photos hidden on widgets",

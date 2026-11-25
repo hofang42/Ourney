@@ -1,9 +1,11 @@
-import 'dart:ui' show Rect;
+import 'dart:io';
 
 import 'package:clock/clock.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderException;
 import 'package:ourney_core/ourney_core.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../app/providers.dart';
@@ -85,6 +87,49 @@ class SharePlusShareCardSharer implements ShareCardSharer {
 
 final shareCardSharerProvider = Provider<ShareCardSharer>(
   (ref) => const SharePlusShareCardSharer(),
+);
+
+/// Saves an exported share-card image file to the device so the user can
+/// keep it locally. Injectable so tests can assert what is saved.
+abstract interface class ShareCardSaver {
+  Future<String> saveImage({
+    required String path,
+    required String mimeType,
+  });
+}
+
+class PlatformShareCardSaver implements ShareCardSaver {
+  const PlatformShareCardSaver();
+
+  static const _channel = MethodChannel('ourney/media_saver');
+
+  @override
+  Future<String> saveImage({
+    required String path,
+    required String mimeType,
+  }) async {
+    final ext = mimeType == 'image/jpeg' ? 'jpg' : 'png';
+    final fileName =
+        'ourney-card-${DateTime.now().millisecondsSinceEpoch}.$ext';
+    try {
+      final saved = await _channel.invokeMethod<String>('saveImage', {
+        'path': path,
+        'mimeType': mimeType,
+        'fileName': fileName,
+      });
+      if (saved != null && saved.isNotEmpty) return saved;
+    } on Object {
+      // Fall back to copying into application documents directory.
+    }
+    final dir = await getApplicationDocumentsDirectory();
+    final target = File('${dir.path}${Platform.pathSeparator}$fileName');
+    await File(path).copy(target.path);
+    return target.path;
+  }
+}
+
+final shareCardSaverProvider = Provider<ShareCardSaver>(
+  (ref) => const PlatformShareCardSaver(),
 );
 
 final shareCardExporterProvider = Provider<ShareCardExporter>(

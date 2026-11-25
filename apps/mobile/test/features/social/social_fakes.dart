@@ -35,6 +35,8 @@ Friendship friend(String id, {String? name}) => Friendship(
   acceptedAt: DateTime(2026, 10, 2),
 );
 
+final _twoDaysAgo = DateTime.now().subtract(const Duration(days: 2));
+
 Friendship request(
   String id, {
   FriendDirection direction = FriendDirection.incoming,
@@ -42,6 +44,7 @@ Friendship request(
   String? journeyId,
   String? journeyTitle,
   String? name,
+  DateTime? createdAt,
 }) => Friendship(
   person: person(id, name: name),
   status: FriendStatus.pending,
@@ -49,7 +52,7 @@ Friendship request(
   source: source,
   sourceJourneyId: journeyId,
   sourceJourneyTitle: journeyTitle,
-  createdAt: DateTime(2026, 10, 20, 17, 30),
+  createdAt: createdAt ?? _twoDaysAgo,
 );
 
 /// A value stream: replays the latest value to each new listener.

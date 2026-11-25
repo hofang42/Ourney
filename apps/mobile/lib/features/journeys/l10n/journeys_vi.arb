@@ -522,7 +522,7 @@
       }
     }
   },
-  "journeys_shareMakeCard": "Tạo thẻ hoặc video",
+  "journeys_shareMakeCard": "Tạo thẻ chia sẻ",
   "@journeys_shareMakeCard": {
     "description": "Detail share sheet: image card option."
   },
@@ -1351,6 +1351,16 @@
   "journeys_wrapped_hideBrand": "Ẩn chữ ourney",
   "journeys_wrapped_messages": "Tin nhắn",
   "journeys_wrapped_otherApps": "Ứng dụng khác",
+  "journeys_wrapped_saveCard": "Lưu ảnh",
+  "journeys_wrapped_cardSaved": "Đã lưu thẻ.",
+  "journeys_create_invitingFriend": "Sẽ gửi lời mời tới @{handle}",
+  "@journeys_create_invitingFriend": {
+    "placeholders": {
+      "handle": {
+        "type": "String"
+      }
+    }
+  },
   "journeys_wrapped_open": "Xem hành trình đã về đích",
   "journeys_wrapped_menu": "Câu chuyện về đích",
   "journeys_home_squadChip": "{title} · {days} NGÀY",

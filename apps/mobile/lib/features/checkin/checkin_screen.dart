@@ -66,6 +66,11 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
   late final DraftFiles _drafts;
   bool _metricError = false;
   CheckInOutcome? _outcome;
+  CapturedPhoto? _overridePhoto;
+  final _metricKey = GlobalKey();
+  final _extrasKey = GlobalKey();
+
+  CapturedPhoto? get _activePhoto => _overridePhoto ?? widget.photo;
 
   /// The first-check-in notification offer; the success view waits for it
   /// before closing by itself (B-B2).
@@ -120,7 +125,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
     _countdown?.cancel();
     // Left without posting (close, back gesture): the raw camera/picker
     // file is not needed. After a post the poster already cleaned up.
-    final photo = widget.photo;
+    final photo = _activePhoto;
     if (photo != null && !_posting && _outcome == null) {
       unawaited(_drafts.discard([photo.path]));
     }
@@ -224,18 +229,68 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
     }
   }
 
+  Future<void> _repickFromLibrary(CapturedPhoto current) async {
+    if (_posting) return;
+    _stopCountdown();
+    final path = await ref.read(galleryPickerProvider).pickPhoto();
+    if (path == null || !mounted) return;
+    unawaited(_drafts.discard([current.path]));
+    setState(() {
+      _overridePhoto = CapturedPhoto(
+        journeyId: current.journeyId,
+        path: path,
+        capturedAt: DateTime.now(),
+        fromLibrary: true,
+        initialMetricValue: current.initialMetricValue,
+      );
+    });
+  }
+
+  void _rejectValidation(String message, {GlobalKey? targetKey}) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    unawaited(UiHaptics.reject());
+    final ctx = targetKey?.currentContext;
+    if (ctx != null) {
+      unawaited(
+        Scrollable.ensureVisible(
+          ctx,
+          duration: UiMotion.fast,
+          curve: UiCurves.easeOutStrong,
+          alignment: 0.3,
+        ),
+      );
+    } else {
+      showUiToast(context, message);
+    }
+  }
+
   Future<void> _post(Journey journey, CapturedPhoto photo) async {
     if (_posting) return;
     final l10n = CheckinL10n.of(context);
     final caption = _caption.text.trim();
-    if (validateCaption(caption) != null) return;
+    if (validateCaption(caption) != null) {
+      _rejectValidation(
+        l10n.checkin_captionLimitReached(captionMax),
+        targetKey: _captionKey,
+      );
+      return;
+    }
     final skin = personaSkinOf(journey);
     if (skin == PersonaSkinId.aestheticFlexer &&
         (_extras.paceInvalid || _extras.kmInvalid)) {
+      _rejectValidation(
+        _extras.kmInvalid
+            ? l10n.checkin_extraKmInvalid
+            : l10n.checkin_extraPaceInvalid,
+        targetKey: _extrasKey,
+      );
       return;
     }
     final extras = _extras.extrasFor(skin);
-    if (extras.validate() != null) return;
+    if (extras.validate() != null) {
+      _rejectValidation(l10n.checkin_metricInvalid, targetKey: _extrasKey);
+      return;
+    }
 
     double? metric;
     if (journey.metricName != null) {
@@ -245,7 +300,10 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
           (raw.trim().isNotEmpty && metric == null) ||
           validateMetricValue(metric) != null;
       setState(() => _metricError = invalid);
-      if (invalid) return;
+      if (invalid) {
+        _rejectValidation(l10n.checkin_metricInvalid, targetKey: _metricKey);
+        return;
+      }
     }
 
     setState(() => _posting = true);
@@ -306,7 +364,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
     // Keeps OurneyHaptics.enabled in sync with the user's toggle.
     final haptics = ref.watch(hapticsEnabledProvider);
     final l10n = CheckinL10n.of(context);
-    final photo = widget.photo;
+    final photo = _activePhoto;
 
     if (photo == null) {
       return _frame(
@@ -576,7 +634,11 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
                             ),
                             child: _PhotoPreview(
                               photo: photo,
-                              onRetake: _posting ? null : _close,
+                              onRetake: _posting
+                                  ? null
+                                  : photo.fromLibrary
+                                  ? () => _repickFromLibrary(photo)
+                                  : _close,
                             ),
                           ),
                   );
@@ -653,38 +715,44 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
             ),
             if (metricLabel != null) ...[
               const SizedBox(height: UiSpace.lg),
-              UiTextField(
-                fieldKey: const ValueKey('checkin-metric'),
-                label: metricLabel,
-                hint: _lastMetricHint(l10n, vi),
-                controller: _metric,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
+              KeyedSubtree(
+                key: _metricKey,
+                child: UiTextField(
+                  fieldKey: const ValueKey('checkin-metric'),
+                  label: metricLabel,
+                  hint: _lastMetricHint(l10n, vi),
+                  controller: _metric,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
+                  ],
+                  onChanged: (_) {
+                    if (_metricError) setState(() => _metricError = false);
+                  },
+                  error: _metricError ? l10n.checkin_metricInvalid : null,
+                  helper: hideMetric ? l10n.checkin_metricPrivate : null,
+                  trailing: hideMetric
+                      ? OurneyIcon(
+                          name: 'lock',
+                          flat: true,
+                          size: 18,
+                          color: ui.inkMuted,
+                        )
+                      : null,
                 ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
-                ],
-                onChanged: (_) {
-                  if (_metricError) setState(() => _metricError = false);
-                },
-                error: _metricError ? l10n.checkin_metricInvalid : null,
-                helper: hideMetric ? l10n.checkin_metricPrivate : null,
-                trailing: hideMetric
-                    ? OurneyIcon(
-                        name: 'lock',
-                        flat: true,
-                        size: 18,
-                        color: ui.inkMuted,
-                      )
-                    : null,
               ),
             ],
-            PostExtrasSection(
-              skin: skin,
-              controller: _extras,
-              selfName: journey.coupleSelfName,
-              partnerName: journey.couplePartnerName,
-              onPickPartnerPhoto: _pickPartnerPhoto,
+            KeyedSubtree(
+              key: _extrasKey,
+              child: PostExtrasSection(
+                skin: skin,
+                controller: _extras,
+                selfName: journey.coupleSelfName,
+                partnerName: journey.couplePartnerName,
+                onPickPartnerPhoto: _pickPartnerPhoto,
+              ),
             ),
             if (skin == PersonaSkinId.minimalistHabit) ...[
               const SizedBox(height: UiSpace.md),
@@ -968,7 +1036,9 @@ class _PhotoPreview extends StatelessWidget {
                         child: UiPressable(
                           key: const ValueKey('checkin-retake'),
                           onPressed: onRetake,
-                          semanticLabel: l10n.checkin_retake,
+                          semanticLabel: photo.fromLibrary
+                              ? l10n.checkin_chooseAnother
+                              : l10n.checkin_retake,
                           excludeChildSemantics: true,
                           borderRadius: BorderRadius.circular(UiRadius.capsule),
                           child: Container(
@@ -986,8 +1056,10 @@ class _PhotoPreview extends StatelessWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const OurneyIcon(
-                                  name: 'refresh',
+                                OurneyIcon(
+                                  name: photo.fromLibrary
+                                      ? 'gallery'
+                                      : 'refresh',
                                   flat: true,
                                   size: 18,
                                   color: UiCamera.onPhoto,
@@ -995,7 +1067,9 @@ class _PhotoPreview extends StatelessWidget {
                                 const SizedBox(width: 6),
                                 Flexible(
                                   child: Text(
-                                    l10n.checkin_retake,
+                                    photo.fromLibrary
+                                        ? l10n.checkin_chooseAnother
+                                        : l10n.checkin_retake,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: UiText.body(

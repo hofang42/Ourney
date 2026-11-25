@@ -105,7 +105,13 @@ class FeedbackL10nEn extends FeedbackL10n {
 
   @override
   String feedback_voteSemantics(String title, int count, String state) {
-    return '$title, $count votes, $state';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$title, $count votes, $state',
+      one: '$title, 1 vote, $state',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -116,7 +122,13 @@ class FeedbackL10nEn extends FeedbackL10n {
 
   @override
   String feedback_shippedVotes(int count) {
-    return 'Shipped · $count votes';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Shipped · $count votes',
+      one: 'Shipped · 1 vote',
+    );
+    return '$_temp0';
   }
 
   @override

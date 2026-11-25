@@ -479,13 +479,33 @@ class SharingL10nVi extends SharingL10n {
 
   @override
   String sharing_newViewersWeek(int count) {
-    return '+$count người xem mới tuần này';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '+$count người xem mới tuần này',
+      zero: 'Chưa có người xem mới tuần này',
+    );
+    return '$_temp0';
   }
 
   @override
   String sharing_thisWeek(int count) {
-    return '+$count tuần này';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '+$count tuần này',
+      zero: '0 tuần này',
+    );
+    return '$_temp0';
   }
+
+  @override
+  String sharing_removedFriendToast(String name) {
+    return 'Đã gỡ quyền xem của $name.';
+  }
+
+  @override
+  String get sharing_undo => 'Hoàn tác';
 
   @override
   String get sharing_viewsPerDay => 'Số người xem mỗi ngày';

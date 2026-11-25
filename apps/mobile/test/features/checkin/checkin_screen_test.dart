@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/features/camera/capture_services.dart'
+    show galleryPickerProvider;
 import 'package:ourney/features/checkin/captured_photo.dart';
 import 'package:ourney/features/checkin/checkin_clock.dart';
 import 'package:ourney/features/checkin/checkin_success.dart';
@@ -194,6 +196,7 @@ void main() {
   testWidgets('library photo shows the from-library label (FR-C3)', (
     tester,
   ) async {
+    final gallery = FakeGalleryPicker('/tmp/lib-repicked.jpg');
     await pump(
       tester,
       extra: CapturedPhoto(
@@ -202,8 +205,13 @@ void main() {
         capturedAt: testNowUtc,
         fromLibrary: true,
       ),
+      overrides: [galleryPickerProvider.overrideWithValue(gallery)],
     );
     expect(find.byKey(const ValueKey('checkin-from-library')), findsOneWidget);
+    expect(find.text('Chọn ảnh khác'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('checkin-retake')));
+    await tester.pumpAndSettle();
+    expect(gallery.calls, 1);
     await tapPost(tester);
     expect(checkIns.submitted.single.fromLibrary, isTrue);
     await finishSuccess(tester);

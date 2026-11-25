@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../data/groups_providers.dart';
+import '../groups_paths.dart';
 import '../l10n/generated/groups_localizations.dart';
 import 'group_errors.dart';
 
@@ -17,9 +19,14 @@ Future<void> showGroupInviteSheet(BuildContext context, String journeyId) =>
     );
 
 class GroupInviteSheet extends ConsumerStatefulWidget {
-  const GroupInviteSheet({required this.journeyId, super.key});
+  const GroupInviteSheet({
+    required this.journeyId,
+    this.showCodeLink = true,
+    super.key,
+  });
 
   final String journeyId;
+  final bool showCodeLink;
 
   @override
   ConsumerState<GroupInviteSheet> createState() => _GroupInviteSheetState();
@@ -113,6 +120,21 @@ class _GroupInviteSheetState extends ConsumerState<GroupInviteSheet> {
             loading: _busy,
             onPressed: _busy ? null : _send,
           ),
+          if (widget.showCodeLink) ...[
+            const SizedBox(height: UiSpace.sm),
+            UiButton.ghost(
+              key: const ValueKey('invite-share-code'),
+              label: l10n.groups_inviteShareCode,
+              glyph: const OurneyIcon(name: 'link', size: 18),
+              onPressed: () {
+                final router = GoRouter.maybeOf(context);
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+                router?.push(GroupsPaths.invite(widget.journeyId));
+              },
+            ),
+          ],
           const SizedBox(height: UiSpace.lg),
           UiEyebrow(l10n.groups_invitePendingTitle.toUpperCase()),
           const SizedBox(height: UiSpace.sm),

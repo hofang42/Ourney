@@ -179,7 +179,7 @@ abstract class WidgetsL10n {
   /// Urgent badge shown in widget preview when streak is at risk.
   ///
   /// In vi, this message translates to:
-  /// **'Sắp đứt chuỗi · trước 24:00'**
+  /// **'Sắp đứt chuỗi · trước nửa đêm'**
   String get widgets_previewAtRiskBadge;
 
   /// Status badge in widget preview when today is still pending.

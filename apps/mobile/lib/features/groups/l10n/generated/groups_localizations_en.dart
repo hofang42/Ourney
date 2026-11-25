@@ -279,7 +279,13 @@ class GroupsL10nEn extends GroupsL10n {
 
   @override
   String groups_previewMembersValue(int count, int max) {
-    return '$count of $max people';
+    String _temp0 = intl.Intl.pluralLogic(
+      max,
+      locale: localeName,
+      other: '$count of $max people',
+      one: '$count of 1 person',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -287,7 +293,13 @@ class GroupsL10nEn extends GroupsL10n {
 
   @override
   String groups_previewDurationValue(int days) {
-    return '$days days';
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$_temp0';
   }
 
   @override

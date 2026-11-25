@@ -186,4 +186,56 @@ void main() {
       });
     }
   }
+
+  testWidgets('UX-03: completion copy reflects actual journey audience', (
+    tester,
+  ) async {
+    Future<void> pumpAudience(Journey j) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: testApp(
+            CheckinSuccessView(
+              outcome: CheckInOutcome(
+                checkIn: testCheckIn(j.startDate),
+                streakBefore: 2,
+                streakAfter: 3,
+              ),
+              journey: j,
+              haptics: false,
+              onDone: () {},
+              onShare: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    await pumpAudience(testJourney());
+    expect(find.text('Đã lưu. Chỉ mình bạn thấy.'), findsOneWidget);
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
+
+    await pumpAudience(
+      testJourney(
+        kind: JourneyKind.group,
+        visibility: JourneyVisibility.group,
+      ),
+    );
+    expect(find.text('Đã chia sẻ với cả nhóm.'), findsOneWidget);
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
+
+    await pumpAudience(
+      testJourney(
+        kind: JourneyKind.group,
+        maxMembers: 2,
+        visibility: JourneyVisibility.group,
+      ),
+    );
+    expect(find.text('Nửa của bạn đã được gửi.'), findsOneWidget);
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
+
+    await pumpAudience(testJourney(visibility: JourneyVisibility.link));
+    expect(find.text('Đã hiển thị trên hành trình chia sẻ.'), findsOneWidget);
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
+  });
 }

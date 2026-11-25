@@ -65,7 +65,9 @@ class _JourneyPickerSheetState extends State<JourneyPickerSheet> {
     final q = _query.text.trim().toLowerCase();
     final shown = [
       for (final j in widget.journeys)
-        if (q.isEmpty || j.title.toLowerCase().contains(q)) j,
+        if (j.status == JourneyStatus.active &&
+            (q.isEmpty || j.title.toLowerCase().contains(q)))
+          j,
     ];
     final pinned = [
       for (final j in shown)
@@ -77,25 +79,16 @@ class _JourneyPickerSheetState extends State<JourneyPickerSheet> {
     ];
     final notShot = [
       for (final j in rest)
-        if (j.status == JourneyStatus.active &&
-            !widget.shotTodayIds.contains(j.id))
-          j,
+        if (!widget.shotTodayIds.contains(j.id)) j,
     ];
     final shot = [
       for (final j in rest)
-        if (j.status == JourneyStatus.active &&
-            widget.shotTodayIds.contains(j.id))
-          j,
-    ];
-    final ended = [
-      for (final j in rest)
-        if (j.status != JourneyStatus.active) j,
+        if (widget.shotTodayIds.contains(j.id)) j,
     ];
     final sections = [
       (l10n.camera_pickerPinned, 'pinned', pinned),
       (l10n.camera_pickerNotShot, 'not-shot', notShot),
       (l10n.camera_pickerShot, 'shot', shot),
-      (l10n.camera_pickerEnded, 'ended', ended),
     ];
     // showUiSheet already wraps this in a UiSheet; wrapping again drew the
     // sheet frame and grabber twice (bug 12).

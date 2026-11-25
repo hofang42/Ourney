@@ -6,9 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
+import 'package:ourney/features/share_card/data/share_card_providers.dart';
 import 'package:ourney/features/social/data/social_providers.dart';
 import 'package:ourney_core/ourney_core.dart';
 
+import '../share_card/share_card_fakes.dart' show FakeExporter, FakeSaver, FakeSharer;
 import 'journeys_fakes.dart';
 
 Finder _key(String k) => find.byKey(ValueKey(k));
@@ -65,7 +67,8 @@ void main() {
       await tester.tap(find.text('4:5'));
       await tester.pumpAndSettle();
       expect(_key('wrapped-card-feed'), findsOneWidget);
-      expect(find.text('Export card'), findsOneWidget);
+      expect(find.text('Share'), findsOneWidget);
+      expect(find.text('Edit card'), findsOneWidget);
     });
 
     testWidgets('U4: back arrow steps a page; story exposes scroll actions', (
@@ -140,7 +143,8 @@ void main() {
         await tester.tapAt(const Offset(380, 500));
         await tester.pumpAndSettle();
       }
-      await tester.tap(_key('wrapped-cta'));
+      await tester.ensureVisible(_key('wrapped-edit-card'));
+      await tester.tap(_key('wrapped-edit-card'));
       await tester.pumpAndSettle();
       final uri = Uri.parse(h.location);
       expect(uri.path, '/share/${j.id}');
@@ -242,11 +246,12 @@ void main() {
     );
 
     testWidgets(
-      'Messages and Other apps in share sheet honor hide-brand toggle, iPad origin, and surface share errors (DE-17)',
+      'Share and Save image in share sheet export rendered card image, honor hide-brand toggle, and surface share errors (DE-17, UX-07)',
       (tester) async {
         expect(defaultSharePositionOrigin().isEmpty, isFalse);
-        final shared = <String>[];
-        var shouldThrow = false;
+        final exporter = FakeExporter();
+        final sharer = FakeSharer();
+        final saver = FakeSaver();
         final token = 'pub${'0' * 37}';
         final base = testJourney(
           status: JourneyStatus.ended,
@@ -278,12 +283,9 @@ void main() {
             testCheckIn(j.id, const LocalDate(2026, 10, 10)),
           ]),
           extraOverrides: [
-            socialShareLauncherProvider.overrideWithValue((text) async {
-              if (shouldThrow) {
-                throw const OurneyException(OurneyErrorCode.unknown);
-              }
-              shared.add(text);
-            }),
+            shareCardExporterProvider.overrideWithValue(exporter),
+            shareCardSharerProvider.overrideWithValue(sharer),
+            shareCardSaverProvider.overrideWithValue(saver),
           ],
         );
         await tester.tap(_key('wrapped-segment-2'));
@@ -293,11 +295,16 @@ void main() {
         await tester.pumpAndSettle();
         expect(_key('wrapped-share-sheet'), findsOneWidget);
 
-        await tester.tap(_key('wrapped-share-messages'));
+        await tester.tap(_key('wrapped-share-now'));
         await tester.pumpAndSettle();
-        expect(shared, hasLength(1));
-        expect(shared.single, contains(j.title));
-        expect(shared.single, contains('ourney · https://ourney.tech/p/$token'));
+        expect(exporter.exports, hasLength(1));
+        expect(sharer.shared, hasLength(1));
+        expect(sharer.shared.single.path, contains('ourney-${j.id}-story.png'));
+        expect(sharer.shared.single.text, contains(j.title));
+        expect(
+          sharer.shared.single.text,
+          contains('ourney · https://ourney.tech/p/$token'),
+        );
         expect(h.location, JourneysPaths.wrapped(j.id));
 
         // Toggling "Hide the ourney wordmark" in the sheet hides the brand
@@ -306,19 +313,27 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(_key('wrapped-hide-brand'));
         await tester.pumpAndSettle();
-        await tester.tap(_key('wrapped-share-other'));
+        await tester.tap(_key('wrapped-share-now'));
         await tester.pumpAndSettle();
-        expect(shared, hasLength(2));
-        expect(shared.last, isNot(contains('ourney · ')));
-        expect(shared.last, contains('https://ourney.tech/p/$token'));
+        expect(sharer.shared, hasLength(2));
+        expect(sharer.shared.last.text, isNot(contains('ourney · ')));
+        expect(sharer.shared.last.text, contains('https://ourney.tech/p/$token'));
         expect(_key('wrapped-brand'), findsNothing);
         expect(h.location, JourneysPaths.wrapped(j.id));
 
-        // A failing share launcher shows a toast instead of an unhandled async error.
-        shouldThrow = true;
+        // Save image exports and saves the rendered card image.
         await tester.tap(_key('wrapped-share'));
         await tester.pumpAndSettle();
-        await tester.tap(_key('wrapped-share-messages'));
+        await tester.tap(_key('wrapped-share-save'));
+        await tester.pumpAndSettle();
+        expect(saver.saved, hasLength(1));
+        expect(find.text('Card saved.'), findsOneWidget);
+
+        // A failing export shows a toast instead of an unhandled async error.
+        exporter.error = const OurneyException(OurneyErrorCode.unknown);
+        await tester.tap(_key('wrapped-share'));
+        await tester.pumpAndSettle();
+        await tester.tap(_key('wrapped-share-now'));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         expect(find.text('Something went wrong. Please try again.'), findsOneWidget);

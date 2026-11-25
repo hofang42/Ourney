@@ -30,6 +30,9 @@
   "checkin_shareSkinMinimal": "Export card",
   "checkin_shareSkinQuiet": "Make a card",
   "checkin_done_savedPrivate": "Saved. Only you can see it.",
+  "checkin_done_sharedSquad": "Shared with your squad.",
+  "checkin_done_sharedLink": "Visible on your shared journey.",
+  "checkin_chooseAnother": "Choose another",
   "checkin_done_stampChecked": "CHECKED IN",
   "checkin_done_stampWeek1": "WEEK 1 DONE",
   "checkin_done_stampCup": "CUP WON",
@@ -83,7 +86,7 @@
       }
     }
   },
-  "checkin_calendarSemantics": "Calendar of the last {days} days, today has a photo",
+  "checkin_calendarSemantics": "{days, plural, =1{Calendar of the last 1 day, today has a photo} other{Calendar of the last {days} days, today has a photo}}",
   "@checkin_calendarSemantics": {
     "placeholders": {
       "days": {
@@ -115,7 +118,7 @@
   "checkin_extraYou": "You",
   "checkin_extraPartner": "Partner",
   "checkin_extraHeartsLabel": "How many hearts for this meal?",
-  "checkin_extraHeartsValue": "{count} hearts",
+  "checkin_extraHeartsValue": "{count, plural, =1{1 heart} other{{count} hearts}}",
   "@checkin_extraHeartsValue": {
     "placeholders": {
       "count": {

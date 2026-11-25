@@ -262,6 +262,7 @@ Future<GroupsHarness> pumpGroups(
   GroupSafetyHooks hooks = const GroupSafetyHooks(),
   AppConfig config = testBackendConfig,
   Locale locale = const Locale('en'),
+  String? clipboardText,
 }) async {
   tester.platformDispatcher.accessibilityFeaturesTestValue =
       const FakeAccessibilityFeatures(disableAnimations: true);
@@ -300,6 +301,10 @@ Future<GroupsHarness> pumpGroups(
       groupClipboardProvider.overrideWithValue(
         (text) async => copied.add(text),
       ),
+      if (clipboardText != null)
+        groupClipboardReaderProvider.overrideWithValue(
+          () async => clipboardText,
+        ),
     ],
   );
   final h = GroupsHarness(container, g, j, s, shared, copied);

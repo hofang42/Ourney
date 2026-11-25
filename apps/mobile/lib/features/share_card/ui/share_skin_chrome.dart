@@ -539,7 +539,7 @@ class QuietShareControls extends StatelessWidget {
 }
 
 /// `PosterShareSheet` / `SquadShareSheet`: title, "Ẩn chữ ourney" toggle
-/// row, then Messages / Other apps / Save image.
+/// row, then one honest "Chia sẻ" action + "Lưu ảnh" action.
 Future<void> showShareSheet({
   required BuildContext context,
   required String skinId,
@@ -547,6 +547,7 @@ Future<void> showShareSheet({
   required bool hideBrand,
   required ValueChanged<bool> onHideBrand,
   required VoidCallback onAction,
+  VoidCallback? onSave,
 }) {
   var hidden = hideBrand;
   return showUiSheet<void>(
@@ -644,7 +645,7 @@ Future<void> showShareSheet({
               ),
             ),
           );
-          Widget action(String label, String key) => row(
+          Widget action(String label, String key, VoidCallback callback) => row(
             Center(
               child: Text(
                 label,
@@ -660,7 +661,7 @@ Future<void> showShareSheet({
             label: label,
             onTap: () {
               Navigator.of(sheetContext).pop();
-              onAction();
+              callback();
             },
           );
           return Column(
@@ -745,11 +746,15 @@ Future<void> showShareSheet({
                 },
               ),
               action(
-                l10n.share_card_sheetMessages,
-                'share-card-sheet-messages',
+                l10n.share_card_squadShare,
+                'share-card-sheet-share',
+                onAction,
               ),
-              action(l10n.share_card_sheetOther, 'share-card-sheet-other'),
-              action(l10n.share_card_sheetSave, 'share-card-sheet-save'),
+              action(
+                l10n.share_card_sheetSave,
+                'share-card-sheet-save',
+                onSave ?? onAction,
+              ),
             ],
           );
         },

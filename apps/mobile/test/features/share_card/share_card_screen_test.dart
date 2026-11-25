@@ -98,7 +98,7 @@ void main() {
         checkIns: streakCheckIns(j.id),
         locale: const Locale('en'),
       );
-      await _tap(tester, _seg('share-card-number-mode', 'Day N'));
+      await _tap(tester, _seg('share-card-number-mode', 'Day 7'));
       expect(_text(tester, 'share-card-number'), '7');
       expect(_text(tester, 'share-card-day'), 'DAY 7');
     });
@@ -399,7 +399,7 @@ void main() {
         checkIns: streakCheckIns(j.id),
       );
       await _tap(tester, _key('share-card-share'));
-      await _tap(tester, _key('share-card-sheet-other'));
+      await _tap(tester, _key('share-card-sheet-share'));
       expect(h.exporter.exports, hasLength(1));
       final e = h.exporter.exports.single;
       expect(e.format, ShareCardFormat.story);
@@ -413,10 +413,17 @@ void main() {
 
       await _tap(tester, _seg('share-card-format', '4:5'));
       await _tap(tester, _key('share-card-share'));
-      await _tap(tester, _key('share-card-sheet-other'));
+      await _tap(tester, _key('share-card-sheet-share'));
       expect(h.exporter.exports.last.format, ShareCardFormat.feed);
       expect(h.exporter.exports.last.boundarySize, const Size(360, 450));
       expect(h.sharer.shared, hasLength(2));
+
+      // Save image saves via ShareCardSaver and shows confirmation toast (UX-06).
+      await _tap(tester, _key('share-card-share'));
+      await _tap(tester, _key('share-card-sheet-save'));
+      expect(h.saver.saved, hasLength(1));
+      expect(h.saver.saved.single.path, '/tmp/ourney-j1-feed.png');
+      expect(find.text('Đã lưu thẻ.'), findsOneWidget);
     });
 
     testWidgets('a rendering failure shows a friendly error', (tester) async {

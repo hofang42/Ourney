@@ -109,6 +109,15 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_done_savedPrivate => 'Đã lưu. Chỉ mình bạn thấy.';
 
   @override
+  String get checkin_done_sharedSquad => 'Đã chia sẻ với cả nhóm.';
+
+  @override
+  String get checkin_done_sharedLink => 'Đã hiển thị trên hành trình chia sẻ.';
+
+  @override
+  String get checkin_chooseAnother => 'Chọn ảnh khác';
+
+  @override
   String get checkin_done_stampChecked => 'ĐÃ ĐIỂM DANH';
 
   @override

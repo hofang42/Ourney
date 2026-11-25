@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -10,10 +11,15 @@ import '../../../../app/app_routes.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../personas/persona_contract.dart';
 import '../../../../ui/ui.dart';
+import '../../../share_card/data/share_card_exporter.dart'
+    show shareCardBaseName;
+import '../../../share_card/data/share_card_providers.dart'
+    show
+        shareCardExporterProvider,
+        shareCardSaverProvider,
+        shareCardSharerProvider;
 import '../../../share_card/domain/share_card_content.dart'
-    show activePublicToken;
-import '../../../social/data/social_providers.dart'
-    show socialShareLauncherProvider;
+    show ShareCardFormat, activePublicToken;
 import '../../data/journeys_providers.dart';
 import '../../domain/journey_progress.dart';
 import '../../domain/wrapped_story.dart';
@@ -537,7 +543,7 @@ class _Story extends StatelessWidget {
   }
 }
 
-class _Summary extends ConsumerWidget {
+class _Summary extends ConsumerStatefulWidget {
   const _Summary({
     required this.journey,
     required this.skin,
@@ -569,19 +575,36 @@ class _Summary extends ConsumerWidget {
     return '${f(values.first)} kg  >  ${f(values.last)} kg';
   }
 
-  String _cta(JourneysL10n l10n) => switch (skin) {
-    PersonaSkinId.memoryCollectors => l10n.journeys_wrapped_ctaPoster,
-    PersonaSkinId.coupleRituals => l10n.journeys_wrapped_ctaStory,
-    PersonaSkinId.aestheticFlexer => l10n.journeys_wrapped_ctaFlexer,
-    PersonaSkinId.minimalistHabit => l10n.journeys_wrapped_ctaMinimal,
-    _ => l10n.journeys_wrapped_ctaCard,
-  };
+  @override
+  ConsumerState<_Summary> createState() => _SummaryState();
+}
+
+class _SummaryState extends ConsumerState<_Summary> {
+  final _boundaryKey = GlobalKey();
+  final _shareButtonKey = GlobalKey();
+
+  Journey get journey => widget.journey;
+  PersonaSkinId get skin => widget.skin;
+  WrappedStats get stats => widget.stats;
+  _Ratio get ratio => widget.ratio;
+  bool get hideKg => widget.hideKg;
+  bool get hideBrand => widget.hideBrand;
+  ValueChanged<_Ratio> get onRatio => widget.onRatio;
+  VoidCallback get onHideKg => widget.onHideKg;
+  ValueChanged<bool> get onHideBrand => widget.onHideBrand;
+
+  Rect? _shareOrigin() {
+    final box = _shareButtonKey.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return null;
+    return box.localToGlobal(Offset.zero) & box.size;
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = JourneysL10n.of(context);
     final ui = context.ui;
     final quiet = skin == PersonaSkinId.quietTransformer;
+    final hasWeights = _Summary._weights(stats) != null;
     // U4: carry the format and privacy choices over to the card editor. The
     // photo blur is not handed over: the quiet card always blurs its portrait.
     void openShare() => context.push(
@@ -593,7 +616,11 @@ class _Summary extends ConsumerWidget {
       ),
     );
     Future<void> shareNow(bool hideWordmark) async {
-      final launcher = ref.read(socialShareLauncherProvider);
+      final exporter = ref.read(shareCardExporterProvider);
+      final sharer = ref.read(shareCardSharerProvider);
+      final format = ratio == _Ratio.story
+          ? ShareCardFormat.story
+          : ShareCardFormat.feed;
       final text = wrappedShareText(
         l10n,
         journey,
@@ -603,7 +630,56 @@ class _Summary extends ConsumerWidget {
         hideBrand: hideWordmark,
       );
       try {
-        await launcher(text);
+        if (hideWordmark != hideBrand) {
+          onHideBrand(hideWordmark);
+        }
+        await WidgetsBinding.instance.endOfFrame;
+        final boundary =
+            _boundaryKey.currentContext?.findRenderObject()
+                as RenderRepaintBoundary?;
+        if (boundary == null) throw StateError('wrapped card not laid out');
+        final file = await exporter.export(
+          boundary,
+          format,
+          baseName: shareCardBaseName(journey.id, format),
+        );
+        await sharer.shareImage(
+          path: file.path,
+          mimeType: file.mimeType,
+          text: text,
+          origin: _shareOrigin(),
+        );
+      } on Object catch (e) {
+        if (context.mounted) {
+          showJourneySnack(context, journeyErrorMessage(context, e));
+        }
+      }
+    }
+
+    Future<void> saveCard(bool hideWordmark) async {
+      final exporter = ref.read(shareCardExporterProvider);
+      final saver = ref.read(shareCardSaverProvider);
+      final format = ratio == _Ratio.story
+          ? ShareCardFormat.story
+          : ShareCardFormat.feed;
+      try {
+        if (hideWordmark != hideBrand) {
+          onHideBrand(hideWordmark);
+        }
+        await WidgetsBinding.instance.endOfFrame;
+        final boundary =
+            _boundaryKey.currentContext?.findRenderObject()
+                as RenderRepaintBoundary?;
+        if (boundary == null) throw StateError('wrapped card not laid out');
+        final file = await exporter.export(
+          boundary,
+          format,
+          baseName: shareCardBaseName(journey.id, format),
+        );
+        await saver.saveImage(path: file.path, mimeType: file.mimeType);
+        if (context.mounted) {
+          showJourneySnack(context, l10n.journeys_wrapped_cardSaved);
+        }
       } on Object catch (e) {
         if (context.mounted) {
           showJourneySnack(context, journeyErrorMessage(context, e));
@@ -649,7 +725,10 @@ class _Summary extends ConsumerWidget {
                     child: AspectRatio(
                       key: ValueKey('wrapped-card-${ratio.name}'),
                       aspectRatio: aspect,
-                      child: child,
+                      child: RepaintBoundary(
+                        key: _boundaryKey,
+                        child: child,
+                      ),
                     ),
                   );
                 },
@@ -689,9 +768,9 @@ class _Summary extends ConsumerWidget {
                           size: 16,
                         ).copyWith(height: 1.35),
                       ),
-                      if (quiet && !hideKg && _weights(stats) != null)
+                      if (quiet && !hideKg && hasWeights)
                         Text(
-                          _weights(stats)!,
+                          _Summary._weights(stats)!,
                           key: const ValueKey('wrapped-weights'),
                           style: UiText.muted(color: ui.ink)
                               .copyWith(height: 1.4),
@@ -714,18 +793,19 @@ class _Summary extends ConsumerWidget {
               spacing: UiSpace.sm,
               runSpacing: UiSpace.sm,
               children: [
-                UiChip(
-                  key: const ValueKey('wrapped-hide-kg'),
-                  label:
-                      '${l10n.journeys_wrapped_hideKg} · ${hideKg ? l10n.journeys_wrapped_on : l10n.journeys_wrapped_off}',
-                  selected: hideKg,
-                  glyph: OurneyIcon(
-                    name: hideKg ? 'check' : 'eye',
-                    size: 14,
-                    flat: true,
+                if (hasWeights)
+                  UiChip(
+                    key: const ValueKey('wrapped-hide-kg'),
+                    label:
+                        '${l10n.journeys_wrapped_hideKg} · ${hideKg ? l10n.journeys_wrapped_on : l10n.journeys_wrapped_off}',
+                    selected: hideKg,
+                    glyph: OurneyIcon(
+                      name: hideKg ? 'check' : 'eye',
+                      size: 14,
+                      flat: true,
+                    ),
+                    onPressed: onHideKg,
                   ),
-                  onPressed: onHideKg,
-                ),
                 // Locked: the quiet card always blurs its portrait, so the
                 // chip shows that state instead of a switch that does nothing.
                 UiChip(
@@ -740,32 +820,21 @@ class _Summary extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: UiSpace.lg),
-          UiButton(
-            key: const ValueKey('wrapped-cta'),
-            label: _cta(l10n),
-            onPressed: openShare,
+          KeyedSubtree(
+            key: _shareButtonKey,
+            child: UiButton(
+              key: const ValueKey('wrapped-share'),
+              label: l10n.journeys_wrapped_share,
+              glyph: const OurneyIcon(name: 'share', size: 18, flat: true),
+              onPressed: () => _shareSheet(context, shareNow, saveCard),
+            ),
           ),
           const SizedBox(height: UiSpace.sm),
-          Row(
-            children: [
-              Expanded(
-                child: UiButton.secondary(
-                  key: const ValueKey('wrapped-share'),
-                  label: l10n.journeys_wrapped_share,
-                  glyph: const OurneyIcon(name: 'share', size: 18, flat: true),
-                  onPressed: () => _shareSheet(context, shareNow),
-                ),
-              ),
-              const SizedBox(width: UiSpace.sm),
-              Expanded(
-                child: UiButton.secondary(
-                  key: const ValueKey('wrapped-edit-card'),
-                  label: l10n.journeys_wrapped_editCard,
-                  glyph: const OurneyIcon(name: 'pencil', size: 18, flat: true),
-                  onPressed: openShare,
-                ),
-              ),
-            ],
+          UiButton.secondary(
+            key: const ValueKey('wrapped-edit-card'),
+            label: l10n.journeys_wrapped_editCard,
+            glyph: const OurneyIcon(name: 'pencil', size: 18, flat: true),
+            onPressed: openShare,
           ),
           const SizedBox(height: UiSpace.xl),
         ],
@@ -776,6 +845,7 @@ class _Summary extends ConsumerWidget {
   Future<void> _shareSheet(
     BuildContext context,
     Future<void> Function(bool hideBrand) onShare,
+    Future<void> Function(bool hideBrand) onSave,
   ) {
     final l10n = JourneysL10n.of(context);
     return showUiSheet<void>(
@@ -788,6 +858,10 @@ class _Summary extends ConsumerWidget {
           Navigator.of(ctx).pop();
           unawaited(onShare(hide));
         },
+        onSave: (hide) {
+          Navigator.of(ctx).pop();
+          unawaited(onSave(hide));
+        },
       ),
     );
   }
@@ -799,12 +873,14 @@ class _ShareSheet extends StatefulWidget {
     required this.hideBrand,
     required this.onHideBrand,
     required this.onShare,
+    required this.onSave,
   });
 
   final JourneysL10n l10n;
   final bool hideBrand;
   final ValueChanged<bool> onHideBrand;
   final ValueChanged<bool> onShare;
+  final ValueChanged<bool> onSave;
 
   @override
   State<_ShareSheet> createState() => _ShareSheetState();
@@ -841,15 +917,17 @@ class _ShareSheetState extends State<_ShareSheet> {
         ),
         const SizedBox(height: UiSpace.md),
         UiButton(
-          key: const ValueKey('wrapped-share-messages'),
-          label: l10n.journeys_wrapped_messages,
+          key: const ValueKey('wrapped-share-now'),
+          label: l10n.journeys_wrapped_share,
+          glyph: const OurneyIcon(name: 'share', size: 18, flat: true),
           onPressed: () => widget.onShare(_hide),
         ),
         const SizedBox(height: UiSpace.sm),
         UiButton.secondary(
-          key: const ValueKey('wrapped-share-other'),
-          label: l10n.journeys_wrapped_otherApps,
-          onPressed: () => widget.onShare(_hide),
+          key: const ValueKey('wrapped-share-save'),
+          label: l10n.journeys_wrapped_saveCard,
+          glyph: const OurneyIcon(name: 'download', size: 18, flat: true),
+          onPressed: () => widget.onSave(_hide),
         ),
       ],
     );

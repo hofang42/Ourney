@@ -136,11 +136,22 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
   }
 
   Future<void> _unshareFriend(PersonSummary friend) async {
+    final l10n = SharingL10n.of(context);
+    final name = friend.displayName.trim().isNotEmpty
+        ? friend.displayName.trim()
+        : '@${friend.username}';
     setState(() => _removing.add(friend.userId));
     try {
       await ref
           .read(sharingRepositoryProvider)
           .unshare(_journey.id, friendId: friend.userId);
+      if (!mounted) return;
+      showUiToast(
+        context,
+        l10n.sharing_removedFriendToast(name),
+        actionLabel: l10n.sharing_undo,
+        onAction: () => unawaited(_share([friend.userId])),
+      );
     } on Object catch (e) {
       if (mounted) _snack(sharingFailure(context, e));
     } finally {

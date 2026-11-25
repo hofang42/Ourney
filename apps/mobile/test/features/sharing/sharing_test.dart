@@ -815,6 +815,36 @@ void main() {
       expect(_key('insights-privacy'), findsOneWidget);
     });
 
+    testWidgets(
+      'UX-39: zero weekly deltas render muted copy and VI mode localizes persona style name',
+      (tester) async {
+        await pumpSharing(
+          tester,
+          location: '/sharing/j1/insights',
+          locale: const Locale('vi'),
+          journeys: _journeys(),
+          sharing: FakeSharingRepository(token: 'tok'),
+          insights: FakeInsightsRepository(
+            const JourneyInsights(
+              journeyId: 'j1',
+              views: 10,
+              viewsThisWeek: 0,
+              likesFromFriends: 0,
+              likesFromStrangers: 0,
+              likesThisWeek: 0,
+              started: 0,
+              startedThisWeek: 0,
+              viewsByDay: [],
+              likers: [],
+            ),
+          ),
+        );
+        expect(find.text('Chưa có người xem mới tuần này'), findsOneWidget);
+        expect(find.text('0 tuần này'), findsNWidgets(2));
+        expect(find.textContaining('Quiet Transformer'), findsNothing);
+      },
+    );
+
     test('fillDays pads 30 days ending on the latest day', () {
       final days = fillDays(const [
         DailyCount(LocalDate(2026, 10, 15), 4),

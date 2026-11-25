@@ -56,7 +56,7 @@ class WidgetsL10nVi extends WidgetsL10n {
   String get widgets_previewDoneBadge => 'Đã chụp hôm nay';
 
   @override
-  String get widgets_previewAtRiskBadge => 'Sắp đứt chuỗi · trước 24:00';
+  String get widgets_previewAtRiskBadge => 'Sắp đứt chuỗi · trước nửa đêm';
 
   @override
   String get widgets_previewPendingBadge => 'Chưa chụp hôm nay';

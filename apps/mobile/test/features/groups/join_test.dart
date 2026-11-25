@@ -56,6 +56,27 @@ void main() {
       expect(h.groups.calls, ['join:ZZ99YY88']);
     });
 
+    testWidgets(
+      'UX-15 & UX-30: Paste button fills code from clipboard, and malformed deep link shows error',
+      (tester) async {
+        final h = await pumpGroups(
+          tester,
+          location: AppRoutes.join('bad'),
+          clipboardText: 'https://ourney.tech/j/abcd2345',
+        );
+        // Malformed initial deep link `/join/bad` immediately shows invalid-code error (UX-30).
+        expect(find.byKey(const ValueKey('groups-join-error')), findsOneWidget);
+
+        // Tapping Paste extracts the 8-char invite code from the clipboard URL (UX-15).
+        await tester.tap(find.byKey(const ValueKey('groups-join-paste')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('groups-join-error')), findsNothing);
+        await tester.tap(find.byKey(const ValueKey('groups-join-submit')));
+        await tester.pumpAndSettle();
+        expect(h.groups.calls, ['join:ABCD2345']);
+      },
+    );
+
     final errors = {
       OurneyErrorCode.notFound: 'No squad uses this code.',
       OurneyErrorCode.full: 'This squad is full (10 members).',

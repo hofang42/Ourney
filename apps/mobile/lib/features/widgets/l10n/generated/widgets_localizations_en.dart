@@ -56,7 +56,7 @@ class WidgetsL10nEn extends WidgetsL10n {
   String get widgets_previewDoneBadge => 'Checked in today';
 
   @override
-  String get widgets_previewAtRiskBadge => 'Streak at risk · before 24:00';
+  String get widgets_previewAtRiskBadge => 'Streak at risk · before midnight';
 
   @override
   String get widgets_previewPendingBadge => 'Not checked in yet';

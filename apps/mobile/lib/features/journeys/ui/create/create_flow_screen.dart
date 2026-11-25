@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../app/app_routes.dart';
 import '../../../../app/providers.dart';
 import '../../../../ui/ui.dart';
+import '../../../groups/data/groups_providers.dart';
 import '../../../onboarding/onboarding_providers.dart';
 import '../../../profile/share_privacy_sync.dart';
 import '../../../reminders/data/reminder_scheduler.dart';
@@ -48,6 +49,7 @@ class CreateFlowScreen extends ConsumerStatefulWidget {
   const CreateFlowScreen({
     this.resume = false,
     this.initialWho,
+    this.inviteHandle,
     super.key,
   });
 
@@ -57,6 +59,9 @@ class CreateFlowScreen extends ConsumerStatefulWidget {
   /// Preselected value for step 3 ("Who is coming along?", e.g. `?who=group`
   /// when launched from a friend's sheet, DE-20).
   final CreateWho? initialWho;
+
+  /// Friend username to auto-invite when creating a group journey (`?invite=`).
+  final String? inviteHandle;
 
   static CreateWho? parseWho(String? raw) => switch (raw) {
     'solo' => CreateWho.solo,
@@ -419,6 +424,18 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       );
       // The journey exists: the saved draft must not resurrect it (U8).
       unawaited(progress.clear());
+      final invite = widget.inviteHandle?.trim();
+      if (invite != null &&
+          invite.isNotEmpty &&
+          journey.kind == JourneyKind.group) {
+        try {
+          await ref
+              .read(groupInviteRepositoryProvider)
+              .send(journey.id, handle: invite);
+        } on Object {
+          // Non-fatal: the journey exists; the owner can still invite from the journey screen.
+        }
+      }
       if (mounted && extrasRejected) {
         showJourneySnack(
           context,
@@ -621,6 +638,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                               showErrors: _attempted.contains(2),
                               nameLeftController: _nameLeft,
                               nameRightController: _nameRight,
+                              inviteHandle: widget.inviteHandle,
                               onPick: (who) => setState(() {
                                 _who = who;
                                 _applyWho(_form!);
@@ -649,6 +667,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                               start: _start,
                               nameLeftController: _nameLeft,
                               nameRightController: _nameRight,
+                              inviteHandle: widget.inviteHandle,
                               onChangeVariant: () {
                                 unawaited(UiHaptics.selection());
                                 setState(() => _variant = (_variant + 1) % 3);

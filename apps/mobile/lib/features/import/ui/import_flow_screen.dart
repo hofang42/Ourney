@@ -43,6 +43,7 @@ class ImportFlowScreen extends ConsumerStatefulWidget {
 
 class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
   final List<DraftPhoto> _photos = [];
+  final List<DraftPhoto> _removedPhotos = [];
   final _title = TextEditingController();
   _Stage _stage = _Stage.photos;
   String _typeId = 'trip';
@@ -111,7 +112,7 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
       final jobId = _jobId;
       final store = _store;
       final paths = [
-        for (final p in _photos)
+        for (final p in [..._photos, ..._removedPhotos])
           if (!_keptPaths.contains(p.path) || jobId == null) p.path,
       ];
       unawaited(() async {
@@ -296,19 +297,33 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
   }
 
   void _remove(Iterable<DraftPhoto> gone) {
-    final ids = {for (final p in gone) p.id};
+    final removed = gone.toList();
+    if (removed.isEmpty) return;
+    final ids = {for (final p in removed) p.id};
+    final l10n = ImportL10n.of(context);
     setState(() {
       _photos.removeWhere((p) => ids.contains(p.id));
+      _removedPhotos.addAll(removed);
       _bulk.removeAll(ids);
-      // A removed photo is not needed any more: its temp copy goes now.
-      unawaited(
-        _drafts?.discard([for (final p in gone) p.path]) ?? Future.value(),
-      );
       if (_chosen.isEmpty) {
         _selecting = false;
         _stage = _Stage.photos;
       }
     });
+    showUiToast(
+      context,
+      l10n.import_photoRemoved(removed.length),
+      actionLabel: l10n.import_undo,
+      onAction: () {
+        if (!mounted) return;
+        setState(() {
+          _removedPhotos.removeWhere((p) => ids.contains(p.id));
+          _photos
+            ..addAll(removed)
+            ..sort((a, b) => a.order.compareTo(b.order));
+        });
+      },
+    );
   }
 
   // --- save --------------------------------------------------------------

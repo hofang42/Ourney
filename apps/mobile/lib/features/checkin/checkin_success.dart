@@ -333,13 +333,27 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
     final milestone = outcome.milestone;
     // Figma Done screens: a per-skin hero, the streak, one calm line.
     final headline = _headline(l10n, skin, day ?? 1, outcome.streakAfter);
+    final j = journey;
+    final isCoupleAudience = j != null
+        ? (j.kind == JourneyKind.group &&
+              (j.maxMembers == 2 || j.coupleSelfName != null || skin == 'couple'))
+        : skin == 'couple';
+    final isSharedLink =
+        j != null &&
+        (j.visibility == JourneyVisibility.link ||
+            (j.publicToken != null && j.publicToken!.trim().isNotEmpty));
+    final audienceMessage = isCoupleAudience
+        ? l10n.checkin_done_coupleSent
+        : (j != null && j.kind == JourneyKind.group)
+        ? l10n.checkin_done_sharedSquad
+        : isSharedLink
+        ? l10n.checkin_done_sharedLink
+        : l10n.checkin_done_savedPrivate;
     final message = outcome.extraPhoto
         ? l10n.checkin_photoAdded(outcome.photoOfDay)
         : milestoneTitle != null
         ? l10n.checkin_milestoneMessage
-        : skin == 'couple'
-        ? l10n.checkin_done_coupleSent
-        : l10n.checkin_done_savedPrivate;
+        : audienceMessage;
     final shout = skin == 'flexer' || skin == 'minimal';
 
     final shareButton = milestoneTitle == null

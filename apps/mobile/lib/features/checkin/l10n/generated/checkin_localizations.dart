@@ -278,6 +278,24 @@ abstract class CheckinL10n {
   /// **'Đã lưu. Chỉ mình bạn thấy.'**
   String get checkin_done_savedPrivate;
 
+  /// No description provided for @checkin_done_sharedSquad.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã chia sẻ với cả nhóm.'**
+  String get checkin_done_sharedSquad;
+
+  /// No description provided for @checkin_done_sharedLink.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã hiển thị trên hành trình chia sẻ.'**
+  String get checkin_done_sharedLink;
+
+  /// No description provided for @checkin_chooseAnother.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn ảnh khác'**
+  String get checkin_chooseAnother;
+
   /// No description provided for @checkin_done_stampChecked.
   ///
   /// In vi, this message translates to:

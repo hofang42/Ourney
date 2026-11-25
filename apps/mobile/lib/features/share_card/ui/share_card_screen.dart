@@ -216,6 +216,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       hideBrand: hideBrand,
       onHideBrand: (v) => setState(() => _hideBrand = v),
       onAction: () => _share(journey: journey, photo: photo, skinId: skinId),
+      onSave: () => _save(journey: journey, photo: photo),
     );
     final actionLabel = switch (skinId) {
       'quiet' => l10n.share_card_export,
@@ -516,7 +517,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                       ),
                       UiSegment(
                         value: ShareCardNumber.day,
-                        label: l10n.share_card_numberDay,
+                        label: l10n.share_card_numberDay(progress.dayNumber),
                       ),
                     ],
                     value: _number,
@@ -670,6 +671,42 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
         text: '${l10n.share_card_shareText(journey.emoji, journey.title)}\n$link',
         origin: _shareOrigin(),
       );
+    } on Object {
+      if (mounted) _snack(l10n.share_card_shareError);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _save({
+    required Journey journey,
+    required ImageProvider? photo,
+  }) async {
+    final l10n = ShareCardL10n.of(context);
+    final format = _format;
+    final exporter = ref.read(shareCardExporterProvider);
+    final saver = ref.read(shareCardSaverProvider);
+    setState(() => _busy = true);
+    try {
+      if (photo != null) {
+        await precacheImage(
+          photo,
+          context,
+          onError: (_, _) {},
+        ).timeout(_photoWait, onTimeout: () {});
+      }
+      await WidgetsBinding.instance.endOfFrame;
+      final boundary =
+          _boundaryKeys[format]?.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
+      if (boundary == null) throw StateError('share card not laid out');
+      final file = await exporter.export(
+        boundary,
+        format,
+        baseName: shareCardBaseName(journey.id, format),
+      );
+      await saver.saveImage(path: file.path, mimeType: file.mimeType);
+      if (mounted) _snack(l10n.share_card_exportSaved);
     } on Object {
       if (mounted) _snack(l10n.share_card_shareError);
     } finally {

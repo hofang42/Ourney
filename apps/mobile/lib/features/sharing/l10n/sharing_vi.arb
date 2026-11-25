@@ -627,7 +627,7 @@
   "@sharing_started": {
     "description": "SCR-88 tile."
   },
-  "sharing_newViewersWeek": "+{count} người xem mới tuần này",
+  "sharing_newViewersWeek": "{count, plural, =0{Chưa có người xem mới tuần này} other{+{count} người xem mới tuần này}}",
   "@sharing_newViewersWeek": {
     "description": "Views delta.",
     "placeholders": {
@@ -636,7 +636,7 @@
       }
     }
   },
-  "sharing_thisWeek": "+{count} tuần này",
+  "sharing_thisWeek": "{count, plural, =0{0 tuần này} other{+{count} tuần này}}",
   "@sharing_thisWeek": {
     "description": "Likes / started delta.",
     "placeholders": {
@@ -644,6 +644,19 @@
         "type": "int"
       }
     }
+  },
+  "sharing_removedFriendToast": "Đã gỡ quyền xem của {name}.",
+  "@sharing_removedFriendToast": {
+    "description": "Toast sau khi gỡ quyền xem hành trình của một người bạn.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sharing_undo": "Hoàn tác",
+  "@sharing_undo": {
+    "description": "Nút hoàn tác trên toast gỡ quyền xem."
   },
   "sharing_viewsPerDay": "Số người xem mỗi ngày",
   "@sharing_viewsPerDay": {

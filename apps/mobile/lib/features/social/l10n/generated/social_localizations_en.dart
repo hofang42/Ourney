@@ -263,6 +263,33 @@ class SocialL10nEn extends SocialL10n {
   String get social_declineAll => 'Decline all';
 
   @override
+  String get social_declineAllTitle => 'Decline all requests?';
+
+  @override
+  String social_declineAllBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Decline all $count join requests for this group?',
+      one: 'Decline 1 join request for this group?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get social_deleteMessageTitle => 'Delete this message for you?';
+
+  @override
+  String get social_deleteMessageBody =>
+      'This hides the message on your device. The other person can still see it.';
+
+  @override
+  String get social_sendPhotoTitle => 'Send this photo?';
+
+  @override
+  String get social_sendPhotoConfirm => 'Send photo';
+
+  @override
   String get social_inboxEmpty => 'Replies and invites from friends land here';
 
   @override
@@ -349,6 +376,9 @@ class SocialL10nEn extends SocialL10n {
 
   @override
   String get social_groupWeek => 'This week';
+
+  @override
+  String get social_groupEarlier => 'Earlier';
 
   @override
   String get social_offlineStrip => 'Viewing the saved version.';

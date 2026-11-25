@@ -70,7 +70,7 @@
   "@widgets_previewDoneBadge": {
     "description": "Badge shown in widget preview when today's check-in is complete."
   },
-  "widgets_previewAtRiskBadge": "Sắp đứt chuỗi · trước 24:00",
+  "widgets_previewAtRiskBadge": "Sắp đứt chuỗi · trước nửa đêm",
   "@widgets_previewAtRiskBadge": {
     "description": "Urgent badge shown in widget preview when streak is at risk."
   },

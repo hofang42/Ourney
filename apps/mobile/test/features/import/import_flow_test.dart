@@ -251,7 +251,9 @@ void main() {
     expect(sharing.importedDraft!.firstDate, const LocalDate(2024, 2, 4));
   });
 
-  testWidgets('a photo can be removed from the timeline', (tester) async {
+  testWidgets('a photo can be removed from the timeline and undone (UX-22)', (
+    tester,
+  ) async {
     await pumpSharing(
       tester,
       location: '/import',
@@ -261,6 +263,10 @@ void main() {
     await _tap(tester, 'import-remove-0');
     expect(_key('import-row-0'), findsNothing);
     expect(find.text('Day 1 · Feb 3, 2024 · 2 photos'), findsOneWidget);
+    expect(find.text('Removed 1 photo.'), findsOneWidget);
+    await tester.tap(_key('ui-toast-action'));
+    await tester.pumpAndSettle();
+    expect(_key('import-row-0'), findsOneWidget);
   });
 
   testWidgets('back goes one step; leaving with photos asks first', (
