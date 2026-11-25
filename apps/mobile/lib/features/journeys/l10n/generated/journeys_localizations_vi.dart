@@ -613,6 +613,9 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_ticketTagFlexer => 'Ra khỏi giường. Chạy tiếp.';
 
   @override
+  String get journeys_ticketTagFlexerTrain => 'Ra khỏi giường. Tập tiếp.';
+
+  @override
   String get journeys_ticketPreview => 'Xem trước vé khởi hành';
 
   @override

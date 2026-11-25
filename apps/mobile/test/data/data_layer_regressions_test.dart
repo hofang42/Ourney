@@ -12,6 +12,7 @@ import 'package:ourney/data/remote/remote_api.dart';
 import 'package:ourney/data/repositories/journey_repository.dart';
 import 'package:ourney/data/sync/outbox.dart';
 import 'package:ourney/data/sync/sync_engine.dart';
+import 'package:ourney/features/groups/data/group_invite_admin_repository.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import 'data_test_helpers.dart';
@@ -1065,6 +1066,32 @@ void main() {
       // The bad item is back in the queue as it was.
       final rows = await layer.ctx.outbox!.pendingRows();
       expect(rows.single.entityKey, '${journeyKey(jid)}:extras');
+    });
+
+    test('solo renameCouple writes locally while offline and replays through outbox (UX-04)', () async {
+      await cacheActive();
+      final admin = DataGroupInviteAdminRepository(layer.ctx);
+      remote.failure = offline;
+      await admin.renameCouple(jid, 'An', 'Binh');
+      final offlineJourney = await layer.journeys.watch(jid).first;
+      expect(offlineJourney?.coupleSelfName, 'An');
+      expect(offlineJourney?.couplePartnerName, 'Binh');
+      final pending = await layer.ctx.outbox!.pendingRows();
+      expect(
+        pending.any((r) => r.kind == OutboxKind.renameCouple.wire),
+        isTrue,
+      );
+
+      remote.failure = null;
+      remote.rpcHandlers['rename_couple'] = (p) => journeyRow(jid, ownerId: me)
+        ..['couple_self_name'] = p['p_self']
+        ..['couple_partner_name'] = p['p_partner'];
+      await layer.ctx.outbox!.flush(force: true);
+      expect(
+        remote.callsOf('rpc').any((c) => c.target == 'rename_couple'),
+        isTrue,
+      );
+      expect(await layer.ctx.outbox!.pendingRows(), isEmpty);
     });
 
     test('end is refused with syncPending while an upload is queued', () async {

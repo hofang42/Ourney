@@ -88,8 +88,10 @@ bool _isRunningWorkout(Journey j, WrappedStats s) {
   if (s.totalKm > 0) return true;
   final sport = j.dna?['sport'] as String?;
   final measure = j.dna?['measure'] as String?;
+  final unit = (j.metricUnit ?? '').trim().toLowerCase();
   return (sport == null || sport == 'run') &&
-      (measure == null || measure == 'km');
+      (measure == null || measure == 'km') &&
+      (unit.isEmpty || unit == 'km');
 }
 
 /// The story pages of [journey]'s skin, in order (headline of each page).

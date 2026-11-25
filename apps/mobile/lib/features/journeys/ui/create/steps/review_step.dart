@@ -25,6 +25,7 @@ class CreateReviewStep extends StatelessWidget {
     required this.onChangeVariant,
     required this.onEdit,
     this.selfOnRight = false,
+    this.isRunning = true,
     super.key,
   });
 
@@ -41,6 +42,7 @@ class CreateReviewStep extends StatelessWidget {
   final VoidCallback onChangeVariant;
   final VoidCallback onEdit;
   final bool selfOnRight;
+  final bool isRunning;
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +121,10 @@ class CreateReviewStep extends StatelessWidget {
                   'squad' => l10n.journeys_ticketTagSquad,
                   'memory' => l10n.journeys_ticketTagMemory,
                   'couple' => l10n.journeys_ticketTagCouple,
-                  'flexer' => l10n.journeys_ticketTagFlexer,
+                  'flexer' =>
+                    isRunning
+                        ? l10n.journeys_ticketTagFlexer
+                        : l10n.journeys_ticketTagFlexerTrain,
                   _ => '',
                 },
                 changeVariantLabel: l10n.journeys_ticketChangeColor,

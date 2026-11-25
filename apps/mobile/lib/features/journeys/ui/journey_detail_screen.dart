@@ -160,7 +160,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
       if (perms.canEnd &&
           (journey.coupleSelfName != null ||
               skinOfJourney(journey) == PersonaSkinId.coupleRituals ||
-              journey.maxMembers == 2))
+              (journey.kind == JourneyKind.group && journey.maxMembers == 2)))
         _Action.renameCouple,
       if (perms.canEnd) _Action.end,
       if (perms.canArchive) _Action.archive,
@@ -322,6 +322,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                 partnerName: journey.couplePartnerName,
                 selfOnRight: journey.dna?['side'] == 'right',
                 startingWeight: startingWeight,
+                isOpenEnded: journey.durationDays == null,
                 showMilestones: false,
                 showOfflineStamps: !ref.watch(appConfigProvider).localOnly,
                 onTapDay: (d) =>
@@ -576,6 +577,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                         .watch(sharedPreferencesProvider)
                         .getDouble(journeyStartingWeightPrefKey(journey.id))
                   : null,
+              isOpenEnded: journey.durationDays == null,
               showMilestones: false,
               showOfflineStamps: !ref.watch(appConfigProvider).localOnly,
               onTapDay: openDay,

@@ -160,6 +160,7 @@ class TimelineSummary {
     required this.currentDay,
     this.curve30,
     this.metric30Count = 0,
+    this.isOpenEnded = false,
   });
 
   /// What the cells of [days] say: the whole list is the whole journey.
@@ -214,6 +215,9 @@ class TimelineSummary {
 
   /// Day N of today, clamped to the journey.
   final int currentDay;
+
+  /// True when the journey has no fixed duration (`durationDays == null`).
+  final bool isOpenEnded;
 }
 
 /// Everything the long-journey screen needs, computed once per change of the
@@ -341,6 +345,7 @@ class TimelineIndex {
       frames: frames,
       totalDays: length,
       currentDay: math.max(1, math.min(elapsed, length)),
+      isOpenEnded: progress.isOpenEnded,
     );
     return TimelineIndex._(
       progress: progress,

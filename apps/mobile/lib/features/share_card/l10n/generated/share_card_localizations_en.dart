@@ -207,7 +207,13 @@ class ShareCardL10nEn extends ShareCardL10n {
 
   @override
   String share_card_tripPosterTitle(int days, String name) {
-    return '$days DAYS · $name';
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days DAYS · $name',
+      one: '1 DAY · $name',
+    );
+    return '$_temp0';
   }
 
   @override

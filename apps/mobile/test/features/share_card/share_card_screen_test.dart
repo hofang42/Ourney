@@ -120,6 +120,48 @@ void main() {
       },
     );
 
+    testWidgets(
+      'open-ended memory card singularizes Day 1 (UX-20)',
+      (tester) async {
+        final day1Trip = testJourney(
+          templateId: TemplateId.travel,
+          title: 'Da Lat',
+          startDate: const LocalDate(2026, 10, 16),
+          durationDays: null,
+        );
+        await pumpShare(
+          tester,
+          journey: day1Trip,
+          checkIns: [testCheckIn(day1Trip.id, const LocalDate(2026, 10, 16))],
+          locale: const Locale('en'),
+        );
+        expect(find.text('1 DAY · DA LAT'), findsWidgets);
+        expect(find.textContaining('1 DAYS'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'ended open-ended minimal card freezes consistency at lastDay (UX-20)',
+      (tester) async {
+        final endedOpenMinimal = testJourney(
+          templateId: TemplateId.custom,
+          startDate: const LocalDate(2026, 10, 10),
+          durationDays: null,
+          status: JourneyStatus.ended,
+        );
+        await pumpShare(
+          tester,
+          journey: endedOpenMinimal,
+          checkIns: [
+            testCheckIn(endedOpenMinimal.id, const LocalDate(2026, 10, 10)),
+            testCheckIn(endedOpenMinimal.id, const LocalDate(2026, 10, 11)),
+          ],
+          locale: const Locale('en'),
+        );
+        expect(_text(tester, 'share-card-title'), '2 DAYS\n100% CONSISTENT');
+      },
+    );
+
     testWidgets('finished: Vietnamese caption keeps room for diacritics', (
       tester,
     ) async {

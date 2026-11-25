@@ -586,12 +586,28 @@ class _RunnerWall extends ConsumerWidget {
   final GroupPermissions perms;
   final bool flexer;
 
+  bool get _isRunning {
+    final j = perms.journey;
+    final sport = j.dna?['sport'] as String?;
+    final measure = j.dna?['measure'] as String?;
+    final unit = (j.metricUnit ?? '').trim().toLowerCase();
+    return (sport == null || sport == 'run') &&
+        (measure == null || measure == 'km') &&
+        (unit.isEmpty || unit == 'km');
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = GroupsL10n.of(context);
     final ui = context.ui;
+    final isRun = _isRunning;
     final title = flexer
-        ? l10n.groups_flexerTitle(view.doneCount, view.memberCount)
+        ? (isRun
+              ? l10n.groups_flexerTitle(view.doneCount, view.memberCount)
+              : l10n.groups_flexerTrainedTitle(
+                  view.doneCount,
+                  view.memberCount,
+                ))
         : l10n.groups_minimalTitle(view.doneCount, view.memberCount);
     return Column(
       key: ValueKey(flexer ? 'group-wall-flexer' : 'group-wall-minimal'),
@@ -643,9 +659,18 @@ class _RunnerWall extends ConsumerWidget {
               ? l10n.groups_flexerKm(kmText)
               : l10n.groups_flexerKmPace(kmText, pace.toString()));
     final menu = _memberMenu(context, ref, e, perms);
+    final isRun = _isRunning;
     final status = done
-        ? (flexer ? l10n.groups_flexerDone(time ?? '') : (time ?? ''))
-        : (flexer ? l10n.groups_flexerPending : l10n.groups_minimalPending);
+        ? (flexer
+              ? (isRun
+                    ? l10n.groups_flexerDone(time ?? '')
+                    : l10n.groups_flexerTrainedDone(time ?? ''))
+              : (time ?? ''))
+        : (flexer
+              ? (isRun
+                    ? l10n.groups_flexerPending
+                    : l10n.groups_flexerTrainedPending)
+              : l10n.groups_minimalPending);
     return Container(
       key: ValueKey('group-member-$id'),
       margin: const EdgeInsets.only(bottom: UiSpace.md),

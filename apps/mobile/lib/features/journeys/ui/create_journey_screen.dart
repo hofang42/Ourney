@@ -154,7 +154,9 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
           id: _clientId,
           // The colour picked on the ticket (bug B-B12).
           color: _variant,
-          layout: widget.frame?.layout,
+          layout:
+              widget.frame?.layout ??
+              (widget.isCouplePreset ? PersonaSkinId.coupleRituals : null),
         ),
         onExtrasRejected: () => extrasRejected = true,
       );
@@ -220,15 +222,11 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
 
     final skin =
         widget.frame?.layout ??
-        (form == null
-            ? personaSkinForTemplate(
-                widget.templateId,
-                emoji: widget.isCouplePreset ? '💞' : null,
-              )
+        (widget.isCouplePreset
+            ? PersonaSkinId.coupleRituals
             : personaSkinForTemplate(
-                form.template.id,
-                kind: form.kind,
-                emoji: form.emoji,
+                form?.template.id ?? widget.templateId,
+                kind: form?.kind ?? JourneyKind.solo,
               ));
     final pal = JourneyPalette.of(context, journeyStyleFor(skin));
     final gutter = UiSpace.gutter(MediaQuery.sizeOf(context).width);
@@ -349,7 +347,12 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
               'squad' => l10n.journeys_ticketTagSquad,
               'memory' => l10n.journeys_ticketTagMemory,
               'couple' => l10n.journeys_ticketTagCouple,
-              'flexer' => l10n.journeys_ticketTagFlexer,
+              'flexer' =>
+                !form.trackMetric ||
+                        form.metricUnit.trim().isEmpty ||
+                        form.metricUnit.trim().toLowerCase() == 'km'
+                    ? l10n.journeys_ticketTagFlexer
+                    : l10n.journeys_ticketTagFlexerTrain,
               _ => '',
             },
             changeVariantLabel: l10n.journeys_ticketChangeColor,

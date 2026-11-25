@@ -107,7 +107,10 @@ class PostExtrasController extends ChangeNotifier {
 
   /// Only the inputs of [skin] count: a stale value of another skin is
   /// never posted.
-  CheckInExtras extrasFor(PersonaSkinId skin) => switch (skin) {
+  CheckInExtras extrasFor(
+    PersonaSkinId skin, {
+    bool isRunning = true,
+  }) => switch (skin) {
     PersonaSkinId.quietTransformer => CheckInExtras(mood: mood),
     PersonaSkinId.accountabilitySquad => CheckInExtras(minutes: minutes),
     PersonaSkinId.memoryCollectors => CheckInExtras(place: place.text),
@@ -116,10 +119,13 @@ class PostExtrasController extends ChangeNotifier {
       cook: cook,
       hearts: hearts,
     ),
-    PersonaSkinId.aestheticFlexer => CheckInExtras(
-      pace: _paceDigits.isEmpty ? null : paceText,
-      km: kmValue,
-    ),
+    PersonaSkinId.aestheticFlexer =>
+      isRunning
+          ? CheckInExtras(
+              pace: _paceDigits.isEmpty ? null : paceText,
+              km: kmValue,
+            )
+          : CheckInExtras(minutes: minutes),
     PersonaSkinId.minimalistHabit => CheckInExtras.empty,
   }.normalized();
 

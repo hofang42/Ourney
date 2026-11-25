@@ -637,6 +637,10 @@
   "@journeys_ticketTagFlexer": {
     "description": "Departure ticket preview text."
   },
+  "journeys_ticketTagFlexerTrain": "Ra khỏi giường. Tập tiếp.",
+  "@journeys_ticketTagFlexerTrain": {
+    "description": "Departure ticket preview text for non-running workouts."
+  },
   "journeys_ticketPreview": "Xem trước vé khởi hành",
   "@journeys_ticketPreview": {
     "description": "Departure ticket preview text."

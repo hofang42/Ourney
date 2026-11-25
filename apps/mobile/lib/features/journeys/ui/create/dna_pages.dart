@@ -157,10 +157,11 @@ class _DnaWeightPickerState extends State<DnaWeightPicker> {
     }
   }
 
-  static String _formatWeight(num value) {
+  static String _formatWeight(num value, {bool vi = false}) {
     final tenths = (value * 10).round();
     if (tenths % 10 == 0) return '${tenths ~/ 10}';
-    return (tenths / 10).toStringAsFixed(1);
+    final s = (tenths / 10).toStringAsFixed(1);
+    return vi ? s.replaceAll('.', ',') : s;
   }
 
   void _stepTenths(int deltaTenths) {
@@ -187,6 +188,9 @@ class _DnaWeightPickerState extends State<DnaWeightPicker> {
   Widget build(BuildContext context) {
     final ui = context.ui;
     final l10n = JourneysL10n.of(context);
+    final vi = Localizations.localeOf(context).languageCode == 'vi';
+    final decLabel = vi ? '-0,1' : '-0.1';
+    final incLabel = vi ? '+0,1' : '+0.1';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -200,6 +204,8 @@ class _DnaWeightPickerState extends State<DnaWeightPicker> {
               onPressed: widget.weight > dnaWeightMin
                   ? () => _stepTenths(-1)
                   : null,
+              semanticLabel: '$decLabel ${l10n.journeys_dna_weight_unit}',
+              excludeChildSemantics: true,
               borderRadius: BorderRadius.circular(UiRadius.capsule),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -207,7 +213,7 @@ class _DnaWeightPickerState extends State<DnaWeightPicker> {
                   vertical: UiSpace.xs,
                 ),
                 child: Text(
-                  '-0.1',
+                  decLabel,
                   style: UiText.muted(color: ui.inkMuted),
                 ),
               ),
@@ -217,7 +223,7 @@ class _DnaWeightPickerState extends State<DnaWeightPicker> {
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
-                  _formatWeight(widget.weight),
+                  _formatWeight(widget.weight, vi: vi),
                   key: const ValueKey('dna-weight-value'),
                   style: UiText.h1(
                     color: ui.ink,
@@ -237,6 +243,8 @@ class _DnaWeightPickerState extends State<DnaWeightPicker> {
               onPressed: widget.weight < dnaWeightMax
                   ? () => _stepTenths(1)
                   : null,
+              semanticLabel: '$incLabel ${l10n.journeys_dna_weight_unit}',
+              excludeChildSemantics: true,
               borderRadius: BorderRadius.circular(UiRadius.capsule),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -244,7 +252,7 @@ class _DnaWeightPickerState extends State<DnaWeightPicker> {
                   vertical: UiSpace.xs,
                 ),
                 child: Text(
-                  '+0.1',
+                  incLabel,
                   style: UiText.muted(color: ui.inkMuted),
                 ),
               ),

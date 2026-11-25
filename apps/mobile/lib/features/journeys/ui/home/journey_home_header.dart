@@ -466,9 +466,11 @@ class _Flexer extends ConsumerWidget {
     final pace = stats.pace;
     final sport = journey.dna?['sport'] as String?;
     final measure = journey.dna?['measure'] as String?;
+    final unit = (journey.metricUnit ?? '').trim().toLowerCase();
     final isRun =
         (sport == null || sport == 'run') &&
-        (measure == null || measure == 'km');
+        (measure == null || measure == 'km') &&
+        (unit.isEmpty || unit == 'km');
     return Column(
       key: const ValueKey('journey-home-flexer-header'),
       crossAxisAlignment: CrossAxisAlignment.start,

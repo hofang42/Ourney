@@ -236,7 +236,6 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       personaSkinForTemplate(
         form.template.id,
         kind: form.kind,
-        emoji: form.emoji,
       ),
     );
   }
@@ -668,6 +667,15 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                               nameLeftController: _nameLeft,
                               nameRightController: _nameRight,
                               selfOnRight: _dna['side'] == 'right',
+                              isRunning:
+                                  (_dna['sport'] == null ||
+                                      _dna['sport'] == 'run') &&
+                                  (_dna['measure'] == null ||
+                                      _dna['measure'] == 'km') &&
+                                  (!_form!.trackMetric ||
+                                      _form!.metricUnit.trim().isEmpty ||
+                                      _form!.metricUnit.trim().toLowerCase() ==
+                                          'km'),
                               onChangeVariant: () {
                                 unawaited(UiHaptics.selection());
                                 setState(() => _variant = (_variant + 1) % 3);

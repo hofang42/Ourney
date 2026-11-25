@@ -73,6 +73,19 @@ void main() {
           PersonaSkinId.aestheticFlexer,
         ]),
       );
+      // A 10-member squad with a heart emoji is not a couple journey (UX-04).
+      final heartSquad = testJourney(
+        kind: JourneyKind.group,
+        templateId: TemplateId.custom,
+        emoji: '💞',
+      );
+      expect(
+        availableLayoutsFor(
+          heartSquad,
+          current: PersonaSkinId.accountabilitySquad,
+        ),
+        isNot(contains(PersonaSkinId.coupleRituals)),
+      );
     });
   });
 
@@ -110,6 +123,23 @@ void main() {
         await tester.pumpAndSettle();
         // Staged locally: not persisted before Save.
         expect(h.journeys.updates, isEmpty);
+        // Back -> Discard drops the staged layout without saving.
+        await tester.tap(find.bySemanticsLabel('Back').first);
+        await tester.pumpAndSettle();
+        await tester.tap(_key('edit-discard-confirm'));
+        await tester.pumpAndSettle();
+        expect(_key('journey-edit'), findsNothing);
+        expect(h.journeys.updates, isEmpty);
+        expect(h.journeys.journeys.single.layout, isNull);
+
+        // Re-open, stage layout again, and Save to persist.
+        h.container.read(routerProvider).go(JourneysPaths.edit('j1'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(_key('edit-layout-memory'));
+        await tester.tap(_key('edit-layout-memory'));
+        await tester.pumpAndSettle();
+        await tester.tap(_key('layout-use'));
+        await tester.pumpAndSettle();
         await tester.ensureVisible(_key('edit-save-bottom'));
         await tester.tap(_key('edit-save-bottom'));
         await tester.pumpAndSettle();

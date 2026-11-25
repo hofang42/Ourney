@@ -10,6 +10,7 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../personas/persona_contract.dart' show personaSkinOf;
 import '../../../ui/ui.dart';
 import '../../journeys/domain/journey_progress.dart';
 import '../../profile/settings_providers.dart';
@@ -155,11 +156,14 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       checkIns: checkIns,
       now: ref.watch(shareCardClockProvider).now(),
     );
+    final effectiveDayNumber = progress.isActive
+        ? progress.dayNumber
+        : (progress.elapsedDays < 1 ? 1 : progress.elapsedDays);
     final content = ShareCardContent.from(
       journey: journey,
       membership: membership,
       streak: progress.summary,
-      dayNumber: progress.dayNumber,
+      dayNumber: effectiveDayNumber,
       checkIns: checkIns,
       number: _number,
       forceHideMetric: widget.initialHideMetric ?? false,
@@ -188,15 +192,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       caption.caption,
       '${content.emoji} ${content.title}',
     );
-    final skinId = uiSkinIdFor(
-      journey.layout ??
-          personaSkinForTemplate(
-            journey.templateId,
-            kind: journey.kind,
-            maxMembers: journey.maxMembers,
-            emoji: journey.emoji,
-          ),
-    );
+    final skinId = uiSkinIdFor(personaSkinOf(journey));
     final hideBrand = _hideBrand ?? shareCardHidesBrandByDefault(skinId);
     final gallery = <ImageProvider>[
       for (final c in candidates.take(36)) ?_photoProvider(c, thumb: true),

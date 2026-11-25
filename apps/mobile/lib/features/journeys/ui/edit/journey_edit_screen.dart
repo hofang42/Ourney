@@ -177,7 +177,7 @@ class _EditBodyState extends ConsumerState<_EditBody> {
   bool get _isCoupleCapable =>
       j.coupleSelfName != null ||
       skinOfCurrent == PersonaSkinId.coupleRituals ||
-      j.maxMembers == 2;
+      (j.kind == JourneyKind.group && j.maxMembers == 2);
 
   bool get _coupleChanged =>
       _isCoupleCapable &&

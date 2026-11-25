@@ -45,6 +45,7 @@ class JourneyTimeline extends StatelessWidget {
     this.selfOnRight = false,
     this.showOfflineStamps = false,
     this.startingWeight,
+    this.isOpenEnded = false,
     this.showMilestones = true,
     this.summary,
     this.window,
@@ -59,6 +60,9 @@ class JourneyTimeline extends StatelessWidget {
 
   /// Baseline weight from Create Flow (`UX-02`), prepended to the quiet curve.
   final double? startingWeight;
+
+  /// True when the journey has no fixed duration (`durationDays == null`).
+  final bool isOpenEnded;
 
   /// Whether [QuietTimeline] renders its inline milestone stars (`false` on
   /// [JourneyDetailScreen] where [JourneyHomeMilestones] already renders them).
@@ -106,6 +110,7 @@ class JourneyTimeline extends StatelessWidget {
         short: rangeShort,
         onShortChanged: onRangeChanged,
         startingWeight: startingWeight,
+        isOpenEnded: isOpenEnded,
         showMilestones: showMilestones,
       ),
       'squad' => SquadTimeline(

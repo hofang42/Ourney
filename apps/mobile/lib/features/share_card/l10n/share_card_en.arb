@@ -50,7 +50,7 @@
   "share_card_steadyDays": "{n} steady days",
   "share_card_attended": "{done}/{total} CHECKED IN · DAY {day}",
   "share_card_cup": "CUP {n}",
-  "share_card_tripPosterTitle": "{days} DAYS · {name}",
+  "share_card_tripPosterTitle": "{days, plural, =1{1 DAY · {name}} other{{days} DAYS · {name}}}",
   "share_card_coupleTitle": "{days} DAYS TOGETHER · {moments} MOMENTS",
   "share_card_activeDays": "{n} ACTIVE DAYS",
   "share_card_minimalDays": "{done}/{total} DAYS",

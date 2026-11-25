@@ -1130,6 +1130,12 @@ abstract class JourneysL10n {
   /// **'Ra khỏi giường. Chạy tiếp.'**
   String get journeys_ticketTagFlexer;
 
+  /// Departure ticket preview text for non-running workouts.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ra khỏi giường. Tập tiếp.'**
+  String get journeys_ticketTagFlexerTrain;
+
   /// Departure ticket preview text.
   ///
   /// In vi, this message translates to:

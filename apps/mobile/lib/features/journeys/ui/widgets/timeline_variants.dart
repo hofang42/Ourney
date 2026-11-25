@@ -35,6 +35,7 @@ class QuietTimeline extends StatefulWidget {
     this.short,
     this.onShortChanged,
     this.startingWeight,
+    this.isOpenEnded = false,
     this.showMilestones = true,
     super.key,
   });
@@ -51,6 +52,9 @@ class QuietTimeline extends StatefulWidget {
 
   /// Baseline weight from Create Flow (`UX-02`), prepended to the weight curve.
   final double? startingWeight;
+
+  /// True when the journey has no fixed duration (`durationDays == null`).
+  final bool isOpenEnded;
 
   /// Whether to render the inline `quiet-milestones` row (`false` when
   /// [JourneyDetailScreen] already renders [JourneyHomeMilestones] below).
@@ -109,10 +113,10 @@ class _QuietTimelineState extends State<QuietTimeline> {
           (i == 0 ? series.first : series.last).toStringAsFixed(1),
         );
       }
-      if (metricCount == 1 && sum.metricFirst != null) {
+      if (!short && metricCount == 1 && sum.metricFirst != null) {
         return l10n.journeys_quietAxis(sum.metricFirst!.toStringAsFixed(1));
       }
-      if (baseline != null) {
+      if (!short && baseline != null) {
         return l10n.journeys_quietAxis(baseline.toStringAsFixed(1));
       }
       if (series.isNotEmpty) {
@@ -121,11 +125,14 @@ class _QuietTimelineState extends State<QuietTimeline> {
       return '—';
     }
 
+    final openEnded = widget.isOpenEnded || sum.isOpenEnded;
     final total = sum.totalDays;
     final current = sum.currentDay;
-    final marks = <int>{7, total ~/ 2, total}.where((d) => d <= total).toList()
-      ..sort();
-    String markLabel(int d) => d == total
+    final marks = openEnded
+        ? const <int>[7, 14, 30]
+        : (<int>{7, total ~/ 2, total}.where((d) => d <= total).toList()
+            ..sort());
+    String markLabel(int d) => !openEnded && d == total
         ? l10n.journeys_quietFinish
         : d == 7
         ? l10n.journeys_quietWeek
@@ -170,6 +177,21 @@ class _QuietTimelineState extends State<QuietTimeline> {
                     ],
                   ),
                 ),
+                if (short && metricCount < 2 && sum.metricCount >= 2)
+                  Padding(
+                    key: const ValueKey('quiet-range-fallback'),
+                    padding: const EdgeInsets.only(top: UiSpace.xs),
+                    child: Text(
+                      l10n.journeys_range30Pace,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: UiText.body(
+                        size: 12,
+                        height: 1.4,
+                        color: ui.inkMuted,
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: UiSpace.xs),
               ],
               Row(

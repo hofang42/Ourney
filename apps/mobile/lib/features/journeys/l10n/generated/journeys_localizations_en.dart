@@ -616,6 +616,9 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_ticketTagFlexer => 'Get out of bed. Keep running.';
 
   @override
+  String get journeys_ticketTagFlexerTrain => 'Get out of bed. Keep training.';
+
+  @override
   String get journeys_ticketPreview => 'Departure ticket preview';
 
   @override
