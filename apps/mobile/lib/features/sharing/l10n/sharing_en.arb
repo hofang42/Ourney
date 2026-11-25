@@ -26,6 +26,7 @@
   "sharing_blurredPreview": "Photos blurred in previews",
   "sharing_copyLink": "Copy link",
   "sharing_linkCopied": "Link copied",
+  "sharing_linkChanged": "The link changed while you were choosing.",
   "sharing_resetLink": "Reset link",
   "sharing_resetConfirmTitle": "Reset the link?",
   "sharing_resetConfirmBody": "The old link stops working. Counts so far are kept.",

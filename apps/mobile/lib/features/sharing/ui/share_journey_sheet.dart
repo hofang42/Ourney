@@ -94,6 +94,7 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
   String _query = '';
   bool _sharing = false;
   bool _linkBusy = false;
+  PublicLinkResult? _linkResult;
   bool _under18 = false;
   bool _consentNeeded = false;
   final Set<String> _removing = {};
@@ -101,6 +102,12 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
   Journey get _journey => widget.journey;
   bool get _sensitive => isSensitiveTemplate(_journey.templateId);
   bool get _isGroup => _journey.kind == JourneyKind.group;
+
+  @override
+  void didUpdateWidget(ShareJourneyPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.journey.id != _journey.id) _linkResult = null;
+  }
 
   bool _hideLinkTitle(Membership? membership, bool hideWeight) =>
       shareMetricHidden(
@@ -260,18 +267,26 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
       );
       if (!ok || !mounted) return;
     }
+    if (_journey.id != journey.id) return;
     setState(() => _linkBusy = true);
     try {
-      await ref
+      final title = _hideLinkTitleNow ? null : approvedTitle;
+      final result = await ref
           .read(sharingRepositoryProvider)
           .setPublicLink(
             journey.id,
             enabled: enabled,
             reset: reset,
-            approvedTitle: _hideLinkTitleNow ? null : approvedTitle,
+            approvedTitle: title,
             hideWeight: ref.read(hideWeightOnShareProvider),
             expectedAddress: expectedAddress,
           );
+      if (!mounted || _journey.id != journey.id) return;
+      ref.invalidate(shareStateProvider(journey.id));
+      setState(() => _linkResult = result);
+      if (enabled && !result.issued && (reset || result.title != title)) {
+        _snack(l10n.sharing_linkChanged);
+      }
     } on Object catch (e) {
       if (!mounted) return;
       if (sharingErrorCode(e) == OurneyErrorCode.forbidden) {
@@ -372,7 +387,13 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
     if (ref.watch(appConfigProvider).localOnly) {
       return const SharingNeedsServer();
     }
-    final stateAsync = ref.watch(shareStateProvider(_journey.id));
+    final provider = shareStateProvider(_journey.id);
+    final stateAsync = ref.watch(provider);
+    ref.listen(provider, (_, next) {
+      if (!next.isLoading && next.asData != null && _linkResult != null) {
+        setState(() => _linkResult = null);
+      }
+    });
     final friendsAsync = ref.watch(acceptedFriendsProvider);
     final state = stateAsync.value;
     final blocked = ref.watch(blockedUserIdsProvider).value ?? const <String>{};
@@ -417,14 +438,19 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
             (consents != null &&
                 myConsent?.status != ShareConsentStatus.accepted));
     final owner = _isOwner();
-    final publicAddress = owner && state.linkOn
-        ? state.publicAddress(
-            hideTitle: _hideLinkTitle(
-              ref.watch(myMembershipProvider(_journey.id)).value,
-              ref.watch(hideWeightOnShareProvider),
-            ),
-          )
-        : null;
+    final result = _linkResult;
+    final activeAddress = result == null ? state.publicToken : result.address();
+    final linkOn = activeAddress != null;
+    String? publicAddress;
+    if (owner && linkOn) {
+      final hideTitle = _hideLinkTitle(
+        ref.watch(myMembershipProvider(_journey.id)).value,
+        ref.watch(hideWeightOnShareProvider),
+      );
+      publicAddress = result == null
+          ? state.publicAddress(hideTitle: hideTitle)
+          : result.address(hideTitle: hideTitle);
+    }
     final l10n = SharingL10n.of(context);
     final danger = context.ui.danger;
 
@@ -473,7 +499,8 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
         const _Rule(),
         _LinkBlock(
           journey: _journey,
-          state: state,
+          linkOn: linkOn,
+          settings: state.publicSettings,
           canManage: owner,
           sensitive: _sensitive,
           under18: _under18,
@@ -482,8 +509,8 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
           onCopy: () => _copyLink(publicAddress),
           onLink: (on) => _setLink(on),
           onReset: () {
-            if (state.publicToken case final address?) {
-              _setLink(true, expectedAddress: address);
+            if (activeAddress != null) {
+              _setLink(true, expectedAddress: activeAddress);
             }
           },
           onPublic: _setPublic,
@@ -491,7 +518,7 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
         ),
         // A member's "stop" only revokes their own grants; the link is the
         // owner's (unshare(all: true)).
-        if (state.viewers.isNotEmpty || (owner && state.linkOn)) ...[
+        if (state.viewers.isNotEmpty || (owner && linkOn)) ...[
           const SizedBox(height: UiSpace.md),
           UiTextAction(
             key: const ValueKey('share-stop'),
@@ -918,7 +945,8 @@ class _FriendRow extends StatelessWidget {
 class _LinkBlock extends ConsumerWidget {
   const _LinkBlock({
     required this.journey,
-    required this.state,
+    required this.linkOn,
+    required this.settings,
     required this.canManage,
     required this.sensitive,
     required this.under18,
@@ -932,7 +960,8 @@ class _LinkBlock extends ConsumerWidget {
   });
 
   final Journey journey;
-  final JourneyShareState state;
+  final bool linkOn;
+  final PublicSettings settings;
   final bool canManage;
   final bool sensitive;
   final bool under18;
@@ -951,7 +980,7 @@ class _LinkBlock extends ConsumerWidget {
     final ui = context.ui;
     // S9: ended / archived or retold; same rule as `canHavePublicLink`. A
     // running journey that still has a link keeps its controls to revoke it.
-    final eligible = publicLinkEligible(journey) || state.linkOn;
+    final eligible = publicLinkEligible(journey) || linkOn;
 
     Widget locked(String title, String sub) => Opacity(
       opacity: 0.7,
@@ -974,21 +1003,20 @@ class _LinkBlock extends ConsumerWidget {
       children.add(
         locked(
           l10n.sharing_linkOwnerOnly,
-          state.linkOn ? l10n.sharing_linkOn : l10n.sharing_linkOff,
+          linkOn ? l10n.sharing_linkOn : l10n.sharing_linkOff,
         ),
       );
     } else {
-      final settings = state.publicSettings;
       children.addAll([
         UiSwitchRow(
           key: const ValueKey('share-link-switch'),
           label: l10n.sharing_linkOn,
-          subtitle: state.linkOn ? null : l10n.sharing_linkOff,
-          value: state.linkOn,
+          subtitle: linkOn ? null : l10n.sharing_linkOff,
+          value: linkOn,
           onChanged: under18 || busy ? null : onLink,
         ),
         // Keep the full address visible on narrow screens.
-        if (state.linkOn && linkUri != null)
+        if (linkOn && linkUri != null)
           Padding(
             padding: const EdgeInsets.only(top: UiSpace.sm),
             child: Text(
@@ -1008,7 +1036,7 @@ class _LinkBlock extends ConsumerWidget {
               style: sharingLabel(context, size: 12, color: ui.warn),
             ),
           ),
-        if (state.linkOn) ...[
+        if (linkOn) ...[
           if (sensitive)
             Padding(
               padding: const EdgeInsets.only(top: 10),
@@ -1102,7 +1130,7 @@ class _LinkBlock extends ConsumerWidget {
         ],
       ]);
     }
-    if (eligible && state.linkOn) {
+    if (eligible && linkOn) {
       final insights = ref.watch(journeyInsightsProvider(journey.id)).value;
       if (insights != null) {
         children.add(

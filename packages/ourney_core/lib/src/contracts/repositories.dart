@@ -366,6 +366,8 @@ enum OurneyErrorCode {
         return unauthenticated;
       case '22008':
         return invalidCapturedAt;
+      case '55P03': // Lock unavailable. The outbox retries transient errors.
+        return internal;
     }
     if (sqlstate != null &&
         (sqlstate.startsWith('22') || sqlstate.startsWith('23'))) {

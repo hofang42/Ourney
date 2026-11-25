@@ -1,7 +1,5 @@
--- The column migration has committed, so this scan holds SHARE rather than
--- ACCESS EXCLUSIVE on journeys. Only populated aliases enter the index.
-create unique index journeys_public_slug_key on public.journeys (public_slug)
-  where public_slug is not null;
+-- Equivalent to SET LOCAL, including when the CLI starts an implicit batch.
+select pg_catalog.set_config('lock_timeout', '2s', true);
 
 create function private.new_public_slug(p_title text) returns text
 language sql volatile set search_path = ''
@@ -62,10 +60,6 @@ begin
 end;
 $$;
 
-create trigger journeys_sync_public_slug
-  before insert or update of public_token, title, owner_id, hide_metric_default, template_id on public.journeys
-  for each row execute function private.sync_public_slug();
-
 create function private.retire_private_public_slug() returns trigger
 language plpgsql security definer set search_path = ''
 as $$
@@ -74,20 +68,17 @@ declare
 begin
   -- Serialize with issuance even if the journey had no alias when the
   -- membership update began. A concurrent issuer may have just added one.
+  -- Leave locks the journey before the membership. Fail the whole privacy
+  -- write with 55P03 so the outbox can retry after releasing the membership.
   select * into j from public.journeys
    where id = new.journey_id and owner_id = new.user_id and deleted_at is null
-   for no key update;
+   for no key update nowait;
   if private.public_slug_is_titled(j.public_slug) then
     update public.journeys set public_slug = private.new_public_slug(null) where id = j.id;
   end if;
   return new;
 end;
 $$;
-
-create trigger memberships_retire_private_public_slug
-  after update of hide_metric on public.memberships
-  for each row when (new.role = 'owner' and new.hide_metric and not old.hide_metric)
-  execute function private.retire_private_public_slug();
 
 create function private.manage_public_link(
   p_journey uuid, p_enabled boolean, p_reset boolean, p_approved_title text,
@@ -269,5 +260,22 @@ begin
          and not private.is_blocked_pair(c.user_id)), '[]'::json),
     'public_token', j.public_token,
     'public_slug', j.public_slug);
+end;
+$$;
+
+-- Acquire both trigger-install locks without queueing behind a transaction
+-- that might still need to write the other table. Retry the migration if busy.
+do $$
+begin
+  lock table public.journeys, public.memberships in share row exclusive mode nowait;
+
+  create trigger journeys_sync_public_slug
+    before insert or update of public_token, title, owner_id, hide_metric_default, template_id on public.journeys
+    for each row execute function private.sync_public_slug();
+
+  create trigger memberships_retire_private_public_slug
+    after update of hide_metric on public.memberships
+    for each row when (new.role = 'owner' and new.hide_metric and not old.hide_metric)
+    execute function private.retire_private_public_slug();
 end;
 $$;

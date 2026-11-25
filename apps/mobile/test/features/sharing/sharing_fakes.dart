@@ -76,6 +76,7 @@ class FakeSharingRepository implements SharingRepository {
   final Completer<void>? unshareGate;
   Object? shareError;
   Object? linkError;
+  PublicLinkResult? linkResult;
   Object? viewError;
   JourneyStory? savedStory;
   ImportedJourneyDraft? importedDraft;
@@ -170,6 +171,7 @@ class FakeSharingRepository implements SharingRepository {
   }) async {
     calls.add('link:$enabled:$reset');
     if (linkError case final e?) throw e;
+    if (linkResult case final result?) return result;
     if (expectedAddress != null && expectedAddress != state.publicToken) {
       return PublicLinkResult(issued: false, legacyToken: state.publicToken);
     }

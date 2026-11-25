@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(57);
+select plan(59);
 
 create schema tests;
 grant usage on schema tests to authenticated;
@@ -30,6 +30,11 @@ select ok(
 );
 select ok(not has_column_privilege('authenticated', 'public.journeys', 'public_slug', 'UPDATE'),
   'authenticated users cannot change a slug directly');
+select ok((select indisvalid and indisunique from pg_index
+  where indexrelid = 'public.journeys_public_slug_key'::regclass),
+  'the alias index is valid and unique before aliases can be issued');
+select matches(pg_get_functiondef('private.retire_private_public_slug()'::regprocedure),
+  'for no key update nowait', 'privacy never waits for the journey row while holding the membership row');
 
 do $$ begin perform tests.as_user(tests.u(1)); end $$;
 select public_token as create_token, public_slug as create_slug

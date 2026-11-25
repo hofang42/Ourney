@@ -119,6 +119,10 @@
   "@sharing_linkCopied": {
     "description": "Snack after copying."
   },
+  "sharing_linkChanged": "Liên kết đã thay đổi trong lúc bạn chọn.",
+  "@sharing_linkChanged": {
+    "description": "Shown when a concurrent link change takes precedence over the owner's choice."
+  },
   "sharing_resetLink": "Đặt lại",
   "@sharing_resetLink": {
     "description": "Rotates the public token."

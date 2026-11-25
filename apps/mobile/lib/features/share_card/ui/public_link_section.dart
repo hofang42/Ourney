@@ -191,7 +191,9 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
 
   void _showLink(PublicLinkResult result) {
     final provider = shareStateProvider(widget.journey.id);
-    if (ref.read(provider).value?.publicToken != result.address()) {
+    final address = result.address();
+    // A pre-revoke read may still be in flight even when there is no value.
+    if (address == null || ref.read(provider).value?.publicToken != address) {
       ref.invalidate(provider);
     }
     setState(() => _linkResult = result);

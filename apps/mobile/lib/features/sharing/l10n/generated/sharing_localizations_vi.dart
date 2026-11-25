@@ -104,6 +104,9 @@ class SharingL10nVi extends SharingL10n {
   String get sharing_linkCopied => 'Đã sao chép liên kết';
 
   @override
+  String get sharing_linkChanged => 'Liên kết đã thay đổi trong lúc bạn chọn.';
+
+  @override
   String get sharing_resetLink => 'Đặt lại';
 
   @override

@@ -108,6 +108,9 @@ class SharingL10nEn extends SharingL10n {
   String get sharing_linkCopied => 'Link copied';
 
   @override
+  String get sharing_linkChanged => 'The link changed while you were choosing.';
+
+  @override
   String get sharing_resetLink => 'Reset link';
 
   @override

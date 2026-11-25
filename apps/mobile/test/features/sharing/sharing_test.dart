@@ -7,6 +7,7 @@ import 'package:ourney/app/config.dart';
 import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/theme/app_theme.dart';
+import 'package:ourney/features/sharing/data/sharing_providers.dart';
 import 'package:ourney/features/sharing/sharing.dart';
 import 'package:ourney/features/sharing/ui/insights_screen.dart';
 import 'package:ourney/ui/ui.dart';
@@ -186,6 +187,59 @@ void main() {
       expect(_key('share-show-counts'), findsOneWidget);
       expect(find.textContaining('1.2K views'), findsOneWidget);
     });
+
+    for (final reset in [false, true]) {
+      testWidgets(
+        'a stale ${reset ? 'reset' : 'enable'} shows the current address and feedback',
+        (tester) async {
+          const replacement = 'other-title-abcdefghijklmnop';
+          final sharing =
+              FakeSharingRepository(
+                  token: reset ? 'old-title-abcdefghijklmnop' : null,
+                )
+                ..linkResult = const PublicLinkResult(
+                  issued: false,
+                  slug: replacement,
+                  title: 'Other title',
+                );
+          final refreshed = Completer<JourneyShareState>();
+          var reads = 0;
+          await pumpSharing(
+            tester,
+            location: '/sharing/j1',
+            sharing: sharing,
+            journeys: _journeys(),
+            locale: Locale(reset ? 'vi' : 'en'),
+            extraOverrides: [
+              shareStateProvider('j1').overrideWith(
+                (_) => reads++ == 0
+                    ? Stream.value(sharing.state)
+                    : refreshed.future.asStream(),
+              ),
+            ],
+          );
+          await _tap(
+            tester,
+            _key(reset ? 'share-reset-link' : 'share-link-switch'),
+          );
+          await _tap(tester, _key('share-link-neutral'));
+
+          expect(sharing.calls, contains('link:true:$reset'));
+          expect(
+            find.text(
+              reset
+                  ? 'Liên kết đã thay đổi trong lúc bạn chọn.'
+                  : 'The link changed while you were choosing.',
+            ),
+            findsOneWidget,
+          );
+          expect(
+            tester.widget<Text>(_key('share-link-url')).data,
+            'https://ourney.tech/p/$replacement',
+          );
+        },
+      );
+    }
 
     testWidgets('under 18: forbidden explains the age rule', (tester) async {
       final sharing = FakeSharingRepository()

@@ -736,6 +736,53 @@ void main() {
       expect(find.text(publicJourneyLink(testNeutralSlug)), findsOneWidget);
     });
 
+    testWidgets('revoke discards a share-state read already in flight', (
+      tester,
+    ) async {
+      final j = testJourney(
+        status: JourneyStatus.ended,
+        visibility: JourneyVisibility.link,
+        publicToken: testSlug,
+      );
+      final stale = Completer<JourneyShareState>();
+      final refreshed = Completer<JourneyShareState>();
+      var reads = 0;
+      await pumpShare(
+        tester,
+        journey: j,
+        backend: true,
+        overrides: [
+          shareStateProvider(j.id).overrideWith(
+            (_) => (reads++ == 0 ? stale : refreshed).future.asStream(),
+          ),
+        ],
+      );
+      await _tap(tester, _key('share-card-link-revoke'));
+      await _tap(tester, _key('share-card-link-revoke-confirm'));
+
+      JourneyShareState state({String? address}) => JourneyShareState(
+        journeyId: j.id,
+        viewers: const [],
+        story: const JourneyStory(),
+        publicSettings: const PublicSettings(
+          showCounts: false,
+          allowPublicReactions: false,
+          allowViewerRequests: false,
+        ),
+        hiddenCheckInIds: const {},
+        publicToken: address,
+      );
+      stale.complete(state(address: testSlug));
+      await tester.pumpAndSettle();
+      expect(_key('share-card-link-url'), findsNothing);
+      expect(_key('share-card-link-create'), findsOneWidget);
+      expect(reads, 2);
+
+      refreshed.complete(state());
+      await tester.pumpAndSettle();
+      expect(_key('share-card-link-create'), findsOneWidget);
+    });
+
     for (final action in ['cancel', 'copy', 'reset']) {
       testWidgets(
         'stale create waits for explicit $action of the titled link',

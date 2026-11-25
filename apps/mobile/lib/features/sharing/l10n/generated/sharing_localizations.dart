@@ -254,6 +254,12 @@ abstract class SharingL10n {
   /// **'Đã sao chép liên kết'**
   String get sharing_linkCopied;
 
+  /// Shown when a concurrent link change takes precedence over the owner's choice.
+  ///
+  /// In vi, this message translates to:
+  /// **'Liên kết đã thay đổi trong lúc bạn chọn.'**
+  String get sharing_linkChanged;
+
   /// Rotates the public token.
   ///
   /// In vi, this message translates to:
