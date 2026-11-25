@@ -60,6 +60,6 @@
     <string name="widget_live_celebrate_title">Đã hoàn thành tất cả hôm nay</string>
     <string name="widget_live_celebrate_body">Chuỗi %1$d ngày được giữ vững</string>
     <string name="widget_live_dismiss">Ẩn hôm nay</string>
-    <string name="widget_live_chip_hours">Còn %1$dg</string>
-    <string name="widget_live_chip_mins">Còn %1$dp</string>
+    <string name="widget_live_chip_hours">Tối nay</string>
+    <string name="widget_live_chip_mins">Tối nay</string>
 </resources>

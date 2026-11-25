@@ -14,7 +14,7 @@ enum LiveActivityAction {
   /// No Live Activity should be active; any running activity ends immediately.
   endImmediate,
 
-  /// Start or update the active Check-In Window countdown.
+  /// Start or update the active Check-In Window.
   startOrUpdate,
 
   /// All active journeys just became completed today while a Live Activity was
@@ -204,8 +204,7 @@ abstract final class LiveActivityWindowPlanner {
         isSensitive: j.isSensitive,
       );
 
-      final remaining = deadlineUtc.difference(nowUtc);
-      final shortCritical = _formatShortCriticalText(remaining, isEn: isEn);
+      final shortCritical = _formatShortCriticalText(isEn: isEn);
       final statusText = j.atRisk
           ? (isEn
                 ? '${j.currentStreak}-day streak · open until midnight'
@@ -242,15 +241,8 @@ abstract final class LiveActivityWindowPlanner {
   }
 
   /// Formats the Android 16 status-bar chip critical text (`<= 7` chars, §1.2).
-  static String _formatShortCriticalText(
-    Duration remaining, {
-    required bool isEn,
-  }) {
-    final totalMinutes = remaining.inMinutes.clamp(1, 360);
-    if (totalMinutes >= 60) {
-      final hours = (totalMinutes / 60).ceil();
-      return isEn ? '${hours}h left' : 'Còn ${hours}g';
-    }
-    return isEn ? '${totalMinutes}m' : '${totalMinutes}p';
+  static String _formatShortCriticalText({required bool isEn}) {
+    final chip = isEn ? 'Tonight' : 'Tối nay';
+    return chip.length <= 7 ? chip : chip.substring(0, 7);
   }
 }

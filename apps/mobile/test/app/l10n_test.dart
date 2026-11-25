@@ -229,12 +229,21 @@ void main() {
         'android/app/src/main/res/values-en/widget_strings.xml',
         'android/app/src/main/res/values-vi/widget_strings.xml',
       ];
+      final bannedNativeCountdown = RegExp(
+        r'Còn %1\$d|Còn \\\(pending\)|left today|\\\(pending\) left|số hành trình còn lại|remaining check-ins',
+        caseSensitive: false,
+      );
       for (final relPath in nativeFiles) {
         final content = File(relPath).readAsStringSync();
         expect(
           bannedReminderWidget.hasMatch(content),
           isFalse,
           reason: '$relPath contains banned pressuring reminder/widget phrase',
+        );
+        expect(
+          bannedNativeCountdown.hasMatch(content),
+          isFalse,
+          reason: '$relPath contains countdown/"left" widget copy',
         );
       }
     },

@@ -61,6 +61,6 @@
     <string name="widget_live_celebrate_title">All checked in for today</string>
     <string name="widget_live_celebrate_body">%1$d-day streak locked in</string>
     <string name="widget_live_dismiss">Dismiss today</string>
-    <string name="widget_live_chip_hours">%1$dh</string>
-    <string name="widget_live_chip_mins">%1$dm</string>
+    <string name="widget_live_chip_hours">Tonight</string>
+    <string name="widget_live_chip_mins">Tonight</string>
 </resources>

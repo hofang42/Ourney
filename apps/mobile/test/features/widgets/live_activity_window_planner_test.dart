@@ -84,7 +84,11 @@ void main() {
       expect(activePlan.window!.windowKey, '2026-11-24:j-1');
       expect(activePlan.window!.windowStartUtc, '2026-11-24T12:30:00.000Z');
       expect(activePlan.window!.deadlineUtc, '2026-11-24T17:00:00.000Z');
-      expect(activePlan.channelPayload!['shortCriticalText'], 'Còn 5g');
+      expect(activePlan.channelPayload!['shortCriticalText'], 'Tối nay');
+      expect(
+        (activePlan.channelPayload!['shortCriticalText'] as String).length,
+        lessThanOrEqualTo(7),
+      );
     });
 
     test('clamps early morning reminder window to at most 6 hours before midnight', () {
@@ -116,7 +120,34 @@ void main() {
       );
       expect(eveningPlan.action, LiveActivityAction.startOrUpdate);
       expect(eveningPlan.window!.windowStartUtc, '2026-11-24T11:00:00.000Z');
-      expect(eveningPlan.channelPayload!['shortCriticalText'], '6h left');
+      expect(eveningPlan.channelPayload!['shortCriticalText'], 'Tonight');
+      expect(
+        (eveningPlan.channelPayload!['shortCriticalText'] as String).length,
+        lessThanOrEqualTo(7),
+      );
+
+      // Under-60m remaining also uses the fixed calm chip without countdown numbers.
+      final latePlanVi = LiveActivityWindowPlanner.plan(
+        now: DateTime.utc(2026, 11, 24, 16, 40),
+        authStatus: AuthStatus.signedIn,
+        liveActivityEnabled: true,
+        streakAlertsEnabled: true,
+        redactTitleOnLockScreen: false,
+        locale: 'vi',
+        journeys: [item],
+      );
+      expect(latePlanVi.channelPayload!['shortCriticalText'], 'Tối nay');
+
+      final latePlanEn = LiveActivityWindowPlanner.plan(
+        now: DateTime.utc(2026, 11, 24, 16, 40),
+        authStatus: AuthStatus.signedIn,
+        liveActivityEnabled: true,
+        streakAlertsEnabled: true,
+        redactTitleOnLockScreen: false,
+        locale: 'en',
+        journeys: [item],
+      );
+      expect(latePlanEn.channelPayload!['shortCriticalText'], 'Tonight');
     });
 
     test('opens [18:00, midnight) window when atRisk and streakAlertsEnabled without daily reminder', () {
