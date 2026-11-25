@@ -61,6 +61,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get nav_profile => 'Hồ sơ và cài đặt';
 
   @override
+  String common_usePlace(String place) {
+    return 'Dùng “$place”';
+  }
+
+  @override
   String get common_retry => 'Thử lại';
 
   @override

@@ -157,11 +157,8 @@ void main() {
       onSkip: () {},
     ),
     'ghost': () => DnaGhostPage(onLater: () {}),
-    'place': () => DnaPlacePicker(
-      controller: TextEditingController(text: 'Đà Lạt'),
-      place: 'Đà Lạt',
-      onChanged: (_) {},
-    ),
+    'place': () =>
+        DnaPlacePicker(controller: TextEditingController(), onChanged: (_) {}),
     'dates': () => DnaDateRange(
       today: DateTime(2026, 11, 15),
       value: DnaDates(DateTime(2026, 11, 20), DateTime(2026, 11, 25)),

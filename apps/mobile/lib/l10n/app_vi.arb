@@ -68,6 +68,13 @@
   "@nav_profile": {
     "description": "Tooltip of the app-bar button that opens the profile (settings, reminders, safety)."
   },
+  "common_usePlace": "Dùng “{place}”",
+  "@common_usePlace": {
+    "description": "Chooses the user's typed place in the offline place picker.",
+    "placeholders": {
+      "place": {"type": "String"}
+    }
+  },
   "common_retry": "Thử lại",
   "common_cancel": "Hủy",
   "common_ok": "OK",

@@ -200,6 +200,12 @@ abstract class AppLocalizations {
   /// **'Hồ sơ và cài đặt'**
   String get nav_profile;
 
+  /// Chooses the user's typed place in the offline place picker.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dùng “{place}”'**
+  String common_usePlace(String place);
+
   /// No description provided for @common_retry.
   ///
   /// In vi, this message translates to:

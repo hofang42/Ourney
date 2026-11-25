@@ -1065,22 +1065,12 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_dna_trophy_hint => 'Trophy 7.5';
 
   @override
-  String get journeys_dna_place_search => 'Destination or place...';
+  String get journeys_dna_place_search => 'Search destinations';
 
   @override
-  String get journeys_dna_place_country => 'Vietnam';
-
-  @override
-  String get journeys_dna_place_dalat => 'Da Lat';
-
-  @override
-  String get journeys_dna_place_hoian => 'Hoi An';
-
-  @override
-  String get journeys_dna_place_phuquoc => 'Phu Quoc';
-
-  @override
-  String get journeys_dna_place_pine => 'Pine forest and mist';
+  String journeys_dna_place_limit(int max) {
+    return 'Use up to $max characters.';
+  }
 
   @override
   String get journeys_dna_dates_open => 'return date not set';
