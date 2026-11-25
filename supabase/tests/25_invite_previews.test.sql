@@ -7,7 +7,7 @@
 -- and anonymous salted SHA-256 IP hash failed-lookup rate limiting.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(38);
+select plan(43);
 
 create schema tests;
 grant usage on schema tests to anon, authenticated, service_role;
@@ -127,11 +127,13 @@ select ok(
 
 select ok(
   (select relrowsecurity from pg_class where oid = 'private.invite_preview_attempts'::regclass)
+  and to_regclass('private.invite_preview_attempts_ip_kind_idx') is not null
+  and to_regclass('private.invite_preview_attempts_created_at_idx') is not null
   and not has_table_privilege('anon', 'private.invite_preview_attempts', 'select')
   and not has_table_privilege('authenticated', 'private.invite_preview_attempts', 'select')
   and not has_function_privilege('anon', 'private.caller_ip_hash(text)', 'execute')
   and not has_function_privilege('authenticated', 'private.caller_ip_hash(text)', 'execute'),
-  'private.invite_preview_attempts has RLS enabled and neither table nor caller_ip_hash is exposed to anon/authenticated'
+  'private.invite_preview_attempts has RLS and cleanup indexes enabled and neither table nor caller_ip_hash is exposed to anon/authenticated'
 );
 
 -- ===== 2. preview_friend_invite as anon =======================================
@@ -367,9 +369,11 @@ select is(
   '10 failed authenticated preview_group_invite calls return null and record join_attempts'
 );
 
-select ok(
-  public.preview_group_invite(tests.group_code(1)) is null,
-  '11th authenticated preview_group_invite call returns null even for a valid code once join_attempts limit (10/h) is reached'
+select throws_ok(
+  $$ select public.preview_group_invite(tests.group_code(1)) $$,
+  'P0001',
+  'rate_limited',
+  '11th authenticated preview_group_invite call raises rate_limited even for a valid code once join_attempts limit (10/h) is reached'
 );
 
 select throws_ok(
@@ -377,6 +381,20 @@ select throws_ok(
   'P0001',
   'rate_limited',
   'authenticated join_by_code shares the same private.join_attempts budget and raises rate_limited after 10 preview_group_invite misses'
+);
+
+select is(
+  (select count(*)::int from generate_series(1, 60) g
+    where public.preview_friend_invite('zzzzzzzzzz' || lpad(g::text, 2, '0')) is null),
+  60,
+  '60 failed authenticated preview_friend_invite calls return null and record friend_preview_miss rate events'
+);
+
+select throws_ok(
+  $$ select public.preview_friend_invite(tests.friend_token(1)) $$,
+  'P0001',
+  'rate_limited',
+  '61st authenticated preview_friend_invite call raises rate_limited even for a valid token once friend_preview_miss limit (60/h) is reached'
 );
 
 -- ===== 5. Anonymous salted SHA-256 IP hash rate limiting (failed lookups only) =====
@@ -389,9 +407,25 @@ select is(
   '30 failed anon preview_group_invite calls from the same IP return null and record hashed IP attempts'
 );
 
-select ok(
-  public.preview_group_invite(tests.group_code(1)) is null,
-  '31st anon preview_group_invite call from the throttled IP returns null even for a valid code'
+select throws_ok(
+  $$ select public.preview_group_invite(tests.group_code(1)) $$,
+  'P0001',
+  'rate_limited',
+  '31st anon preview_group_invite call from the throttled IP raises rate_limited even for a valid code'
+);
+
+select is(
+  (select count(*)::int from generate_series(1, 60) g
+    where public.preview_friend_invite('yyyyyyyyyy' || lpad(g::text, 2, '0')) is null),
+  60,
+  '60 failed anon preview_friend_invite calls from the same IP return null and record hashed IP attempts'
+);
+
+select throws_ok(
+  $$ select public.preview_friend_invite(tests.friend_token(1)) $$,
+  'P0001',
+  'rate_limited',
+  '61st anon preview_friend_invite call from the throttled IP raises rate_limited even for a valid token'
 );
 
 do $$ begin perform tests.as_anon('198.51.100.88'); end $$;
@@ -399,16 +433,58 @@ do $$ begin perform tests.as_anon('198.51.100.88'); end $$;
 select is(
   public.preview_group_invite(tests.group_code(1)) ->> 'title',
   'Hội IELTS 7.5',
-  'another anon IP is not affected by the throttled IP hash'
+  'another anon IP is not affected by the throttled IP hash for preview_group_invite'
+);
+
+select is(
+  public.preview_friend_invite(tests.friend_token(1)) ->> 'display_name',
+  'Minh Anh',
+  'another anon IP is not affected by the throttled IP hash for preview_friend_invite'
 );
 
 do $$ begin perform tests.as_postgres(); end $$;
 
+-- Row count breakdown in private.invite_preview_attempts:
+--   * kind = 'group_preview' (34 rows total):
+--       - 4 rows from '203.0.113.10' in Section 3 valid-format negative tests:
+--           1. 'ZZZZZZZZ' (unknown code)
+--           2. tests.group_code(3) (soft-deleted owner)
+--           3. tests.group_code(4) (banned owner)
+--           4. tests.group_code(1) while status = 'ended' (ended journey)
+--         (invalid formats in Section 3 exit before DB lookup; valid hits are never logged)
+--       - 30 rows from '198.51.100.77' in Section 5 ('YYYYYY01'..'YYYYYY30');
+--         the 31st call raises 'rate_limited' before inserting.
+--   * kind = 'friend_preview' (64 rows total):
+--       - 4 rows from '203.0.113.10' in Section 2 valid-format negative tests:
+--           1. 'zzzzzzzzzzzz' (unknown token)
+--           2. tests.friend_token(3) (soft-deleted inviter)
+--           3. tests.friend_token(4) (banned inviter)
+--           4. 'aaaaaaaaaaaa' (rotated old token)
+--       - 60 rows from '198.51.100.77' in Section 5 ('yyyyyyyyyy01'..'yyyyyyyyyy60');
+--         the 61st call raises 'rate_limited' before inserting.
 select ok(
-  (select count(*) = 30 and bool_and(length(ip_hash) = 64 and ip_hash !~ '198\.51\.100')
-     from private.invite_preview_attempts
-    where kind = 'group_preview'),
-  'private.invite_preview_attempts stores only 64-char SHA-256 hashes and never raw IP addresses'
+  (select count(*) filter (where kind = 'group_preview') = 34
+      and count(*) filter (
+            where kind = 'group_preview'
+              and ip_hash = pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to('ourney-group-preview|203.0.113.10', 'UTF8')), 'hex')
+          ) = 4
+      and count(*) filter (
+            where kind = 'group_preview'
+              and ip_hash = pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to('ourney-group-preview|198.51.100.77', 'UTF8')), 'hex')
+          ) = 30
+      and count(*) filter (where kind = 'friend_preview') = 64
+      and count(*) filter (
+            where kind = 'friend_preview'
+              and ip_hash = pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to('ourney-friend-preview|203.0.113.10', 'UTF8')), 'hex')
+          ) = 4
+      and count(*) filter (
+            where kind = 'friend_preview'
+              and ip_hash = pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to('ourney-friend-preview|198.51.100.77', 'UTF8')), 'hex')
+          ) = 60
+      and count(*) = 98
+      and bool_and(length(ip_hash) = 64 and ip_hash ~ '^[0-9a-f]{64}$' and ip_hash !~ '(203\.0\.113|198\.51\.100)')
+     from private.invite_preview_attempts),
+  'private.invite_preview_attempts stores exact per-IP-bucket counts (34 group_preview = 4 + 30; 64 friend_preview = 4 + 60) as 64-char SHA-256 hashes and never raw IP addresses'
 );
 
 select * from finish();

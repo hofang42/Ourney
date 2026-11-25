@@ -14,6 +14,38 @@ function sanitizeText(raw) {
   return raw.replace(/[\u0000-\u001F\u007F]/g, '').trim();
 }
 
+function serializeEmbeddedJson(payload) {
+  return JSON.stringify(payload).replace(/[<>&]/g, (ch) => {
+    if (ch === '<') return '\\u003c';
+    if (ch === '>') return '\\u003e';
+    return '\\u0026';
+  });
+}
+
+function putEdgeCache(context, edgeCache, cacheKey, assetResponse, responseToCache) {
+  if (!assetResponse || !assetResponse.ok || !edgeCache || !cacheKey) return;
+  let cloned = null;
+  try {
+    cloned = responseToCache.clone();
+    const putPromise = Promise.resolve(edgeCache.put(cacheKey, cloned)).catch(() => {
+      if (cloned && cloned.body && typeof cloned.body.cancel === 'function') {
+        try {
+          Promise.resolve(cloned.body.cancel()).catch(() => {});
+        } catch (_) {}
+      }
+    });
+    if (context && typeof context.waitUntil === 'function') {
+      context.waitUntil(putPromise);
+    }
+  } catch (_) {
+    if (cloned && cloned.body && typeof cloned.body.cancel === 'function') {
+      try {
+        Promise.resolve(cloned.body.cancel()).catch(() => {});
+      } catch (_) {}
+    }
+  }
+}
+
 async function fetchStaticSquadPage(context) {
   const { request, env } = context;
   if (env && env.ASSETS && typeof env.ASSETS.fetch === 'function') {
@@ -108,7 +140,7 @@ export async function handleSquadInviteRequest(context, routePrefix = 'j') {
   const headers = new Headers(assetResponse.headers);
   headers.delete('ETag');
   headers.delete('Last-Modified');
-  if (lookup.status === 'error') {
+  if (lookup.status === 'error' || !assetResponse.ok) {
     headers.set('Cache-Control', 'no-store');
   } else {
     headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
@@ -120,12 +152,12 @@ export async function handleSquadInviteRequest(context, routePrefix = 'j') {
     headers
   });
 
-  if (typeof HTMLRewriter === 'undefined' || lookup.status === 'error' || lookup.status === 'invalid') {
+  if (typeof HTMLRewriter === 'undefined' || !assetResponse.ok || lookup.status === 'error' || lookup.status === 'invalid') {
     return baseResponse;
   }
 
   if (lookup.status === 'empty' || !lookup.preview) {
-    const emptyPayload = JSON.stringify({ status: 'empty', code, data: null });
+    const emptyPayload = serializeEmbeddedJson({ status: 'empty', code, data: null });
     const emptyRewritten = await new HTMLRewriter()
       .on('html', {
         element(el) {
@@ -134,12 +166,7 @@ export async function handleSquadInviteRequest(context, routePrefix = 'j') {
       })
       .transform(baseResponse);
 
-    if (edgeCache && cacheKey) {
-      try {
-        const putPromise = edgeCache.put(cacheKey, emptyRewritten.clone());
-        if (typeof context.waitUntil === 'function') context.waitUntil(putPromise);
-      } catch (_) {}
-    }
+    putEdgeCache(context, edgeCache, cacheKey, assetResponse, emptyRewritten);
     return emptyRewritten;
   }
 
@@ -157,7 +184,7 @@ export async function handleSquadInviteRequest(context, routePrefix = 'j') {
   const detail = parts.length > 0 ? ` (${parts.join(' · ')})` : '';
   const description = `${headline}${detail} — mở trong ứng dụng hoặc dùng mã mời ${code} để tham gia ngay.`;
   const canonicalUrl = `https://ourney.tech/${routePrefix}/${encodeURIComponent(code)}`;
-  const embeddedPayload = JSON.stringify({
+  const embeddedPayload = serializeEmbeddedJson({
     status: 'ok',
     code,
     data: {
@@ -216,14 +243,24 @@ export async function handleSquadInviteRequest(context, routePrefix = 'j') {
     })
     .transform(baseResponse);
 
-  if (edgeCache && cacheKey) {
-    try {
-      const putPromise = edgeCache.put(cacheKey, rewritten.clone());
-      if (typeof context.waitUntil === 'function') context.waitUntil(putPromise);
-    } catch (_) {}
-  }
+  putEdgeCache(context, edgeCache, cacheKey, assetResponse, rewritten);
 
   return rewritten;
+}
+
+export async function handleSquadInviteHead(context, routePrefix = 'j') {
+  const res = await handleSquadInviteRequest(context, routePrefix);
+  if (res.body && typeof res.body.cancel === 'function') {
+    const cancelPromise = Promise.resolve(res.body.cancel()).catch(() => {});
+    if (context && typeof context.waitUntil === 'function') {
+      context.waitUntil(cancelPromise);
+    }
+  }
+  return new Response(null, {
+    status: res.status,
+    statusText: res.statusText,
+    headers: res.headers
+  });
 }
 
 export async function onRequestGet(context) {
@@ -231,10 +268,5 @@ export async function onRequestGet(context) {
 }
 
 export async function onRequestHead(context) {
-  const res = await handleSquadInviteRequest(context, 'j');
-  return new Response(null, {
-    status: res.status,
-    statusText: res.statusText,
-    headers: res.headers
-  });
+  return handleSquadInviteHead(context, 'j');
 }
