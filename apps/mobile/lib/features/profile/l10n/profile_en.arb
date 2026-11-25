@@ -151,6 +151,8 @@
   "profile_password_sameError": "New password must be different from your current password.",
   "profile_password_signOutOthers": "Sign out of other devices",
   "profile_password_signOutOthersSub": "Keeps you signed in on this device",
+  "profile_password_continue": "Continue",
+  "profile_password_sending": "Sending code…",
   "profile_password_save": "Save password",
   "profile_password_saving": "Saving…",
   "profile_password_codeTitle": "confirm with a code.",

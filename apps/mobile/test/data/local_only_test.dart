@@ -256,6 +256,7 @@ void main() {
     expect(layer.auth.currentUserId, isNull);
     expect(await layer.auth.watchUserId().first, isNull);
     expect(await layer.auth.hasPassword(), isFalse);
+    await layer.auth.cancelPasswordFlow();
     await expectLater(
       layer.auth.updatePassword('password123', code: '123456'),
       throwsA(

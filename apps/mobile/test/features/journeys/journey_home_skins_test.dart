@@ -225,5 +225,73 @@ void main() {
       await _open(tester, j, size: const Size(320, 640));
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets(
+      'open-ended squad header shows OPEN-ENDED instead of 1 DAYS / DAY 1 (UX-20)',
+      (tester) async {
+        final j = Journey(
+          id: 'j1',
+          ownerId: 'u1',
+          kind: JourneyKind.group,
+          templateId: TemplateId.englishDaily,
+          title: 'English',
+          emoji: '📚',
+          startDate: testToday,
+          durationDays: null,
+          timezone: testTz,
+          visibility: JourneyVisibility.group,
+          status: JourneyStatus.active,
+        );
+        await _open(tester, j, members: [_m('a', 'An', shot: true)]);
+        expect(find.text('ENGLISH · OPEN-ENDED'), findsOneWidget);
+        expect(find.text('OPEN-ENDED'), findsOneWidget);
+        expect(find.textContaining('1 DAYS'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'couple ritual save shows ritual-specific intro and fallback names (UX-04, UX-24)',
+      (tester) async {
+        final coupleSave = Journey(
+          id: 'j1',
+          ownerId: 'u1',
+          kind: JourneyKind.group,
+          templateId: TemplateId.custom,
+          title: 'Us',
+          emoji: '💞',
+          startDate: const LocalDate(2026, 10, 10),
+          durationDays: 30,
+          timezone: testTz,
+          visibility: JourneyVisibility.group,
+          status: JourneyStatus.active,
+          maxMembers: 2,
+          dna: const {'ritual': 'save'},
+        );
+        await _open(tester, coupleSave);
+        expect(
+          find.text('What are you two saving for today?'),
+          findsOneWidget,
+        );
+        // Unnamed couple journey falls back to You / Partner and offers Rename Couple (UX-04).
+        expect(find.text('You'), findsWidgets);
+        expect(find.text('Partner'), findsWidgets);
+      },
+    );
+
+    testWidgets(
+      'flexer gym shows TRAINED instead of RAN (UX-24)',
+      (tester) async {
+        final gymSquad = testJourney(
+          kind: JourneyKind.group,
+          templateId: TemplateId.workout30,
+        ).copyWith(dna: const {'sport': 'gym', 'measure': 'session'});
+        await _open(
+          tester,
+          gymSquad,
+          members: [_m('a', 'An', shot: true), _m('b', 'Binh')],
+        );
+        expect(find.text('1/2 TRAINED'), findsOneWidget);
+      },
+    );
   });
 }

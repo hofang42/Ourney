@@ -258,7 +258,7 @@ content_path = "./supabase/templates/confirmation.html"
 
 # Password reset and in-app password setup/change send a 6-digit code (the app asks for it, no link).
 [auth.email.template.recovery]
-subject = "Mã đặt lại mật khẩu Ourney / Your Ourney password reset code"
+subject = "Mã đặt mật khẩu Ourney / Your Ourney password code"
 content_path = "./supabase/templates/recovery.html"
 
 # Uncomment to customize email template

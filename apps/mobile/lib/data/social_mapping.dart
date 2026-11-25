@@ -243,6 +243,7 @@ JourneyFrame frameFromJson(Object? json) {
     durationDays: _intOrNull(r['duration_days']),
     metricName: r['metric_name'] as String?,
     metricUnit: r['metric_unit'] as String?,
+    layout: _layoutOrNull(r['layout']),
   );
 }
 

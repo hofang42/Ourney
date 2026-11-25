@@ -14,7 +14,8 @@ enum OutboxKind {
   deleteMedia('delete_media'),
   react('react'),
   updateMembership('update_membership'),
-  updateJourney('update_journey');
+  updateJourney('update_journey'),
+  renameCouple('rename_couple');
 
   const OutboxKind(this.wire);
   final String wire;

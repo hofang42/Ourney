@@ -944,6 +944,18 @@ abstract class ProfileL10n {
   /// **'Giữ phiên đăng nhập trên máy này'**
   String get profile_password_signOutOthersSub;
 
+  /// Primary action button on step 1 of the password sheet to request/enter the verification code.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiếp tục'**
+  String get profile_password_continue;
+
+  /// Primary action button label on step 1 while sending the verification code.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang gửi mã…'**
+  String get profile_password_sending;
+
   /// Primary action button in the password sheet.
   ///
   /// In vi, this message translates to:
@@ -956,31 +968,31 @@ abstract class ProfileL10n {
   /// **'Đang lưu…'**
   String get profile_password_saving;
 
-  /// Reauthentication code step title in the password sheet.
+  /// Verification code step title in the password sheet.
   ///
   /// In vi, this message translates to:
   /// **'xác minh bằng mã.'**
   String get profile_password_codeTitle;
 
-  /// Reauthentication code step lead.
+  /// Verification code step lead in the password sheet.
   ///
   /// In vi, this message translates to:
   /// **'Nhập mã 6 số vừa gửi tới {email} để lưu mật khẩu.'**
   String profile_password_codeLead(String email);
 
-  /// Semantics label for the 6-digit reauthentication OTP field.
+  /// Semantics label for the 6-digit password verification OTP field.
   ///
   /// In vi, this message translates to:
   /// **'Mã xác minh 6 số'**
   String get profile_password_codeLabel;
 
-  /// Error when the reauthentication nonce is wrong or expired.
+  /// Error when the 6-digit verification code is wrong or expired.
   ///
   /// In vi, this message translates to:
   /// **'Mã chưa đúng hoặc đã hết hạn. Kiểm tra lại nhé.'**
   String get profile_password_codeWrong;
 
-  /// Resend reauthentication code button.
+  /// Resend verification code button.
   ///
   /// In vi, this message translates to:
   /// **'Gửi lại mã'**
@@ -992,7 +1004,7 @@ abstract class ProfileL10n {
   /// **'Gửi lại sau {seconds}s'**
   String profile_password_resendIn(int seconds);
 
-  /// Confirmation after resending the reauthentication code.
+  /// Confirmation after resending the verification code.
   ///
   /// In vi, this message translates to:
   /// **'Đã gửi mã mới.'**

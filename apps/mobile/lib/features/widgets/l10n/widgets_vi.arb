@@ -32,6 +32,14 @@
   "@widgets_previewSampleTitle": {
     "description": "Fallback sample journey title shown in preview when the user has no active journeys."
   },
+  "widgets_previewSampleBadge": "Xem trước mẫu",
+  "@widgets_previewSampleBadge": {
+    "description": "Badge shown in widget preview when displaying sample data instead of a real journey."
+  },
+  "widgets_previewYou": "Bạn",
+  "@widgets_previewYou": {
+    "description": "Label for the current user in the Squad widget preview."
+  },
   "widgets_previewDayOf": "Ngày {day}/{total}",
   "@widgets_previewDayOf": {
     "description": "Day N of M badge in widget preview.",
@@ -70,7 +78,7 @@
   "@widgets_previewDoneBadge": {
     "description": "Badge shown in widget preview when today's check-in is complete."
   },
-  "widgets_previewAtRiskBadge": "Sắp đứt chuỗi · trước 24:00",
+  "widgets_previewAtRiskBadge": "Sắp đứt chuỗi · trước nửa đêm",
   "@widgets_previewAtRiskBadge": {
     "description": "Urgent badge shown in widget preview when streak is at risk."
   },
@@ -146,9 +154,13 @@
   "@widgets_redactTitlesLabel": {
     "description": "Switch label for redacting journey titles on the Lock Screen."
   },
-  "widgets_redactTitlesSub": "Khi máy đang khóa, tiện ích khóa và Live Activity chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.",
+  "widgets_redactTitlesSub": "Trên Màn hình khóa, tiện ích khóa và Live Activity chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.",
   "@widgets_redactTitlesSub": {
-    "description": "Switch subtitle for redacting journey titles on the Lock Screen."
+    "description": "Switch subtitle for redacting journey titles on the Lock Screen (iOS)."
+  },
+  "widgets_redactTitlesSubAndroid": "Trên Màn hình khóa, thông báo đếm ngược chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.",
+  "@widgets_redactTitlesSubAndroid": {
+    "description": "Switch subtitle for redacting journey titles on the Lock Screen (Android)."
   },
   "widgets_secLiveActivity": "đếm ngược cuối ngày",
   "@widgets_secLiveActivity": {
@@ -156,11 +168,19 @@
   },
   "widgets_liveActivityLabel": "Live Activity & đếm ngược khung giờ chụp",
   "@widgets_liveActivityLabel": {
-    "description": "Switch label for enabling Live Activities / Live Updates."
+    "description": "Switch label for enabling Live Activities (iOS)."
+  },
+  "widgets_liveActivityLabelAndroid": "Cập nhật trực tiếp & đếm ngược thanh trạng thái",
+  "@widgets_liveActivityLabelAndroid": {
+    "description": "Switch label for enabling Live Updates (Android)."
   },
   "widgets_liveActivitySub": "Hiện đồng hồ đếm ngược trên Dynamic Island / Màn hình khóa từ 30 phút trước giờ nhắc (hoặc từ 18:00 khi chuỗi sắp đứt) và tự tắt ngay khi bạn chụp xong.",
   "@widgets_liveActivitySub": {
-    "description": "Switch subtitle for Live Activities / Live Updates."
+    "description": "Switch subtitle for Live Activities (iOS)."
+  },
+  "widgets_liveActivitySubAndroid": "Hiện đồng hồ đếm ngược trên thanh trạng thái và Màn hình khóa từ 30 phút trước giờ nhắc (hoặc từ 18:00 khi chuỗi sắp đứt) và tự tắt ngay khi bạn chụp xong.",
+  "@widgets_liveActivitySubAndroid": {
+    "description": "Switch subtitle for Live Updates (Android)."
   },
   "widgets_secDefaultJourney": "hành trình ưu tiên trên tiện ích",
   "@widgets_secDefaultJourney": {
@@ -180,7 +200,11 @@
   },
   "widgets_setupStep1Title": "1. Chạm và giữ Màn hình chính hoặc Màn hình khóa",
   "@widgets_setupStep1Title": {
-    "description": "Step 1 title of the widget setup instructions."
+    "description": "Step 1 title of the widget setup instructions (iOS)."
+  },
+  "widgets_setupStep1TitleAndroid": "1. Chạm và giữ Màn hình chính",
+  "@widgets_setupStep1TitleAndroid": {
+    "description": "Step 1 title of the widget setup instructions (Android)."
   },
   "widgets_setupStep1Body": "Chạm giữ vùng trống đến khi các biểu tượng rung nhẹ, sau đó chọn Sửa hoặc Tiện ích (Widgets).",
   "@widgets_setupStep1Body": {

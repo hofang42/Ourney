@@ -1,4 +1,4 @@
--- 0026_auth_has_password.sql
+-- 0028_auth_has_password.sql
 -- Parameterless SECURITY DEFINER RPC for authenticated callers to check whether
 -- their own auth.users row has a non-empty encrypted_password set.
 -- Cross-user enumeration is impossible by signature (caller resolved via public._uid(),

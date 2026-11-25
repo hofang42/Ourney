@@ -1,17 +1,25 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
+import '../../../app/providers.dart'
+    show appConfigProvider, currentUserIdProvider;
 import '../../../app/theme/motion.dart' show OurneyHaptics;
 import '../../../personas/persona_contract.dart' show personaSkinOf;
 import '../../../ui/ui.dart';
+import '../../groups/data/groups_providers.dart'
+    show groupBlockedIdsProvider, groupCheckInsProvider, groupTodayProvider;
+import '../../groups/domain/group_today.dart';
 import '../../journeys/data/journeys_providers.dart';
 import '../../journeys/domain/journey_progress.dart';
 import '../../journeys/ui/journey_row.dart' show journeyTypeId;
+import '../../safety/data/safety_providers.dart' show hiddenCheckInIdsProvider;
 import '../data/widget_sync_controller.dart';
 import '../domain/widget_privacy.dart';
 import '../domain/widget_snapshot.dart';
@@ -65,6 +73,20 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
       }
     }
     featuredJourney ??= activeJourneys.firstOrNull;
+
+    Journey? featuredSquadJourney;
+    if (featuredJourney != null && featuredJourney.kind == JourneyKind.group) {
+      featuredSquadJourney = featuredJourney;
+    } else {
+      for (final j in activeJourneys) {
+        if (j.kind == JourneyKind.group) {
+          featuredSquadJourney = j;
+          break;
+        }
+      }
+    }
+
+    final isAndroid = defaultTargetPlatform == TargetPlatform.android;
 
     final photoModeNote = switch (photoMode) {
       WidgetPhotoMode.smart => l10n.widgets_photoModeSmartNote,
@@ -129,6 +151,7 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
               key: ValueKey('widgets-preview-card-${_previewKind.name}'),
               kind: _previewKind,
               journey: featuredJourney,
+              squadJourney: featuredSquadJourney,
               photoMode: photoMode,
             ),
           ),
@@ -197,7 +220,9 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
                 UiSwitchRow(
                   key: const ValueKey('widgets-redact-lock-titles'),
                   label: l10n.widgets_redactTitlesLabel,
-                  subtitle: l10n.widgets_redactTitlesSub,
+                  subtitle: isAndroid
+                      ? l10n.widgets_redactTitlesSubAndroid
+                      : l10n.widgets_redactTitlesSub,
                   value: redactTitles,
                   divider: false,
                   onChanged: (v) {
@@ -221,8 +246,12 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: UiSpace.md),
             child: UiSwitchRow(
               key: const ValueKey('widgets-live-activity-toggle'),
-              label: l10n.widgets_liveActivityLabel,
-              subtitle: l10n.widgets_liveActivitySub,
+              label: isAndroid
+                  ? l10n.widgets_liveActivityLabelAndroid
+                  : l10n.widgets_liveActivityLabel,
+              subtitle: isAndroid
+                  ? l10n.widgets_liveActivitySubAndroid
+                  : l10n.widgets_liveActivitySub,
               value: liveEnabled,
               divider: false,
               onChanged: (v) {
@@ -298,7 +327,9 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
               children: [
                 _SetupStepRow(
                   iconName: 'home',
-                  title: l10n.widgets_setupStep1Title,
+                  title: isAndroid
+                      ? l10n.widgets_setupStep1TitleAndroid
+                      : l10n.widgets_setupStep1Title,
                   body: l10n.widgets_setupStep1Body,
                 ),
                 const SizedBox(height: UiSpace.md),
@@ -437,20 +468,26 @@ class _WidgetPreviewCard extends ConsumerWidget {
   const _WidgetPreviewCard({
     required this.kind,
     required this.journey,
+    required this.squadJourney,
     required this.photoMode,
     super.key,
   });
 
   final WidgetPreviewKind kind;
   final Journey? journey;
+  final Journey? squadJourney;
   final WidgetPhotoMode photoMode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = WidgetsL10n.of(context);
     final j = journey;
-    final skinId = j == null ? 'squad' : uiSkinIdFor(personaSkinOf(j));
-    final variantIndex = (j?.color ?? 0).clamp(0, 2);
+    final sq = squadJourney;
+    final targetJourney = kind == WidgetPreviewKind.squad ? sq : j;
+    final skinId = targetJourney == null
+        ? 'squad'
+        : uiSkinIdFor(personaSkinOf(targetJourney));
+    final variantIndex = (targetJourney?.color ?? 0).clamp(0, 2);
 
     return Semantics(
       container: true,
@@ -469,10 +506,59 @@ class _WidgetPreviewCard extends ConsumerWidget {
               journey: j,
             ),
             WidgetPreviewKind.squad => _SquadWidgetPreview(
-              journey: j,
+              journey: sq,
               photoMode: photoMode,
             ),
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _SamplePreviewPill extends StatelessWidget {
+  const _SamplePreviewPill({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Container(
+        key: const ValueKey('widgets-preview-sample-badge'),
+        margin: const EdgeInsets.only(bottom: UiSpace.sm),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: ui.fill,
+          borderRadius: BorderRadius.circular(UiRadius.capsule),
+          border: Border.all(color: ui.outline, width: UiBorder.thin),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            OurneyIcon(
+              name: 'sparkle',
+              size: 12,
+              flat: true,
+              color: ui.inkMuted,
+            ),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: UiText.body(
+                  size: 11,
+                  weight: FontWeight.w700,
+                  height: 1.3,
+                  color: ui.inkMuted,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -493,26 +579,35 @@ class _TodayWidgetPreview extends ConsumerWidget {
     final l10n = WidgetsL10n.of(context);
     final ui = context.ui;
     final j = journey;
+    final isSample = j == null;
     final now = ref.watch(journeysNowProvider);
-    final checkIns = j == null ? null : ref.watch(myCheckInsProvider(j.id));
-    final membership = j == null ? null : ref.watch(myMembershipProvider(j.id));
-    final progress = (j != null && (checkIns?.hasValue ?? false))
-        ? JourneyProgress.compute(
+    final checkIns = j == null
+        ? const <CheckIn>[]
+        : (ref.watch(myCheckInsProvider(j.id)).asData?.value ??
+              const <CheckIn>[]);
+    final membership = j == null
+        ? null
+        : ref.watch(myMembershipProvider(j.id)).asData?.value;
+    final progress = j == null
+        ? null
+        : JourneyProgress.compute(
             journey: j,
-            membership: membership?.value,
-            checkIns: checkIns!.value!,
+            membership: membership,
+            checkIns: checkIns,
             now: now,
-          )
-        : null;
+          );
 
     final title = j?.title ?? l10n.widgets_previewSampleTitle;
     final typeId = j == null ? 'study' : journeyTypeId(j);
     final day = progress?.dayNumber ?? 15;
-    final totalDays = progress?.totalDays ?? j?.durationDays ?? 30;
+    final totalDays = progress == null
+        ? 30
+        : (progress.totalDays ?? j?.durationDays ?? 0);
     final streak = progress?.summary.current ?? 14;
     final checkedInToday = progress?.checkedInToday ?? false;
     final atRisk = progress?.summary.atRisk ?? true;
-    final isSensitive = j != null && WidgetPrivacyPolicy.isSensitiveMetricJourney(j);
+    final isSensitive =
+        j != null && WidgetPrivacyPolicy.isSensitiveMetricJourney(j);
 
     final photoStatusText = switch (photoMode) {
       WidgetPhotoMode.off => l10n.widgets_previewPhotoHiddenNote,
@@ -540,7 +635,9 @@ class _TodayWidgetPreview extends ConsumerWidget {
             isToday: i == 0,
             locale: localeCode,
           ),
-          done: i > 0 || checkedInToday,
+          done: progress != null
+              ? progress.checkInsByDate.containsKey(nowDate.addDays(-i))
+              : i > 0,
           isToday: i == 0,
         ),
     ];
@@ -553,6 +650,8 @@ class _TodayWidgetPreview extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (isSample)
+            _SamplePreviewPill(label: l10n.widgets_previewSampleBadge),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -798,19 +897,32 @@ class _StreakWidgetPreview extends ConsumerWidget {
     final l10n = WidgetsL10n.of(context);
     final ui = context.ui;
     final j = journey;
+    final isSample = j == null;
     final now = ref.watch(journeysNowProvider);
-    final checkIns = j == null ? null : ref.watch(myCheckInsProvider(j.id));
-    final membership = j == null ? null : ref.watch(myMembershipProvider(j.id));
-    final progress = (j != null && (checkIns?.hasValue ?? false))
-        ? JourneyProgress.compute(
+    final checkIns = j == null
+        ? const <CheckIn>[]
+        : (ref.watch(myCheckInsProvider(j.id)).asData?.value ??
+              const <CheckIn>[]);
+    final membership = j == null
+        ? null
+        : ref.watch(myMembershipProvider(j.id)).asData?.value;
+    final progress = j == null
+        ? null
+        : JourneyProgress.compute(
             journey: j,
-            membership: membership?.value,
-            checkIns: checkIns!.value!,
+            membership: membership,
+            checkIns: checkIns,
             now: now,
-          )
-        : null;
+          );
     final streak = progress?.summary.current ?? 14;
     final title = j?.title ?? l10n.widgets_previewSampleTitle;
+    final nowDate = progress?.today ?? const LocalDate(2026, 11, 24);
+    final weekDone = [
+      for (var i = 6; i >= 0; i--)
+        progress != null
+            ? progress.checkInsByDate.containsKey(nowDate.addDays(-i))
+            : i > 0,
+    ];
 
     return Center(
       child: ConstrainedBox(
@@ -824,6 +936,8 @@ class _StreakWidgetPreview extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (isSample)
+                _SamplePreviewPill(label: l10n.widgets_previewSampleBadge),
               Row(
                 children: [
                   const OurneyIcon(name: 'flame', size: 28, active: true),
@@ -872,12 +986,12 @@ class _StreakWidgetPreview extends ConsumerWidget {
               const SizedBox(height: UiSpace.md),
               Row(
                 children: [
-                  for (var i = 0; i < 7; i++) ...[
+                  for (var i = 0; i < weekDone.length; i++) ...[
                     Expanded(
                       child: Container(
                         height: 10,
                         decoration: BoxDecoration(
-                          color: i < 6 ? ui.accent : ui.fill,
+                          color: weekDone[i] ? ui.accent : ui.fill,
                           borderRadius: BorderRadius.circular(3),
                           border: Border.all(
                             color: ui.outline,
@@ -886,7 +1000,7 @@ class _StreakWidgetPreview extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    if (i < 6) const SizedBox(width: 3),
+                    if (i < weekDone.length - 1) const SizedBox(width: 3),
                   ],
                 ],
               ),
@@ -898,7 +1012,7 @@ class _StreakWidgetPreview extends ConsumerWidget {
   }
 }
 
-class _SquadWidgetPreview extends StatelessWidget {
+class _SquadWidgetPreview extends ConsumerWidget {
   const _SquadWidgetPreview({
     required this.journey,
     required this.photoMode,
@@ -907,19 +1021,109 @@ class _SquadWidgetPreview extends StatelessWidget {
   final Journey? journey;
   final WidgetPhotoMode photoMode;
 
-  static const List<(String, bool)> _sampleMembers = [
-    ('Minh', true),
-    ('Linh', true),
-    ('An', true),
-    ('Khánh', false),
-    ('Bạn', false),
-  ];
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = WidgetsL10n.of(context);
     final ui = context.ui;
-    final title = journey?.title ?? l10n.widgets_previewSampleTitle;
+    final j = journey;
+    final isSample = j == null;
+    final title = j?.title ?? l10n.widgets_previewSampleTitle;
+
+    int doneCount;
+    int memberCount;
+    List<({String name, bool done, int colorIndex})> members;
+
+    if (j != null) {
+      final now = ref.watch(journeysNowProvider);
+      final myCheckIns =
+          ref.watch(myCheckInsProvider(j.id)).asData?.value ?? const <CheckIn>[];
+      final membership = ref.watch(myMembershipProvider(j.id)).asData?.value;
+      final localOnly = ref.watch(appConfigProvider).localOnly;
+      final rawMembers = localOnly
+          ? null
+          : ref.watch(groupTodayProvider(j.id)).asData?.value;
+      final groupCheckIns = localOnly
+          ? const <CheckIn>[]
+          : (ref.watch(groupCheckInsProvider(j.id)).asData?.value ??
+                const <CheckIn>[]);
+      final blockedIds = localOnly
+          ? const <String>{}
+          : (ref.watch(groupBlockedIdsProvider).asData?.value ??
+                const <String>{});
+      final hiddenCheckInIds = ref.watch(hiddenCheckInIdsProvider);
+      final currentUserId = ref.watch(currentUserIdProvider);
+
+      final progress = JourneyProgress.compute(
+        journey: j,
+        membership: membership,
+        checkIns: myCheckIns,
+        now: now,
+      );
+      final combinedCheckIns = <CheckIn>[
+        ...groupCheckIns,
+        for (final c in myCheckIns)
+          if (!groupCheckIns.any((g) => g.id == c.id)) c,
+      ];
+      final todayCheckIns = progress.checkInsOn(progress.today);
+      final myTodayCheckIn = todayCheckIns.isEmpty ? null : todayCheckIns.last;
+      final selfUserId = currentUserId ?? membership?.userId ?? j.ownerId;
+      final partnerName = j.couplePartnerName?.trim();
+      final effectiveMembers = (rawMembers != null && rawMembers.isNotEmpty)
+          ? rawMembers
+          : <MemberToday>[
+              MemberToday(
+                userId: selfUserId,
+                displayName: j.coupleSelfName ?? l10n.widgets_previewYou,
+                role: membership?.role ?? MemberRole.owner,
+                currentStreak: progress.summary.current,
+                todayCheckIn: myTodayCheckIn,
+              ),
+              if (partnerName != null && partnerName.isNotEmpty)
+                MemberToday(
+                  userId: '${j.id}-partner',
+                  displayName: partnerName,
+                  role: MemberRole.member,
+                  currentStreak: 0,
+                ),
+            ];
+      final groupView = GroupTodayView.build(
+        journey: j,
+        members: effectiveMembers,
+        now: now,
+        myUserId: currentUserId ?? membership?.userId,
+        blockedIds: blockedIds,
+        hiddenCheckInIds: hiddenCheckInIds,
+        checkIns: combinedCheckIns,
+        myMembership: membership,
+      );
+      final ordered = <GroupMemberEntry>[
+        ...groupView.done,
+        ...groupView.pending,
+      ];
+      doneCount = groupView.doneCount;
+      memberCount = groupView.memberCount;
+      members = [
+        for (final entry in ordered.take(j.maxMembers.clamp(1, 10)))
+          (
+            name: entry.member.displayName.trim().isEmpty
+                ? l10n.widgets_previewYou
+                : entry.member.displayName,
+            done: entry.checkedInToday,
+            colorIndex: UiAvatar.indexFor(entry.member.userId),
+          ),
+      ];
+    } else {
+      doneCount = 3;
+      memberCount = 5;
+      members = [
+        (name: 'Minh', done: true, colorIndex: 0),
+        (name: 'Linh', done: true, colorIndex: 1),
+        (name: 'An', done: true, colorIndex: 2),
+        (name: 'Khánh', done: false, colorIndex: 3),
+        (name: l10n.widgets_previewYou, done: false, colorIndex: 4),
+      ];
+    }
+
     final photoStatusText = switch (photoMode) {
       WidgetPhotoMode.off => l10n.widgets_previewPhotoHiddenNote,
       WidgetPhotoMode.blurred => l10n.widgets_previewPhotoBlurredNote,
@@ -941,6 +1145,8 @@ class _SquadWidgetPreview extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (isSample)
+            _SamplePreviewPill(label: l10n.widgets_previewSampleBadge),
           Row(
             children: [
               const OurneyIcon(name: 'squad', size: 22),
@@ -961,7 +1167,7 @@ class _SquadWidgetPreview extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      l10n.widgets_previewSquadCount(3, 5),
+                      l10n.widgets_previewSquadCount(doneCount, memberCount),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: UiText.body(
@@ -981,11 +1187,11 @@ class _SquadWidgetPreview extends StatelessWidget {
             spacing: UiSpace.md,
             runSpacing: UiSpace.sm,
             children: [
-              for (var i = 0; i < _sampleMembers.length; i++)
+              for (final member in members)
                 _SquadMemberPreviewBubble(
-                  name: _sampleMembers[i].$1,
-                  done: _sampleMembers[i].$2,
-                  colorIndex: i,
+                  name: member.name,
+                  done: member.done,
+                  colorIndex: member.colorIndex,
                 ),
             ],
           ),

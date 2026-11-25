@@ -482,6 +482,12 @@ class ProfileL10nEn extends ProfileL10n {
       'Keeps you signed in on this device';
 
   @override
+  String get profile_password_continue => 'Continue';
+
+  @override
+  String get profile_password_sending => 'Sending code…';
+
+  @override
   String get profile_password_save => 'Save password';
 
   @override

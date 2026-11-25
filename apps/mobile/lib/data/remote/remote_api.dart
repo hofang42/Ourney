@@ -56,6 +56,10 @@ abstract interface class RemoteApi {
     bool signOutOthers = false,
   });
 
+  /// Clears any cached recovery-code verification state and cleans up any
+  /// half-completed unauthenticated recovery session locally. Never throws.
+  Future<void> cancelPasswordFlow();
+
   /// Signs out. [global] also revokes the refresh tokens of every device
   /// (falls back to a local sign-out when the server is unreachable). Never
   /// throws.

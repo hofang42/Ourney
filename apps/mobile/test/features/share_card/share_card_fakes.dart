@@ -59,6 +59,7 @@ Journey testJourney({
   String? metricUnit,
   bool hideMetricDefault = false,
   JourneyOrigin origin = JourneyOrigin.live,
+  int maxMembers = 10,
 }) => Journey(
   origin: origin,
   id: id,
@@ -76,6 +77,7 @@ Journey testJourney({
   metricName: metricName,
   metricUnit: metricUnit,
   hideMetricDefault: hideMetricDefault,
+  maxMembers: maxMembers,
 );
 
 /// Weight-loss journey as the create flow makes it (FR-B7 defaults).

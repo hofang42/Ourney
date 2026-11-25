@@ -96,6 +96,11 @@ abstract interface class AuthRepository {
     bool signOutOthers = false,
   });
 
+  /// Clears any in-memory verified recovery-code state from an abandoned
+  /// password reset or in-app password setup/change flow, and ends any
+  /// half-completed unauthenticated recovery session locally. Never throws.
+  Future<void> cancelPasswordFlow();
+
   Future<void> signOut();
 
   /// Deletes the account and all media server-side (Edge Function

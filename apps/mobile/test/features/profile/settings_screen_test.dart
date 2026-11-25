@@ -283,6 +283,11 @@ void main() {
 
         expect(byKey('profile-password-sheet'), findsOneWidget);
         expect(find.text('đặt mật khẩu.'), findsOneWidget);
+        // R-5: Step 1 CTA shows 'Tiếp tục' when no code has been verified yet.
+        expect(
+          tester.widget<UiButton>(byKey('password-sheet-continue')).label,
+          'Tiếp tục',
+        );
         // First-time set does NOT offer sign-out-others switch.
         expect(byKey('password-sheet-sign-out-others'), findsNothing);
 
@@ -446,6 +451,11 @@ void main() {
           findsOneWidget,
         );
         expect(byKey('password-sheet-new'), findsOneWidget);
+        // R-5: Once _verifiedCode is set, Step 1 CTA shows 'Lưu mật khẩu'.
+        expect(
+          tester.widget<UiButton>(byKey('password-sheet-continue')).label,
+          'Lưu mật khẩu',
+        );
 
         // Client-side validation rejects submitting the known same password again
         // without making any network call.
@@ -471,7 +481,9 @@ void main() {
         );
         expect(byKey('profile-password-sheet'), findsNothing);
 
-        // 4. Re-open and toggle signOutOthers OFF -> passes signOutOthers=false.
+        // 4. Re-open: test R-4 (_backToPassword preserves 60s cooldown so fixing a typo
+        // on Step 1 returns to Step 2 without sending a duplicate email) and R-2 (cancel
+        // calls cancelPasswordFlow).
         await tester.tap(byKey('settings-password'));
         await tester.pumpAndSettle();
         await tester.tap(byKey('password-sheet-sign-out-others'));
@@ -485,11 +497,45 @@ void main() {
         await tester.enterText(byKey('password-sheet-new'), 'anotherpass99');
         await tester.tap(byKey('password-sheet-continue'));
         await tester.pumpAndSettle();
+        final sendCountAfterStep1 = auth.calls
+            .where((c) => c.startsWith('sendReset:'))
+            .length;
+
+        // Tap Back on Step 2 -> edit password typo on Step 1 -> tap Continue within 60s cooldown.
+        await tester.tap(byKey('password-sheet-back'));
+        await tester.pumpAndSettle();
+        expect(byKey('password-sheet-new'), findsOneWidget);
+        await tester.enterText(byKey('password-sheet-new'), 'correctedpass99');
+        await tester.tap(byKey('password-sheet-continue'));
+        await tester.pumpAndSettle();
+        expect(byKey('password-sheet-otp'), findsOneWidget);
+        expect(
+          auth.calls.where((c) => c.startsWith('sendReset:')).length,
+          sendCountAfterStep1,
+          reason: 'R-4: submitting Step 1 during active cooldown must not re-send recovery email',
+        );
+        expect(
+          tester.widget<UiTextAction>(byKey('password-sheet-resend')).onPressed,
+          isNull,
+          reason: 'R-4: 60s resend cooldown stays active across _backToPassword',
+        );
+
         await tester.enterText(byKey('password-sheet-otp'), '444444');
         await tester.pumpAndSettle();
         expect(
           auth.calls.last,
-          'updatePassword:anotherpass99:code=444444:signOutOthers=false',
+          'updatePassword:correctedpass99:code=444444:signOutOthers=false',
+        );
+
+        // 5. Re-open and cancel -> invokes cancelPasswordFlow (R-2).
+        final cancelsBefore = auth.cancelPasswordFlowCalls;
+        await tester.tap(byKey('settings-password'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('password-sheet-cancel'));
+        await tester.pumpAndSettle();
+        expect(
+          auth.cancelPasswordFlowCalls,
+          greaterThan(cancelsBefore),
         );
       },
     );

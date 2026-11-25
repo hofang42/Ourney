@@ -91,6 +91,9 @@ class LocalAuthRepository implements AuthRepository {
   }) async => _needsServer();
 
   @override
+  Future<void> cancelPasswordFlow() async {}
+
+  @override
   Future<void> requestDeleteCode() async {}
 
   @override
@@ -241,6 +244,9 @@ class SupabaseAuthRepository implements AuthRepository {
     code: code,
     signOutOthers: signOutOthers,
   );
+
+  @override
+  Future<void> cancelPasswordFlow() => remote.cancelPasswordFlow();
 
   @override
   Future<void> requestDeleteCode() async {

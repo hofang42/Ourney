@@ -1,4 +1,4 @@
--- 0026_auth_has_password: pgTAP tests for public.auth_has_password().
+-- 0028_auth_has_password: pgTAP tests for public.auth_has_password().
 -- Covers: anon denied, authenticated/service_role allowed, SECURITY DEFINER + STABLE + search_path='',
 -- parameterless signature (cross-user query impossible; account_has_password(uuid) remains service_role-only),
 -- NULL / empty / whitespace encrypted_password -> false, bcrypt hash -> true,
@@ -30,7 +30,7 @@ begin
 end $$;
 
 create function tests.u(n int) returns uuid language sql immutable as $$
-  select format('26000000-0000-4000-8000-%s', lpad(n::text, 12, '0'))::uuid $$;
+  select format('28000000-0000-4000-8000-%s', lpad(n::text, 12, '0'))::uuid $$;
 
 grant execute on all functions in schema tests to anon, authenticated, service_role;
 

@@ -179,4 +179,42 @@ void main() {
     );
     expect(draft.partnerPhotoFile, '/tmp/partner.jpg.1080.jpg');
   });
+
+  testWidgets(
+    'non-cooking couple ritual hides Who cooked (UX-24)',
+    (tester) async {
+      final coupleLdr = Journey(
+        id: 'j1',
+        ownerId: 'me',
+        kind: JourneyKind.solo,
+        templateId: TemplateId.custom,
+        title: 'Hai đứa',
+        emoji: '💞',
+        startDate: const LocalDate(2026, 10, 1),
+        durationDays: 30,
+        timezone: 'Asia/Ho_Chi_Minh',
+        visibility: JourneyVisibility.private,
+        status: JourneyStatus.active,
+        coupleSelfName: 'An',
+        couplePartnerName: 'Bình',
+        dna: const {'ritual': 'ldr'},
+      );
+      await pump(tester, coupleLdr);
+      expect(find.byKey(const ValueKey('checkin-cook-An')), findsNothing);
+      expect(find.byKey(const ValueKey('checkin-cook-Bình')), findsNothing);
+      expect(find.byKey(const ValueKey('checkin-dish')), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'non-running workout shows duration minutes instead of km (UX-24)',
+    (tester) async {
+      final gymJourney = testJourney(
+        templateId: TemplateId.workout30,
+      ).copyWith(dna: const {'sport': 'gym', 'measure': 'min'});
+      await pump(tester, gymJourney);
+      expect(find.byKey(const ValueKey('checkin-km')), findsNothing);
+      expect(find.byKey(const ValueKey('checkin-minutes-45')), findsOneWidget);
+    },
+  );
 }

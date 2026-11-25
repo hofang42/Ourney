@@ -29,9 +29,16 @@ public struct SquadWidgetEntryView: View {
 
   public var body: some View {
     let snapshot = entry.snapshot
-    let locale = snapshot?.locale ?? "vi"
+    let locale = snapshot?.locale ?? ""
     let themeMode = snapshot?.themeMode ?? "system"
-    let squad = snapshot?.selectedSquad()
+    let cardState = WidgetSnapshot.resolveSquadCardState(
+      snapshot: snapshot,
+      pinnedId: entry.pinnedId
+    )
+    let squad: WidgetSquadItem? = {
+      if case .ready(let item) = cardState { return item }
+      return nil
+    }()
     let theme = OurneyWidgetTheme.resolve(
       skinId: squad?.skinId ?? "squad",
       colorVariant: squad?.colorVariant ?? 0,
@@ -40,20 +47,57 @@ public struct SquadWidgetEntryView: View {
     )
 
     let rootDestination: URL = {
-      guard let item = squad, !(snapshot?.isSignedOutOrEmpty ?? true) else {
+      switch cardState {
+      case .ready(let item):
+        return OurneyDeepLinks.group(id: item.journeyId)
+      case .unsynced, .signedOut:
+        return OurneyDeepLinks.syncJourneys
+      case .soloOnly, .noSquads:
         return OurneyDeepLinks.groups
       }
-      return OurneyDeepLinks.group(id: item.journeyId)
     }()
 
     Group {
-      if let snap = snapshot, !snap.isSignedOutOrEmpty, let item = squad {
-        if family == .systemLarge {
-          SquadLargeView(snapshot: snap, squad: item, theme: theme)
-        } else {
-          SquadMediumView(snapshot: snap, squad: item, theme: theme)
+      switch cardState {
+      case .ready(let item):
+        if let snap = snapshot {
+          if family == .systemLarge {
+            SquadLargeView(snapshot: snap, squad: item, theme: theme)
+          } else {
+            SquadMediumView(snapshot: snap, squad: item, theme: theme)
+          }
         }
-      } else {
+      case .unsynced:
+        OurneyEmptyWidgetView(
+          iconName: "sparkle",
+          title: WidgetL10n.unsyncedTitle(locale: locale),
+          subtitle: WidgetL10n.unsyncedSubtitle(locale: locale),
+          ctaLabel: WidgetL10n.unsyncedCta(locale: locale),
+          destination: OurneyDeepLinks.syncJourneys,
+          theme: theme,
+          isSmall: false
+        )
+      case .signedOut:
+        OurneyEmptyWidgetView(
+          iconName: "lock",
+          title: WidgetL10n.signedOutTitle(locale: locale),
+          subtitle: WidgetL10n.signedOutSubtitle(locale: locale),
+          ctaLabel: WidgetL10n.signedOutCta(locale: locale),
+          destination: OurneyDeepLinks.syncJourneys,
+          theme: theme,
+          isSmall: false
+        )
+      case .soloOnly(let soloCount):
+        OurneyEmptyWidgetView(
+          iconName: "squad",
+          title: WidgetL10n.emptySquadTitle(locale: locale),
+          subtitle: WidgetL10n.soloOnlySquadSubtitle(soloCount: soloCount, locale: locale),
+          ctaLabel: WidgetL10n.openOurney(locale: locale),
+          destination: OurneyDeepLinks.groups,
+          theme: theme,
+          isSmall: false
+        )
+      case .noSquads:
         OurneyEmptyWidgetView(
           iconName: "squad",
           title: WidgetL10n.emptySquadTitle(locale: locale),

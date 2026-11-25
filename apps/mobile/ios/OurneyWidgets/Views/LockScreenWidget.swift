@@ -37,19 +37,72 @@ public struct LockScreenWidgetEntryView: View {
 
   public var body: some View {
     let snapshot = entry.snapshot
-    let locale = snapshot?.locale ?? "vi"
-    let featured = snapshot?.selectedTodayJourney(state: entry.state)
-    let bestStreak = max(snapshot?.totals.bestActiveStreak ?? 0, featured?.currentStreak ?? 0)
-    let pendingCount = snapshot?.totals.pendingTodayCount ?? 0
-    let activeCount = max(snapshot?.totals.activeCount ?? 1, 1)
-    let completedCount = snapshot?.totals.completedTodayCount ?? 0
-    let redactTitle = snapshot?.privacy.redactLockScreenTitles ?? false
+    let locale = snapshot?.locale ?? ""
+    let cardState = WidgetSnapshot.resolveTodayCardState(
+      snapshot: snapshot,
+      pinnedId: entry.pinnedId,
+      state: entry.state
+    )
+    let isPinned = snapshot?.isTodayJourneyPinned(entry.pinnedId) ?? false
+    let featured: WidgetJourneyItem? = {
+      if case .ready(let item) = cardState { return item }
+      return nil
+    }()
+
+    let bestStreak: Int = {
+      if let item = featured, isPinned {
+        return item.currentStreak
+      }
+      return max(snapshot?.totals.bestActiveStreak ?? 0, featured?.currentStreak ?? 0)
+    }()
+
+    let pendingCount: Int = {
+      if let item = featured, isPinned {
+        return item.checkedInToday ? 0 : 1
+      }
+      return snapshot?.totals.pendingTodayCount ?? 0
+    }()
+
+    let activeCount: Int = {
+      if featured != nil && isPinned {
+        return 1
+      }
+      return max(snapshot?.totals.activeCount ?? 1, 1)
+    }()
+
+    let completedCount: Int = {
+      if let item = featured, isPinned {
+        return item.checkedInToday ? 1 : 0
+      }
+      return snapshot?.totals.completedTodayCount ?? 0
+    }()
+
+    let redactTitle = snapshot?.shouldRedactLockScreenTitle(for: featured) ?? true
+
+    let statusTextOverride: String? = {
+      switch cardState {
+      case .ready:
+        return nil
+      case .unsynced:
+        return WidgetL10n.unsyncedLockScreenStatus(locale: locale)
+      case .signedOut:
+        return WidgetL10n.signedOutCta(locale: locale)
+      case .noJourneys:
+        return WidgetL10n.noJourneysCta(locale: locale)
+      }
+    }()
 
     let destination: URL = {
-      if let item = featured, !item.checkedInToday {
-        return OurneyDeepLinks.capture(journeyId: item.id)
+      switch cardState {
+      case .ready(let item):
+        return item.checkedInToday
+          ? OurneyDeepLinks.journey(id: item.id)
+          : OurneyDeepLinks.capture(journeyId: item.id)
+      case .unsynced, .signedOut:
+        return OurneyDeepLinks.syncJourneys
+      case .noJourneys:
+        return OurneyDeepLinks.newJourney
       }
-      return OurneyDeepLinks.journeys
     }()
 
     Group {
@@ -64,6 +117,7 @@ public struct LockScreenWidgetEntryView: View {
           LockScreenInlineView(
             streak: bestStreak,
             pending: pendingCount,
+            statusOverride: statusTextOverride,
             locale: locale
           )
         } else {
@@ -72,6 +126,7 @@ public struct LockScreenWidgetEntryView: View {
             streak: bestStreak,
             pendingCount: pendingCount,
             redactTitle: redactTitle,
+            statusOverride: statusTextOverride,
             locale: locale
           )
         }
@@ -124,11 +179,17 @@ private struct LockScreenRectangularView: View {
   let streak: Int
   let pendingCount: Int
   let redactTitle: Bool
+  let statusOverride: String?
   let locale: String
 
   var body: some View {
-    let title = journey?.title ?? WidgetL10n.lockScreenRedactedTitle(locale: locale)
+    let rawTitle = journey?.title.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    let isRedactedToBrand = redactTitle || rawTitle.isEmpty
+    let title = isRedactedToBrand
+      ? WidgetL10n.lockScreenRedactedTitle(locale: locale)
+      : rawTitle
     let days = journey?.weekStrip ?? []
+    let footerText = statusOverride ?? WidgetL10n.lockScreenRemaining(pending: pendingCount, locale: locale)
 
     VStack(alignment: .leading, spacing: 3) {
       HStack(spacing: 4) {
@@ -138,10 +199,11 @@ private struct LockScreenRectangularView: View {
           .font(OurneyWidgetFont.display(14, weight: .bold))
           .ourneyWidgetAccentable()
 
+        // Never apply `.privacySensitive()` when `title` is already redacted to `"Ourney"`
+        // (Rank 6.3: avoids turning the brand header into a gray placeholder bar on locked iPhones).
         Text(title)
           .font(OurneyWidgetFont.body(11.5, bold: true))
           .lineLimit(1)
-          .privacySensitive(redactTitle)
       }
 
       // 7-day mini chain bar
@@ -155,7 +217,7 @@ private struct LockScreenRectangularView: View {
       }
       .ourneyWidgetAccentable()
 
-      Text(WidgetL10n.lockScreenRemaining(pending: pendingCount, locale: locale))
+      Text(footerText)
         .font(OurneyWidgetFont.body(10, bold: false))
         .foregroundColor(.secondary)
         .lineLimit(1)
@@ -166,12 +228,20 @@ private struct LockScreenRectangularView: View {
 private struct LockScreenInlineView: View {
   let streak: Int
   let pending: Int
+  let statusOverride: String?
   let locale: String
 
   var body: some View {
+    let inlineText: String = {
+      if let overrideText = statusOverride {
+        return "Ourney · \(overrideText)"
+      }
+      return WidgetL10n.lockScreenInline(streak: streak, pending: pending, locale: locale)
+    }()
+
     HStack(spacing: 4) {
       OurneyIconView(name: "flame", size: 12, flat: true, overrideColor: .primary)
-      Text(WidgetL10n.lockScreenInline(streak: streak, pending: pending, locale: locale))
+      Text(inlineText)
     }
   }
 }

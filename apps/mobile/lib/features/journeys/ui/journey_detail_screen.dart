@@ -157,7 +157,11 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
           (membership?.isActive ?? false) &&
           !ref.watch(appConfigProvider).localOnly)
         _Action.invite,
-      if (perms.canEnd && journey.coupleSelfName != null) _Action.renameCouple,
+      if (perms.canEnd &&
+          (journey.coupleSelfName != null ||
+              skinOfJourney(journey) == PersonaSkinId.coupleRituals ||
+              (journey.kind == JourneyKind.group && journey.maxMembers == 2)))
+        _Action.renameCouple,
       if (perms.canEnd) _Action.end,
       if (perms.canArchive) _Action.archive,
       if (perms.canDelete) _Action.delete,
@@ -254,6 +258,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                 today: progress.today,
                 offline: ref.watch(journeyHomeOfflineProvider).value ?? false,
                 readOnly: !perms.isActive,
+                ritual: journey.dna?['ritual'] as String?,
               ),
             if (progress != null) const SizedBox(height: UiSpace.lg),
             DeadUploadsBanner(journeyId: journey.id),
@@ -281,20 +286,15 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                 ),
                 const SizedBox(height: UiSpace.lg),
               ],
-              if (skin == 'quiet' || skin == 'flexer') ...[
-                JourneyHomeChart(
-                  skin: skin,
-                  values: index!.metricSeries,
-                  accent: pal.accent,
-                  unit: journey.metricUnit ?? '',
-                  maskable: skin == 'quiet',
-                ),
-                const SizedBox(height: UiSpace.lg),
-              ],
             ],
             _SectionTab(title: l10n.journeys_timelineTitle, accent: pal.accent),
             const SizedBox(height: UiSpace.xl),
           ];
+          final startingWeight = skin == 'quiet'
+              ? ref
+                    .watch(sharedPreferencesProvider)
+                    .getDouble(journeyStartingWeightPrefKey(journey.id))
+              : null;
           final timelineChildren = <Widget>[
             if (checkIns.hasError && progress == null)
               UiEmptyState(
@@ -320,6 +320,10 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                 pal: pal,
                 selfName: journey.coupleSelfName,
                 partnerName: journey.couplePartnerName,
+                selfOnRight: journey.dna?['side'] == 'right',
+                startingWeight: startingWeight,
+                isOpenEnded: journey.durationDays == null,
+                showMilestones: false,
                 showOfflineStamps: !ref.watch(appConfigProvider).localOnly,
                 onTapDay: (d) =>
                     context.push(JourneysPaths.day(journey.id, d.date)),
@@ -567,6 +571,14 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
               pal: pal,
               selfName: journey.coupleSelfName,
               partnerName: journey.couplePartnerName,
+              selfOnRight: journey.dna?['side'] == 'right',
+              startingWeight: skin == 'quiet'
+                  ? ref
+                        .watch(sharedPreferencesProvider)
+                        .getDouble(journeyStartingWeightPrefKey(journey.id))
+                  : null,
+              isOpenEnded: journey.durationDays == null,
+              showMilestones: false,
               showOfflineStamps: !ref.watch(appConfigProvider).localOnly,
               onTapDay: openDay,
               onOpenEarlier: () =>

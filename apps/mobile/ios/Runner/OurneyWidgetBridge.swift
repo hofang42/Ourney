@@ -54,20 +54,36 @@ public final class OurneyWidgetBridge {
   public func currentCapabilities() -> [String: Any] {
     let appGroupAvailable = WidgetSnapshotStore.sharedRootDirectory() != nil
     var liveActivityAvailable = false
+    var configurableWidgets = false
     #if canImport(ActivityKit)
     if #available(iOS 16.2, *) {
       liveActivityAvailable = ActivityAuthorizationInfo().areActivitiesEnabled
     }
     #endif
+    if #available(iOS 17.0, *) {
+      configurableWidgets = true
+    }
     return [
       "widgets": true,
+      "configurableWidgets": configurableWidgets,
       "liveActivity": liveActivityAvailable,
       "promotedLiveUpdates": false,
       "appGroup": appGroupAvailable,
+      "appGroupAvailable": appGroupAvailable,
     ]
   }
 
   // MARK: - syncSnapshot
+
+  public struct SnapshotWriteOutcome: Equatable {
+    public let succeeded: Bool
+    public let didChange: Bool
+
+    public init(succeeded: Bool, didChange: Bool) {
+      self.succeeded = succeeded
+      self.didChange = didChange
+    }
+  }
 
   private func handleSyncSnapshot(_ rawArgs: Any?, result: @escaping FlutterResult) {
     guard let args = rawArgs as? [String: Any] else {
@@ -97,26 +113,41 @@ public final class OurneyWidgetBridge {
         DispatchQueue.main.async { result(false) }
         return
       }
-      let didUpdate = self.writeSnapshotAndThumbs(
+      let outcome = self.writeSnapshotAndThumbsOutcome(
         snapshotData: validSnapshotData,
         thumbSpecs: thumbSpecs
       )
       DispatchQueue.main.async {
-        if didUpdate {
+        if outcome.succeeded && outcome.didChange {
           WidgetCenter.shared.reloadAllTimelines()
         }
-        result(true)
+        result(outcome.succeeded)
       }
     }
   }
 
   /// Writes thumbnails and `snapshot_v1.json` atomically. Returns `true` if WidgetKit timelines
-  /// should be reloaded.
+  /// should be reloaded (`didChange`).
   public func writeSnapshotAndThumbs(
     snapshotData: Data,
     thumbSpecs: [[String: Any]],
     overrideRootDirectory: URL? = nil
   ) -> Bool {
+    writeSnapshotAndThumbsOutcome(
+      snapshotData: snapshotData,
+      thumbSpecs: thumbSpecs,
+      overrideRootDirectory: overrideRootDirectory
+    ).didChange
+  }
+
+  /// Writes thumbnails and `snapshot_v1.json` atomically, distinguishing disk I/O success
+  /// (`succeeded`) from content mutation (`didChange`) so `syncSnapshot` reports `false` to Dart
+  /// on write failure (Rank 4).
+  public func writeSnapshotAndThumbsOutcome(
+    snapshotData: Data,
+    thumbSpecs: [[String: Any]],
+    overrideRootDirectory: URL? = nil
+  ) -> SnapshotWriteOutcome {
     let rootDir: URL
     if let overrideRoot = overrideRootDirectory {
       rootDir = overrideRoot
@@ -129,7 +160,7 @@ public final class OurneyWidgetBridge {
       }
       rootDir = fallbackRoot
     } else {
-      return false
+      return SnapshotWriteOutcome(succeeded: false, didChange: false)
     }
 
     let fm = FileManager.default
@@ -139,7 +170,7 @@ public final class OurneyWidgetBridge {
       try WidgetSnapshotStore.ensureDirectoryPrepared(rootDir, fileManager: fm)
       try WidgetSnapshotStore.ensureDirectoryPrepared(thumbsDir, fileManager: fm)
     } catch {
-      return false
+      return SnapshotWriteOutcome(succeeded: false, didChange: false)
     }
 
     let decodedSnapshot = try? JSONDecoder().decode(WidgetSnapshot.self, from: snapshotData)
@@ -214,7 +245,7 @@ public final class OurneyWidgetBridge {
         values.isExcludedFromBackup = true
         try? mutableURL.setResourceValues(values)
       } catch {
-        return false
+        return SnapshotWriteOutcome(succeeded: false, didChange: false)
       }
     }
 
@@ -224,7 +255,7 @@ public final class OurneyWidgetBridge {
       endAllLiveActivitiesImmediate()
     }
 
-    return snapshotChanged || thumbsChanged
+    return SnapshotWriteOutcome(succeeded: true, didChange: snapshotChanged || thumbsChanged)
   }
 
   private static func cleanThumbFileName(_ raw: String?) -> String? {
@@ -339,10 +370,13 @@ public final class OurneyWidgetBridge {
     }
 
     let cachedSnapshot = WidgetSnapshotStore.loadSnapshot(at: now)
+    let defaultLocale = (Locale.preferredLanguages.first ?? "en")
+      .lowercased()
+      .hasPrefix("vi") ? "vi" : "en"
     let locale = (topDict["locale"] as? String)
       ?? (windowDict["locale"] as? String)
       ?? cachedSnapshot?.locale
-      ?? "vi"
+      ?? defaultLocale
     let redactTitle = Self.resolveRedactLockScreenTitles(
       topDict: topDict,
       windowDict: windowDict,
@@ -431,22 +465,39 @@ public final class OurneyWidgetBridge {
   }
 
   /// Resolves Lock Screen title redaction flag across `syncLiveActivity` payloads,
-  /// prioritizing canonical `redactLockScreenTitles` (top-level, `liveWindow`, and `privacy` dicts)
-  /// before falling back to legacy `redactTitleOnLockScreen` and cached `snapshot_v1.json`.
+  /// always redacting sensitive journeys first, then prioritizing canonical
+  /// `redactLockScreenTitles` (top-level, `liveWindow`, and `privacy` dicts) before
+  /// falling back to legacy `redactTitleOnLockScreen` and cached `snapshot_v1.json`.
   public static func resolveRedactLockScreenTitles(
     topDict: [String: Any],
     windowDict: [String: Any]? = nil,
     cachedSnapshot: WidgetSnapshot? = nil
   ) -> Bool {
     let resolvedWindowDict = windowDict ?? (topDict["liveWindow"] as? [String: Any]) ?? topDict
+    let isExplicitlySensitive = (resolvedWindowDict["isSensitive"] as? Bool)
+      ?? (topDict["isSensitive"] as? Bool)
+      ?? false
+    let skinId = (resolvedWindowDict["skinId"] as? String) ?? (topDict["skinId"] as? String)
+    let typeIcon = (resolvedWindowDict["typeIcon"] as? String) ?? (topDict["typeIcon"] as? String)
+    let journeyId = (resolvedWindowDict["journeyId"] as? String) ?? (topDict["journeyId"] as? String)
+    let matchedJourney = journeyId.flatMap { jId in
+      cachedSnapshot?.journeys.first(where: { $0.id == jId })
+    }
+
+    if isExplicitlySensitive
+      || WidgetJourneyItem.isImplicitlySensitive(skinId: skinId, typeIcon: typeIcon)
+      || matchedJourney?.isEffectiveSensitiveJourney == true {
+      return true
+    }
+
     let privacyDict = topDict["privacy"] as? [String: Any]
     return (topDict["redactLockScreenTitles"] as? Bool)
       ?? (resolvedWindowDict["redactLockScreenTitles"] as? Bool)
       ?? (privacyDict?["redactLockScreenTitles"] as? Bool)
       ?? (topDict["redactTitleOnLockScreen"] as? Bool)
       ?? (resolvedWindowDict["redactTitleOnLockScreen"] as? Bool)
-      ?? cachedSnapshot?.privacy.redactLockScreenTitles
-      ?? false
+      ?? cachedSnapshot?.shouldRedactLockScreenTitle(for: matchedJourney)
+      ?? true
   }
 
   private static func parseDateArg(_ raw: Any?) -> Date? {

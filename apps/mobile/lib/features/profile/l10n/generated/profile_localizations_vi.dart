@@ -481,6 +481,12 @@ class ProfileL10nVi extends ProfileL10n {
       'Giữ phiên đăng nhập trên máy này';
 
   @override
+  String get profile_password_continue => 'Tiếp tục';
+
+  @override
+  String get profile_password_sending => 'Đang gửi mã…';
+
+  @override
   String get profile_password_save => 'Lưu mật khẩu';
 
   @override

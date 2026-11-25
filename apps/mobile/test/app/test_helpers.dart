@@ -179,6 +179,13 @@ class FakeAuthRepository implements AuthRepository {
     hasPasswordValue = true;
   }
 
+  int cancelPasswordFlowCalls = 0;
+
+  @override
+  Future<void> cancelPasswordFlow() async {
+    cancelPasswordFlowCalls++;
+  }
+
   @override
   Future<void> requestDeleteCode() async {}
 

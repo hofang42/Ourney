@@ -341,7 +341,7 @@ abstract class AppLocalizations {
   /// Daily reminder banner copy, flexer skin.
   ///
   /// In vi, this message translates to:
-  /// **'ĐẾN GIỜ. CHẠY ĐI.'**
+  /// **'ĐẾN GIỜ. TẬP ĐI.'**
   String get reminderBanner_daily_flexer;
 
   /// Daily reminder banner copy, minimal skin.

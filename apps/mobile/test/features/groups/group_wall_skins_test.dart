@@ -175,4 +175,36 @@ void main() {
       },
     );
   }
+
+  testWidgets('flexer wall: non-running workout in VI shows ĐÃ TẬP / CHƯA TẬP (UX-24)', (
+    tester,
+  ) async {
+    final g = groupJourney(
+      templateId: TemplateId.workout30,
+    ).copyWith(dna: const {'sport': 'gym', 'measure': 'min'});
+    final annToday = testCheckIn('g1', testToday, userId: 'u2');
+    await pumpGroups(
+      tester,
+      location: '/groups/g1',
+      locale: const Locale('vi'),
+      journeys: FakeJourneyRepository(
+        journeys: [g],
+        memberships: {'g1': groupMembership(g)},
+      ),
+      checkIns: FakeCheckInRepository([annToday]),
+      groups: FakeGroupRepository(
+        today: {
+          'g1': [
+            memberToday(me, 'Minh', role: MemberRole.owner),
+            memberToday('u2', 'Ann', today: annToday, streak: 5),
+            memberToday('u3', 'Bao'),
+          ],
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('1/3 ĐÃ TẬP'), findsOneWidget);
+    expect(find.text('CHƯA TẬP'), findsNWidgets(2));
+    expect(find.text('1/3 ĐÃ CHẠY'), findsNothing);
+  });
 }

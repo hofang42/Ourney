@@ -496,6 +496,14 @@
   "@profile_password_signOutOthersSub": {
     "description": "Toggle subtitle to keep current device signed in."
   },
+  "profile_password_continue": "Tiếp tục",
+  "@profile_password_continue": {
+    "description": "Primary action button on step 1 of the password sheet to request/enter the verification code."
+  },
+  "profile_password_sending": "Đang gửi mã…",
+  "@profile_password_sending": {
+    "description": "Primary action button label on step 1 while sending the verification code."
+  },
   "profile_password_save": "Lưu mật khẩu",
   "@profile_password_save": {
     "description": "Primary action button in the password sheet."
@@ -506,11 +514,11 @@
   },
   "profile_password_codeTitle": "xác minh bằng mã.",
   "@profile_password_codeTitle": {
-    "description": "Reauthentication code step title in the password sheet."
+    "description": "Verification code step title in the password sheet."
   },
   "profile_password_codeLead": "Nhập mã 6 số vừa gửi tới {email} để lưu mật khẩu.",
   "@profile_password_codeLead": {
-    "description": "Reauthentication code step lead.",
+    "description": "Verification code step lead in the password sheet.",
     "placeholders": {
       "email": {
         "type": "String"
@@ -519,15 +527,15 @@
   },
   "profile_password_codeLabel": "Mã xác minh 6 số",
   "@profile_password_codeLabel": {
-    "description": "Semantics label for the 6-digit reauthentication OTP field."
+    "description": "Semantics label for the 6-digit password verification OTP field."
   },
   "profile_password_codeWrong": "Mã chưa đúng hoặc đã hết hạn. Kiểm tra lại nhé.",
   "@profile_password_codeWrong": {
-    "description": "Error when the reauthentication nonce is wrong or expired."
+    "description": "Error when the 6-digit verification code is wrong or expired."
   },
   "profile_password_resend": "Gửi lại mã",
   "@profile_password_resend": {
-    "description": "Resend reauthentication code button."
+    "description": "Resend verification code button."
   },
   "profile_password_resendIn": "Gửi lại sau {seconds}s",
   "@profile_password_resendIn": {
@@ -540,7 +548,7 @@
   },
   "profile_password_codeResent": "Đã gửi mã mới.",
   "@profile_password_codeResent": {
-    "description": "Confirmation after resending the reauthentication code."
+    "description": "Confirmation after resending the verification code."
   },
   "profile_password_rateLimited": "Bạn thử hơi nhiều rồi. Đợi một chút rồi thử lại nhé.",
   "@profile_password_rateLimited": {

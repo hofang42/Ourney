@@ -232,6 +232,28 @@ void main() {
       expect(auth.recordedTerms, isEmpty);
     });
 
+    testWidgets(
+      'R-2: leaving forgot-password code step or flow calls cancelPasswordFlow',
+      (tester) async {
+        final auth = RecordingAuthRepository();
+        await pumpBackendApp(tester, auth: auth, eulaAccepted: false);
+        await tapVisible(tester, 'auth-use-password');
+        await tapVisible(tester, 'auth-forgot');
+        await tester.enterText(byKey('auth-email'), 'a@b.co');
+        await tapVisible(tester, 'auth-send');
+        expect(byKey('auth-step-code'), findsOneWidget);
+        expect(auth.cancelPasswordFlowCalls, 0);
+
+        await tester.tap(byKey('auth-back'));
+        await tester.pumpAndSettle();
+        expect(auth.cancelPasswordFlowCalls, 1);
+
+        await tester.tap(byKey('auth-flow-back'));
+        await tester.pumpAndSettle();
+        expect(auth.cancelPasswordFlowCalls, 2);
+      },
+    );
+
     testWidgets('phone option is hidden when the server has phone off', (
       tester,
     ) async {

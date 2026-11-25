@@ -69,21 +69,33 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
   bool _signOutOthers = true;
   bool _submitted = false;
   bool _busy = false;
+  bool _saved = false;
   String? _verifiedCode;
   String? _error;
   String? _info;
   int _cooldown = 0;
   Timer? _timer;
+  late final AuthRepository _auth = ref.read(authRepositoryProvider);
 
   bool get _isChange => widget.mode == PasswordSheetMode.change;
 
   @override
   void dispose() {
     _timer?.cancel();
+    if (!_saved) {
+      unawaited(_auth.cancelPasswordFlow());
+    }
     _newPassword.dispose();
     _code.dispose();
     _codeFocus.dispose();
     super.dispose();
+  }
+
+  void _cancelSheet() {
+    if (_busy) return;
+    _verifiedCode = null;
+    unawaited(_auth.cancelPasswordFlow());
+    Navigator.of(context).pop(false);
   }
 
   void _startCooldown() {
@@ -110,20 +122,19 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
 
   void _backToPassword() {
     if (_busy) return;
-    _timer?.cancel();
     setState(() {
       _direction = -1;
       _stage = _Stage.password;
       _code.clear();
       _error = null;
       _info = null;
-      _cooldown = 0;
     });
   }
 
   /// Step 1 -> 2 (or direct save when `_verifiedCode` is already verified):
   /// validates the new password client-side first, then either reuses the
-  /// already-verified recovery code or sends a 6-digit recovery code to
+  /// already-verified recovery code, returns to Step 2 while the 60s cooldown
+  /// from an already-sent code is active, or sends a 6-digit recovery code to
   /// [widget.email].
   Future<void> _requestCode({bool resend = false}) async {
     final l10n = ProfileL10n.of(context);
@@ -145,7 +156,15 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
       await _submitCode(codeOverride: _verifiedCode);
       return;
     }
-    final auth = ref.read(authRepositoryProvider);
+    if (!resend && _cooldown > 0) {
+      setState(() {
+        _direction = 1;
+        _stage = _Stage.code;
+      });
+      _codeFocus.requestFocus();
+      return;
+    }
+    final auth = _auth;
     setState(() => _busy = true);
     try {
       await auth.sendPasswordReset(widget.email);
@@ -254,6 +273,7 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
       AuthMethodPrefs.lastMethodKey,
       RememberedAuthMethod.password.wireName,
     );
+    _saved = true;
     unawaited(UiHaptics.success());
     if (!mounted) return;
     Navigator.of(context).pop(true);
@@ -401,7 +421,11 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
       const SizedBox(height: UiSpace.lg),
       UiButton(
         key: const ValueKey('password-sheet-continue'),
-        label: _busy ? l10n.profile_password_saving : l10n.profile_password_save,
+        label: _verifiedCode != null
+            ? (_busy ? l10n.profile_password_saving : l10n.profile_password_save)
+            : (_busy
+                  ? l10n.profile_password_sending
+                  : l10n.profile_password_continue),
         loading: _busy,
         onPressed: _busy ? null : _requestCode,
       ),
@@ -409,7 +433,7 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
       UiButton.secondary(
         key: const ValueKey('password-sheet-cancel'),
         label: AppLocalizations.of(context).common_cancel,
-        onPressed: _busy ? null : () => Navigator.of(context).pop(false),
+        onPressed: _busy ? null : _cancelSheet,
       ),
     ];
   }
@@ -473,7 +497,7 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
       UiButton.secondary(
         key: const ValueKey('password-sheet-cancel'),
         label: AppLocalizations.of(context).common_cancel,
-        onPressed: _busy ? null : () => Navigator.of(context).pop(false),
+        onPressed: _busy ? null : _cancelSheet,
       ),
     ];
   }

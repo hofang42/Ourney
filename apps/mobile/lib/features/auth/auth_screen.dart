@@ -83,6 +83,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   bool _pendingRememberedPhone = false;
   int _cooldown = 0;
   Timer? _timer;
+  late final AuthRepository _auth = ref.read(authRepositoryProvider);
 
   @override
   void initState() {
@@ -135,6 +136,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   @override
   void dispose() {
     _timer?.cancel();
+    if (_flow == _Flow.reset && !_success) {
+      unawaited(_auth.cancelPasswordFlow());
+    }
     _otpShakeCtrl?.dispose();
     _email.dispose();
     _phone.dispose();
@@ -159,6 +163,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
 
   void _goFlow(_Flow flow) {
     _timer?.cancel();
+    if (_flow == _Flow.reset) {
+      unawaited(_auth.cancelPasswordFlow());
+    }
     final int nextDirection;
     if (_codeStep) {
       nextDirection = -1;
@@ -524,6 +531,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
 
   void _backToForm() {
     _timer?.cancel();
+    if (_flow == _Flow.reset) {
+      unawaited(_auth.cancelPasswordFlow());
+    }
     setState(() {
       _flowDirection = -1;
       _codeStep = false;

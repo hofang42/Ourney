@@ -227,6 +227,11 @@ class FakeRemoteApi implements RemoteApi {
   });
 
   @override
+  Future<void> cancelPasswordFlow() async {
+    calls.add(RemoteCall('cancelPasswordFlow', ''));
+  }
+
+  @override
   Future<void> signOut({bool global = false}) async {
     calls.add(RemoteCall('signOut', global ? 'global' : 'local'));
     if (global && hangGlobalSignOut) {
