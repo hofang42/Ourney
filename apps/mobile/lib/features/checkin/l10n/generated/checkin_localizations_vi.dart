@@ -236,6 +236,12 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_extraDishHint => 'Để trống cũng được';
 
   @override
+  String get checkin_extraMomentLabel => 'Khoảnh khắc hôm nay';
+
+  @override
+  String get checkin_extraMomentHint => 'Để trống cũng được';
+
+  @override
   String get checkin_extraCookLabel => 'Ai nấu?';
 
   @override
@@ -246,6 +252,9 @@ class CheckinL10nVi extends CheckinL10n {
 
   @override
   String get checkin_extraHeartsLabel => 'Bữa này mấy tim?';
+
+  @override
+  String get checkin_extraHeartsMomentLabel => 'Hôm nay mấy tim?';
 
   @override
   String checkin_extraHeartsValue(int count) {

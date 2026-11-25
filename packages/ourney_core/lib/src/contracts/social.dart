@@ -340,6 +340,7 @@ class JourneyFrame {
     this.durationDays,
     this.metricName,
     this.metricUnit,
+    this.layout,
   });
 
   final String sourceJourneyId;
@@ -353,6 +354,7 @@ class JourneyFrame {
   final int? durationDays;
   final String? metricName;
   final String? metricUnit;
+  final PersonaSkinId? layout;
 }
 
 /// A journey as one viewer sees it (SCR-84). Built by `shared_journey(id)`
