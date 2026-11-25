@@ -4,6 +4,14 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      macos_runner:
+        description: macOS runner for this manual build
+        type: choice
+        default: macos-latest
+        options:
+          - macos-latest
+          - macos-26-intel
 
 concurrency:
   group: ios-${{ github.ref }}
@@ -19,7 +27,7 @@ jobs:
   build:
     name: Build unsigned .ipa
     # Standard free runner for public repos (macOS 26, arm64). See docs/adr/0001.
-    runs-on: macos-latest
+    runs-on: ${{ inputs.macos_runner || 'macos-latest' }}
     timeout-minutes: 60
     permissions:
       contents: write # needed only to attach the IPA to a GitHub Release on tags
@@ -126,7 +134,7 @@ jobs:
             -destination "platform=iOS Simulator,id=$device_id" \
             -parallel-testing-enabled NO -only-testing:RunnerTests/WidgetAppGroupTests \
             -only-testing:RunnerTests/WidgetTimelineProviderTests \
-            CODE_SIGNING_ALLOWED=NO SWIFT_ENABLE_BATCH_MODE=NO
+            CODE_SIGNING_ALLOWED=NO
 
       - name: Attach to GitHub Release (tags only)
         if: startsWith(github.ref, 'refs/tags/v')
