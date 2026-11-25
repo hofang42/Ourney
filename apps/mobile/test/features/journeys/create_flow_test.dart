@@ -15,6 +15,7 @@ import 'package:ourney/features/journeys/ui/create/create_widgets.dart';
 import 'package:ourney/features/journeys/ui/create/dna_questions.dart';
 import 'package:ourney/features/journeys/ui/widgets/departure_ticket.dart';
 import 'package:ourney/features/onboarding/onboarding_providers.dart';
+import 'package:ourney/features/profile/settings_providers.dart';
 import 'package:ourney/features/reminders/data/notification_gateway.dart';
 import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
 import 'package:ourney/ui/ui.dart';
@@ -352,6 +353,35 @@ void main() {
       await _tap(tester, 'journey-create');
       expect(h.journeys.created.single.hideMetricDefault, isFalse);
       expect(h.journeys.prefUpdates, isEmpty);
+    });
+
+    testWidgets('creating a journey also reconciles an existing weight log', (
+      tester,
+    ) async {
+      final old = testJourney(
+        id: 'old-log',
+        metricName: 'Reading',
+        metricUnit: 'lbs',
+      );
+      final h = await _open(
+        tester,
+        journeys: FakeJourneyRepository(
+          journeys: [old],
+          memberships: {old.id: testMembership(old)},
+        ),
+      );
+      await tester.runAsync(
+        () => h.container.read(hideWeightOnShareProvider.notifier).set(true),
+      );
+      await _pick(tester, 'template-english_daily');
+      for (var i = 0; i < 3; i++) {
+        await _tap(tester, 'create-next');
+      }
+      await _tap(tester, 'journey-create');
+      expect(h.journeys.created, hasLength(1));
+      expect(h.journeys.prefUpdates, [
+        (id: old.id, hideMetric: true, blurMedia: null),
+      ]);
     });
 
     testWidgets('calendar keeps the chosen start when paging months', (

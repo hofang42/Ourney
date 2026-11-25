@@ -14,6 +14,10 @@
   "profile_usernameTooLong": "At most {max} characters.",
   "profile_usernameInvalidChars": "Use only a–z, 0–9, _ .",
   "profile_usernameTaken": "That username is already taken",
+  "profile_usernameUnavailable": "That username isn't available",
+  "@profile_usernameUnavailable": {
+    "description": "A username cannot be used. The lookup does not give a reason."
+  },
   "profile_displayNameLabel": "Display name",
   "profile_displayNameEmpty": "Enter a display name.",
   "profile_displayNameTooLong": "At most {max} characters.",
@@ -28,6 +32,10 @@
   "profile_continue": "Done",
   "profile_saving": "Saving…",
   "profile_saveError": "Couldn't save your profile. Please try again.",
+  "profile_saveContentPolicy": "Try a different username or display name.",
+  "@profile_saveContentPolicy": {
+    "description": "The profile was rejected by the content policy, which does not identify the field."
+  },
   "profile_offlineError": "You're offline. Reconnect and try again.",
   "profile_loadError": "Couldn't load your profile.",
   "profile_completeTitle": "Finish your profile",

@@ -11,6 +11,7 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../personas/persona_contract.dart';
 import '../../../../ui/ui.dart';
 import '../../../groups/data/groups_providers.dart';
+import '../../../profile/share_privacy_sync.dart' show reconcileHiddenWeight;
 import '../../../reminders/data/reminder_scheduler.dart';
 import '../../../reminders/data/reminder_settings.dart';
 import '../../../reminders/domain/reminder_plan.dart';
@@ -212,6 +213,7 @@ class _EditBodyState extends ConsumerState<_EditBody> {
     if (!_owner || !_changed || !_nameOk || !_coupleOk || _busy) return;
     setState(() => _busy = true);
     final repo = ref.read(journeyRepositoryProvider);
+    final container = ProviderScope.containerOf(context, listen: false);
     try {
       final dna = <String, Object?>{...?j.dna};
       final trophy = _trophy.text.trim();
@@ -240,6 +242,7 @@ class _EditBodyState extends ConsumerState<_EditBody> {
           clear: clear,
         ),
       );
+      await reconcileHiddenWeight(container);
       if (_coupleChanged) {
         await ref
             .read(groupInviteAdminRepositoryProvider)

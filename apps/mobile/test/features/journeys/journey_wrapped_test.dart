@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
+import 'package:ourney/features/profile/settings_providers.dart';
 import 'package:ourney/features/social/data/social_providers.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -324,6 +325,63 @@ void main() {
         expect(find.text('Something went wrong. Please try again.'), findsOneWidget);
       },
     );
+
+    for (final (globalHide, membershipHide) in [
+      (false, false),
+      (false, true),
+      (true, false),
+      (true, true),
+    ]) {
+      testWidgets('Wrapped caption with global hide $globalHide and '
+          'membership hide $membershipHide', (tester) async {
+        final j = testJourney(
+          status: JourneyStatus.ended,
+          templateId: TemplateId.custom,
+          metricName: 'Reading',
+          metricUnit: 'kg',
+        ).copyWith(layout: PersonaSkinId.quietTransformer);
+        final shared = <String>[];
+        final h = await pumpJourneys(
+          tester,
+          locale: const Locale('en'),
+          location: JourneysPaths.wrapped(j.id),
+          journeys: FakeJourneyRepository(
+            journeys: [j],
+            memberships: {j.id: testMembership(j, hideMetric: membershipHide)},
+          ),
+          checkIns: FakeCheckInRepository([
+            testCheckIn(j.id, const LocalDate(2026, 10, 10), metricValue: 81.2),
+            testCheckIn(j.id, const LocalDate(2026, 10, 11), metricValue: 78.4),
+          ]),
+          extraOverrides: [
+            socialShareLauncherProvider.overrideWithValue((text) async {
+              shared.add(text);
+            }),
+          ],
+        );
+        await tester.runAsync(
+          () => h.container
+              .read(hideWeightOnShareProvider.notifier)
+              .set(globalHide),
+        );
+        await tester.tap(_key('wrapped-segment-4'));
+        await tester.pumpAndSettle();
+        await tester.tap(_key('wrapped-hide-kg'));
+        await tester.pumpAndSettle();
+        expect(_key('wrapped-weights'), findsOneWidget);
+        await tester.ensureVisible(_key('wrapped-share'));
+        await tester.tap(_key('wrapped-share'));
+        await tester.pumpAndSettle();
+        await tester.tap(_key('wrapped-share-messages'));
+        await tester.pumpAndSettle();
+        for (final value in ['81.2', '78.4']) {
+          expect(
+            shared.single.contains(value),
+            !(globalHide || membershipHide),
+          );
+        }
+      });
+    }
 
     for (final skin in [
       TemplateId.weightLoss,

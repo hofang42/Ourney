@@ -121,6 +121,12 @@ abstract interface class AuthRepository {
 
 abstract interface class ProfileRepository {
   Stream<Profile?> watchMe();
+
+  /// Whether [username] is valid and not taken by another account on the
+  /// server (`rpc check_username_available`, UX-09). Returns `true` for the
+  /// caller's own current username or in local-only mode when format is valid.
+  Future<bool> isUsernameAvailable(String username);
+
   Future<void> upsertMe(
       {required String username, required String displayName});
   Future<void> setAvatar(List<int> jpegBytes);
@@ -267,8 +273,9 @@ abstract interface class SafetyRepository {
   Future<void> unblock(String userId);
   Stream<Set<String>> watchBlockedIds();
 
-  /// `my_blocked_people` (U16): the people the caller blocked with their real
-  /// names, even on a fresh device. Server only: throws `offline` without one.
+  /// `my_blocked_people`: the caller's active blocks with names where the
+  /// server permits them. Hidden profiles keep their ID so they can be
+  /// unblocked. Server only: throws `offline` without one.
   Future<List<PersonSummary>> myBlockedPeople();
 }
 
@@ -374,6 +381,12 @@ class OurneyException implements Exception {
   @override
   String toString() =>
       'OurneyException($code${detail == null ? '' : ': $detail'})';
+}
+
+/// A profile write failed because another account owns the requested handle.
+class ProfileUsernameTakenException extends OurneyException {
+  const ProfileUsernameTakenException([String? detail])
+    : super(OurneyErrorCode.invalid, detail);
 }
 
 class GroupException extends OurneyException {

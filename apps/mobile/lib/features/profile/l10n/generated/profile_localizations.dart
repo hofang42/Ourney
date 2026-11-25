@@ -182,6 +182,12 @@ abstract class ProfileL10n {
   /// **'Tên này đã có người dùng'**
   String get profile_usernameTaken;
 
+  /// A username cannot be used. The lookup does not give a reason.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tên này không dùng được'**
+  String get profile_usernameUnavailable;
+
   /// Display name field label.
   ///
   /// In vi, this message translates to:
@@ -265,6 +271,12 @@ abstract class ProfileL10n {
   /// In vi, this message translates to:
   /// **'Không lưu được hồ sơ. Thử lại nhé.'**
   String get profile_saveError;
+
+  /// The profile was rejected by the content policy, which does not identify the field.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hãy thử tên người dùng hoặc tên hiển thị khác.'**
+  String get profile_saveContentPolicy;
 
   /// Offline error.
   ///
@@ -383,7 +395,7 @@ abstract class ProfileL10n {
   /// Stat label.
   ///
   /// In vi, this message translates to:
-  /// **'tổng ngày check-in'**
+  /// **'tổng lần check-in'**
   String get profile_statSnaps;
 
   /// Stat label.

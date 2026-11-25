@@ -129,7 +129,7 @@ class RecordingAuthRepository extends FakeAuthRepository {
 }
 
 /// In-memory [ProfileRepository]; `upsertMe` fails for [takenUsernames]
-/// the way the data layer maps a UNIQUE violation (23505 → `invalid`).
+/// the way the data layer maps a unique username violation.
 class FakeProfileRepository implements ProfileRepository {
   FakeProfileRepository([this.profile]);
 
@@ -148,6 +148,14 @@ class FakeProfileRepository implements ProfileRepository {
   }
 
   @override
+  Future<bool> isUsernameAvailable(String username) async {
+    final norm = username.trim().toLowerCase();
+    if (validateUsername(norm) != null) return false;
+    if (profile != null && profile!.username == norm) return true;
+    return !takenUsernames.contains(norm);
+  }
+
+  @override
   Future<void> upsertMe({
     required String username,
     required String displayName,
@@ -155,7 +163,7 @@ class FakeProfileRepository implements ProfileRepository {
     calls.add('upsertMe:$username:$displayName');
     if (upsertError case final e?) throw e;
     if (takenUsernames.contains(username)) {
-      throw const OurneyException(OurneyErrorCode.invalid, '23505');
+      throw const ProfileUsernameTakenException();
     }
     profile = Profile(
       id: 'u1',

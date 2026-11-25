@@ -10,8 +10,10 @@ import '../../../../app/app_routes.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../personas/persona_contract.dart';
 import '../../../../ui/ui.dart';
+import '../../../profile/settings_providers.dart'
+    show hideWeightOnShareProvider;
 import '../../../share_card/domain/share_card_content.dart'
-    show activePublicToken;
+    show activePublicToken, shareMetricHidden;
 import '../../../social/data/social_providers.dart'
     show socialShareLauncherProvider;
 import '../../data/journeys_providers.dart';
@@ -594,12 +596,20 @@ class _Summary extends ConsumerWidget {
     );
     Future<void> shareNow(bool hideWordmark) async {
       final launcher = ref.read(socialShareLauncherProvider);
+      final membership = ref.read(myMembershipProvider(journey.id)).value;
       final text = wrappedShareText(
         l10n,
         journey,
         skin,
         stats,
-        hideKg: hideKg,
+        hideKg:
+            membership == null ||
+            shareMetricHidden(
+              journey,
+              membership,
+              forceHideMetric: hideKg,
+              hideWeight: ref.read(hideWeightOnShareProvider),
+            ),
         hideBrand: hideWordmark,
       );
       try {

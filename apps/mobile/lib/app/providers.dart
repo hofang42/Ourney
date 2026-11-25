@@ -11,7 +11,8 @@
 //
 // Regenerate providers.g.dart with:
 //   dart run build_runner build
-import 'package:flutter_riverpod/flutter_riverpod.dart' show FutureProvider;
+import 'package:flutter_riverpod/flutter_riverpod.dart'
+    show FutureProvider, Provider;
 import 'package:ourney_core/ourney_core.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -75,6 +76,12 @@ ProfileRepository profileRepository(Ref ref) =>
 @Riverpod(keepAlive: true)
 JourneyRepository journeyRepository(Ref ref) =>
     _notWired('journeyRepositoryProvider');
+
+/// One-time repair of cached hide flags that older builds could leave unsent.
+final legacyWeightPrivacyRepairProvider =
+    Provider<Future<void> Function(String, bool Function(Journey))?>(
+      (ref) => null,
+    );
 
 @Riverpod(keepAlive: true)
 CheckInRepository checkInRepository(Ref ref) =>

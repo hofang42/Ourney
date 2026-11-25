@@ -165,9 +165,7 @@ class SafetyL10nEn extends SafetyL10n {
   String get safety_unknownUser => 'User';
 
   @override
-  String safety_unknownUserId(String id) {
-    return 'ID $id';
-  }
+  String get safety_blockedAccount => 'Blocked account';
 
   @override
   String get safety_blockedEmptyTitle => 'You haven\'t blocked anyone';

@@ -630,6 +630,23 @@ void main() {
       );
     });
 
+    test('blocking a user evicts their locally cached avatars', () async {
+      const other = 'cccccccc-0000-4000-8000-000000000002';
+      final blockedAvatar = await layer.ctx.files.writeBytes(
+        'avatars/$other/cached.jpg',
+        [1],
+      );
+      final ownAvatar = await layer.ctx.files.writeBytes(
+        'avatars/$me/cached.jpg',
+        [2],
+      );
+
+      await layer.safety.block(other);
+
+      expect(await blockedAvatar.exists(), isFalse);
+      expect(await ownAvatar.exists(), isTrue);
+    });
+
     test('FS-07: DataSafetyRepository.report forwards optional messageId to report_content RPC', () async {
       await layer.safety.report(
         messageId: 'msg-123',

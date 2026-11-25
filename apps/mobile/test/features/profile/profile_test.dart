@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -27,6 +28,20 @@ class _FailingProfileRepository extends FakeProfileRepository {
   @override
   Stream<Profile?> watchMe() =>
       Stream.error(const OurneyException(OurneyErrorCode.internal));
+}
+
+class _ControlledUsernameRepository extends FakeProfileRepository {
+  _ControlledUsernameRepository(super.profile);
+
+  final lookups = <String>[];
+  final pending = <String, Completer<bool>>{};
+
+  @override
+  Future<bool> isUsernameAvailable(String username) {
+    lookups.add(username);
+    final result = pending[username] = Completer<bool>();
+    return result.future;
+  }
 }
 
 class _ReadyProfileGate extends ProfileGateNotifier {
@@ -66,6 +81,133 @@ Future<ProviderContainer> signedIn(
 }
 
 void main() {
+  for (final editing in [false, true]) {
+    group(
+      editing ? 'edit username availability' : 'setup username availability',
+      () {
+        final path = editing ? profileEditPath : profileSetupPath;
+        final initial = editing ? aliceProfile : null;
+        const debounce = Duration(milliseconds: 400);
+
+        VoidCallback? saveAction(WidgetTester tester) => editing
+            ? tester.widget<UiButton>(byKey('profile-save')).onPressed
+            : tester.widget<UiFlowButton>(byKey('profile-save')).onPressed;
+
+        testWidgets(
+          'debounces, ignores stale results and rechecks on re-entry',
+          (tester) async {
+            final profiles = _ControlledUsernameRepository(initial);
+            await signedIn(tester, profiles: profiles, path: path);
+            final field = byKey('profile-username');
+            if (editing) {
+              expect(find.text('Dùng được'), findsOneWidget);
+              expect(profiles.lookups, isEmpty);
+            }
+
+            await tester.enterText(field, 'first');
+            await tester.pump(const Duration(milliseconds: 250));
+            await tester.enterText(field, 'first.handle');
+            await tester.pump(const Duration(milliseconds: 399));
+            expect(profiles.lookups, isEmpty);
+            await tester.pump(const Duration(milliseconds: 1));
+            expect(profiles.lookups, ['first.handle']);
+            expect(find.text('Dùng được'), findsNothing);
+
+            const next = 'abcdefghijklmnopqrst';
+            await tester.enterText(field, '${next}uvwxy');
+            await tester.pump(debounce);
+            expect(find.text(next), findsOneWidget);
+            expect(profiles.lookups, ['first.handle', next]);
+            profiles.pending[next]!.complete(false);
+            await tester.pumpAndSettle();
+            expect(find.text('Tên này không dùng được'), findsOneWidget);
+            expect(saveAction(tester), isNull);
+
+            profiles.pending['first.handle']!.complete(true);
+            await tester.pumpAndSettle();
+            expect(find.text('Tên này không dùng được'), findsOneWidget);
+            expect(find.text('Dùng được'), findsNothing);
+
+            // A handle can be released after the previous lookup.
+            await tester.enterText(field, 'other');
+            await tester.enterText(field, next);
+            await tester.pump(debounce);
+            expect(profiles.lookups, ['first.handle', next, next]);
+            expect(find.text('Tên này không dùng được'), findsNothing);
+            profiles.pending[next]!.complete(true);
+            await tester.pumpAndSettle();
+            expect(find.text('Dùng được'), findsOneWidget);
+            expect(saveAction(tester), isNotNull);
+
+            await tester.enterText(field, 'other');
+            await tester.pump(debounce);
+            profiles.pending['other']!.completeError(
+              const OurneyException(OurneyErrorCode.offline),
+            );
+            await tester.pumpAndSettle();
+            expect(find.text('Dùng được'), findsNothing);
+            expect(find.text('Tên này không dùng được'), findsNothing);
+            expect(saveAction(tester), isNotNull);
+          },
+        );
+
+        testWidgets('in-flight availability cannot erase a write collision', (
+          tester,
+        ) async {
+          final profiles = _ControlledUsernameRepository(initial)
+            ..takenUsernames.add('race.handle');
+          final c = await signedIn(tester, profiles: profiles, path: path);
+          if (!editing) {
+            await tester.enterText(byKey('profile-display-name'), 'New name');
+          }
+          await tester.enterText(byKey('profile-username'), 'race.handle');
+          await tester.pump(debounce);
+          expect(profiles.lookups, ['race.handle']);
+          expect(saveAction(tester), isNotNull);
+
+          await tapVisible(tester, 'profile-save');
+          expect(profiles.calls, hasLength(1));
+          expect(find.text('Tên này đã có người dùng'), findsOneWidget);
+          expect(saveAction(tester), isNull);
+
+          profiles.pending['race.handle']!.complete(true);
+          await tester.pumpAndSettle();
+          expect(find.text('Tên này đã có người dùng'), findsOneWidget);
+          expect(find.text('Dùng được'), findsNothing);
+          expect(saveAction(tester), isNull);
+          expect(location(c), path);
+        });
+
+        testWidgets(
+          'save distinguishes content policy from username collisions',
+          (tester) async {
+            final profiles = _ControlledUsernameRepository(initial)
+              ..upsertError = const OurneyException(
+                OurneyErrorCode.contentPolicy,
+              );
+            await signedIn(tester, profiles: profiles, path: path);
+            if (!editing) {
+              await tester.enterText(byKey('profile-display-name'), 'New name');
+            }
+            await tester.enterText(byKey('profile-username'), 'rejected');
+            await tapVisible(tester, 'profile-save');
+            expect(find.text('Tên này đã có người dùng'), findsNothing);
+            if (editing) {
+              expect(find.text('Tên này không dùng được'), findsOneWidget);
+              expect(saveAction(tester), isNull);
+            } else {
+              expect(
+                find.text('Hãy thử tên người dùng hoặc tên hiển thị khác.'),
+                findsOneWidget,
+              );
+              expect(saveAction(tester), isNotNull);
+            }
+          },
+        );
+      },
+    );
+  }
+
   group('profile setup (FR-A2)', () {
     testWidgets('validates username locally (ourney_core rules)', (
       tester,
@@ -97,48 +239,81 @@ void main() {
 
       // A usable username enables the button; a blank name is still caught.
       await tester.enterText(byKey('profile-username'), 'bob');
+      await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
       expect(find.text('Dùng được'), findsOneWidget);
       await tapVisible(tester, 'profile-save');
       await tester.pumpAndSettle();
       expect(find.text('Nhập tên hiển thị.'), findsOneWidget);
       expect(profiles.calls, isEmpty);
-    });
 
-    testWidgets('taken username, then success with avatar -> from target', (
-      tester,
-    ) async {
-      final profiles = FakeProfileRepository()..takenUsernames.add('bob');
-      final picker = FakeAvatarPicker(_png);
-      final c = await signedIn(
-        tester,
-        profiles: profiles,
-        picker: picker,
-        path: '$profileSetupPath?from=%2Fjourneys',
+      // UX-09: input maxLength clamps typing at usernameMax (20 chars).
+      await tester.enterText(
+        byKey('profile-username'),
+        'abcdefghijklmnopqrstuvwxy',
       );
-
-      await tester.enterText(byKey('profile-username'), 'bob');
-      await tester.enterText(byKey('profile-display-name'), '  Bob Tran ');
-      await tapVisible(tester, 'profile-save');
-      expect(profiles.calls, ['upsertMe:bob:Bob Tran']);
-      expect(find.text('Tên này đã có người dùng'), findsOneWidget);
-      expect(location(c), startsWith(profileSetupPath));
-
-      await tapVisible(tester, 'profile-avatar-pick');
-      await tester.tap(byKey('profile-avatar-gallery'));
+      await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
-      expect(picker.lastSource, AvatarSource.gallery);
-
-      await tester.enterText(byKey('profile-username'), 'bob.tran');
-      await tapVisible(tester, 'profile-save');
-      expect(profiles.calls, [
-        'upsertMe:bob:Bob Tran',
-        'upsertMe:bob.tran:Bob Tran',
-        'setAvatar:${_png.length}',
-      ]);
-      expect(profiles.avatarBytes, _png);
-      expect(location(c), AppRoutes.journeys);
+      expect(find.text('abcdefghijklmnopqrst'), findsOneWidget);
+      expect(find.text('abcdefghijklmnopqrstuvwxy'), findsNothing);
     });
+
+    testWidgets(
+      'UX-09: preflight rejection uses neutral copy and save reports a collision',
+      (tester) async {
+        final profiles = FakeProfileRepository()..takenUsernames.add('bob');
+        final picker = FakeAvatarPicker(_png);
+        final c = await signedIn(
+          tester,
+          profiles: profiles,
+          picker: picker,
+          path: '$profileSetupPath?from=%2Fjourneys',
+        );
+
+        // The availability check reports a rejection without giving a reason.
+        await tester.enterText(byKey('profile-username'), 'bob');
+        await tester.enterText(byKey('profile-display-name'), '  Bob Tran ');
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.pumpAndSettle();
+        expect(find.text('Tên này không dùng được'), findsOneWidget);
+        expect(find.text('Dùng được'), findsNothing);
+        expect(
+          tester.widget<UiFlowButton>(byKey('profile-save')).onPressed,
+          isNull,
+        );
+        expect(profiles.calls, isEmpty);
+
+        // The server write can still reject a username claimed after preflight.
+        await tester.enterText(byKey('profile-username'), 'bob.race');
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.pumpAndSettle();
+        expect(find.text('Dùng được'), findsOneWidget);
+        profiles.takenUsernames.add('bob.race');
+        await tapVisible(tester, 'profile-save');
+        expect(profiles.calls, ['upsertMe:bob.race:Bob Tran']);
+        expect(find.text('Tên này đã có người dùng'), findsOneWidget);
+        expect(find.text('Dùng được'), findsNothing);
+        expect(location(c), startsWith(profileSetupPath));
+
+        await tapVisible(tester, 'profile-avatar-pick');
+        await tester.tap(byKey('profile-avatar-gallery'));
+        await tester.pumpAndSettle();
+        expect(picker.lastSource, AvatarSource.gallery);
+
+        await tester.enterText(byKey('profile-username'), 'bob.tran');
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.pumpAndSettle();
+        expect(find.text('Dùng được'), findsOneWidget);
+        await tapVisible(tester, 'profile-save');
+        expect(profiles.calls, [
+          'upsertMe:bob.race:Bob Tran',
+          'upsertMe:bob.tran:Bob Tran',
+          'setAvatar:${_png.length}',
+        ]);
+        expect(profiles.avatarBytes, _png);
+        expect(location(c), AppRoutes.journeys);
+      },
+    );
 
     testWidgets(
       'DE-07: offline save keeps the form with an error and retry recovers',
@@ -459,10 +634,14 @@ void main() {
   });
 
   group('profile stats and badges', () {
-    testWidgets('shows the stat cards and a badge rule on tap', (tester) async {
+    testWidgets('shows the stat cards and a badge rule on tap (UX-43)', (
+      tester,
+    ) async {
       await signedIn(tester);
       expect(byKey('profile-stats'), findsOneWidget);
       expect(byKey('profile-stat-snaps'), findsOneWidget);
+      expect(find.text('tổng lần check-in'), findsOneWidget);
+      expect(find.text('tổng ngày check-in'), findsNothing);
       await tapVisible(tester, 'profile-badge-streak7');
       expect(find.text('Có mặt đủ 7 ngày liên tiếp.'), findsOneWidget);
     });

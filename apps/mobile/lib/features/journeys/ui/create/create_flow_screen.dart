@@ -382,6 +382,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     final tz = ref.read(deviceTimezoneProvider).value;
     if (tz != null) form.timezone = tz;
     final repo = ref.read(journeyRepositoryProvider);
+    final container = ProviderScope.containerOf(context, listen: false);
     final today = _today(form);
     final start = _start != null && !_start!.isBefore(today) ? _start! : today;
     final reminders = ref.read(reminderSchedulerProvider);
@@ -466,6 +467,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           }
         }
       }
+      await reconcileHiddenWeight(container);
       if (!mounted) return;
       // The quiz turned a reminder on: offer the OS permission now, or the
       // scheduler has nothing it may post (bug #7).
