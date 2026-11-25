@@ -159,6 +159,7 @@ Journey settleJourney(Ref ref, Journey j, DateTime now) {
 /// repository still lists). The database stream is subscribed once; the clock
 /// only re-maps its last value.
 final journeysListProvider = StreamProvider.autoDispose<List<Journey>>((ref) {
+  ref.watch(currentUserIdProvider);
   return mapWithNow(
     ref,
     ref.watch(journeyRepositoryProvider).watchActive(),
@@ -167,17 +168,19 @@ final journeysListProvider = StreamProvider.autoDispose<List<Journey>>((ref) {
 }, retry: _noRetry);
 
 /// Journeys the caller archived on this device (Hub shelf "Archived").
-final archivedJourneysProvider = StreamProvider.autoDispose<List<Journey>>(
-  (ref) => ref.watch(journeyRepositoryProvider).watchArchived(),
-  retry: _noRetry,
-);
+final archivedJourneysProvider = StreamProvider.autoDispose<List<Journey>>((
+  ref,
+) {
+  ref.watch(currentUserIdProvider);
+  return ref.watch(journeyRepositoryProvider).watchArchived();
+}, retry: _noRetry);
 
 /// Ids of the journeys the caller pinned (per-user, also local-only). The
 /// list provider already orders pinned journeys first.
-final pinnedJourneyIdsProvider = StreamProvider.autoDispose<Set<String>>(
-  (ref) => ref.watch(journeyRepositoryProvider).watchPinnedJourneyIds(),
-  retry: _noRetry,
-);
+final pinnedJourneyIdsProvider = StreamProvider.autoDispose<Set<String>>((ref) {
+  ref.watch(currentUserIdProvider);
+  return ref.watch(journeyRepositoryProvider).watchPinnedJourneyIds();
+}, retry: _noRetry);
 
 final journeyByIdProvider = StreamProvider.autoDispose.family<Journey?, String>(
   (ref, id) => mapWithNow(
@@ -189,10 +192,10 @@ final journeyByIdProvider = StreamProvider.autoDispose.family<Journey?, String>(
 );
 
 final myMembershipProvider = StreamProvider.autoDispose
-    .family<Membership?, String>(
-      (ref, id) => ref.watch(journeyRepositoryProvider).watchMyMembership(id),
-      retry: _noRetry,
-    );
+    .family<Membership?, String>((ref, id) {
+      ref.watch(currentUserIdProvider);
+      return ref.watch(journeyRepositoryProvider).watchMyMembership(id);
+    }, retry: _noRetry);
 
 /// The caller's own check-ins in a journey. Local-only mode has no user id;
 /// then the membership's user id is used (or every check-in, which in

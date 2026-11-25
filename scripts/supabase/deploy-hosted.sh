@@ -303,6 +303,7 @@ body="$(
     --rawfile recovery_html "$recovery_file" \
     '{site_url: $ENV.AUTH_SITE_URL,
       mailer_otp_length: 6, mailer_otp_exp: 3600, mailer_autoconfirm: true,
+      security_update_password_require_reauthentication: true,
       sms_otp_length: 6, sms_template: $sms_template,
       mailer_subjects_magic_link: $magic_subject,
       mailer_templates_magic_link_content: $magic_html,

@@ -81,6 +81,19 @@ class LocalAuthRepository implements AuthRepository {
   ) async => _needsServer();
 
   @override
+  Future<bool> hasPassword() async => false;
+
+  @override
+  Future<void> updatePassword(
+    String newPassword, {
+    required String code,
+    bool signOutOthers = false,
+  }) async => _needsServer();
+
+  @override
+  Future<void> cancelPasswordFlow() async {}
+
+  @override
   Future<void> requestDeleteCode() async {}
 
   @override
@@ -217,6 +230,23 @@ class SupabaseAuthRepository implements AuthRepository {
     await remote.resetPassword(email, code, newPassword);
     _syncSoon();
   }
+
+  @override
+  Future<bool> hasPassword() => remote.hasPassword();
+
+  @override
+  Future<void> updatePassword(
+    String newPassword, {
+    required String code,
+    bool signOutOthers = false,
+  }) => remote.updatePassword(
+    newPassword,
+    code: code,
+    signOutOthers: signOutOthers,
+  );
+
+  @override
+  Future<void> cancelPasswordFlow() => remote.cancelPasswordFlow();
 
   @override
   Future<void> requestDeleteCode() async {

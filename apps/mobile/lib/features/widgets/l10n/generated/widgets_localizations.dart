@@ -347,7 +347,7 @@ abstract class WidgetsL10n {
   /// Subtitle for automatic journey selection.
   ///
   /// In vi, this message translates to:
-  /// **'Tự chuyển sang hành trình tiếp theo ngay khi bạn hoàn tất một tấm ảnh'**
+  /// **'Áp dụng cho tiện ích ở chế độ Tự động. Nhấn giữ tiện ích trên Màn hình chính để chọn riêng từng hành trình.'**
   String get widgets_defaultJourneyAutoSub;
 
   /// Section heading for the 3-step OS widget setup guide.

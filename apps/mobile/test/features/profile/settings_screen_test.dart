@@ -7,8 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/locale_override.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/features/auth/auth_providers.dart';
 import 'package:ourney/features/profile/settings_providers.dart';
 import 'package:ourney/ui/ui.dart';
+import 'package:ourney_core/ourney_core.dart'
+    show OurneyErrorCode, OurneyException;
 
 import '../../app/test_helpers.dart' show pumpOurneyApp, testBackendConfig;
 import '../journeys/journeys_fakes.dart' show FakeJourneyRepository, testJourney;
@@ -135,6 +138,7 @@ void main() {
       expect(find.text('me@example.com'), findsOneWidget);
       final headings = [
         'tài khoản',
+        'bảo mật',
         'nhắc nhở',
         'giao diện & ngôn ngữ',
         'riêng tư & an toàn',
@@ -187,6 +191,7 @@ void main() {
       final c = await pumpOurneyApp(tester);
       await goTo(tester, c, '/profile/settings');
       expect(byKey('settings-account-id'), findsNothing);
+      expect(byKey('settings-password'), findsNothing);
       expect(byKey('settings-signout'), findsNothing);
       expect(byKey('settings-delete'), findsNothing);
       expect(byKey('settings-haptics'), findsOneWidget);
@@ -233,6 +238,304 @@ void main() {
             ),
           ),
           findsOneWidget,
+        );
+        // Phone-only account shows read-only SMS explanation row in Bảo mật.
+        expect(byKey('settings-password'), findsOneWidget);
+        expect(find.text('Mật khẩu'), findsOneWidget);
+        expect(
+          find.text('Tài khoản số điện thoại đăng nhập bằng mã SMS'),
+          findsOneWidget,
+        );
+        expect(
+          tester.widget<UiRow>(byKey('settings-password')).onPressed,
+          isNull,
+        );
+      },
+    );
+  });
+
+  group('settings security / password (Bảo mật)', () {
+    testWidgets(
+      'first-time set password (hasPassword=false): recovery-code flow, leaves other devices signed in, flips row to Đổi mật khẩu',
+      (tester) async {
+        final auth = RecordingAuthRepository(
+          userId: 'u1',
+          hasPasswordValue: false,
+        );
+        final c = await pumpBackendApp(
+          tester,
+          auth: auth,
+          profiles: FakeProfileRepository(aliceProfile),
+        );
+        await goTo(tester, c, '/profile/settings');
+
+        expect(byKey('settings-password'), findsOneWidget);
+        expect(find.text('Đặt mật khẩu'), findsOneWidget);
+        expect(
+          find.text('Tùy chọn — bạn vẫn luôn đăng nhập được bằng mã 6 số'),
+          findsOneWidget,
+        );
+
+        await tester.ensureVisible(byKey('settings-password'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('settings-password'));
+        await tester.pumpAndSettle();
+
+        expect(byKey('profile-password-sheet'), findsOneWidget);
+        expect(find.text('đặt mật khẩu.'), findsOneWidget);
+        // R-5: Step 1 CTA shows 'Tiếp tục' when no code has been verified yet.
+        expect(
+          tester.widget<UiButton>(byKey('password-sheet-continue')).label,
+          'Tiếp tục',
+        );
+        // First-time set does NOT offer sign-out-others switch.
+        expect(byKey('password-sheet-sign-out-others'), findsNothing);
+
+        // Short password rejected client-side without calling sendPasswordReset.
+        await tester.enterText(byKey('password-sheet-new'), 'short');
+        await tester.tap(byKey('password-sheet-continue'));
+        await tester.pumpAndSettle();
+        expect(find.text('Mật khẩu cần ít nhất 8 ký tự.'), findsOneWidget);
+        expect(auth.calls, isEmpty);
+
+        // Send failure shows password-specific send error (never profile save error).
+        auth.sendOtpError = const OurneyException(OurneyErrorCode.internal);
+        await tester.enterText(byKey('password-sheet-new'), 'strongpass123');
+        await tester.tap(byKey('password-sheet-continue'));
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Chưa gửi được mã xác minh. Thử lại nhé.'),
+          findsOneWidget,
+        );
+        expect(find.textContaining('Không lưu được hồ sơ'), findsNothing);
+
+        // Valid password sends 6-digit recovery code and advances to Step 2.
+        auth.sendOtpError = null;
+        await tester.tap(byKey('password-sheet-continue'));
+        await tester.pumpAndSettle();
+        expect(
+          auth.calls,
+          ['sendReset:me@example.com', 'sendReset:me@example.com'],
+        );
+        expect(find.text('xác minh bằng mã.'), findsOneWidget);
+        expect(byKey('password-sheet-otp'), findsOneWidget);
+
+        // Entering 6 digits submits updatePassword with code and signOutOthers=false.
+        await tester.enterText(byKey('password-sheet-otp'), '654321');
+        await tester.pumpAndSettle();
+        expect(
+          auth.calls.last,
+          'updatePassword:strongpass123:code=654321:signOutOthers=false',
+        );
+        expect(byKey('profile-password-sheet'), findsNothing);
+        expect(c.read(hasPasswordProvider), isTrue);
+        expect(
+          c
+              .read(sharedPreferencesProvider)
+              .getBool(AuthMethodPrefs.hasPasswordKeyFor('u1')),
+          isTrue,
+        );
+        expect(
+          c
+              .read(sharedPreferencesProvider)
+              .getString(AuthMethodPrefs.lastMethodKey),
+          RememberedAuthMethod.password.wireName,
+        );
+        // Settings row now displays "Đổi mật khẩu".
+        expect(find.text('Đổi mật khẩu'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'change password (hasPassword=true): recovery-code flow, sign-out-others default ON and toggleable, wrong code clears OTP, same_password keeps verified session without burning a second email',
+      (tester) async {
+        final auth = RecordingAuthRepository(
+          userId: 'u1',
+          hasPasswordValue: true,
+        );
+        final c = await pumpBackendApp(
+          tester,
+          auth: auth,
+          profiles: FakeProfileRepository(aliceProfile),
+        );
+        await goTo(tester, c, '/profile/settings');
+        await tester.pumpAndSettle();
+
+        expect(find.text('Đổi mật khẩu'), findsOneWidget);
+        expect(
+          find.text('Đang bật song song với mã đăng nhập 6 số'),
+          findsOneWidget,
+        );
+
+        await tester.ensureVisible(byKey('settings-password'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('settings-password'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('đổi mật khẩu.'), findsOneWidget);
+        expect(byKey('password-sheet-sign-out-others'), findsOneWidget);
+        expect(
+          tester
+              .widget<UiSwitchRow>(byKey('password-sheet-sign-out-others'))
+              .value,
+          isTrue,
+        );
+
+        await tester.enterText(byKey('password-sheet-new'), 'rotatedpass99');
+        await tester.tap(byKey('password-sheet-continue'));
+        await tester.pumpAndSettle();
+        expect(auth.calls, ['sendReset:me@example.com']);
+
+        // 1. Wrong/expired recovery code clears OTP field and shows inline error.
+        auth.updatePasswordError = const OurneyException(
+          OurneyErrorCode.invalid,
+          '400 (otp_expired): Token has expired or is invalid',
+        );
+        await tester.enterText(byKey('password-sheet-otp'), '111111');
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Mã chưa đúng hoặc đã hết hạn. Kiểm tra lại nhé.'),
+          findsOneWidget,
+        );
+        expect(byKey('password-sheet-otp'), findsOneWidget);
+        expect(
+          tester.widget<UiOtpField>(byKey('password-sheet-otp')).controller.text,
+          isEmpty,
+        );
+
+        // Generic server error on save shows password-specific save error.
+        auth.updatePasswordError = const OurneyException(
+          OurneyErrorCode.internal,
+        );
+        await tester.enterText(byKey('password-sheet-otp'), '121212');
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Chưa lưu được mật khẩu. Thử lại nhé.'),
+          findsOneWidget,
+        );
+        expect(find.textContaining('Không lưu được hồ sơ'), findsNothing);
+
+        // Resend is disabled during 60s cooldown, enabled after cooldown expires,
+        // and announces confirmation in a liveRegion.
+        expect(
+          tester.widget<UiTextAction>(byKey('password-sheet-resend')).onPressed,
+          isNull,
+        );
+        await tester.pump(const Duration(seconds: 60));
+        expect(
+          tester.widget<UiTextAction>(byKey('password-sheet-resend')).onPressed,
+          isNotNull,
+        );
+        await tester.tap(byKey('password-sheet-resend'));
+        await tester.pumpAndSettle();
+        expect(find.text('Đã gửi mã mới.'), findsOneWidget);
+        expect(
+          find.ancestor(
+            of: find.text('Đã gửi mã mới.'),
+            matching: find.byWidgetPredicate(
+              (w) => w is Semantics && (w.properties.liveRegion ?? false),
+            ),
+          ),
+          findsOneWidget,
+        );
+
+        // 2. same_password returns to Step 1 while keeping the verified session.
+        auth.updatePasswordError = const OurneyException(
+          OurneyErrorCode.invalid,
+          '422 (same_password): New password should be different',
+        );
+        await tester.enterText(byKey('password-sheet-otp'), '222222');
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Mật khẩu mới cần khác mật khẩu hiện tại.'),
+          findsOneWidget,
+        );
+        expect(byKey('password-sheet-new'), findsOneWidget);
+        // R-5: Once _verifiedCode is set, Step 1 CTA shows 'Lưu mật khẩu'.
+        expect(
+          tester.widget<UiButton>(byKey('password-sheet-continue')).label,
+          'Lưu mật khẩu',
+        );
+
+        // Client-side validation rejects submitting the known same password again
+        // without making any network call.
+        final callsBeforeSameRetry = auth.calls.length;
+        await tester.tap(byKey('password-sheet-continue'));
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Mật khẩu mới cần khác mật khẩu hiện tại.'),
+          findsOneWidget,
+        );
+        expect(auth.calls, hasLength(callsBeforeSameRetry));
+
+        // 3. Entering a different password saves directly on the kept verified
+        // session without burning a second email or showing Step 2 again.
+        auth.updatePasswordError = null;
+        await tester.enterText(byKey('password-sheet-new'), 'brandnewpass99');
+        await tester.tap(byKey('password-sheet-continue'));
+        await tester.pumpAndSettle();
+        expect(auth.calls, hasLength(callsBeforeSameRetry + 1));
+        expect(
+          auth.calls.last,
+          'updatePassword:brandnewpass99:code=222222:signOutOthers=true',
+        );
+        expect(byKey('profile-password-sheet'), findsNothing);
+
+        // 4. Re-open: test R-4 (_backToPassword preserves 60s cooldown so fixing a typo
+        // on Step 1 returns to Step 2 without sending a duplicate email) and R-2 (cancel
+        // calls cancelPasswordFlow).
+        await tester.tap(byKey('settings-password'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('password-sheet-sign-out-others'));
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<UiSwitchRow>(byKey('password-sheet-sign-out-others'))
+              .value,
+          isFalse,
+        );
+        await tester.enterText(byKey('password-sheet-new'), 'anotherpass99');
+        await tester.tap(byKey('password-sheet-continue'));
+        await tester.pumpAndSettle();
+        final sendCountAfterStep1 = auth.calls
+            .where((c) => c.startsWith('sendReset:'))
+            .length;
+
+        // Tap Back on Step 2 -> edit password typo on Step 1 -> tap Continue within 60s cooldown.
+        await tester.tap(byKey('password-sheet-back'));
+        await tester.pumpAndSettle();
+        expect(byKey('password-sheet-new'), findsOneWidget);
+        await tester.enterText(byKey('password-sheet-new'), 'correctedpass99');
+        await tester.tap(byKey('password-sheet-continue'));
+        await tester.pumpAndSettle();
+        expect(byKey('password-sheet-otp'), findsOneWidget);
+        expect(
+          auth.calls.where((c) => c.startsWith('sendReset:')).length,
+          sendCountAfterStep1,
+          reason: 'R-4: submitting Step 1 during active cooldown must not re-send recovery email',
+        );
+        expect(
+          tester.widget<UiTextAction>(byKey('password-sheet-resend')).onPressed,
+          isNull,
+          reason: 'R-4: 60s resend cooldown stays active across _backToPassword',
+        );
+
+        await tester.enterText(byKey('password-sheet-otp'), '444444');
+        await tester.pumpAndSettle();
+        expect(
+          auth.calls.last,
+          'updatePassword:correctedpass99:code=444444:signOutOthers=false',
+        );
+
+        // 5. Re-open and cancel -> invokes cancelPasswordFlow (R-2).
+        final cancelsBefore = auth.cancelPasswordFlowCalls;
+        await tester.tap(byKey('settings-password'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('password-sheet-cancel'));
+        await tester.pumpAndSettle();
+        expect(
+          auth.cancelPasswordFlowCalls,
+          greaterThan(cancelsBefore),
         );
       },
     );

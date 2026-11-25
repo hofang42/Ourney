@@ -2,11 +2,18 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/auth/auth_providers.dart';
 import '../features/feedback/data/feedback_providers.dart';
+import '../features/groups/data/groups_providers.dart'
+    show groupJourneysProvider;
 import '../features/import/data/import_providers.dart';
 import '../features/journeys/data/create_progress.dart';
 import '../features/journeys/data/journeys_providers.dart'
-    show isPerJourneyAccountPrefKey;
+    show
+        archivedJourneysProvider,
+        isPerJourneyAccountPrefKey,
+        journeysListProvider,
+        pinnedJourneyIdsProvider;
 import '../features/onboarding/onboarding_providers.dart';
 import '../features/profile/settings_providers.dart';
 import '../features/reminders/data/reminder_scheduler.dart';
@@ -59,7 +66,9 @@ Future<void> resetAccountLocalState(
           (SafetyPrefs.userIdOfTermsKey(key) != null &&
               SafetyPrefs.userIdOfTermsKey(key) != nextUserId) ||
           (FeedbackPrefs.userIdOfKey(key) != null &&
-              FeedbackPrefs.userIdOfKey(key) != nextUserId))
+              FeedbackPrefs.userIdOfKey(key) != nextUserId) ||
+          (AuthMethodPrefs.userIdOfHasPasswordKey(key) != null &&
+              AuthMethodPrefs.userIdOfHasPasswordKey(key) != nextUserId))
         key,
   };
   final removals = <Future<void>>[];
@@ -83,9 +92,15 @@ Future<void> resetAccountLocalState(
     ..invalidate(feedbackDraftProvider)
     ..invalidate(feedbackVoteOverlayProvider)
     ..invalidate(activeJourneyIdProvider)
+    ..invalidate(activeJourneyProvider)
+    ..invalidate(journeysListProvider)
+    ..invalidate(archivedJourneysProvider)
+    ..invalidate(pinnedJourneyIdsProvider)
+    ..invalidate(groupJourneysProvider)
     ..invalidate(createProgressProvider)
     ..invalidate(hideWeightOnShareProvider)
     ..invalidate(blurPhotosOnShareProvider)
+    ..invalidate(hasPasswordProvider)
     ..invalidate(reminderSettingsProvider)
     ..invalidate(streakAlertsEnabledProvider)
     ..invalidate(reminderBannerProvider)

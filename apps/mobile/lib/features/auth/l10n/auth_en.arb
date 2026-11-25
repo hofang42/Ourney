@@ -38,12 +38,13 @@
   "auth_signIn": "Sign in",
   "auth_usePassword": "Sign in with password",
   "auth_useCode": "Use a code instead",
-  "auth_forgot": "Forgot password?",
-  "auth_resetTitle": "reset password.",
-  "auth_resetSubtitle": "Enter your email and Ourney sends a 6-digit code to set a new password.",
+  "auth_forgot": "Forgot or no password yet?",
+  "auth_resetTitle": "set a new password.",
+  "auth_resetSubtitle": "Enter your email and Ourney will send a 6-digit code to set your password.",
   "auth_resetConfirm": "Set password",
   "auth_backToSignIn": "Back to sign in",
-  "auth_errorWrongPassword": "Wrong password. Try again or sign in with a code.",
+  "auth_errorWrongPassword": "Wrong password, or this account doesn't have a password yet.",
+  "auth_sendCodeForEmail": "Send a sign-in code to this email",
   "@auth_emailHint": {
     "description": ""
   },

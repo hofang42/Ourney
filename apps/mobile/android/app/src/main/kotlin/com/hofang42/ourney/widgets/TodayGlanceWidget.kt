@@ -1,21 +1,27 @@
 package com.hofang42.ourney.widgets
 
+import android.appwidget.AppWidgetManager
 import android.content.Context
 import androidx.annotation.Keep
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalSize
+import androidx.glance.action.Action
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
+import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -31,10 +37,22 @@ import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.semantics.contentDescription
 import androidx.glance.semantics.semantics
+import androidx.glance.state.GlanceStateDefinition
+import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.hofang42.ourney.R
+
+private class TodayRenderBundle(
+    val nowMs: Long,
+    val l10n: Context,
+    val palette: OurneyWidgetPalette,
+    val cardState: JourneyWidgetCardState,
+    val streakHeroBitmap: android.graphics.Bitmap?,
+    val weekStripBitmap: android.graphics.Bitmap?,
+    val framedHeroPhoto: android.graphics.Bitmap?,
+)
 
 /**
  * `OurneyTodayWidget` — Responsive `2×2` (`110×110dp`), `4×2` (`250×110dp`),
@@ -43,132 +61,175 @@ import com.hofang42.ourney.R
 @Keep
 class TodayGlanceWidget : GlanceAppWidget() {
 
+    override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
+
     override val sizeMode: SizeMode = SizeMode.Responsive(
         setOf(SMALL_BOX, MEDIUM_BOX, LARGE_BOX),
     )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val nowMs = System.currentTimeMillis()
         val store = WidgetSnapshotStore.fromContext(context)
-        val snapshot = store.readSnapshot(nowMs)
-        val state = store.readState()
-        val isDark = OurneyGlanceTheme.resolveIsDark(context, snapshot?.themeMode)
-        val l10n = OurneyGlanceTheme.localizedContext(context, snapshot?.locale)
-
-        val journey = snapshot?.takeIf { !it.isSignedOut }?.selectTodayJourney(state)
-        val palette = if (journey != null) {
-            OurneyGlanceTheme.skinPalette(journey.skinId, journey.colorVariant, isDark)
-        } else {
-            OurneyGlanceTheme.neutralShellPalette(isDark)
-        }
-
-        val pendingJourneys = snapshot?.journeys?.filter { !it.checkedInToday }.orEmpty()
-        val pendingIndex = if (journey != null && pendingJourneys.size >= 2) {
-            (pendingJourneys.indexOfFirst { it.id == journey.id }.takeIf { it >= 0 } ?: 0) + 1
-        } else {
-            1
-        }
-
-        val streakHeroBitmap = journey?.let {
-            OurneyWidgetCanvas.renderStreakHeroBadge(
-                context = context,
-                streakCount = it.currentStreak,
-                palette = palette,
-                atRisk = it.isStreakAlertActive(nowMs),
-                checkedInToday = it.checkedInToday,
-                compact = true,
-            )
-        }
-
-        val weekStripBitmap = journey?.let {
-            OurneyWidgetCanvas.renderWeekStrip(
-                context = context,
-                weekStrip = it.weekStrip,
-                palette = palette,
-                widthDp = 220f,
-                heightDp = 42f,
-            )
-        }
-
-        val framedHeroPhoto = if (
-            journey != null &&
-            journey.checkedInToday &&
-            snapshot != null &&
-            snapshot.privacy.photoMode != "off" &&
-            !journey.heroThumbFile.isNullOrBlank()
-        ) {
-            OurneyWidgetCanvas.renderFramedPhoto(
-                context = context,
-                photoFile = store.resolveThumbFile(journey.heroThumbFile),
-                palette = palette,
-                widthDp = 76f,
-                heightDp = 76f,
-            )
-        } else {
-            null
+        val appWidgetId = try {
+            GlanceAppWidgetManager(context).getAppWidgetId(id)
+        } catch (_: Exception) {
+            AppWidgetManager.INVALID_APPWIDGET_ID
         }
 
         provideContent {
+            val prefs = currentState<Preferences>()
+            val snapshotSeq = prefs[WidgetPrefsKeys.SNAPSHOT_SEQ] ?: 0L
+            val prefSelectedId = prefs[WidgetPrefsKeys.SELECTED_ID]
+            val prefCycleIndex = prefs[WidgetPrefsKeys.CYCLE_INDEX]
             val size = LocalSize.current
-            when {
-                snapshot?.isSignedOut == true -> {
-                    EmptyOrSignedOutCard(
+
+            val bundle = remember(snapshotSeq, prefSelectedId, prefCycleIndex) {
+                val nowMs = System.currentTimeMillis()
+                val snapshot = store.readSnapshot(nowMs)
+                val diskState = store.readState()
+                val selectedId = prefSelectedId
+                    ?.takeIf { it.isNotBlank() }
+                    ?: diskState.selectionFor(appWidgetId)
+                val cycleIndex = prefCycleIndex ?: 0
+                val cardState = WidgetSnapshot.resolveTodayCardState(
+                    snapshot = snapshot,
+                    selectedId = selectedId,
+                    cycleIndex = cycleIndex,
+                )
+                val isDark = OurneyGlanceTheme.resolveIsDark(context, snapshot?.themeMode)
+                val l10n = OurneyGlanceTheme.localizedContext(context, snapshot?.locale)
+
+                val journey = (cardState as? JourneyWidgetCardState.Ready)?.journey
+                val palette = if (journey != null) {
+                    OurneyGlanceTheme.skinPalette(journey.skinId, journey.colorVariant, isDark)
+                } else {
+                    OurneyGlanceTheme.neutralShellPalette(isDark)
+                }
+
+                val streakHeroBitmap = journey?.let {
+                    OurneyWidgetCanvas.renderStreakHeroBadge(
                         context = context,
+                        streakCount = it.currentStreak,
+                        palette = palette,
+                        atRisk = it.isStreakAlertActive(nowMs),
+                        checkedInToday = it.checkedInToday,
+                        compact = true,
+                    )
+                }
+
+                val weekStripBitmap = journey?.let {
+                    OurneyWidgetCanvas.renderWeekStrip(
+                        context = context,
+                        weekStrip = it.weekStrip,
+                        palette = palette,
+                        widthDp = 220f,
+                        heightDp = 42f,
+                    )
+                }
+
+                val framedHeroPhoto = if (
+                    journey != null &&
+                    journey.checkedInToday &&
+                    snapshot != null &&
+                    snapshot.privacy.photoMode != "off" &&
+                    !journey.heroThumbFile.isNullOrBlank()
+                ) {
+                    OurneyWidgetCanvas.renderFramedPhoto(
+                        context = context,
+                        photoFile = store.resolveThumbFile(journey.heroThumbFile),
+                        palette = palette,
+                        widthDp = 76f,
+                        heightDp = 76f,
+                    )
+                } else {
+                    null
+                }
+
+                TodayRenderBundle(
+                    nowMs = nowMs,
+                    l10n = l10n,
+                    palette = palette,
+                    cardState = cardState,
+                    streakHeroBitmap = streakHeroBitmap,
+                    weekStripBitmap = weekStripBitmap,
+                    framedHeroPhoto = framedHeroPhoto,
+                )
+            }
+
+            val l10n = bundle.l10n
+            val palette = bundle.palette
+            when (val state = bundle.cardState) {
+                is JourneyWidgetCardState.Unsynced -> {
+                    EmptyOrSignedOutCard(
+                        palette = palette,
+                        title = l10n.getString(R.string.widget_unsynced_title),
+                        subtitle = l10n.getString(R.string.widget_unsynced_subtitle),
+                        ctaText = l10n.getString(R.string.widget_unsynced_cta),
+                        iconRes = R.drawable.ic_ourney_sticker_sparkle,
+                        clickAction = WidgetActions.syncWidgetsAction(context),
+                    )
+                }
+                is JourneyWidgetCardState.SignedOut -> {
+                    EmptyOrSignedOutCard(
                         palette = palette,
                         title = l10n.getString(R.string.widget_signed_out_title),
                         subtitle = l10n.getString(R.string.widget_signed_out_subtitle),
-                        ctaText = l10n.getString(R.string.widget_empty_cta),
+                        ctaText = l10n.getString(R.string.widget_signed_out_cta),
                         iconRes = R.drawable.ic_ourney_sticker_lock,
+                        clickAction = WidgetActions.syncWidgetsAction(context),
                     )
                 }
-                journey == null -> {
+                is JourneyWidgetCardState.NoJourneys -> {
                     EmptyOrSignedOutCard(
-                        context = context,
                         palette = palette,
                         title = l10n.getString(R.string.widget_empty_title),
                         subtitle = l10n.getString(R.string.widget_empty_subtitle),
-                        ctaText = l10n.getString(R.string.widget_empty_cta),
+                        ctaText = l10n.getString(R.string.widget_empty_cta_create),
                         iconRes = R.drawable.ic_ourney_sticker_journeys,
+                        clickAction = WidgetActions.createJourneyAction(context),
                     )
                 }
-                size.width < 200.dp -> {
-                    SmallTodayCard(
-                        context = context,
-                        l10n = l10n,
-                        journey = journey,
-                        palette = palette,
-                        nowMs = nowMs,
-                        pendingIndex = pendingIndex,
-                        pendingCount = pendingJourneys.size,
-                        streakBitmap = streakHeroBitmap,
-                    )
-                }
-                size.height < 200.dp -> {
-                    MediumTodayCard(
-                        context = context,
-                        l10n = l10n,
-                        journey = journey,
-                        palette = palette,
-                        nowMs = nowMs,
-                        pendingIndex = pendingIndex,
-                        pendingCount = pendingJourneys.size,
-                        streakBitmap = streakHeroBitmap,
-                        framedPhoto = framedHeroPhoto,
-                    )
-                }
-                else -> {
-                    LargeTodayCard(
-                        context = context,
-                        l10n = l10n,
-                        journey = journey,
-                        palette = palette,
-                        nowMs = nowMs,
-                        pendingIndex = pendingIndex,
-                        pendingCount = pendingJourneys.size,
-                        streakBitmap = streakHeroBitmap,
-                        weekStripBitmap = weekStripBitmap,
-                        framedPhoto = framedHeroPhoto,
-                    )
+                is JourneyWidgetCardState.Ready -> {
+                    when {
+                        size.width < 200.dp -> {
+                            SmallTodayCard(
+                                context = context,
+                                l10n = l10n,
+                                journey = state.journey,
+                                palette = palette,
+                                nowMs = bundle.nowMs,
+                                pendingIndex = state.pendingIndex,
+                                pendingCount = state.pendingCount,
+                                streakBitmap = bundle.streakHeroBitmap,
+                            )
+                        }
+                        size.height < 200.dp -> {
+                            MediumTodayCard(
+                                context = context,
+                                l10n = l10n,
+                                journey = state.journey,
+                                palette = palette,
+                                nowMs = bundle.nowMs,
+                                pendingIndex = state.pendingIndex,
+                                pendingCount = state.pendingCount,
+                                streakBitmap = bundle.streakHeroBitmap,
+                                framedPhoto = bundle.framedHeroPhoto,
+                            )
+                        }
+                        else -> {
+                            LargeTodayCard(
+                                context = context,
+                                l10n = l10n,
+                                journey = state.journey,
+                                palette = palette,
+                                nowMs = bundle.nowMs,
+                                pendingIndex = state.pendingIndex,
+                                pendingCount = state.pendingCount,
+                                streakBitmap = bundle.streakHeroBitmap,
+                                weekStripBitmap = bundle.weekStripBitmap,
+                                framedPhoto = bundle.framedHeroPhoto,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -700,18 +761,18 @@ class TodayGlanceWidget : GlanceAppWidget() {
 
     @Composable
     private fun EmptyOrSignedOutCard(
-        context: Context,
         palette: OurneyWidgetPalette,
         title: String,
         subtitle: String,
         ctaText: String,
         iconRes: Int,
+        clickAction: Action,
     ) {
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(ImageProvider(palette.cardBackgroundRes()))
-                .clickable(WidgetActions.journeysHubAction(context))
+                .clickable(clickAction)
                 .semantics { contentDescription = "$title. $subtitle" }
                 .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -746,8 +807,9 @@ class TodayGlanceWidget : GlanceAppWidget() {
             Spacer(modifier = GlanceModifier.height(8.dp))
             Row(
                 modifier = GlanceModifier
-                    .height(44.dp)
+                    .height(48.dp)
                     .background(ImageProvider(R.drawable.bg_widget_cta))
+                    .clickable(clickAction)
                     .padding(horizontal = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
