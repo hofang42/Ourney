@@ -121,10 +121,10 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
             ),
           ),
           const SizedBox(height: UiSpace.md),
-          AnimatedSwitcher(
-            duration: UiMotion.fadeOf(context, UiMotion.fast),
-            switchInCurve: UiCurves.easeOutStrong,
-            switchOutCurve: UiCurves.easeInOutStrong,
+          UiFadeThroughSwitcher(
+            duration: UiMotion.fast,
+            animateSize: true,
+            alignment: Alignment.topCenter,
             child: _WidgetPreviewCard(
               key: ValueKey('widgets-preview-card-${_previewKind.name}'),
               kind: _previewKind,

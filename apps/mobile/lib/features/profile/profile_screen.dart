@@ -373,18 +373,11 @@ class _ProfileHeader extends ConsumerWidget {
         ),
       ),
     };
-    return AnimatedSwitcher(
-      duration: UiMotion.fadeOf(context, UiMotion.normal),
-      reverseDuration: UiMotion.fadeOf(context, UiMotion.normal),
-      switchInCurve: UiCurves.easeOutStrong,
-      switchOutCurve: Curves.easeOut,
-      layoutBuilder: (currentChild, previousChildren) => Stack(
-        alignment: Alignment.topCenter,
-        children: <Widget>[
-          ...previousChildren,
-          ?currentChild,
-        ],
-      ),
+    return UiFadeThroughSwitcher(
+      duration: UiMotion.normal,
+      scaleBegin: 1.0,
+      animateSize: true,
+      alignment: Alignment.topCenter,
       child: stateChild,
     );
   }

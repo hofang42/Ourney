@@ -160,20 +160,11 @@ class _QuietTimelineState extends State<QuietTimeline> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Flexible(
-                    child: AnimatedSwitcher(
-                      duration: UiMotion.of(
-                        context,
-                        const Duration(milliseconds: 140),
-                      ),
-                      switchInCurve: UiCurves.easeOutStrong,
-                      switchOutCurve: Curves.easeOut,
-                      layoutBuilder: (currentChild, previousChildren) => Stack(
-                        alignment: AlignmentDirectional.centerStart,
-                        children: <Widget>[
-                          ...previousChildren,
-                          ?currentChild,
-                        ],
-                      ),
+                    child: UiFadeThroughSwitcher(
+                      duration: UiMotion.fast,
+                      scaleBegin: 1.0,
+                      instantOnReduceMotion: true,
+                      alignment: AlignmentDirectional.centerStart,
                       child: TimelineNumber(
                         axis(0),
                         key: ValueKey(
@@ -186,20 +177,11 @@ class _QuietTimelineState extends State<QuietTimeline> {
                     ),
                   ),
                   Flexible(
-                    child: AnimatedSwitcher(
-                      duration: UiMotion.of(
-                        context,
-                        const Duration(milliseconds: 140),
-                      ),
-                      switchInCurve: UiCurves.easeOutStrong,
-                      switchOutCurve: Curves.easeOut,
-                      layoutBuilder: (currentChild, previousChildren) => Stack(
-                        alignment: AlignmentDirectional.centerEnd,
-                        children: <Widget>[
-                          ...previousChildren,
-                          ?currentChild,
-                        ],
-                      ),
+                    child: UiFadeThroughSwitcher(
+                      duration: UiMotion.fast,
+                      scaleBegin: 1.0,
+                      instantOnReduceMotion: true,
+                      alignment: AlignmentDirectional.centerEnd,
                       child: TimelineNumber(
                         axis(1),
                         key: ValueKey(
