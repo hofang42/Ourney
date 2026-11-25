@@ -154,6 +154,16 @@ class ShareCardL10nVi extends ShareCardL10n {
   String get share_card_linkCopy => 'Sao chép link';
 
   @override
+  String get share_card_linkAlreadyActive => 'Đã có link chia sẻ';
+
+  @override
+  String get share_card_linkConflict =>
+      'Link hiện tại chứa tên hành trình. Nếu tạo lại link, link cũ sẽ ngừng hoạt động.';
+
+  @override
+  String get share_card_linkResetAndCopy => 'Tạo lại và sao chép link';
+
+  @override
   String get share_card_linkCopied => 'Đã sao chép link';
 
   @override

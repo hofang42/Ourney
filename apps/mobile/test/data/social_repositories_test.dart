@@ -344,17 +344,22 @@ void main() {
           journeyRow(p['p_id'] as String, ownerId: me);
       final j = await layer.journeys.create(soloDraft());
       const slug = '7-ngay-da-lat-abcdefghijklmnop';
-      remote.rpcHandlers['set_readable_public_link'] = (p) =>
-          p['enabled'] == true ? slug : null;
-      expect(
-        await layer.sharing!.setPublicLink(
-          j.id,
-          enabled: true,
-          reset: true,
-          approvedTitle: '7 Ngày Đà Lạt',
-        ),
-        slug,
+      remote.rpcHandlers['set_readable_public_link'] = (_) => {
+        'issued': true,
+        'public_slug': slug,
+        'public_token': 'legacy',
+        'style': 'titled',
+        'title': '7 Ngày Đà Lạt',
+      };
+      final result = await layer.sharing!.setPublicLink(
+        j.id,
+        enabled: true,
+        reset: true,
+        approvedTitle: '7 Ngày Đà Lạt',
       );
+      expect(result.address(), slug);
+      expect(result.issued, isTrue);
+      expect(result.address(hideTitle: true), 'legacy');
       expect(lastArgs('set_readable_public_link'), {
         'journey': j.id,
         'enabled': true,

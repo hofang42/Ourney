@@ -159,16 +159,28 @@ class FakeSharingRepository implements SharingRepository {
   }
 
   @override
-  Future<String?> setPublicLink(
+  Future<PublicLinkResult> setPublicLink(
     String journeyId, {
     required bool enabled,
     bool reset = false,
     String? approvedTitle,
+    bool hideWeight = false,
+    bool existingOnly = false,
   }) async {
     calls.add('link:$enabled:$reset');
     if (linkError case final e?) throw e;
-    _setState(token: enabled ? 'tok' : null, clearToken: !enabled);
-    return enabled ? 'tok' : null;
+    if (!existingOnly) {
+      _setState(token: enabled ? 'tok' : null, clearToken: !enabled);
+    }
+    final token = existingOnly
+        ? state.publicToken
+        : enabled
+        ? 'tok'
+        : null;
+    return PublicLinkResult(
+      issued: enabled && !existingOnly,
+      legacyToken: token,
+    );
   }
 
   @override

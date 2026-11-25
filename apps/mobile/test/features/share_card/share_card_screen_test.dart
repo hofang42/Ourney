@@ -674,7 +674,7 @@ void main() {
 
       // Copying an existing link does not rotate the token.
       await _tap(tester, _key('share-card-link-copy'));
-      expect(h.journeys.calls, ['setPublicLink:j1:true']);
+      expect(h.journeys.calls.last, 'setPublicLink:j1:true:existing');
       expect(h.clipboard, [expected, expected]);
 
       await _tap(tester, _key('share-card-link-revoke'));
@@ -685,7 +685,7 @@ void main() {
       expect(find.text('Đã thu hồi link'), findsOneWidget);
     });
 
-    testWidgets('existing link journey: copy without calling the server', (
+    testWidgets('copy fills a neutral alias for an existing legacy link', (
       tester,
     ) async {
       final j = testJourney(
@@ -694,8 +694,63 @@ void main() {
       );
       final h = await pumpShare(tester, journey: j, backend: true);
       await _tap(tester, _key('share-card-link-copy'));
-      expect(h.journeys.calls, isEmpty);
-      expect(h.clipboard.single, 'https://ourney.tech/p/$testToken');
+      expect(h.journeys.calls, ['setPublicLink:j1:true:existing']);
+      expect(h.clipboard.single, 'https://ourney.tech/p/$testNeutralSlug');
+    });
+
+    for (final action in ['cancel', 'copy', 'reset']) {
+      testWidgets(
+        'stale create waits for explicit $action of the titled link',
+        (tester) async {
+          final j = testJourney(status: JourneyStatus.ended);
+          final h = await pumpShare(tester, journey: j, backend: true);
+          h.journeys.serverLink = PublicLinkResult(
+            issued: false,
+            legacyToken: testToken,
+            slug: testSlug,
+            title: j.title,
+          );
+
+          await _tap(tester, _key('share-card-link-create'));
+          await _tap(tester, _key('share-link-neutral'));
+          expect(h.clipboard, isEmpty);
+          expect(h.journeys.calls, ['setPublicLink:j1:true']);
+          expect(find.text(publicJourneyLink(testSlug)), findsWidgets);
+
+          await _tap(tester, _key('share-card-link-conflict-$action'));
+          switch (action) {
+            case 'copy':
+              expect(h.clipboard, [publicJourneyLink(testSlug)]);
+              expect(h.journeys.calls.last, 'setPublicLink:j1:true:existing');
+            case 'reset':
+              expect(h.clipboard, [publicJourneyLink(testNeutralSlug)]);
+              expect(h.journeys.calls.last, 'setPublicLink:j1:true:reset');
+              expect(h.journeys.lastExpectedSlug, testSlug);
+            case 'cancel':
+              expect(h.clipboard, isEmpty);
+              expect(h.journeys.calls, ['setPublicLink:j1:true']);
+              expect(find.text(publicJourneyLink(testSlug)), findsOneWidget);
+          }
+        },
+      );
+    }
+
+    testWidgets('Hide Weight suppresses title approval for custom kg metrics', (
+      tester,
+    ) async {
+      final j = testJourney(
+        templateId: TemplateId.custom,
+        status: JourneyStatus.ended,
+        metricUnit: ' KG ',
+      );
+      final h = await pumpShare(tester, journey: j, backend: true);
+      await h.container.read(hideWeightOnShareProvider.notifier).set(true);
+      await tester.pumpAndSettle();
+      await _tap(tester, _key('share-card-link-create'));
+      expect(_key('share-link-use-title'), findsNothing);
+      expect(h.journeys.lastApprovedTitle, isNull);
+      expect(h.journeys.lastHideWeight, isTrue);
+      expect(h.clipboard, [publicJourneyLink(testNeutralSlug)]);
     });
 
     testWidgets('works even when the repository stream lags behind', (

@@ -24,7 +24,7 @@
 // [OurneyErrorCode.fromServer]. Writes that are queued offline do not throw.
 
 import '../models.dart';
-import 'social.dart' show PersonSummary;
+import 'social.dart' show PersonSummary, PublicLinkResult;
 
 /// Result of an attempt that may need the server.
 sealed class SyncResult {
@@ -186,13 +186,18 @@ abstract interface class JourneyRepository {
   /// via the Storage API (own-objects delete policy).
   Future<void> delete(String journeyId);
 
-  /// Enables a public link for a finished journey and returns its readable
-  /// slug. Pass [approvedTitle] only after the owner agrees to put that title
-  /// in a new URL. Disabling revokes both URL forms and returns null.
-  Future<String?> setPublicLink(
+  /// Enables a public link for a finished journey. Pass [approvedTitle] only
+  /// after the owner agrees to put that title in a new URL. [existingOnly]
+  /// checks a link before copying without enabling it. [expectedSlug] guards
+  /// a reset confirmed for a specific address. Disabling revokes both forms.
+  Future<PublicLinkResult> setPublicLink(
     String journeyId, {
     required bool enabled,
     String? approvedTitle,
+    bool hideWeight = false,
+    bool existingOnly = false,
+    bool reset = false,
+    String? expectedSlug,
   });
 
   /// The caller's own `memberships` row (role, status, joinedAt, prefs).

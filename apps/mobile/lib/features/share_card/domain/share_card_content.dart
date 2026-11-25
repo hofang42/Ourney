@@ -290,6 +290,23 @@ String? activePublicToken(Journey journey) {
   return token;
 }
 
+/// A cached title may have been retired on another device. Recheck titled
+/// addresses before adding them to an outgoing share caption.
+Future<String?> publicAddressForCaption(
+  Journey journey,
+  SharingRepository Function() sharing, {
+  required bool hideTitle,
+}) async {
+  final token = activePublicToken(journey);
+  if (!isTitledPublicSlug(token)) return token;
+  try {
+    final state = await sharing().watchShareState(journey.id).first;
+    return state.publicAddress(hideTitle: hideTitle);
+  } on OurneyException {
+    return null;
+  }
+}
+
 /// Check-ins offered as the card photo, newest day first, one per day.
 List<CheckIn> photoCandidates(Iterable<CheckIn> checkIns) {
   final byDate = <LocalDate, CheckIn>{};

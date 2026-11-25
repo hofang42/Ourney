@@ -24,6 +24,7 @@ final testNow = DateTime.utc(2026, 10, 16, 5);
 /// A valid `[a-z0-9]{40}` public token.
 final testToken = 'tok${'0' * 37}';
 const testSlug = 'doc-sach-abcdefghijklmnop';
+const testNeutralSlug = 'journey-abcdefghijklmnop';
 
 /// A value plus a broadcast of its changes; new listeners get the current
 /// value first (like the real repositories' local DB streams).
@@ -154,6 +155,9 @@ class FakeJourneyRepository implements JourneyRepository {
 
   final List<String> calls = [];
   String? lastApprovedTitle;
+  PublicLinkResult? serverLink;
+  String? lastExpectedSlug;
+  bool lastHideWeight = false;
 
   @override
   Stream<List<Journey>> watchArchived() => Stream.value(const []);
@@ -184,25 +188,59 @@ class FakeJourneyRepository implements JourneyRepository {
       _memberships.putIfAbsent(journeyId, () => _Live(null)).watch();
 
   @override
-  Future<String?> setPublicLink(
+  Future<PublicLinkResult> setPublicLink(
     String journeyId, {
     required bool enabled,
     String? approvedTitle,
+    bool hideWeight = false,
+    bool existingOnly = false,
+    bool reset = false,
+    String? expectedSlug,
   }) async {
-    calls.add('setPublicLink:$journeyId:$enabled');
+    final action = existingOnly
+        ? ':existing'
+        : reset
+        ? ':reset'
+        : '';
+    calls.add('setPublicLink:$journeyId:$enabled$action');
     lastApprovedTitle = approvedTitle;
+    lastExpectedSlug = expectedSlug;
+    lastHideWeight = hideWeight;
     if (linkError case final e?) {
       linkError = null;
       throw e;
     }
-    final token = enabled ? testSlug : null;
+    final cached = _journeys.value.firstWhere((j) => j.id == journeyId);
+    final current =
+        serverLink ??
+        PublicLinkResult(issued: false, legacyToken: cached.publicToken);
+    final issued =
+        enabled && (reset || current.address() == null) && !existingOnly;
+    final result = !enabled
+        ? const PublicLinkResult(issued: false)
+        : issued
+        ? PublicLinkResult(
+            issued: true,
+            legacyToken: testToken,
+            slug: approvedTitle == null ? testNeutralSlug : testSlug,
+            title: approvedTitle,
+          )
+        : PublicLinkResult(
+            issued: false,
+            legacyToken: current.legacyToken,
+            slug:
+                current.slug ??
+                (current.legacyToken == null ? null : testNeutralSlug),
+            title: current.title,
+          );
+    serverLink = result;
     if (echoLinkChanges) {
       _journeys.set([
         for (final j in _journeys.value)
-          j.id == journeyId ? _withLink(j, token) : j,
+          j.id == journeyId ? _withLink(j, result.address()) : j,
       ]);
     }
-    return token;
+    return result;
   }
 
   static Journey _withLink(Journey j, String? token) => Journey(

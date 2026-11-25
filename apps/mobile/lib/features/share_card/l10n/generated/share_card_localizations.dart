@@ -314,6 +314,24 @@ abstract class ShareCardL10n {
   /// **'Sao chép link'**
   String get share_card_linkCopy;
 
+  /// No description provided for @share_card_linkAlreadyActive.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã có link chia sẻ'**
+  String get share_card_linkAlreadyActive;
+
+  /// No description provided for @share_card_linkConflict.
+  ///
+  /// In vi, this message translates to:
+  /// **'Link hiện tại chứa tên hành trình. Nếu tạo lại link, link cũ sẽ ngừng hoạt động.'**
+  String get share_card_linkConflict;
+
+  /// No description provided for @share_card_linkResetAndCopy.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo lại và sao chép link'**
+  String get share_card_linkResetAndCopy;
+
   /// Snack bar after the link was copied.
   ///
   /// In vi, this message translates to:

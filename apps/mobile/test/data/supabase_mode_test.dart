@@ -657,8 +657,15 @@ void main() {
   test('RPC argument names follow the server signatures', () async {
     final j = await layer.journeys.create(soloDraft());
     const slug = 'journey-abcdefghijklmnop';
-    remote.rpcHandlers['set_readable_public_link'] = (_) => slug;
-    expect(await layer.journeys.setPublicLink(j.id, enabled: true), slug);
+    remote.rpcHandlers['set_readable_public_link'] = (_) => {
+      'issued': true,
+      'public_slug': slug,
+      'style': 'neutral',
+    };
+    expect(
+      (await layer.journeys.setPublicLink(j.id, enabled: true)).address(),
+      slug,
+    );
     expect(
       (await layer.journeys.watch(j.id).first)!.visibility,
       JourneyVisibility.link,

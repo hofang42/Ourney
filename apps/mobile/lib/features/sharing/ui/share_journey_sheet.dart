@@ -10,9 +10,11 @@ import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../personas/persona_contract.dart';
 import '../../../ui/ui.dart';
+import '../../journeys/data/journeys_providers.dart' show myMembershipProvider;
+import '../../profile/settings_providers.dart' show hideWeightOnShareProvider;
 import '../../safety/data/safety_providers.dart';
 import '../../share_card/domain/share_card_content.dart'
-    show publicLinkEligible;
+    show publicLinkEligible, shareMetricHidden;
 import '../data/sharing_providers.dart';
 import '../l10n/generated/sharing_localizations.dart';
 import '../sharing_paths.dart';
@@ -99,6 +101,19 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
   Journey get _journey => widget.journey;
   bool get _sensitive => isSensitiveTemplate(_journey.templateId);
   bool get _isGroup => _journey.kind == JourneyKind.group;
+
+  bool _hideLinkTitle(Membership? membership, bool hideWeight) =>
+      shareMetricHidden(
+        _journey,
+        membership,
+        forceHideMetric: false,
+        hideWeight: hideWeight,
+      );
+
+  bool get _hideLinkTitleNow => _hideLinkTitle(
+    ref.read(myMembershipProvider(_journey.id)).value,
+    ref.read(hideWeightOnShareProvider),
+  );
 
   bool _isOwner() {
     final me = ref.read(currentUserIdProvider);
@@ -227,7 +242,7 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
     if (enabled && !reset && _sensitive) {
       if (!await showSensitiveLinkWarning(context) || !mounted) return;
     }
-    if (enabled && canUsePublicLinkTitle(journey)) {
+    if (enabled && !_hideLinkTitleNow) {
       final useTitle = await choosePublicLinkTitle(
         context,
         journey,
@@ -252,7 +267,8 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
             journey.id,
             enabled: enabled,
             reset: reset,
-            approvedTitle: approvedTitle,
+            approvedTitle: _hideLinkTitleNow ? null : approvedTitle,
+            hideWeight: ref.read(hideWeightOnShareProvider),
           );
     } on Object catch (e) {
       if (!mounted) return;
@@ -262,6 +278,30 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
       } else {
         _snack(sharingFailure(context, e));
       }
+    } finally {
+      if (mounted) setState(() => _linkBusy = false);
+    }
+  }
+
+  Future<void> _copyLink() async {
+    setState(() => _linkBusy = true);
+    try {
+      final result = await ref
+          .read(sharingRepositoryProvider)
+          .setPublicLink(
+            _journey.id,
+            enabled: true,
+            existingOnly: true,
+            hideWeight: ref.read(hideWeightOnShareProvider),
+          );
+      if (!mounted) return;
+      final address = result.address(hideTitle: _hideLinkTitleNow);
+      final uri = address == null ? null : _linkUri(address);
+      if (uri == null) return;
+      await Clipboard.setData(ClipboardData(text: uri.toString()));
+      if (mounted) _snack(SharingL10n.of(context).sharing_linkCopied);
+    } on Object catch (e) {
+      if (mounted) _snack(sharingFailure(context, e));
     } finally {
       if (mounted) setState(() => _linkBusy = false);
     }
@@ -373,6 +413,14 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
             (consents != null &&
                 myConsent?.status != ShareConsentStatus.accepted));
     final owner = _isOwner();
+    final publicAddress = owner
+        ? state.publicAddress(
+            hideTitle: _hideLinkTitle(
+              ref.watch(myMembershipProvider(_journey.id)).value,
+              ref.watch(hideWeightOnShareProvider),
+            ),
+          )
+        : null;
     final l10n = SharingL10n.of(context);
     final danger = context.ui.danger;
 
@@ -426,9 +474,8 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
           sensitive: _sensitive,
           under18: _under18,
           busy: _linkBusy,
-          linkUri: state.publicToken == null
-              ? null
-              : _linkUri(state.publicToken!),
+          linkUri: publicAddress == null ? null : _linkUri(publicAddress),
+          onCopy: _copyLink,
           onLink: (on) => _setLink(on),
           onReset: () => _setLink(true, reset: true),
           onPublic: _setPublic,
@@ -869,6 +916,7 @@ class _LinkBlock extends ConsumerWidget {
     required this.under18,
     required this.busy,
     required this.linkUri,
+    required this.onCopy,
     required this.onLink,
     required this.onReset,
     required this.onPublic,
@@ -882,6 +930,7 @@ class _LinkBlock extends ConsumerWidget {
   final bool under18;
   final bool busy;
   final Uri? linkUri;
+  final VoidCallback onCopy;
   final ValueChanged<bool> onLink;
   final VoidCallback onReset;
   final Future<void> Function(PublicSettings, {required bool turningOn})
@@ -983,16 +1032,7 @@ class _LinkBlock extends ConsumerWidget {
                   key: const ValueKey('share-copy-link'),
                   icon: 'copy',
                   label: l10n.sharing_copyLink,
-                  onPressed: linkUri == null
-                      ? null
-                      : () async {
-                          await Clipboard.setData(
-                            ClipboardData(text: linkUri.toString()),
-                          );
-                          if (context.mounted) {
-                            showSharingSnack(context, l10n.sharing_linkCopied);
-                          }
-                        },
+                  onPressed: busy ? null : onCopy,
                 ),
                 SharingPillButton(
                   key: const ValueKey('share-reset-link'),
@@ -1099,9 +1139,6 @@ class _LinkBlock extends ConsumerWidget {
     );
   }
 }
-
-bool canUsePublicLinkTitle(Journey journey) =>
-    !isSensitiveTemplate(journey.templateId) && !journey.hideMetricDefault;
 
 /// True includes the shown title, false uses a neutral address, null cancels.
 Future<bool?> choosePublicLinkTitle(

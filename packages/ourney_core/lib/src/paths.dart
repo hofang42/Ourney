@@ -39,6 +39,15 @@ bool isValidPublicToken(String token) =>
     _legacyPublicToken.hasMatch(token) ||
     (token.length <= 40 && _readablePublicSlug.hasMatch(token));
 
+final RegExp _neutralPublicSlug = RegExp(r'^journey-[a-z2-7]{16}$');
+
+/// A readable address whose prefix may contain the owner's title.
+bool isTitledPublicSlug(String? token) =>
+    token != null &&
+    token.length <= 40 &&
+    _readablePublicSlug.hasMatch(token) &&
+    !_neutralPublicSlug.hasMatch(token);
+
 /// Canonical public web host for Ourney share links.
 const String ourneyWebHost = 'ourney.tech';
 

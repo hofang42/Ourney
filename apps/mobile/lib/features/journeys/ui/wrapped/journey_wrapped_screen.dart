@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../../app/app_routes.dart';
+import '../../../../app/providers.dart' show sharingRepositoryProvider;
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../personas/persona_contract.dart';
 import '../../../../ui/ui.dart';
@@ -23,7 +24,7 @@ import '../../../share_card/data/share_card_providers.dart'
         shareCardSaverProvider,
         shareCardSharerProvider;
 import '../../../share_card/domain/share_card_content.dart'
-    show ShareCardFormat, activePublicToken, shareMetricHidden;
+    show ShareCardFormat, publicAddressForCaption, shareMetricHidden;
 import '../../data/journeys_providers.dart';
 import '../../domain/journey_progress.dart';
 import '../../domain/wrapped_story.dart';
@@ -41,6 +42,7 @@ String wrappedShareText(
   Journey journey,
   PersonaSkinId skin,
   WrappedStats stats, {
+  String? publicAddress,
   bool hideKg = true,
   bool hideBrand = false,
 }) {
@@ -48,10 +50,9 @@ String wrappedShareText(
   final weights = skin == PersonaSkinId.quietTransformer && !hideKg
       ? _Summary._weights(stats)
       : null;
-  final token = activePublicToken(journey);
   final String? footer;
-  if (token != null) {
-    final url = publicJourneyLink(token);
+  if (publicAddress != null) {
+    final url = publicJourneyLink(publicAddress);
     footer = hideBrand ? url : 'ourney · $url';
   } else {
     footer = hideBrand ? null : 'ourney · https://ourney.tech';
@@ -657,15 +658,26 @@ class _SummaryState extends ConsumerState<_Summary> {
             _boundaryKey.currentContext?.findRenderObject()
                 as RenderRepaintBoundary?;
         if (boundary == null) throw StateError('wrapped card not laid out');
+        final membership = ref.read(membershipProvider);
+        final hideWeight = ref.read(hideWeightOnShareProvider);
+        final address = await publicAddressForCaption(
+          journey,
+          () => ref.read(sharingRepositoryProvider),
+          hideTitle: shareMetricHidden(
+            journey,
+            membership.value,
+            forceHideMetric: false,
+            hideWeight: hideWeight,
+          ),
+        );
+        if (!context.mounted) return;
         final text = wrappedShareText(
           l10n,
           journey,
           skin,
           stats,
-          hideKg: _hideExportKg(
-            ref.read(membershipProvider),
-            ref.read(hideWeightOnShareProvider),
-          ),
+          publicAddress: address,
+          hideKg: _hideExportKg(membership, hideWeight),
           hideBrand: hideWordmark,
         );
         final file = await exporter.export(
