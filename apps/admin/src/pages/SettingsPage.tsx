@@ -6,12 +6,12 @@ import {
   type AdminRole,
   type SystemHealth,
 } from '../lib/adminRpc'
-import { useI18n } from '../lib/i18n'
+import { formatAdminError, formatAdminRole, useI18n } from '../lib/i18n'
 import { OIcon } from '../ui/Icon'
 import { AccessibleModal } from '../ui/Modal'
 
 export function SettingsPage({ admin }: { admin: AdminIdentity }) {
-  const { t } = useI18n()
+  const { lang, t } = useI18n()
   const [admins, setAdmins] = useState<AdminIdentity[]>([])
   const [health, setHealth] = useState<SystemHealth | null>(null)
   const [emailOrUid, setEmailOrUid] = useState('')
@@ -33,13 +33,14 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
       setAdmins(list)
       setHealth(hl)
     } catch (err) {
-      const msg = await handleRpcError(err, 'system_health')
+      const msg = await handleRpcError(err, 'system_health', lang)
       setErrorMsg(msg)
     }
   }
 
   useEffect(() => {
     void loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleUpsertAdmin = async (e: FormEvent) => {
@@ -52,17 +53,18 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
         p_role: role,
         p_note: note.trim() || undefined,
       })
+      const roleLabel = formatAdminRole(role, lang)
       setStatusMsg(
         t(
-          `Đã cập nhật quyền quản trị cho ${emailOrUid.trim()} (${role}).`,
-          `Upserted admin user ${emailOrUid.trim()} (${role}).`,
+          `Đã cập nhật quyền quản trị cho ${emailOrUid.trim()} (${roleLabel}).`,
+          `Upserted admin user ${emailOrUid.trim()} (${roleLabel}).`,
         ),
       )
       setEmailOrUid('')
       setNote('')
       await loadData()
     } catch (err) {
-      const msg = await handleRpcError(err, 'upsert_admin_user')
+      const msg = await handleRpcError(err, 'upsert_admin_user', lang)
       setErrorMsg(msg)
     }
   }
@@ -80,7 +82,7 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
       setRemoveReason('')
       await loadData()
     } catch (err) {
-      const msg = await handleRpcError(err, 'remove_admin_user')
+      const msg = await handleRpcError(err, 'remove_admin_user', lang)
       setErrorMsg(msg)
     }
   }
@@ -91,13 +93,13 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
       await adminApi.invokeAdminAction({ action: 'run_storage_sweep' })
       setStatusMsg(
         t(
-          'Đã chạy tiến trình dọn dẹp Storage (storage-purge-sweep).',
+          'Đã chạy tiến trình dọn dẹp tệp lưu trữ.',
           'Executed Storage Purge Sweep Now.',
         ),
       )
       await loadData()
     } catch (err) {
-      const msg = await handleRpcError(err, 'run_storage_sweep')
+      const msg = await handleRpcError(err, 'run_storage_sweep', lang)
       setErrorMsg(msg)
     }
   }
@@ -116,7 +118,11 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
       )
       await loadData()
     } catch (err) {
-      const msg = await handleRpcError(err, 'reset_stuck_storage_purge')
+      const msg = await handleRpcError(
+        err,
+        'reset_stuck_storage_purge',
+        lang,
+      )
       setErrorMsg(msg)
     }
   }
@@ -127,13 +133,17 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
       await adminApi.invokeAdminAction({ action: 'trigger_moderation_notify' })
       setStatusMsg(
         t(
-          'Đã kích hoạt gửi thông báo cảnh báo kiểm duyệt (notify-moderation).',
+          'Đã kích hoạt gửi thông báo cảnh báo kiểm duyệt.',
           'Triggered Moderation Notification Digest.',
         ),
       )
       await loadData()
     } catch (err) {
-      const msg = await handleRpcError(err, 'trigger_moderation_notify')
+      const msg = await handleRpcError(
+        err,
+        'trigger_moderation_notify',
+        lang,
+      )
       setErrorMsg(msg)
     }
   }
@@ -150,8 +160,8 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
           </h1>
           <p className="page-subtitle">
             {t(
-              'Quản lý danh sách private.admins (owner / moderator), giám sát hàng đợi xóa tệp Storage và kích hoạt cảnh báo SLA.',
-              'Manage private.admins (owner / moderator) and operate pending_storage_purge and moderation notification queues.',
+              'Quản lý danh sách quản trị viên (Chủ sở hữu / Kiểm duyệt viên), giám sát hàng đợi dọn dẹp tệp lưu trữ và kích hoạt cảnh báo SLA.',
+              'Manage admin team roles (Owner / Moderator) and operate storage purge and moderation notification queues.',
             )}
           </p>
         </div>
@@ -174,8 +184,8 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
           <div className="card">
             <h3 style={{ marginBottom: 8 }}>
               {t(
-                'Sức khỏe Hàng đợi Dọn dẹp Storage (private.pending_storage_purge)',
-                'Storage Purge Queue Health (private.pending_storage_purge)',
+                'Sức khỏe Hàng đợi Dọn dẹp Lưu trữ',
+                'Storage Purge Queue Health',
               )}
             </h3>
             <div className="kpi-grid" style={{ marginBottom: 14 }}>
@@ -197,7 +207,7 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
               </div>
               <div className="card-subtle">
                 <div className="kpi-label">
-                  {t('Bị kẹt (Attempts >= 20)', 'Stuck (>= 20)')}
+                  {t('Bị kẹt (>= 20 lần thử)', 'Stuck (>= 20)')}
                 </div>
                 <div className="kpi-value">
                   {health.storage_purge.stuck_count}
@@ -224,7 +234,16 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
                     <strong>
                       {err.bucket}/{err.path_prefix}
                     </strong>{' '}
-                    ({err.attempts} attempts): {err.last_error}
+                    ({err.attempts} {t('lần thử', 'attempts')}):{' '}
+                    {formatAdminError(err.last_error, lang)}
+                    <details style={{ marginTop: 2, fontSize: '0.75rem' }}>
+                      <summary
+                        style={{ cursor: 'pointer', color: 'var(--muted)' }}
+                      >
+                        {t('Chi tiết kỹ thuật', 'Technical details')}
+                      </summary>
+                      <code>{err.last_error}</code>
+                    </details>
                   </div>
                 ))}
               </div>
@@ -259,7 +278,7 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
           <div className="card">
             <h3 style={{ marginBottom: 8 }}>
               {t(
-                'Trạng thái Cảnh báo Kiểm duyệt (notify-moderation)',
+                'Trạng thái Cảnh báo Kiểm duyệt',
                 'Moderation Alert Webhook Status',
               )}
             </h3>
@@ -277,7 +296,7 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
               </div>
               <div className="card-subtle">
                 <div className="kpi-label">
-                  {t('Đang giữ lease gửi', 'Leased In-Flight')}
+                  {t('Đang xử lý gửi', 'Leased In-Flight')}
                 </div>
                 <div className="kpi-value">
                   {health.moderation_notifications.leased_count}
@@ -313,18 +332,16 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
       <div className="card">
         <div className="kpi-top" style={{ marginBottom: 12 }}>
           <h3>
-            {t(
-              'Đội ngũ Quản trị viên (private.admins)',
-              'Admin Team (private.admins)',
-            )}
+            {t('Đội ngũ Quản trị viên', 'Admin Team')}
           </h3>
           {health && (
             <div style={{ display: 'flex', gap: 8 }}>
               <span className="badge badge-primary">
-                Owners: {health.admins_count.owners}
+                {t('Chủ sở hữu', 'Owners')}: {health.admins_count.owners}
               </span>
               <span className="badge badge-sky">
-                Moderators: {health.admins_count.moderators}
+                {t('Kiểm duyệt viên', 'Moderators')}:{' '}
+                {health.admins_count.moderators}
               </span>
             </div>
           )}
@@ -336,12 +353,12 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
               type="text"
               className="input"
               aria-label={t(
-                'Email hoặc UUID quản trị viên',
-                'Admin email or Auth User UUID',
+                'Email hoặc mã người dùng quản trị viên',
+                'Admin email or Auth User ID',
               )}
               placeholder={t(
-                'Email hoặc UUID tài khoản Ourney...',
-                'Email or Auth User UUID...',
+                'Email hoặc mã tài khoản Ourney...',
+                'Email or Auth User ID...',
               )}
               value={emailOrUid}
               onChange={(e) => setEmailOrUid(e.target.value)}
@@ -353,8 +370,10 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
               value={role}
               onChange={(e) => setRole(e.target.value as AdminRole)}
             >
-              <option value="moderator">moderator</option>
-              <option value="owner">owner</option>
+              <option value="moderator">
+                {formatAdminRole('moderator', lang)}
+              </option>
+              <option value="owner">{formatAdminRole('owner', lang)}</option>
             </select>
             <input
               type="text"
@@ -375,7 +394,7 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Email & Username</th>
+                <th>{t('Email & Tên người dùng', 'Email & Username')}</th>
                 <th>{t('Vai trò', 'Role')}</th>
                 <th>{t('Ghi chú', 'Note')}</th>
                 <th>{t('Thao tác', 'Actions')}</th>
@@ -396,7 +415,7 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
                         a.role === 'owner' ? 'badge-primary' : 'badge-sky'
                       }`}
                     >
-                      {a.role}
+                      {formatAdminRole(a.role, lang)}
                     </span>
                   </td>
                   <td>{a.note || '—'}</td>
@@ -426,15 +445,18 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
             'Xác nhận gỡ quyền quản trị viên',
             'Confirm Admin Removal',
           )}
-          onClose={() => setRemoveTarget(null)}
+          onClose={() => {
+            setRemoveTarget(null)
+            setRemoveReason('')
+          }}
         >
           <h3>
             {t('Xác nhận gỡ quyền quản trị viên', 'Confirm Admin Removal')}
           </h3>
           <p className="page-subtitle">
-            {removeTarget.email} ({removeTarget.role}) —{' '}
+            {removeTarget.email} ({formatAdminRole(removeTarget.role, lang)}) —{' '}
             {t(
-              'Hành động này sẽ thu hồi ngay mọi quyền truy cập bảng điều khiển và xóa các media grant đang mở.',
+              'Hành động này sẽ thu hồi ngay mọi quyền truy cập bảng điều khiển và hủy các quyền xem ảnh tạm thời đang mở.',
               'This revokes admin console privileges immediately and purges any active media grants.',
             )}
           </p>
@@ -457,7 +479,10 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn"
-              onClick={() => setRemoveTarget(null)}
+              onClick={() => {
+                setRemoveTarget(null)
+                setRemoveReason('')
+              }}
             >
               {t('Hủy', 'Cancel')}
             </button>

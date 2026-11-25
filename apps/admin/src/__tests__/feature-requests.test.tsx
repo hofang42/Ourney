@@ -20,7 +20,7 @@ describe('FeatureRequestsPage', () => {
     vi.restoreAllMocks()
   })
 
-  it('renders graceful not-installed empty state when RPC returns PGRST202 / 404, but does NOT misclassify 23514 constraint errors', async () => {
+  it('renders graceful not-installed empty state without leaking migration numbers or PostgREST codes when RPC returns PGRST202 / 404', async () => {
     const notFoundErr = Object.assign(
       new Error('Could not find the function admin.list_feature_requests'),
       { code: 'PGRST202', status: 404 },
@@ -47,12 +47,14 @@ describe('FeatureRequestsPage', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Tính năng Đề xuất chưa cài đặt \(Migration 0024\)/i),
+        screen.getByText(/Tính năng Đề xuất chưa được kích hoạt/i),
       ).toBeInTheDocument()
     })
+    expect(screen.queryByText(/Migration 0024/i)).toBeNull()
+    expect(screen.queryByText(/PGRST202/i)).toBeNull()
   })
 
-  it('uses section 4.4B RPCs, deduplicates overlapping voter estimates on merge, and supports content filter dry-run', async () => {
+  it('uses section 4.4B RPCs, deduplicates overlapping voter estimates on merge, supports content filter dry-run, and requires confirmation for Hide Request and Clear Reply (UX-28)', async () => {
     vi.spyOn(adminApi, 'featureRequestStats').mockResolvedValue(
       SQL_FIXTURE_FR_STATS,
     )
@@ -67,7 +69,6 @@ describe('FeatureRequestsPage', () => {
             merged_children: [],
             reports: [],
             voters: [
-              // usr-10 overlaps with fr-101!
               {
                 user_id: 'usr-10',
                 username: 'linh_ielts',
@@ -125,8 +126,45 @@ describe('FeatureRequestsPage', () => {
       p_admin_reply:
         'Đội ngũ Ourney đang thiết kế Widget Lock Screen cho bản iOS 1.1 vào tháng tới.',
       p_hidden: false,
-      p_reason: 'Updated status=planned, category=squad, hidden=false',
+      p_reason: null,
     })
+
+    // UX-28: Hide Request requires confirmation modal and does NOT commit unsaved status draft
+    updateSpy.mockClear()
+    await user.selectOptions(
+      screen.getByLabelText(/Select roadmap status/i),
+      'declined',
+    )
+    await user.click(screen.getByRole('button', { name: /Hide Request/i }))
+    expect(updateSpy).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: /Confirm Hide Request/i }),
+    )
+    expect(updateSpy).toHaveBeenCalledWith({
+      p_id: 'fr-101',
+      p_status: 'planned',
+      p_category: 'squad',
+      p_admin_reply:
+        'Đội ngũ Ourney đang thiết kế Widget Lock Screen cho bản iOS 1.1 vào tháng tới.',
+      p_hidden: true,
+      p_reason: 'Hidden from public roadmap via Admin Console',
+    })
+
+    // UX-28: Clear Reply requires confirmation modal
+    updateSpy.mockClear()
+    await user.click(screen.getByRole('button', { name: /Clear Reply/i }))
+    expect(updateSpy).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: /Confirm Clear Reply/i }),
+    )
+    expect(updateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        p_id: 'fr-101',
+        p_admin_reply: null,
+      }),
+    )
 
     await user.click(
       screen.getByRole('button', { name: /Merge into Canonical Request/i }),

@@ -6,7 +6,11 @@ import {
   type OverviewFeatureRequestTopItem,
   type OverviewStats,
 } from '../lib/adminRpc'
-import { useI18n } from '../lib/i18n'
+import {
+  formatFeatureRequestCategory,
+  formatFeatureRequestStatus,
+  useI18n,
+} from '../lib/i18n'
 import {
   BarTrendChart,
   CohortHeatmap,
@@ -350,7 +354,8 @@ export function OverviewPage() {
                   +{kpis.users.new_today} {t('hôm nay', 'today')}
                 </span>
                 <span>
-                  +{kpis.users.new_7d} (7d) / {kpis.users.total_auth} Auth
+                  +{kpis.users.new_7d} ({t('7 ngày', '7d')}) /{' '}
+                  {kpis.users.total_auth} {t('tài khoản', 'Auth')}
                 </span>
               </div>
             </div>
@@ -365,7 +370,7 @@ export function OverviewPage() {
               <div className="kpi-value">{kpis.waitlist.total}</div>
               <div className="kpi-sub">
                 <span className="badge badge-warn">
-                  +{kpis.waitlist.new_7d} (7d)
+                  +{kpis.waitlist.new_7d} ({t('7 ngày', '7d')})
                 </span>
                 <span>
                   {kpis.waitlist.converted_pct.toFixed(1)}%{' '}
@@ -385,7 +390,8 @@ export function OverviewPage() {
               </div>
               <div className="kpi-sub">
                 <span className="badge badge-primary">
-                  Stickiness {kpis.engagement.stickiness_pct.toFixed(1)}%
+                  {t('Độ gắn kết', 'Stickiness')}{' '}
+                  {kpis.engagement.stickiness_pct.toFixed(1)}%
                 </span>
               </div>
             </div>
@@ -434,7 +440,8 @@ export function OverviewPage() {
               <div className="kpi-value">{kpis.moderation.open_reports}</div>
               <div className="kpi-sub">
                 <span className="badge badge-success">
-                  24h SLA: {kpis.moderation.sla_compliance_pct_30d}%
+                  {t('SLA 24h', '24h SLA')}:{' '}
+                  {kpis.moderation.sla_compliance_pct_30d}%
                 </span>
                 <span>
                   {kpis.moderation.open_blocks}{' '}
@@ -464,7 +471,7 @@ export function OverviewPage() {
                     to={`/feature-requests?id=${encodeURIComponent(topVotedFirst.id)}`}
                     style={{ fontWeight: 700, textDecoration: 'underline' }}
                   >
-                    Top #1 ({topVotedFirst.vote_count} votes)
+                    Top #1 ({topVotedFirst.vote_count} {t('phiếu', 'votes')})
                   </Link>
                 )}
               </div>
@@ -511,8 +518,8 @@ export function OverviewPage() {
                   <p className="page-subtitle">
                     {frKpis === null
                       ? t(
-                          'Chưa cài đặt bảng đề xuất tính năng (Migration 0024).',
-                          'Feature requests table not installed yet (Migration 0024).',
+                          'Tính năng đề xuất chưa được kích hoạt trên hệ thống.',
+                          'Feature requests are not enabled on this system yet.',
                         )
                       : t(
                           'Chưa có đề xuất tính năng nào đang mở.',
@@ -540,7 +547,7 @@ export function OverviewPage() {
                         }}
                       >
                         <span className="badge badge-primary tabular">
-                          {fr.vote_count} votes
+                          {fr.vote_count} {t('phiếu', 'votes')}
                         </span>
                         <div>
                           <div style={{ fontWeight: 700 }}>{fr.title}</div>
@@ -552,8 +559,12 @@ export function OverviewPage() {
                               fontSize: '0.75rem',
                             }}
                           >
-                            <span className="badge">{fr.category}</span>
-                            <span className="badge badge-sky">{fr.status}</span>
+                            <span className="badge">
+                              {formatFeatureRequestCategory(fr.category, lang)}
+                            </span>
+                            <span className="badge badge-sky">
+                              {formatFeatureRequestStatus(fr.status, lang)}
+                            </span>
                           </div>
                         </div>
                       </div>
