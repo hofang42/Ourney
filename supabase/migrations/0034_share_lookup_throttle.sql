@@ -98,7 +98,24 @@ begin
   if not v_is_slug and not coalesce(p_token collate "C" ~ '^[a-z0-9]{32,64}$', false) then
     raise exception 'not_found';
   end if;
-  v_retry := private.take_share_lookup('user', uid::text, 60);
+  -- Misses skip the counter write. Authorize, charge once, and only then build the payload
+  -- from the same snapshot as the credential and viewer role.
+  with candidate as materialized (
+    select j.id, private.viewer_role(j.id, true) as role
+      from public.journeys j
+     where j.deleted_at is null and j.public_token is not null
+       and ((v_is_slug and j.public_slug = p_token) or (not v_is_slug and j.public_token = p_token))
+  ), authorized as materialized (
+    select c.id, c.role, private.take_share_lookup('user', uid::text, 60) as retry_after
+      from candidate c where c.role is not null
+  )
+  select a.id, a.role, a.retry_after,
+         case when a.retry_after = 0 then private.journey_view(a.id, a.role) end
+    into v_journey, v_role, v_retry, v_view
+    from authorized a;
+  if not found then
+    raise exception 'not_found';
+  end if;
   if v_retry > 0 then
     raise sqlstate 'PGRST' using
       message = '{"code":"P0001","message":"rate_limited"}',
@@ -106,25 +123,6 @@ begin
         'headers', json_build_object('Retry-After', v_retry::text, 'Cache-Control', 'no-store'))::text;
   end if;
 
-  -- Use the credential, viewer role, and payload from the same snapshot.
-  if v_is_slug then
-    select j.id, r.role, private.journey_view(j.id, r.role)
-      into v_journey, v_role, v_view
-      from public.journeys j
-      cross join lateral (select private.viewer_role(j.id, true) as role) r
-     where j.public_slug = p_token and j.public_token is not null
-       and j.deleted_at is null and r.role is not null;
-  else
-    select j.id, r.role, private.journey_view(j.id, r.role)
-      into v_journey, v_role, v_view
-      from public.journeys j
-      cross join lateral (select private.viewer_role(j.id, true) as role) r
-     where j.public_token = p_token and j.deleted_at is null and r.role is not null;
-  end if;
-  -- Misses keep raising the legacy error, which rolls back the provisional debit.
-  if v_role is null then
-    raise exception 'not_found';
-  end if;
   if v_role <> 'member' then
     perform private.record_view(v_journey, uid::text);
   end if;

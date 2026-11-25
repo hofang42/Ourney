@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(26);
+select plan(27);
 
 select ok(
   has_function_privilege('service_role', 'public.lookup_public_journey_for_edge(text,text)', 'execute')
@@ -98,12 +98,14 @@ select throws_ok($$ select public.public_journey_by_token(repeat('z', 40)) $$,
   'P0001', 'not_found', 'an unknown token still raises the legacy error');
 reset role;
 select is((select hits from private.share_lookup_buckets where scope = 'user'), 1,
-  'an authenticated miss rolls back the provisional debit');
+  'an authenticated miss does not consume the successful lookup budget');
 update private.share_lookup_buckets set hits = 60 where scope = 'user';
 set local role authenticated;
 select throws_ok(format('select public.public_journey_by_token(%L)', :'slug'), 'PGRST',
   '{"code":"P0001","message":"rate_limited"}',
   'the same signed-in account is throttled across both token formats');
+select throws_ok($$ select public.public_journey_by_token(repeat('z', 40)) $$,
+  'P0001', 'not_found', 'an authenticated miss stays on the cheap path after budget exhaustion');
 set local request.jwt.claims = '{"sub":"34000000-0000-4000-8000-000000000002","role":"authenticated"}';
 select is(public.public_journey_by_token(:'slug')->>'role', 'stranger',
   'another signed-in account retains its own quota and can open the readable link');
