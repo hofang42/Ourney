@@ -58,7 +58,7 @@ begin
   perform public.create_journey(tests.j(8), 'group', 'travel', '7 Ngày Đà Lạt',
     'x', null, null, false, current_date - 1, 7, 'UTC');
   perform public.create_journey(tests.j(9), 'solo', 'custom', 'At 78 kg',
-    'x', 'Custom number', ' KG ', false, current_date - 1, 7, 'UTC');
+    'x', 'Custom number', U&'\FEFF KG\00A0', false, current_date - 1, 7, 'UTC');
   perform public.create_journey(tests.j(10), 'solo', 'custom', 'Old title', 'x',
     null, null, false, current_date - 1, 7, 'UTC');
   perform public.create_journey(tests.j(11), 'solo', 'custom', 'Legacy address', 'x',
