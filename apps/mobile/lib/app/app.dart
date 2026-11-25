@@ -16,6 +16,7 @@ import '../features/profile/settings_providers.dart' show themeModeProvider;
 import '../features/profile/share_privacy_sync.dart' show SharePrivacyHealHook;
 import '../features/reminders/data/reminder_scheduler.dart';
 import '../features/update/data/update_providers.dart';
+import '../features/update/ui/update_gate_screen.dart';
 import '../features/widgets/data/widget_sync_controller.dart'
     show WidgetLifecycleHook;
 import '../l10n/generated/app_localizations.dart';
@@ -78,12 +79,15 @@ class OurneyApp extends ConsumerWidget {
               child: OurneyTextScaleClamp(
                 // In-app reminder banner (V2 `ReminderNotification`): shown while
                 // `reminderBannerProvider` holds a value; a tap opens the camera.
-                child: ReminderBannerHost(
-                  onOpenJourneyCamera: (id) =>
-                      unawaited(_openReminderJourney(ref, router, id)),
-                  child: _SplashGate(
-                    returning: onboarded,
-                    child: child ?? const SizedBox.shrink(),
+                // Suppressed when `UpdateGateHost` presents the forced gate.
+                child: _SplashGate(
+                  returning: onboarded,
+                  child: UpdateGateHost(
+                    child: ReminderBannerHost(
+                      onOpenJourneyCamera: (id) =>
+                          unawaited(_openReminderJourney(ref, router, id)),
+                      child: child ?? const SizedBox.shrink(),
+                    ),
                   ),
                 ),
               ),

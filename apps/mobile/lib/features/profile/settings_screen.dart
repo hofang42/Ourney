@@ -13,6 +13,8 @@ import '../../ui/ui.dart';
 import '../auth/phone_format.dart';
 import '../safety/safety_paths.dart';
 import '../update/data/update_providers.dart';
+import '../update/ui/soft_update_sheet.dart';
+import '../update/ui/whats_new_sheet.dart';
 import 'l10n/generated/profile_localizations.dart';
 import 'profile_screen.dart' show profileEditPath;
 import 'settings_providers.dart';
@@ -406,13 +408,75 @@ class _VersionRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ProfileL10n.of(context);
+    final ui = context.ui;
     final version = ref.watch(appVersionProvider).asData?.value ?? '';
+    final updateState = ref.watch(appUpdateControllerProvider);
+    final updateEnabled = ref.watch(appUpdateEnabledProvider);
+    final manifest = updateState.manifest;
+
+    if (updateState.showSettingsBadge && manifest != null) {
+      final installedLabel =
+          updateState.installedVersion?.precedence ?? version;
+      final latestLabel = manifest.latest.precedence;
+      return MergeSemantics(
+        child: UiRow(
+          key: const ValueKey('settings-version'),
+          leading: const OurneyIcon(name: 'sparkle', size: 22),
+          title: installedLabel.isEmpty
+              ? l10n.profile_settings_version
+              : l10n.profile_settings_versionValue(installedLabel),
+          subtitle: Text(
+            l10n.profile_settings_versionUpdateBadge(latestLabel),
+            key: const ValueKey('settings-version-badge'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: UiText.body(
+              size: 12,
+              weight: FontWeight.w700,
+              height: 1.4,
+              color: ui.timeCue,
+            ),
+          ),
+          divider: false,
+          onPressed: () => unawaited(
+            showSoftUpdateSheet(
+              context,
+              fromSettings: true,
+              version: manifest.latest,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final installedNotes = updateState.installedReleaseNotes;
+    final hasWhatsNew = installedNotes != null && installedNotes.isNotEmpty;
+    final VoidCallback? onUpToDateTap = hasWhatsNew
+        ? () => unawaited(
+            showWhatsNewSheet(
+              context,
+              version: updateState.installedVersion,
+            ),
+          )
+        : updateEnabled
+        ? () {
+            OurneyHaptics.selection();
+            unawaited(
+              ref
+                  .read(appUpdateControllerProvider.notifier)
+                  .refresh(manual: true),
+            );
+          }
+        : null;
+
     return MergeSemantics(
       child: UiRow(
         key: const ValueKey('settings-version'),
         leading: const OurneyIcon(name: 'info', flat: true),
         title: l10n.profile_settings_version,
         divider: false,
+        showChevron: false,
+        onPressed: onUpToDateTap,
         trailing: version.isEmpty
             ? null
             : Text(
@@ -420,7 +484,7 @@ class _VersionRow extends ConsumerWidget {
                 style: UiText.body(
                   size: 14,
                   height: 1.4,
-                  color: context.ui.inkMuted,
+                  color: ui.inkMuted,
                 ),
               ),
       ),

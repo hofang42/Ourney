@@ -395,6 +395,24 @@
   "profile_settings_privacyPolicy": "Chính sách riêng tư",
   "profile_settings_contact": "Liên hệ",
   "profile_settings_version": "Phiên bản",
+  "profile_settings_versionValue": "Phiên bản {version}",
+  "@profile_settings_versionValue": {
+    "description": "Settings version row title when an update badge is shown.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "profile_settings_versionUpdateBadge": "Có bản mới {latest}",
+  "@profile_settings_versionUpdateBadge": {
+    "description": "Settings version row subtitle when a newer version is available.",
+    "placeholders": {
+      "latest": {
+        "type": "String"
+      }
+    }
+  },
   "profile_settings_signOut": "Đăng xuất",
   "profile_settings_delete": "Xóa tài khoản",
   "profile_settingsEntry": "Cài đặt",

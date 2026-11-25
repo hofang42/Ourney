@@ -12,6 +12,8 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../profile/profile_providers.dart';
 import '../../sharing/sharing.dart';
+import '../../update/data/update_providers.dart';
+import '../../update/ui/hub_update_banner.dart';
 import '../data/create_progress.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
@@ -366,7 +368,12 @@ class _HubNotices extends ConsumerWidget {
     final ui = context.ui;
     final offline = ref.watch(journeyHomeOfflineProvider).value ?? false;
     final resume = ref.watch(createProgressProvider);
-    if (!offline && resume == null) return const SizedBox.shrink();
+    final showUpdate = ref.watch(
+      appUpdateControllerProvider.select((s) => s.showHubBanner),
+    );
+    if (!offline && resume == null && !showUpdate) {
+      return const SizedBox.shrink();
+    }
     return Padding(
       padding: const EdgeInsets.only(top: UiSpace.md),
       child: Column(
@@ -419,6 +426,9 @@ class _HubNotices extends ConsumerWidget {
                 ),
               ),
             ),
+          if ((offline || resume != null) && showUpdate)
+            const SizedBox(height: UiSpace.sm),
+          if (showUpdate) const HubUpdateBanner(),
         ],
       ),
     );

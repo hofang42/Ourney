@@ -15,6 +15,7 @@ import 'package:ourney/features/profile/l10n/generated/profile_localizations.dar
 import 'package:ourney/features/reminders/l10n/generated/reminders_localizations.dart';
 import 'package:ourney/features/safety/l10n/generated/safety_localizations.dart';
 import 'package:ourney/features/share_card/l10n/generated/share_card_localizations.dart';
+import 'package:ourney/features/update/l10n/generated/update_localizations.dart';
 import 'package:ourney/l10n/generated/app_localizations.dart';
 import 'package:ourney/personas/accountability_squad/l10n/generated/accountability_squad_localizations.dart';
 import 'package:ourney/personas/aesthetic_flexer/l10n/generated/aesthetic_flexer_localizations.dart';
@@ -131,6 +132,7 @@ void main() {
         SafetyL10n.of(ctx).safety_title,
         RemindersL10n.of(ctx).reminders_title,
         FeedbackL10n.of(ctx).feedback_title,
+        UpdateL10n.of(ctx).update_ctaUpdate,
       ];
       expect(titles.every((t) => t.isNotEmpty), isTrue);
       // One class per persona (F1): all six load with the app delegates.

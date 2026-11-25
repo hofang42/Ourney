@@ -794,6 +794,18 @@ abstract class ProfileL10n {
   /// **'Phiên bản'**
   String get profile_settings_version;
 
+  /// Settings version row title when an update badge is shown.
+  ///
+  /// In vi, this message translates to:
+  /// **'Phiên bản {version}'**
+  String profile_settings_versionValue(String version);
+
+  /// Settings version row subtitle when a newer version is available.
+  ///
+  /// In vi, this message translates to:
+  /// **'Có bản mới {latest}'**
+  String profile_settings_versionUpdateBadge(String latest);
+
   /// No description provided for @profile_settings_signOut.
   ///
   /// In vi, this message translates to:

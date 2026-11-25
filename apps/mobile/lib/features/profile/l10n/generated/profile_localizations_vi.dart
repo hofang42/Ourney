@@ -389,6 +389,16 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_settings_version => 'Phiên bản';
 
   @override
+  String profile_settings_versionValue(String version) {
+    return 'Phiên bản $version';
+  }
+
+  @override
+  String profile_settings_versionUpdateBadge(String latest) {
+    return 'Có bản mới $latest';
+  }
+
+  @override
   String get profile_settings_signOut => 'Đăng xuất';
 
   @override
