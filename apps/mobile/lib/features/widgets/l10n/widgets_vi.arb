@@ -12,6 +12,10 @@
   "@widgets_intro": {
     "description": "Introductory paragraph at the top of the Widgets screen."
   },
+  "widgets_appGroupUnavailable": "Bản cài này chưa cho widget đọc dữ liệu. Widget sẽ hoạt động ở bản TestFlight/App Store hoặc khi cài qua AltStore/SideStore.",
+  "@widgets_appGroupUnavailable": {
+    "description": "Notice on iOS when the app installation lacks a shared widget data container."
+  },
   "widgets_secPreview": "xem trước tiện ích",
   "@widgets_secPreview": {
     "description": "Section heading for the interactive widget preview gallery."

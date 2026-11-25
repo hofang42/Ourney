@@ -2,7 +2,6 @@ import Foundation
 
 /// Constants shared across the widget extension and host bridge.
 public enum OurneyWidgetConstants {
-  public static let appGroupId = "group.com.hofang42.ourney"
   public static let directoryName = "ourney_widgets"
   public static let snapshotFileName = "snapshot_v1.json"
   public static let stateFileName = "state.json"
@@ -80,6 +79,7 @@ public enum OurneyTimePhase: String, Equatable {
 
 /// 4-state card resolution for `Today`, `Streak`, and `LockScreen` widgets (§A.3).
 public enum OurneyJourneyCardState: Equatable {
+  case appGroupUnavailable
   case unsynced
   case signedOut
   case noJourneys
@@ -88,6 +88,7 @@ public enum OurneyJourneyCardState: Equatable {
 
 /// 5-state card resolution for `Squad` widget (§A.3 & Rank 5 solo-only hint).
 public enum OurneySquadCardState: Equatable {
+  case appGroupUnavailable
   case unsynced
   case signedOut
   case soloOnly(soloCount: Int)
@@ -361,12 +362,14 @@ public struct WidgetSnapshot: Codable, Equatable {
     selectedTodayJourney(pinnedId: pinnedId, state: state)
   }
 
-  /// Resolves the 4-state card model for `OurneyTodayWidget` and `OurneyLockScreenWidget` (§A.3).
+  /// Resolves the card state for `OurneyTodayWidget` and `OurneyLockScreenWidget`.
   public static func resolveTodayCardState(
     snapshot: WidgetSnapshot?,
     pinnedId: String? = nil,
-    state: WidgetInteractiveState = WidgetInteractiveState()
+    state: WidgetInteractiveState = WidgetInteractiveState(),
+    appGroupAvailable: Bool = true
   ) -> OurneyJourneyCardState {
+    guard appGroupAvailable else { return .appGroupUnavailable }
     guard let snap = snapshot else { return .unsynced }
     if snap.isSignedOut { return .signedOut }
     guard let journey = snap.selectedTodayJourney(pinnedId: pinnedId, state: state) else {
@@ -375,11 +378,13 @@ public struct WidgetSnapshot: Codable, Equatable {
     return .ready(journey)
   }
 
-  /// Resolves the 4-state card model for `OurneyStreakWidget` (§A.3).
+  /// Resolves the card state for `OurneyStreakWidget`.
   public static func resolveStreakCardState(
     snapshot: WidgetSnapshot?,
-    pinnedId: String? = nil
+    pinnedId: String? = nil,
+    appGroupAvailable: Bool = true
   ) -> OurneyJourneyCardState {
+    guard appGroupAvailable else { return .appGroupUnavailable }
     guard let snap = snapshot else { return .unsynced }
     if snap.isSignedOut { return .signedOut }
     guard let journey = snap.selectedStreakJourney(preferredId: pinnedId) else {
@@ -388,11 +393,13 @@ public struct WidgetSnapshot: Codable, Equatable {
     return .ready(journey)
   }
 
-  /// Resolves the 5-state card model for `OurneySquadWidget` (§A.3 & Rank 5).
+  /// Resolves the card state for `OurneySquadWidget`.
   public static func resolveSquadCardState(
     snapshot: WidgetSnapshot?,
-    pinnedId: String? = nil
+    pinnedId: String? = nil,
+    appGroupAvailable: Bool = true
   ) -> OurneySquadCardState {
+    guard appGroupAvailable else { return .appGroupUnavailable }
     guard let snap = snapshot else { return .unsynced }
     if snap.isSignedOut { return .signedOut }
     if let squad = snap.selectedSquad(preferredId: pinnedId) {
@@ -1228,14 +1235,15 @@ public enum WidgetDateParser {
 }
 
 /// Shared App Group container reader/writer used by both `OurneyWidgetsExtension` and `Runner`.
-/// Degrades gracefully when the App Group container is unavailable (e.g., Free Apple ID sideload).
+/// Provides sandbox storage for Runner if no shared App Group is accessible.
 public enum WidgetSnapshotStore {
   /// Returns the shared App Group `ourney_widgets` directory, or `nil` when App Group
-  /// entitlement is unavailable (Free Apple ID sideload — Binding Note O2).
+  /// access is unavailable for this installation.
   public static func sharedRootDirectory(fileManager: FileManager = .default) -> URL? {
-    guard let container = fileManager.containerURL(
-      forSecurityApplicationGroupIdentifier: OurneyWidgetConstants.appGroupId
-    ) else {
+    let appGroup = fileManager === FileManager.default
+      ? WidgetAppGroup.current
+      : WidgetAppGroup.resolve(fileManager: fileManager)
+    guard let container = appGroup?.containerURL else {
       return nil
     }
     return container

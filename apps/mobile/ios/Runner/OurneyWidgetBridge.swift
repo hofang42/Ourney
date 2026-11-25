@@ -156,7 +156,7 @@ public final class OurneyWidgetBridge {
     } else if let fallbackRoot = WidgetSnapshotStore.localFallbackDirectory() {
       if !didLogMissingAppGroup {
         didLogMissingAppGroup = true
-        NSLog("[OurneyWidgetBridge] App Group container unavailable (free Apple ID sideload); using sandbox fallback.")
+        NSLog("[OurneyWidgetBridge] App Group container unavailable; using sandbox fallback.")
       }
       rootDir = fallbackRoot
     } else {
