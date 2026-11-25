@@ -2,7 +2,35 @@ import SwiftUI
 import WidgetKit
 
 @main
-struct OurneyWidgetsBundle: WidgetBundle {
+enum OurneyWidgetsLauncher {
+  @MainActor static func main() {
+    #if canImport(AppIntents)
+    if #available(iOSApplicationExtension 17.0, iOS 17.0, *) {
+      OurneyConfigurableWidgetsBundle.main()
+      return
+    }
+    #endif
+    OurneyLegacyWidgetsBundle.main()
+  }
+}
+
+#if canImport(AppIntents)
+@available(iOSApplicationExtension 17.0, iOS 17.0, *)
+struct OurneyConfigurableWidgetsBundle: WidgetBundle {
+  @WidgetBundleBuilder
+  var body: some Widget {
+    TodayConfigurableWidget()
+    StreakConfigurableWidget()
+    SquadConfigurableWidget()
+    LockScreenConfigurableWidget()
+    #if canImport(ActivityKit)
+    CheckInLiveActivity()
+    #endif
+  }
+}
+#endif
+
+struct OurneyLegacyWidgetsBundle: WidgetBundle {
   @WidgetBundleBuilder
   var body: some Widget {
     TodayWidget()
