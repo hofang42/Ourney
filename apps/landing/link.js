@@ -41,9 +41,12 @@
       f_meta_title: 'ourney · lời mời kết bạn trên Ourney',
       f_meta_desc: 'Bạn được mời kết bạn trên Ourney — mở trong ứng dụng để kết nối, chia sẻ hành trình ảnh mỗi ngày và giữ chuỗi cùng nhau.',
       f_kicker: 'VÉ MỜI KẾT BẠN · OURNEY',
+      f_loading: 'Đang tải lời mời kết bạn…',
       f_headline: 'Bạn được mời kết bạn trên Ourney',
+      f_invited_suffix: ' mời bạn kết bạn trên Ourney',
       f_desc: 'Mở lời mời trong ứng dụng Ourney để kết bạn ngay, cùng chia sẻ hành trình ảnh mỗi ngày và giữ liền chuỗi ngày không bỏ cuộc.',
-      f_token_label: 'Mã lời mời:',
+      f_expired_h1: 'Lời mời không còn hiệu lực',
+      f_expired_desc: 'Có thể bạn ấy đã đổi sang liên kết mời mới. Hãy nhờ bạn ấy gửi lại liên kết mới cho bạn nhé.',
       f_invalid_h1: 'Liên kết lời mời không hợp lệ',
       f_invalid_desc: 'Đường dẫn kết bạn này bị thiếu mã hoặc không đúng định dạng. Nhờ bạn bè gửi lại liên kết mới hoặc mở trực tiếp trong ứng dụng Ourney.',
 
@@ -51,9 +54,19 @@
       j_meta_title: 'ourney · lời mời vào squad trên Ourney',
       j_meta_desc: 'Bạn được mời vào squad trên Ourney — mở trong ứng dụng hoặc sao chép mã mời để tham gia tường Polaroid mỗi ngày cùng nhóm bạn.',
       j_kicker: 'VÉ MỜI SQUAD · TỐI ĐA 10 BẠN',
+      j_kicker_fmt: (max) =>
+        (typeof max === 'number' && max > 0 ? `VÉ MỜI SQUAD · TỐI ĐA ${max} BẠN` : 'VÉ MỜI SQUAD · TỐI ĐA 10 BẠN'),
+      j_loading: 'Đang tải thông tin squad…',
       j_headline: 'Bạn được mời vào squad',
+      j_headline_named_prefix: 'Vào squad ',
+      j_headline_named_suffix: ' trên Ourney',
+      j_members_fmt: (count, max) =>
+        (typeof max === 'number' && max > 0 ? `${count}/${max} thành viên` : `${count} thành viên`),
+      j_owner_fmt: (name) => `Squad của ${name}`,
       j_desc: 'Một mình dễ quên, có hội thì giữ được. Mở thẳng trong ứng dụng Ourney hoặc sao chép mã bên dưới để vào tường Polaroid của nhóm.',
       j_code_label: 'MÃ MỜI VÀO SQUAD',
+      j_expired_h1: 'Mã mời không còn hiệu lực',
+      j_expired_desc: 'Squad này có thể đã đổi mã mời mới hoặc đã kết thúc hành trình. Hãy nhờ thành viên trong nhóm gửi lại liên kết mời mới nhé.',
       j_invalid_h1: 'Mã mời squad không hợp lệ',
       j_invalid_desc: 'Mã mời vào nhóm trong liên kết này bị thiếu hoặc không đúng định dạng. Hãy kiểm tra lại mã mời từ trưởng nhóm.',
 
@@ -112,9 +125,12 @@
       f_meta_title: 'ourney · friend invite on Ourney',
       f_meta_desc: 'You’re invited to be friends on Ourney — open in the app to connect, share daily photo journeys, and keep streaks together.',
       f_kicker: 'FRIEND INVITE PASS · OURNEY',
+      f_loading: 'Loading friend invite…',
       f_headline: 'You’re invited to be friends on Ourney',
+      f_invited_suffix: ' invited you to be friends on Ourney',
       f_desc: 'Open this invite in the Ourney app to connect right away, share daily photo journeys, and keep your streak alive together.',
-      f_token_label: 'Invite token:',
+      f_expired_h1: 'This invite link is no longer active',
+      f_expired_desc: 'Your friend may have created a new invite link. Ask them to resend their latest link.',
       f_invalid_h1: 'Invalid friend invite link',
       f_invalid_desc: 'This friend invite link is missing a token or has an invalid format. Ask your friend for a fresh link or open Ourney directly.',
 
@@ -122,9 +138,19 @@
       j_meta_title: 'ourney · squad invite on Ourney',
       j_meta_desc: 'You’re invited to join a squad on Ourney — open in the app or copy the invite code to join the daily Polaroid wall.',
       j_kicker: 'SQUAD INVITE · UP TO 10 FRIENDS',
+      j_kicker_fmt: (max) =>
+        (typeof max === 'number' && max > 0 ? `SQUAD INVITE · UP TO ${max} FRIENDS` : 'SQUAD INVITE · UP TO 10 FRIENDS'),
+      j_loading: 'Loading squad invite…',
       j_headline: 'You’re invited to join a squad',
+      j_headline_named_prefix: 'Join squad ',
+      j_headline_named_suffix: ' on Ourney',
+      j_members_fmt: (count, max) =>
+        (typeof max === 'number' && max > 0 ? `${count}/${max} members` : `${count} members`),
+      j_owner_fmt: (name) => `${name}'s squad`,
       j_desc: 'Solo fades fast, squads stick together. Open straight in the Ourney app or copy the code below to join your squad’s Polaroid wall.',
       j_code_label: 'SQUAD INVITE CODE',
+      j_expired_h1: 'This squad invite code is no longer active',
+      j_expired_desc: 'This squad may have rotated its invite code or completed its journey. Ask a squad member to send you the latest invite link.',
       j_invalid_h1: 'Invalid squad invite code',
       j_invalid_desc: 'The squad invite code in this link is missing or malformed. Please double-check the code with your squad owner.',
 
@@ -209,8 +235,9 @@
   root.dataset.platform = platform;
 
   /* --- 6. Parse & Validate Route Parameters (/f/:token, /j/:code, /join/:code, /p/:token) --- */
+  const FRIEND_TOKEN_RE = /^[a-z0-9]{12}$/;
   const TOKEN_RE = /^[A-Za-z0-9_-]{1,64}$/;
-  const SQUAD_CODE_RE = /^[A-Z0-9]{3,16}$/;
+  const SQUAD_CODE_RE = /^[A-Z0-9]{8}$/;
 
   function parseRoute() {
     const path = location.pathname || '/';
@@ -238,12 +265,13 @@
     }
 
     if (kind === 'friend') {
-      const valid = TOKEN_RE.test(rawParam);
+      const cleaned = rawParam.toLowerCase();
+      const valid = FRIEND_TOKEN_RE.test(cleaned);
       return {
         kind: 'friend',
         valid,
-        value: valid ? rawParam : '',
-        deepLink: valid ? `ourney://friend/${encodeURIComponent(rawParam)}` : ''
+        value: valid ? cleaned : '',
+        deepLink: valid ? `ourney://friend/${encodeURIComponent(cleaned)}` : ''
       };
     }
 
@@ -602,33 +630,396 @@
   }
 
   /* --- 9. Render Friend Page (/f/:token) --- */
-  function initFriendPage() {
-    const validCard = $('f-valid-card');
-    const invalidCard = $('f-invalid-card');
-    const tokenVal = $('f-token-val');
-    const openBtn = $('open-app-btn');
+  const CLIENT_RPC_TIMEOUT_MS = 4000;
+  let friendPageState = 'loading'; // 'loading' | 'loaded' | 'fallback' | 'expired' | 'invalid'
+  let loadedFriendData = null;
 
-    if (!route.valid) {
+  function firstGrapheme(raw) {
+    const str = typeof raw === 'string' ? raw.trim() : '';
+    if (!str) return '';
+    if (typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function') {
+      const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+      const first = seg.segment(str)[Symbol.iterator]().next();
+      if (first && first.value && first.value.segment) {
+        return first.value.segment.toUpperCase();
+      }
+    }
+    const cp = Array.from(str)[0];
+    return cp ? cp.toUpperCase() : '';
+  }
+
+  function syncFallbackCard(isDeadLink) {
+    const qrPanel = $('qr-panel');
+    const fbNote = $('fallback-note') || document.querySelector('.link-fallback-note');
+    if (qrPanel) qrPanel.hidden = Boolean(isDeadLink);
+    if (fbNote) fbNote.hidden = Boolean(isDeadLink);
+  }
+
+  function readEmbeddedPreview(keyName, expectedValue) {
+    const raw = root.getAttribute('data-invite-preview');
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return null;
+      if (parsed[keyName] !== expectedValue) return null;
+      if (parsed.status === 'ok' && parsed.data && typeof parsed.data === 'object') {
+        return { status: 'ok', data: parsed.data };
+      }
+      if (parsed.status === 'empty') {
+        return { status: 'empty', data: null };
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function getRpcEndpoint(rpcName) {
+    const supabaseUrl = getMetaContent('ourney-supabase-url', DEFAULT_SUPABASE_URL).replace(/\/+$/, '');
+    const anonKey = getMetaContent('ourney-supabase-anon-key', DEFAULT_SUPABASE_ANON_KEY);
+    const isLocalhost = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
+    const hasCustomMetaUrl = Boolean(document.querySelector('meta[name="ourney-supabase-url"]'));
+    const baseUrl = (isLocalhost && !hasCustomMetaUrl) ? location.origin : supabaseUrl;
+    const headers = { 'Content-Type': 'application/json' };
+    if (anonKey) {
+      headers.apikey = anonKey;
+      headers.Authorization = `Bearer ${anonKey}`;
+    }
+    return { url: `${baseUrl}/rest/v1/rpc/${rpcName}`, headers };
+  }
+
+  function renderFriendState() {
+    const validCard = $('f-valid-card');
+    const expiredCard = $('f-expired-card');
+    const invalidCard = $('f-invalid-card');
+    const loadingSkel = $('f-loading-skel');
+    const loadingMsg = $('f-loading-msg');
+    const inviterBox = $('f-inviter-box');
+    const stickerCluster = $('f-sticker-cluster');
+    const avatarInitialEl = $('f-avatar-initial');
+    const handleEl = $('f-inviter-handle');
+    const titleEl = $('f-title');
+    const descEl = $('f-desc');
+    const dict = COPY[curLang];
+
+    if (friendPageState === 'invalid') {
       if (validCard) validCard.hidden = true;
+      if (expiredCard) expiredCard.hidden = true;
       if (invalidCard) invalidCard.hidden = false;
+      syncFallbackCard(true);
+      document.title = dict.f_meta_title;
       return;
     }
 
-    if (validCard) validCard.hidden = false;
-    if (invalidCard) invalidCard.hidden = true;
-    if (tokenVal) tokenVal.textContent = route.value;
-    if (openBtn) openBtn.setAttribute('href', route.deepLink);
+    if (friendPageState === 'expired') {
+      if (validCard) validCard.hidden = true;
+      if (expiredCard) expiredCard.hidden = false;
+      if (invalidCard) invalidCard.hidden = true;
+      syncFallbackCard(true);
+      document.title = dict.f_meta_title;
+      return;
+    }
 
+    syncFallbackCard(false);
+    if (validCard) {
+      validCard.hidden = false;
+      validCard.setAttribute('aria-busy', friendPageState === 'loading' ? 'true' : 'false');
+    }
+    if (expiredCard) expiredCard.hidden = true;
+    if (invalidCard) invalidCard.hidden = true;
+
+    if (friendPageState === 'loading') {
+      if (loadingSkel) loadingSkel.hidden = false;
+      if (loadingMsg) loadingMsg.hidden = false;
+      if (inviterBox) inviterBox.hidden = true;
+      if (stickerCluster) stickerCluster.hidden = true;
+      if (titleEl) titleEl.hidden = true;
+      if (descEl) descEl.hidden = true;
+      document.title = dict.f_meta_title;
+      return;
+    }
+
+    if (loadingSkel) loadingSkel.hidden = true;
+    if (loadingMsg) loadingMsg.hidden = true;
+    if (titleEl) titleEl.hidden = false;
+    if (descEl) {
+      descEl.hidden = false;
+      descEl.textContent = dict.f_desc;
+    }
+
+    if (friendPageState === 'loaded' && loadedFriendData) {
+      const displayName = typeof loadedFriendData.display_name === 'string'
+        ? loadedFriendData.display_name.trim()
+        : '';
+      const handle = typeof loadedFriendData.handle === 'string'
+        ? loadedFriendData.handle.trim().replace(/^@+/, '')
+        : '';
+      const rawInitial = typeof loadedFriendData.avatar_initial === 'string'
+        ? loadedFriendData.avatar_initial.trim()
+        : '';
+      const initial = firstGrapheme(rawInitial || displayName || handle || 'O') || 'O';
+
+      if (inviterBox) inviterBox.hidden = false;
+      if (stickerCluster) stickerCluster.hidden = true;
+      if (avatarInitialEl) avatarInitialEl.textContent = initial;
+      if (handleEl) {
+        if (handle) {
+          handleEl.hidden = false;
+          handleEl.textContent = `@${handle}`;
+        } else {
+          handleEl.hidden = true;
+          handleEl.textContent = '';
+        }
+      }
+
+      if (titleEl && displayName) {
+        const b = document.createElement('b');
+        b.textContent = displayName;
+        const suffix = document.createTextNode(dict.f_invited_suffix);
+        titleEl.replaceChildren(b, suffix);
+        document.title = `ourney · ${displayName}${dict.f_invited_suffix}`;
+      } else if (titleEl) {
+        const b = document.createElement('b');
+        b.textContent = dict.f_headline;
+        titleEl.replaceChildren(b);
+        document.title = dict.f_meta_title;
+      }
+      return;
+    }
+
+    /* Fetch failure -> generic headline (current copy), still with Open-in-app */
+    if (inviterBox) inviterBox.hidden = true;
+    if (stickerCluster) stickerCluster.hidden = false;
+    if (titleEl) {
+      const b = document.createElement('b');
+      b.textContent = dict.f_headline;
+      titleEl.replaceChildren(b);
+    }
+    document.title = dict.f_meta_title;
+  }
+
+  async function fetchFriendPreview() {
+    const embedded = readEmbeddedPreview('token', route.value);
+    if (embedded) {
+      if (embedded.status === 'ok' && embedded.data && typeof embedded.data.display_name === 'string' && embedded.data.display_name.trim()) {
+        loadedFriendData = embedded.data;
+        friendPageState = 'loaded';
+      } else {
+        loadedFriendData = null;
+        friendPageState = 'expired';
+      }
+      renderFriendState();
+      return;
+    }
+
+    friendPageState = 'loading';
+    renderFriendState();
+
+    const { url, headers } = getRpcEndpoint('preview_friend_invite');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), CLIENT_RPC_TIMEOUT_MS);
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ p_token: route.value }),
+        signal: controller.signal
+      });
+      if (!res.ok) {
+        friendPageState = 'fallback';
+        renderFriendState();
+        return;
+      }
+      const data = await res.json();
+      if (!data || typeof data !== 'object' || typeof data.display_name !== 'string' || !data.display_name.trim()) {
+        friendPageState = 'expired';
+        loadedFriendData = null;
+        renderFriendState();
+        return;
+      }
+      loadedFriendData = data;
+      friendPageState = 'loaded';
+      renderFriendState();
+    } catch (e) {
+      friendPageState = 'fallback';
+      renderFriendState();
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function initFriendPage() {
+    const openBtn = $('open-app-btn');
+
+    if (!route.valid) {
+      friendPageState = 'invalid';
+      renderFriendState();
+      return;
+    }
+
+    if (openBtn) openBtn.setAttribute('href', route.deepLink);
     attemptOpenAppOnce(route.deepLink);
+    fetchFriendPreview();
   }
 
   /* --- 10. Render Squad Page (/j/:code, /join/:code) --- */
   let codeCopied = false;
   let copyResetTimer = null;
+  let squadPageState = 'idle'; // 'loading' | 'loaded' | 'fallback' | 'expired' | 'invalid'
+  let loadedSquadData = null;
+
+  function renderSquadState() {
+    const validCard = $('j-valid-card');
+    const expiredCard = $('j-expired-card');
+    const invalidCard = $('j-invalid-card');
+    const loadingSkel = $('j-loading-skel');
+    const loadingMsg = $('j-loading-msg');
+    const squadMeta = $('j-squad-meta');
+    const squadNameEl = $('j-squad-name');
+    const squadMembersEl = $('j-squad-members');
+    const inviterPill = $('j-squad-inviter-pill');
+    const inviterEl = $('j-squad-inviter');
+    const titleEl = $('j-title');
+    const kickerEl = document.querySelector('[data-i18n="j_kicker"]');
+    const dict = COPY[curLang];
+
+    if (squadPageState === 'invalid') {
+      if (validCard) validCard.hidden = true;
+      if (expiredCard) expiredCard.hidden = true;
+      if (invalidCard) invalidCard.hidden = false;
+      syncFallbackCard(true);
+      document.title = dict.j_meta_title;
+      return;
+    }
+
+    if (squadPageState === 'expired') {
+      if (validCard) validCard.hidden = true;
+      if (expiredCard) expiredCard.hidden = false;
+      if (invalidCard) invalidCard.hidden = true;
+      syncFallbackCard(true);
+      document.title = dict.j_meta_title;
+      return;
+    }
+
+    syncFallbackCard(false);
+    if (validCard) {
+      validCard.hidden = false;
+      validCard.setAttribute('aria-busy', squadPageState === 'loading' ? 'true' : 'false');
+    }
+    if (expiredCard) expiredCard.hidden = true;
+    if (invalidCard) invalidCard.hidden = true;
+
+    if (squadPageState === 'loading') {
+      if (loadingSkel) loadingSkel.hidden = false;
+      if (loadingMsg) loadingMsg.hidden = false;
+      if (squadMeta) squadMeta.hidden = true;
+      return;
+    }
+
+    if (loadingSkel) loadingSkel.hidden = true;
+    if (loadingMsg) loadingMsg.hidden = true;
+
+    if (squadPageState === 'loaded' && loadedSquadData) {
+      const rawTitle = loadedSquadData.title || loadedSquadData.group_name || '';
+      const title = typeof rawTitle === 'string' ? rawTitle.trim() : '';
+      const memberCount = typeof loadedSquadData.member_count === 'number' && Number.isFinite(loadedSquadData.member_count)
+        ? loadedSquadData.member_count
+        : 0;
+      const maxMembers = typeof loadedSquadData.max_members === 'number' && Number.isFinite(loadedSquadData.max_members)
+        ? loadedSquadData.max_members
+        : 10;
+      const rawOwner = loadedSquadData.owner_display_name || '';
+      const ownerName = typeof rawOwner === 'string' ? rawOwner.trim() : '';
+
+      if (title) {
+        if (kickerEl) kickerEl.textContent = dict.j_kicker_fmt(maxMembers);
+        if (squadMeta) squadMeta.hidden = false;
+        if (squadNameEl) squadNameEl.textContent = title;
+        if (squadMembersEl) squadMembersEl.textContent = dict.j_members_fmt(memberCount, maxMembers);
+        if (inviterPill && inviterEl) {
+          if (ownerName) {
+            inviterPill.hidden = false;
+            inviterEl.textContent = dict.j_owner_fmt(ownerName);
+          } else {
+            inviterPill.hidden = true;
+            inviterEl.textContent = '';
+          }
+        }
+        if (titleEl) {
+          const prefix = document.createTextNode(dict.j_headline_named_prefix);
+          const b = document.createElement('b');
+          b.textContent = title;
+          const suffix = document.createTextNode(dict.j_headline_named_suffix);
+          titleEl.replaceChildren(prefix, b, suffix);
+        }
+        document.title = `ourney · ${dict.j_headline_named_prefix}${title}${dict.j_headline_named_suffix}`;
+        return;
+      }
+    }
+
+    if (kickerEl) kickerEl.textContent = dict.j_kicker;
+    if (squadMeta) squadMeta.hidden = true;
+    if (titleEl) {
+      const b = document.createElement('b');
+      b.textContent = dict.j_headline;
+      titleEl.replaceChildren(b);
+    }
+    document.title = dict.j_meta_title;
+  }
+
+  async function fetchSquadPreview() {
+    const embedded = readEmbeddedPreview('code', route.value);
+    if (embedded) {
+      const embTitle = embedded.data && (embedded.data.title || embedded.data.group_name);
+      if (embedded.status === 'ok' && typeof embTitle === 'string' && embTitle.trim()) {
+        loadedSquadData = embedded.data;
+        squadPageState = 'loaded';
+      } else {
+        loadedSquadData = null;
+        squadPageState = 'expired';
+      }
+      renderSquadState();
+      return;
+    }
+
+    squadPageState = 'loading';
+    renderSquadState();
+
+    const { url, headers } = getRpcEndpoint('preview_group_invite');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), CLIENT_RPC_TIMEOUT_MS);
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ p_code: route.value }),
+        signal: controller.signal
+      });
+      if (!res.ok) {
+        squadPageState = 'fallback';
+        renderSquadState();
+        return;
+      }
+      const data = await res.json();
+      const title = data && typeof data === 'object' ? (data.title || data.group_name) : '';
+      if (!data || typeof title !== 'string' || !title.trim()) {
+        loadedSquadData = null;
+        squadPageState = 'expired';
+        renderSquadState();
+        return;
+      }
+      loadedSquadData = data;
+      squadPageState = 'loaded';
+      renderSquadState();
+    } catch (e) {
+      squadPageState = 'fallback';
+      renderSquadState();
+    } finally {
+      clearTimeout(timer);
+    }
+  }
 
   function initSquadPage() {
-    const validCard = $('j-valid-card');
-    const invalidCard = $('j-invalid-card');
     const codeVal = $('squad-code-val');
     const codeSlots = $('squad-code-slots');
     const openBtn = $('open-app-btn');
@@ -639,13 +1030,10 @@
     const copyLiveMsg = $('copy-live-msg');
 
     if (!route.valid) {
-      if (validCard) validCard.hidden = true;
-      if (invalidCard) invalidCard.hidden = false;
+      squadPageState = 'invalid';
+      renderSquadState();
       return;
     }
-
-    if (validCard) validCard.hidden = false;
-    if (invalidCard) invalidCard.hidden = true;
     if (codeVal) codeVal.textContent = route.value;
     if (openBtn) openBtn.setAttribute('href', route.deepLink);
 
@@ -696,6 +1084,7 @@
     }
 
     attemptOpenAppOnce(route.deepLink);
+    fetchSquadPreview();
   }
 
   /* --- 11. Render Public Journey Page (/p/:token) --- */
@@ -1064,9 +1453,9 @@
     });
 
     if (route.kind === 'friend') {
-      document.title = dict.f_meta_title;
+      renderFriendState();
     } else if (route.kind === 'squad') {
-      document.title = dict.j_meta_title;
+      renderSquadState();
       const copyLabel = $('copy-code-label');
       if (copyLabel) copyLabel.textContent = codeCopied ? dict.copy_done : dict.copy_code;
     } else if (route.kind === 'journey') {
