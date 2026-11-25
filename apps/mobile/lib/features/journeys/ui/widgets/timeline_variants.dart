@@ -25,7 +25,7 @@ DateTime displayDateOf(TimelineDay d) =>
     DateTime(d.date.year, d.date.month, d.date.day);
 
 /// Quiet transformer: weight curve with private axis labels (hold to reveal),
-/// a vertical rail of nodes captioned like the Figma timeline, and a
+/// a vertical rail of nodes captioned like the Figma timeline, and an optional
 /// milestones row.
 class QuietTimeline extends StatefulWidget {
   const QuietTimeline({
@@ -34,6 +34,9 @@ class QuietTimeline extends StatefulWidget {
     this.summary,
     this.short,
     this.onShortChanged,
+    this.startingWeight,
+    this.isOpenEnded = false,
+    this.showMilestones = true,
     super.key,
   });
 
@@ -46,6 +49,16 @@ class QuietTimeline extends StatefulWidget {
   /// The 30D / All choice when the screen keeps it (else kept here).
   final bool? short;
   final ValueChanged<bool>? onShortChanged;
+
+  /// Baseline weight from Create Flow (`UX-02`), prepended to the weight curve.
+  final double? startingWeight;
+
+  /// True when the journey has no fixed duration (`durationDays == null`).
+  final bool isOpenEnded;
+
+  /// Whether to render the inline `quiet-milestones` row (`false` when
+  /// [JourneyDetailScreen] already renders [JourneyHomeMilestones] below).
+  final bool showMilestones;
 
   @override
   State<QuietTimeline> createState() => _QuietTimelineState();
@@ -81,20 +94,45 @@ class _QuietTimelineState extends State<QuietTimeline> {
       }
     }
 
-    final series = short ? sum.curve30! : sum.curve;
-    final metricCount = short ? sum.metric30Count : sum.metricCount;
+    var series = short ? sum.curve30! : sum.curve;
+    var metricCount = short ? sum.metric30Count : sum.metricCount;
+    final baseline = widget.startingWeight;
+    if (baseline != null && !short) {
+      if (metricCount >= 2) {
+        series = [baseline, ...series];
+        metricCount++;
+      } else if (metricCount == 1 && sum.metricFirst != null) {
+        series = [baseline, sum.metricFirst!];
+        metricCount = 2;
+      }
+    }
     String axis(int i) {
-      if (!_revealed || metricCount < 2) return '••,•';
-      return l10n.journeys_quietAxis(
-        (i == 0 ? series.first : series.last).toStringAsFixed(1),
-      );
+      if (!_revealed) return '••,•';
+      if (metricCount >= 2) {
+        return l10n.journeys_quietAxis(
+          (i == 0 ? series.first : series.last).toStringAsFixed(1),
+        );
+      }
+      if (!short && metricCount == 1 && sum.metricFirst != null) {
+        return l10n.journeys_quietAxis(sum.metricFirst!.toStringAsFixed(1));
+      }
+      if (!short && baseline != null) {
+        return l10n.journeys_quietAxis(baseline.toStringAsFixed(1));
+      }
+      if (series.isNotEmpty) {
+        return '${(i == 0 ? series.first : series.last).round()}';
+      }
+      return '—';
     }
 
+    final openEnded = widget.isOpenEnded || sum.isOpenEnded;
     final total = sum.totalDays;
     final current = sum.currentDay;
-    final marks = <int>{7, total ~/ 2, total}.where((d) => d <= total).toList()
-      ..sort();
-    String markLabel(int d) => d == total
+    final marks = openEnded
+        ? const <int>[7, 14, 30]
+        : (<int>{7, total ~/ 2, total}.where((d) => d <= total).toList()
+            ..sort());
+    String markLabel(int d) => !openEnded && d == total
         ? l10n.journeys_quietFinish
         : d == 7
         ? l10n.journeys_quietWeek
@@ -284,44 +322,46 @@ class _QuietTimelineState extends State<QuietTimeline> {
                 ? markLabel(days[i].dayNumber)
                 : null,
           ),
-        const SizedBox(height: UiSpace.md),
-        Row(
-          key: const ValueKey('quiet-milestones'),
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final m in marks)
-              Expanded(
-                child: Column(
-                  children: [
-                    OurneyIcon(
-                      name: 'star',
-                      size: 20,
-                      flat: m > current,
-                      color: m > current ? ui.inkMuted : null,
-                    ),
-                    Text(
-                      l10n.journeys_quietDayTag(m),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: UiText.muted(color: ui.inkMuted, size: 11),
-                    ),
-                    Text(
-                      markLabel(m),
-                      maxLines: 2,
-                      textAlign: TextAlign.center,
-                      overflow: TextOverflow.ellipsis,
-                      style: UiText.body(
-                        size: 12,
-                        height: 1.35,
-                        weight: FontWeight.w700,
-                        color: ui.ink,
+        if (widget.showMilestones) ...[
+          const SizedBox(height: UiSpace.md),
+          Row(
+            key: const ValueKey('quiet-milestones'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final m in marks)
+                Expanded(
+                  child: Column(
+                    children: [
+                      OurneyIcon(
+                        name: 'star',
+                        size: 20,
+                        flat: m > current,
+                        color: m > current ? ui.inkMuted : null,
                       ),
-                    ),
-                  ],
+                      Text(
+                        l10n.journeys_quietDayTag(m),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: UiText.muted(color: ui.inkMuted, size: 11),
+                      ),
+                      Text(
+                        markLabel(m),
+                        maxLines: 2,
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        style: UiText.body(
+                          size: 12,
+                          height: 1.35,
+                          weight: FontWeight.w700,
+                          color: ui.ink,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -824,6 +864,7 @@ class CoupleTimeline extends StatelessWidget {
     required this.onTapDay,
     this.selfName,
     this.partnerName,
+    this.selfOnRight = false,
     super.key,
   });
 
@@ -833,6 +874,7 @@ class CoupleTimeline extends StatelessWidget {
   /// Persisted couple names; null falls back to You / Partner.
   final String? selfName;
   final String? partnerName;
+  final bool selfOnRight;
 
   @override
   Widget build(BuildContext context) {
@@ -845,6 +887,7 @@ class CoupleTimeline extends StatelessWidget {
             onTap: onTapDay,
             selfName: selfName,
             partnerName: partnerName,
+            selfOnRight: selfOnRight,
           ),
       ],
     );
@@ -857,12 +900,14 @@ class _CouplePair extends StatelessWidget {
     required this.onTap,
     this.selfName,
     this.partnerName,
+    this.selfOnRight = false,
   });
 
   final TimelineDay day;
   final ValueChanged<TimelineDay> onTap;
   final String? selfName;
   final String? partnerName;
+  final bool selfOnRight;
 
   static const double _spine = 44;
 
@@ -888,114 +933,119 @@ class _CouplePair extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, c) {
             final s = math.min((c.maxWidth - _spine) / 2, 120.0);
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  header.toUpperCase(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: UiText.muted(color: ui.inkMuted, size: 11),
-                ),
-                const SizedBox(height: 6),
-                Stack(
-                  alignment: Alignment.topCenter,
-                  children: [
-                    Positioned.fill(
-                      child: ExcludeSemantics(
-                        child: CustomPaint(
-                          painter: RailPainter(color: ui.border),
+    final selfHalf = _CoupleHalf(
+      label: (selfName?.trim().isNotEmpty ?? false)
+          ? selfName!.trim()
+          : l10n.journeys_coupleYou,
+      child: wrapTimelineDayHero(
+        day,
+        TimelineTile(day: day, size: s),
+      ),
+    );
+    final partnerHalf = _CoupleHalf(
+      label: (partnerName?.trim().isNotEmpty ?? false)
+          ? partnerName!.trim()
+          : l10n.journeys_ticketPartner,
+      child: partnerPhoto != null
+          ? _PartnerTile(checkIn: partnerPhoto, size: s)
+          : CustomPaint(
+              key: const ValueKey('couple-partner-slot'),
+              foregroundPainter: DashedOutlinePainter(
+                color: ui.border,
+                width: 1.5,
+                radius: UiRadius.otp,
+              ),
+              child: SizedBox.square(
+                dimension: s,
+                child: waiting
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(
+                            6,
+                          ),
+                          child: Text(
+                            l10n.journeys_coupleWaiting,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: UiText.muted(
+                              color: ui.inkMuted,
+                              size: 11,
+                            ),
+                          ),
                         ),
+                      )
+                    : null,
+              ),
+            ),
+    );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          header.toUpperCase(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: UiText.muted(color: ui.inkMuted, size: 11),
+        ),
+        const SizedBox(height: 6),
+        Stack(
+          alignment: Alignment.topCenter,
+          children: [
+            Positioned.fill(
+              child: ExcludeSemantics(
+                child: CustomPaint(
+                  painter: RailPainter(color: ui.border),
+                ),
+              ),
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: selfOnRight ? partnerHalf : selfHalf,
+                ),
+                SizedBox(
+                  width: _spine,
+                  height: s,
+                  child: Center(
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: done
+                            ? accent.withValues(alpha: 0.25)
+                            : ui.bg,
+                      ),
+                      child: Center(
+                        child: done
+                            ? OurneyIcon(
+                                name: 'heart',
+                                size: 22,
+                                color: accent,
+                                inkColor: ui.ink,
+                              )
+                            : OurneyIcon(
+                                name: 'heart',
+                                size: 22,
+                                flat: true,
+                                color: ui.inkMuted,
+                              ),
                       ),
                     ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: _CoupleHalf(
-                            label: selfName ?? l10n.journeys_coupleYou,
-                            child: wrapTimelineDayHero(
-                              day,
-                              TimelineTile(day: day, size: s),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: _spine,
-                          height: s,
-                          child: Center(
-                            child: Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: done
-                                    ? accent.withValues(alpha: 0.25)
-                                    : ui.bg,
-                              ),
-                              child: Center(
-                                child: done
-                                    ? OurneyIcon(
-                                        name: 'heart',
-                                        size: 22,
-                                        color: accent,
-                                        inkColor: ui.ink,
-                                      )
-                                    : OurneyIcon(
-                                        name: 'heart',
-                                        size: 22,
-                                        flat: true,
-                                        color: ui.inkMuted,
-                                      ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: _CoupleHalf(
-                            label: partnerName ?? l10n.journeys_ticketPartner,
-                            child: partnerPhoto != null
-                                ? _PartnerTile(checkIn: partnerPhoto, size: s)
-                                : CustomPaint(
-                                    key: const ValueKey('couple-partner-slot'),
-                                    foregroundPainter: DashedOutlinePainter(
-                                      color: ui.border,
-                                      width: 1.5,
-                                      radius: UiRadius.otp,
-                                    ),
-                                    child: SizedBox.square(
-                                      dimension: s,
-                                      child: waiting
-                                          ? Center(
-                                              child: Padding(
-                                                padding: const EdgeInsets.all(
-                                                  6,
-                                                ),
-                                                child: Text(
-                                                  l10n.journeys_coupleWaiting,
-                                                  maxLines: 3,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  textAlign: TextAlign.center,
-                                                  style: UiText.muted(
-                                                    color: ui.inkMuted,
-                                                    size: 11,
-                                                  ),
-                                                ),
-                                              ),
-                                            )
-                                          : null,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
+                ),
+                Expanded(
+                  child: selfOnRight ? selfHalf : partnerHalf,
                 ),
               ],
-            );
+            ),
+          ],
+        ),
+      ],
+    );
           },
         ),
       ),
@@ -1197,42 +1247,43 @@ class FlexerTimeline extends StatelessWidget {
       key: const ValueKey('journey-timeline'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ExcludeSemantics(
-          child: Container(
-            key: const ValueKey('timeline-pace'),
-            height: 88,
-            margin: const EdgeInsets.only(bottom: UiSpace.md),
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-            decoration: BoxDecoration(
-              color: ui.surface,
-              borderRadius: BorderRadius.circular(UiRadius.card),
-              border: Border.all(color: ui.border),
-            ),
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: RepaintBoundary(
-                    child: _AnimatedTimelineCurve(
-                      values: series,
-                      color: accent,
-                      smooth: false,
-                      strokeWidth: 3,
+        if (series.length >= 2)
+          ExcludeSemantics(
+            child: Container(
+              key: const ValueKey('timeline-pace'),
+              height: 88,
+              margin: const EdgeInsets.only(bottom: UiSpace.md),
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              decoration: BoxDecoration(
+                color: ui.surface,
+                borderRadius: BorderRadius.circular(UiRadius.card),
+                border: Border.all(color: ui.border),
+              ),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: RepaintBoundary(
+                      child: _AnimatedTimelineCurve(
+                        values: series,
+                        color: accent,
+                        smooth: false,
+                        strokeWidth: 3,
+                      ),
                     ),
                   ),
-                ),
-                Align(
-                  alignment: AlignmentDirectional.topStart,
-                  child: TimelineNumber(
-                    '$done/${sum.totalDays}',
-                    mono: true,
-                    size: 13,
-                    color: accent,
+                  Align(
+                    alignment: AlignmentDirectional.topStart,
+                    child: TimelineNumber(
+                      '$done/${sum.totalDays}',
+                      mono: true,
+                      size: 13,
+                      color: accent,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
         for (final d in days)
           TimelineDayTap(
             day: d,

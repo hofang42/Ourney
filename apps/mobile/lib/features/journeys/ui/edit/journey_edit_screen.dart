@@ -132,15 +132,16 @@ class _EditBodyState extends ConsumerState<_EditBody> {
   late final _partner = TextEditingController(
     text: widget.journey.couplePartnerName ?? '',
   );
-  late int _cover = widget.journey.cover ?? 0;
+  late PersonaSkinId _layout = personaSkinOf(widget.journey);
   late int _color = widget.journey.color ?? 0;
-  late String _hud = (widget.journey.dna?['hud'] as String?) ?? 'bold';
   late bool _link = widget.journey.visibility == JourneyVisibility.link;
 
-  /// The reminder time when the screen opened. `repo.update` and the save
-  /// that follows change what `_initialTime()` would read (bug B-B9).
-  late final ReminderTime _initialReminder = _initialTime();
-  late ReminderTime _time = _initialReminder;
+  /// The reminder setting when the screen opened. `reminderSettingsProvider`
+  /// wins over `j.reminderTime` when the user already adjusted the reminder in
+  /// `/reminders` so opening Edit never clobbers their toggle/time (UX-18).
+  late final ReminderSetting _initialReminder = _readInitialReminder();
+  late bool _reminderEnabled = _initialReminder.enabled;
+  late ReminderTime _time = _initialReminder.time;
   bool _busy = false;
 
   /// Saved or ended: leaving needs no "discard changes?" question.
@@ -149,10 +150,13 @@ class _EditBodyState extends ConsumerState<_EditBody> {
   Journey get j => widget.journey;
   bool get _owner => widget.perms.isOwner && widget.perms.isActive;
 
-  ReminderTime _initialTime() {
+  ReminderSetting _readInitialReminder() {
+    final map = ref.read(reminderSettingsProvider);
+    final existing = map[j.id];
+    if (existing != null) return existing;
     final saved = ReminderTime.tryParse(j.reminderTime);
-    if (saved != null) return saved;
-    return ref.read(reminderSettingsProvider.notifier).of(j.id).time;
+    if (saved != null) return ReminderSetting(enabled: true, time: saved);
+    return ReminderSetting.off;
   }
 
   @override
@@ -170,27 +174,37 @@ class _EditBodyState extends ConsumerState<_EditBody> {
 
   bool get _nameOk => validateJourneyTitle(_name.text) == null;
 
+  bool get _isCoupleCapable =>
+      j.coupleSelfName != null ||
+      skinOfCurrent == PersonaSkinId.coupleRituals ||
+      (j.kind == JourneyKind.group && j.maxMembers == 2);
+
   bool get _coupleChanged =>
-      j.coupleSelfName != null &&
-      (_self.text.trim() != j.coupleSelfName ||
-          _partner.text.trim() != j.couplePartnerName);
+      _isCoupleCapable &&
+      (_self.text.trim() != (j.coupleSelfName ?? '') ||
+          _partner.text.trim() != (j.couplePartnerName ?? ''));
 
   /// A journey that has couple names keeps both: `validateCoupleNames` lets
-  /// an empty pair through (it means "no names"), which is not an option here
-  /// (U19).
-  bool get _coupleOk =>
-      j.coupleSelfName == null ||
-      (_self.text.trim().isNotEmpty &&
-          _partner.text.trim().isNotEmpty &&
-          validateCoupleNames(_self.text, _partner.text) == null);
+  /// an empty pair through (it means "no names"), which is not an option once
+  /// names exist or when the user begins typing names (U19, UX-04).
+  bool get _coupleOk {
+    if (!_isCoupleCapable) return true;
+    if (j.coupleSelfName == null && !_coupleChanged) return true;
+    return _self.text.trim().isNotEmpty &&
+        _partner.text.trim().isNotEmpty &&
+        validateCoupleNames(_self.text, _partner.text) == null;
+  }
+
+  bool get _reminderChanged =>
+      _reminderEnabled != _initialReminder.enabled ||
+      _hhmm(_time) != _hhmm(_initialReminder.time);
 
   bool get _changed =>
       _name.text.trim() != j.title ||
-      _cover != (j.cover ?? 0) ||
+      _layout != personaSkinOf(j) ||
       _color != (j.color ?? 0) ||
-      _hhmm(_time) != _hhmm(_initialReminder) ||
+      _reminderChanged ||
       _trophy.text.trim() != ((j.dna?['trophy'] as String?) ?? '') ||
-      _hud != ((j.dna?['hud'] as String?) ?? 'bold') ||
       _link != (j.visibility == JourneyVisibility.link) ||
       _coupleChanged;
 
@@ -207,21 +221,23 @@ class _EditBodyState extends ConsumerState<_EditBody> {
       } else {
         dna.remove('trophy');
       }
-      if (j.templateId == TemplateId.workout30 ||
-          skinOfCurrent == PersonaSkinId.aestheticFlexer) {
-        dna['hud'] = _hud;
-      }
       final sanitized = sanitizeJourneyDna(dna);
+      final isDefaultLayout = _layout == defaultSkinOf(j);
+      final clear = <String>{
+        if (j.dna != null && sanitized == null) 'dna',
+        if (isDefaultLayout && j.layout != null) 'layout',
+        if (!_reminderEnabled && j.reminderTime != null) 'reminder_time',
+      };
       await repo.update(
         j.id,
         JourneyUpdate(
           title: _name.text.trim(),
-          cover: _cover,
+          layout: isDefaultLayout ? null : _layout,
           color: _color,
-          reminderTime: _hhmm(_time),
+          reminderTime: _reminderEnabled ? _hhmm(_time) : null,
           dna: sanitized,
           // A null field is "unchanged": clear it when nothing is left.
-          clear: j.dna != null && sanitized == null ? {'dna'} : const {},
+          clear: clear,
         ),
       );
       if (_coupleChanged) {
@@ -232,14 +248,9 @@ class _EditBodyState extends ConsumerState<_EditBody> {
       if (_link != (j.visibility == JourneyVisibility.link)) {
         await repo.setPublicLink(j.id, enabled: _link);
       }
-      // Picking a time on the wheel turns this journey's reminder on: the
-      // scheduler only plans enabled settings (bug B-B9).
       final reminders = ref.read(reminderSettingsProvider.notifier);
       final current = reminders.of(j.id);
-      final timePicked = _hhmm(_time) != _hhmm(_initialReminder);
-      final next = timePicked
-          ? ReminderSetting(enabled: true, time: _time)
-          : current.copyWith(time: _time);
+      final next = ReminderSetting(enabled: _reminderEnabled, time: _time);
       final reminderChanged =
           next.enabled != current.enabled || next.time != current.time;
       if (reminderChanged) {
@@ -260,7 +271,7 @@ class _EditBodyState extends ConsumerState<_EditBody> {
     }
   }
 
-  PersonaSkinId get skinOfCurrent => personaSkinOf(j);
+  PersonaSkinId get skinOfCurrent => _layout;
 
   /// Unsaved edits that leaving would lose (U19).
   bool get _dirty => _owner && !_saved && _changed;
@@ -295,7 +306,8 @@ class _EditBodyState extends ConsumerState<_EditBody> {
       };
 
   String? _coupleError(JourneysL10n l10n, TextEditingController field) {
-    if (j.coupleSelfName == null) return null;
+    if (!_isCoupleCapable) return null;
+    if (j.coupleSelfName == null && !_coupleChanged) return null;
     if (field.text.trim().isEmpty) return l10n.journeys_errorCoupleNames;
     final e = validateCoupleNames(_self.text, _partner.text);
     if (e != CoupleNamesError.tooLong) return null;
@@ -305,7 +317,6 @@ class _EditBodyState extends ConsumerState<_EditBody> {
   }
 
   Future<void> _pickLayout(PersonaSkinId skin) async {
-    final l10n = JourneysL10n.of(context);
     final ok = await Navigator.of(context, rootNavigator: true).push<bool>(
       MaterialPageRoute(
         fullscreenDialog: true,
@@ -313,25 +324,12 @@ class _EditBodyState extends ConsumerState<_EditBody> {
       ),
     );
     if (ok != true || !mounted) return;
-    try {
-      // Choosing the template's own skin clears the override.
-      final isDefault = skin == defaultSkinOf(j);
-      await ref
-          .read(journeyRepositoryProvider)
-          .update(
-            j.id,
-            JourneyUpdate(
-              layout: isDefault ? null : skin,
-              color: 0,
-              clear: isDefault ? {'layout'} : const {},
-            ),
-          );
-      if (!mounted) return;
-      setState(() => _color = 0);
-      showJourneySnack(context, l10n.journeys_edit_layoutApplied);
-    } on Object catch (e) {
-      if (mounted) showJourneySnack(context, journeyErrorMessage(context, e));
-    }
+    setState(() {
+      if (_layout != skin) {
+        _layout = skin;
+        _color = 0;
+      }
+    });
   }
 
   Future<void> _confirmEnd() async {
@@ -429,26 +427,6 @@ class _EditBodyState extends ConsumerState<_EditBody> {
                     ),
                   ),
                   _Section(
-                    title: l10n.journeys_edit_cover,
-                    child: Row(
-                      children: [
-                        for (var i = 0; i < 3; i++) ...[
-                          if (i > 0) const SizedBox(width: UiSpace.md),
-                          Expanded(
-                            child: _CoverTile(
-                              index: i,
-                              selected: _cover == i,
-                              label: l10n.journeys_edit_coverOption(i + 1),
-                              onTap: _owner
-                                  ? () => setState(() => _cover = i)
-                                  : null,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  _Section(
                     title: l10n.journeys_edit_layout,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -539,8 +517,7 @@ class _EditBodyState extends ConsumerState<_EditBody> {
                         style: UiText.body(color: ui.inkMuted),
                       ),
                     ),
-                  if (skin == PersonaSkinId.coupleRituals &&
-                      j.coupleSelfName != null)
+                  if (_isCoupleCapable)
                     _Section(
                       title: l10n.journeys_edit_couple,
                       child: Column(
@@ -565,41 +542,37 @@ class _EditBodyState extends ConsumerState<_EditBody> {
                         ],
                       ),
                     ),
-                  if (skin == PersonaSkinId.aestheticFlexer)
-                    _Section(
-                      title: l10n.journeys_edit_hud,
-                      child: Wrap(
-                        spacing: UiSpace.sm,
-                        runSpacing: UiSpace.sm,
-                        children: [
-                          for (final (id, label) in [
-                            ('bold', l10n.journeys_edit_hudBold),
-                            ('stamp', l10n.journeys_edit_hudStamp),
-                            ('strip', l10n.journeys_edit_hudStrip),
-                          ])
-                            UiChip(
-                              key: ValueKey('edit-hud-$id'),
-                              label: label,
-                              selected: _hud == id,
-                              onPressed: _owner
-                                  ? () => setState(() => _hud = id)
-                                  : null,
-                            ),
-                        ],
-                      ),
-                    ),
                   _Section(
                     title: l10n.journeys_edit_reminder,
-                    child: IgnorePointer(
-                      ignoring: !_owner,
-                      child: UiTimeWheel(
-                        hour: _time.hour,
-                        minute: _time.minute,
-                        hourLabel: l10n.journeys_edit_reminderHour,
-                        minuteLabel: l10n.journeys_edit_reminderMinute,
-                        onChanged: (h, m) =>
-                            setState(() => _time = ReminderTime(h, m)),
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        UiSwitchRow(
+                          key: const ValueKey('edit-reminder-toggle'),
+                          label: l10n.journeys_edit_reminder,
+                          value: _reminderEnabled,
+                          onChanged: _owner
+                              ? (v) => setState(() => _reminderEnabled = v)
+                              : null,
+                        ),
+                        const SizedBox(height: UiSpace.sm),
+                        IgnorePointer(
+                          ignoring: !_owner,
+                          child: Opacity(
+                            opacity: _reminderEnabled ? 1.0 : 0.55,
+                            child: UiTimeWheel(
+                              hour: _time.hour,
+                              minute: _time.minute,
+                              hourLabel: l10n.journeys_edit_reminderHour,
+                              minuteLabel: l10n.journeys_edit_reminderMinute,
+                              onChanged: (h, m) => setState(() {
+                                _time = ReminderTime(h, m);
+                                _reminderEnabled = true;
+                              }),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   _Section(
@@ -721,114 +694,6 @@ class _Section extends StatelessWidget {
       ),
     );
   }
-}
-
-/// A cover sticker option (`skin-cover-sticker cover-sticker-N`): a small
-/// drawn badge, distinct per index, outlined when selected.
-class _CoverTile extends StatelessWidget {
-  const _CoverTile({
-    required this.index,
-    required this.selected,
-    required this.label,
-    required this.onTap,
-  });
-
-  final int index;
-  final bool selected;
-  final String label;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    return UiPressable(
-      key: ValueKey('edit-cover-$index'),
-      onPressed: onTap,
-      selected: selected,
-      semanticLabel: label,
-      excludeChildSemantics: true,
-      minSize: const Size(48, 72),
-      borderRadius: BorderRadius.circular(UiRadius.menu),
-      child: Container(
-        height: 72,
-        decoration: BoxDecoration(
-          color: selected ? ui.fillSelected : ui.surface,
-          borderRadius: BorderRadius.circular(UiRadius.menu),
-          border: Border.all(
-            color: selected ? ui.outline : ui.border,
-            width: selected ? 2 : 1.5,
-          ),
-        ),
-        alignment: Alignment.center,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            CustomPaint(
-              size: const Size(40, 40),
-              painter: _CoverPainter(index, ui.accent, ui.ink),
-            ),
-            if (selected)
-              const PositionedDirectional(
-                top: 4,
-                end: 4,
-                child: OurneyIcon(name: 'check', size: 15, flat: true),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CoverPainter extends CustomPainter {
-  _CoverPainter(this.index, this.fill, this.ink);
-
-  final int index;
-  final Color fill;
-  final Color ink;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final f = Paint()..color = fill;
-    final s = Paint()
-      ..color = ink
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    final r = Offset.zero & size;
-    switch (index) {
-      case 0:
-        canvas
-          ..drawCircle(r.center, size.width / 2 - 2, f)
-          ..drawCircle(r.center, size.width / 2 - 2, s)
-          ..drawCircle(r.center, 4, Paint()..color = ink);
-      case 1:
-        final rr = RRect.fromRectAndRadius(
-          r.deflate(3),
-          const Radius.circular(10),
-        );
-        canvas
-          ..drawRRect(rr, f)
-          ..drawRRect(rr, s)
-          ..drawLine(
-            Offset(10, size.height - 12),
-            Offset(size.width - 10, size.height - 12),
-            s,
-          );
-      default:
-        final path = Path()
-          ..moveTo(size.width / 2, 3)
-          ..lineTo(size.width - 3, size.height - 3)
-          ..lineTo(3, size.height - 3)
-          ..close();
-        canvas
-          ..drawPath(path, f)
-          ..drawPath(path, s);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_CoverPainter old) =>
-      old.index != index || old.fill != fill || old.ink != ink;
 }
 
 class _LayoutTile extends StatelessWidget {

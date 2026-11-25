@@ -24,6 +24,8 @@ class CreateReviewStep extends StatelessWidget {
     required this.nameRightController,
     required this.onChangeVariant,
     required this.onEdit,
+    this.selfOnRight = false,
+    this.isRunning = true,
     super.key,
   });
 
@@ -39,6 +41,8 @@ class CreateReviewStep extends StatelessWidget {
   final TextEditingController nameRightController;
   final VoidCallback onChangeVariant;
   final VoidCallback onEdit;
+  final bool selfOnRight;
+  final bool isRunning;
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +81,12 @@ class CreateReviewStep extends StatelessWidget {
               if (n >= 1 && n <= days) l10n.journeys_ticketMilestone('$n'),
           }.toList();
     final couple = who == CreateWho.couple;
+    final selfName = couple && nameLeftController.text.trim().isNotEmpty
+        ? nameLeftController.text.trim()
+        : l10n.journeys_ticketYou;
+    final partnerName = couple && nameRightController.text.trim().isNotEmpty
+        ? nameRightController.text.trim()
+        : l10n.journeys_ticketPartner;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -102,13 +112,8 @@ class CreateReviewStep extends StatelessWidget {
                     : l10n.journeys_ticketOpenEnded,
                 datesLabel: datesLabel,
                 milestones: milestones,
-                leftName: couple && nameLeftController.text.trim().isNotEmpty
-                    ? nameLeftController.text.trim()
-                    : l10n.journeys_ticketYou,
-                rightName:
-                    couple && nameRightController.text.trim().isNotEmpty
-                    ? nameRightController.text.trim()
-                    : l10n.journeys_ticketPartner,
+                leftName: selfOnRight ? partnerName : selfName,
+                rightName: selfOnRight ? selfName : partnerName,
                 privateLabel: l10n.journeys_ticketPrivate,
                 memoryLabel: l10n.journeys_ticketMemory,
                 tagline: switch (skinId) {
@@ -116,7 +121,10 @@ class CreateReviewStep extends StatelessWidget {
                   'squad' => l10n.journeys_ticketTagSquad,
                   'memory' => l10n.journeys_ticketTagMemory,
                   'couple' => l10n.journeys_ticketTagCouple,
-                  'flexer' => l10n.journeys_ticketTagFlexer,
+                  'flexer' =>
+                    isRunning
+                        ? l10n.journeys_ticketTagFlexer
+                        : l10n.journeys_ticketTagFlexerTrain,
                   _ => '',
                 },
                 changeVariantLabel: l10n.journeys_ticketChangeColor,

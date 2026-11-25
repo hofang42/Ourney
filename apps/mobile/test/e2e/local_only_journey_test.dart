@@ -128,8 +128,8 @@ void main() {
     expect(key('journeys-template-picker'), findsOneWidget);
 
     await tap('template-${TemplateId.workout30.wireName}');
-    // V2 step 2 starts with the workout DNA questions (sport, measure, HUD).
-    for (final c in ['sport-run', 'measure-km', 'hud-bold']) {
+    // V2 step 2 starts with the workout DNA questions (sport, measure).
+    for (final c in ['sport-run', 'measure-km']) {
       await tap('dna-choice-$c');
       await tap('create-next');
     }

@@ -449,7 +449,7 @@ abstract class ImportL10n {
   /// Retell a past journey flow.
   ///
   /// In vi, this message translates to:
-  /// **'Màn hình chụp'**
+  /// **'Check-in mỗi ngày'**
   String get import_previewHud;
 
   /// Retell a past journey flow.

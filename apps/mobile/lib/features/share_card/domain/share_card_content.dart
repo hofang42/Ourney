@@ -98,11 +98,25 @@ class ShareCardContent {
     bool blurPhotosOnShare = false,
   }) {
     final core = buildShareCard(journey, streak);
+    var effectiveDay = dayNumber;
+    if (journey.status != JourneyStatus.active &&
+        journey.durationDays == null) {
+      LocalDate? latestDate;
+      for (final c in checkIns) {
+        if (latestDate == null || c.localDate.isAfter(latestDate)) {
+          latestDate = c.localDate;
+        }
+      }
+      final span = latestDate == null
+          ? 1
+          : (journey.startDate.daysUntil(latestDate) + 1).clamp(1, 100000);
+      if (effectiveDay > span) effectiveDay = span;
+    }
     final ShareCardHeadline headline;
     final int value;
     if (number == ShareCardNumber.day) {
       headline = ShareCardHeadline.day;
-      value = dayNumber;
+      value = effectiveDay;
     } else {
       value = core.headlineNumber;
       headline = core.milestone == Milestone.completed
@@ -130,7 +144,7 @@ class ShareCardContent {
     }
 
     final days = <LocalDate>{for (final c in checkIns) c.localDate};
-    final last = dayNumber.clamp(0, journey.durationDays ?? dayNumber);
+    final last = effectiveDay.clamp(0, journey.durationDays ?? effectiveDay);
     final first = (last - shareCardActivityDays).clamp(0, last);
     final activity = [
       for (var i = first; i < last; i++)
@@ -138,7 +152,7 @@ class ShareCardContent {
     ];
 
     return ShareCardContent(
-      dayNumber: dayNumber,
+      dayNumber: effectiveDay,
       completedDays: streak.completed,
       streakDays: streak.current,
       photoCount: checkIns.where((c) => c.photoPath.isNotEmpty).length,

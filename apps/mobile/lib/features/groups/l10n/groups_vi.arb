@@ -472,6 +472,26 @@
     }
   },
   "groups_flexerPending": "CHƯA CHẠY",
+  "groups_flexerTrainedTitle": "{done}/{total} ĐÃ TẬP",
+  "@groups_flexerTrainedTitle": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_flexerTrainedDone": "Đã tập · {time}",
+  "@groups_flexerTrainedDone": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_flexerTrainedPending": "CHƯA TẬP",
   "groups_minimalTitle": "{done}/{total} ĐÃ XONG",
   "@groups_minimalTitle": {
     "placeholders": {

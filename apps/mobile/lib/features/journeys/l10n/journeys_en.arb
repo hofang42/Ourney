@@ -172,6 +172,7 @@
   "journeys_ticketTagMemory": "Bring home plenty of frames.",
   "journeys_ticketTagCouple": "One half each day, together a whole.",
   "journeys_ticketTagFlexer": "Get out of bed. Keep running.",
+  "journeys_ticketTagFlexerTrain": "Get out of bed. Keep training.",
   "journeys_ticketPreview": "Departure ticket preview",
   "journeys_coupleYou": "You",
   "@journeys_coupleYou": {
@@ -453,12 +454,12 @@
   "journeys_dna_weight_private": "Only you can see this",
   "journeys_dna_weight_hide": "Hide kg when sharing",
   "journeys_dna_weight_skip": "Skip",
-  "journeys_dna_ghost_body": "This private photo becomes your alignment frame on the following days.",
-  "journeys_dna_ghost_now": "Take it now",
-  "journeys_dna_ghost_later": "Maybe later.",
+  "journeys_dna_ghost_body": "Show a translucent silhouette guide in the camera so every photo lines up.",
+  "journeys_dna_ghost_now": "Turn on ghost guide",
+  "journeys_dna_ghost_later": "Keep it off for now.",
   "journeys_dna_trophy_label": "Trophy name",
   "journeys_dna_trophy_hint": "Trophy 7.5",
-  "journeys_dna_place_search": "Search for a place...",
+  "journeys_dna_place_search": "Destination or place...",
   "journeys_dna_place_country": "Vietnam",
   "journeys_dna_place_dalat": "Da Lat",
   "journeys_dna_place_hoian": "Hoi An",
@@ -516,6 +517,9 @@
   "journeys_home_introSquad": "how long did you study today.",
   "journeys_home_introMemory": "Where did the crew get lost today?",
   "journeys_home_introCouple": "What are you two cooking today?",
+  "journeys_home_introCoupleSave": "What are you two saving for today?",
+  "journeys_home_introCoupleLdr": "How did you two bridge the distance today?",
+  "journeys_home_introCoupleCustom": "What moment did you two share today?",
   "journeys_home_offlineQuiet": "Saved on this phone · will sync later",
   "journeys_home_offlineSquad": "WAITING TO SYNC · SAVED ON THIS PHONE",
   "journeys_home_offlineMemory": "Saved on this phone. It sends itself once you are online.",
@@ -611,7 +615,7 @@
     }
   },
   "journeys_edit_previewTag": "PREVIEW",
-  "journeys_edit_hudPreview": "Camera HUD",
+  "journeys_edit_hudPreview": "Daily check-in",
   "journeys_edit_dayOf": "DAY {day}/{total}",
   "@journeys_edit_dayOf": {
     "placeholders": {
@@ -687,7 +691,7 @@
   "journeys_edit_visLink": "View link (revocable)",
   "journeys_edit_visQuietNote": "The view page always hides kg and blurs photos by default.",
   "journeys_edit_membersOnly": "Members only",
-  "journeys_edit_membersOnlyHint": "squad journeys have no public link",
+  "journeys_edit_membersOnlyHint": "a public link can be created with member consent once the journey ends",
   "journeys_edit_quietLock": "Private",
   "journeys_edit_endTitle": "End this journey?",
   "journeys_edit_endBody": "You can still look back, but not add photos.",
@@ -884,6 +888,14 @@
       }
     }
   },
+  "journeys_home_squadChipOpen": "{title} · OPEN-ENDED",
+  "@journeys_home_squadChipOpen": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "journeys_home_squadToday": "{done}/{total} TODAY",
   "@journeys_home_squadToday": {
     "placeholders": {
@@ -904,6 +916,7 @@
       }
     }
   },
+  "journeys_home_trophyOpen": "OPEN-ENDED",
   "journeys_home_filmRoll": "FILM ROLL {frames}/{total}",
   "@journeys_home_filmRoll": {
     "placeholders": {
@@ -969,6 +982,17 @@
   },
   "journeys_home_flexRan": "{done}/{total} RAN",
   "@journeys_home_flexRan": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_flexTrained": "{done}/{total} TRAINED",
+  "@journeys_home_flexTrained": {
     "placeholders": {
       "done": {
         "type": "int"

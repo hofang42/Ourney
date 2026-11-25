@@ -24,6 +24,26 @@ const String lastJourneyPrefsKey = 'camera.lastJourneyId';
 /// [lastJourneyPrefsKey]).
 const String captureJourneyParam = 'journeyId';
 
+/// Per-journey starting weight (kg) chosen during the weight-loss onboarding
+/// wizard. Kept in local preferences so it stays private to this device
+/// (`0012_journey_edit.sql`: `journeys.dna` is readable by every member).
+const String journeyStartingWeightPrefPrefix = 'journeys.startingWeight.';
+
+String journeyStartingWeightPrefKey(String journeyId) =>
+    '$journeyStartingWeightPrefPrefix$journeyId';
+
+/// Per-journey preference for the camera's day-1 ghost alignment guide.
+const String journeyGhostGuidePrefPrefix = 'camera.ghostGuide.';
+
+String journeyGhostGuidePrefKey(String journeyId) =>
+    '$journeyGhostGuidePrefPrefix$journeyId';
+
+/// True when [key] is a per-journey local preference (starting weight or
+/// ghost alignment guide) that must be wiped on sign-out / account reset.
+bool isPerJourneyAccountPrefKey(String key) =>
+    key.startsWith(journeyStartingWeightPrefPrefix) ||
+    key.startsWith(journeyGhostGuidePrefPrefix);
+
 /// Repository streams must not retry on their own: the repositories already
 /// handle offline/sync, and retry timers would leak into widget tests.
 Duration? _noRetry(int _, Object _) => null;

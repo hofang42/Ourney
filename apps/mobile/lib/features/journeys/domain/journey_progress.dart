@@ -63,10 +63,12 @@ class TimelineDay {
 }
 
 /// Latest non-null metric value of [dayCheckIns] (oldest first).
+/// Falls back to `CheckInExtras.km` when `metricValue` is null so workout
+/// distance check-ins populate timeline curves and summaries (`UX-05`).
 double? latestMetric(Iterable<CheckIn> dayCheckIns) {
   double? v;
   for (final c in dayCheckIns) {
-    v = c.metricValue ?? v;
+    v = c.metricValue ?? c.extras.km ?? v;
   }
   return v;
 }
