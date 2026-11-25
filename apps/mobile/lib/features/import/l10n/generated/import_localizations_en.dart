@@ -184,6 +184,20 @@ class ImportL10nEn extends ImportL10n {
   String get import_removePhoto => 'Remove photo';
 
   @override
+  String import_photoRemoved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Removed $count photos.',
+      one: 'Removed 1 photo.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get import_undo => 'Undo';
+
+  @override
   String get import_sourceExif => 'Date taken';
 
   @override

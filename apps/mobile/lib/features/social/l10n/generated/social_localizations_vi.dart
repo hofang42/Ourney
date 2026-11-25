@@ -260,6 +260,33 @@ class SocialL10nVi extends SocialL10n {
   String get social_declineAll => 'Từ chối tất cả';
 
   @override
+  String get social_declineAllTitle => 'Từ chối tất cả lời mời kết bạn?';
+
+  @override
+  String social_declineAllBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Từ chối cả $count lời mời kết bạn từ hành trình này?',
+      one: 'Từ chối 1 lời mời kết bạn từ hành trình này?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get social_deleteMessageTitle => 'Xóa tin nhắn này phía bạn?';
+
+  @override
+  String get social_deleteMessageBody =>
+      'Tin nhắn sẽ ẩn khỏi máy bạn nhưng người kia vẫn nhìn thấy.';
+
+  @override
+  String get social_sendPhotoTitle => 'Gửi ảnh này?';
+
+  @override
+  String get social_sendPhotoConfirm => 'Gửi ảnh';
+
+  @override
   String get social_inboxEmpty => 'Câu trả lời và lời mời từ bạn bè sẽ ở đây';
 
   @override
@@ -345,6 +372,9 @@ class SocialL10nVi extends SocialL10n {
 
   @override
   String get social_groupWeek => 'Tuần này';
+
+  @override
+  String get social_groupEarlier => 'Trước đó';
 
   @override
   String get social_offlineStrip => 'Đang xem bản đã lưu.';

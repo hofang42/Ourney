@@ -1007,7 +1007,7 @@ abstract class JourneysL10n {
   /// Detail share sheet: image card option.
   ///
   /// In vi, this message translates to:
-  /// **'Tạo thẻ hoặc video'**
+  /// **'Tạo thẻ chia sẻ'**
   String get journeys_shareMakeCard;
 
   /// Detail share sheet: card hint.
@@ -2816,6 +2816,12 @@ abstract class JourneysL10n {
   /// **'Làm mờ ảnh'**
   String get journeys_wrapped_blur;
 
+  /// No description provided for @journeys_wrapped_blurLocked.
+  ///
+  /// In vi, this message translates to:
+  /// **'Luôn bật với kiểu thẻ này'**
+  String get journeys_wrapped_blurLocked;
+
   /// No description provided for @journeys_wrapped_on.
   ///
   /// In vi, this message translates to:
@@ -2893,6 +2899,24 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Ứng dụng khác'**
   String get journeys_wrapped_otherApps;
+
+  /// No description provided for @journeys_wrapped_saveCard.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lưu ảnh'**
+  String get journeys_wrapped_saveCard;
+
+  /// No description provided for @journeys_wrapped_cardSaved.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lưu thẻ.'**
+  String get journeys_wrapped_cardSaved;
+
+  /// No description provided for @journeys_create_invitingFriend.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sẽ gửi lời mời tới @{handle}'**
+  String journeys_create_invitingFriend(String handle);
 
   /// No description provided for @journeys_wrapped_open.
   ///

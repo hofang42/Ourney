@@ -61,6 +61,8 @@ jobs:
         run: deno run --allow-read supabase/scripts/check-streak-vectors.ts
       - name: Type-check edge functions
         run: deno check supabase/functions/*/index.ts
+      - name: Test public journey metric redaction
+        run: deno test supabase/functions/public-journey/index_test.ts
       - name: Start Supabase (db, auth, storage, rest)
         run: supabase start -x studio,realtime,imgproxy,logflare,vector,mailpit,supavisor,postgres-meta,edge-runtime
       - name: pgTAP

@@ -317,6 +317,21 @@ class FakeSharer implements ShareCardSharer {
   }
 }
 
+class FakeSaver implements ShareCardSaver {
+  final List<({String path, String mimeType})> saved = [];
+  Object? error;
+
+  @override
+  Future<String> saveImage({
+    required String path,
+    required String mimeType,
+  }) async {
+    if (error case final e?) throw e;
+    saved.add((path: path, mimeType: mimeType));
+    return '/saved/$path';
+  }
+}
+
 /// Records what would be captured instead of rendering (toImage needs real
 /// async; the real exporter is covered in share_card_export_test.dart).
 class FakeExporter extends ShareCardExporter {
@@ -354,6 +369,7 @@ class ShareHarness {
     this.container,
     this.journeys,
     this.sharer,
+    this.saver,
     this.exporter,
     this.clipboard,
   );
@@ -361,6 +377,7 @@ class ShareHarness {
   final ProviderContainer container;
   final FakeJourneyRepository journeys;
   final FakeSharer sharer;
+  final FakeSaver saver;
   final FakeExporter exporter;
   final List<String> clipboard;
 
@@ -412,6 +429,7 @@ Future<ShareHarness> pumpShare(
     memberships: {journey.id: membership ?? testMembership(journey)},
   );
   final sharer = FakeSharer();
+  final saver = FakeSaver();
   final exporter = FakeExporter();
   final container = await pumpOurneyApp(
     tester,
@@ -426,11 +444,12 @@ Future<ShareHarness> pumpShare(
       mediaStoreProvider.overrideWithValue(FakeMediaStore(resolve: photos)),
       shareCardClockProvider.overrideWithValue(Clock.fixed(testNow)),
       shareCardSharerProvider.overrideWithValue(sharer),
+      shareCardSaverProvider.overrideWithValue(saver),
       shareCardExporterProvider.overrideWithValue(exporter),
       ...overrides,
     ],
   );
   container.read(routerProvider).go(AppRoutes.share(journey.id));
   await tester.pumpAndSettle();
-  return ShareHarness(container, repo, sharer, exporter, clipboard);
+  return ShareHarness(container, repo, sharer, saver, exporter, clipboard);
 }

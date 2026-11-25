@@ -314,7 +314,15 @@ class _FriendSheet extends ConsumerWidget {
           label: l10n.social_startJourneyTogether,
           onPressed: () {
             Navigator.of(context).pop();
-            hostContext.push('${AppRoutes.journeyNew}?who=group');
+            final handle = person.username.trim();
+            final uri = Uri(
+              path: AppRoutes.journeyNew,
+              queryParameters: {
+                'who': 'group',
+                if (handle.isNotEmpty) 'invite': handle,
+              },
+            );
+            hostContext.push(uri.toString());
           },
         ),
         UiMenuItem(

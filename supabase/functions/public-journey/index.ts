@@ -81,7 +81,10 @@ export function journeyLocalDay(timezone: string, now: Date = new Date()): strin
   }
 }
 
-export async function handle(req: Request): Promise<Response> {
+export async function handle(
+  req: Request,
+  deps: { createAdmin?: typeof adminClient; viewSalt?: string } = {},
+): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (req.method !== "GET") return json({ error: "method_not_allowed" }, 405, { ...cors, Allow: "GET" });
 
@@ -90,7 +93,7 @@ export async function handle(req: Request): Promise<Response> {
   const notFound = () => json({ error: "not_found" }, 404, cors);
   if (!TOKEN_RE.test(token)) return notFound();
 
-  const admin = adminClient();
+  const admin = (deps.createAdmin ?? adminClient)();
   const { data: journeyData, error } = await admin
     .from("journeys")
     .select(
@@ -239,7 +242,7 @@ export async function handle(req: Request): Promise<Response> {
 
   // One anonymous view per browser per journey-local day (S19, FS-23).
   const day = journeyLocalDay(journey.timezone);
-  const salt = `${day}|${Deno.env.get("VIEW_SALT") ?? ""}`;
+  const salt = `${day}|${deps.viewSalt ?? Deno.env.get("VIEW_SALT") ?? ""}`;
   const viewerKey = await sha256Hex(`${token}|${req.headers.get("user-agent") ?? ""}|${salt}`);
   const view = await admin.rpc("record_journey_view", { p_journey: journey.id, p_viewer_key: `web:${viewerKey}` });
   if (view.error) console.error("record_journey_view failed", view.error.message); // never fatal

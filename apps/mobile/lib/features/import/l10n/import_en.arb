@@ -227,6 +227,8 @@
     }
   },
   "import_removePhoto": "Remove photo",
+  "import_photoRemoved": "{count, plural, =1{Removed 1 photo.} other{Removed {count} photos.}}",
+  "import_undo": "Undo",
   "@import_removePhoto": {
     "description": "Retell a past journey flow."
   },

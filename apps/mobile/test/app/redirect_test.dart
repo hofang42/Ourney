@@ -180,6 +180,28 @@ void main() {
         r('https://ourney.tech/profile/delete-account', onboarded: false),
         AppRoutes.capture,
       );
+      // UX-30: truncated or extra-segment invite links redirect to the invite
+      // screen's invalid-link route instead of silently landing on /capture.
+      expect(
+        r('https://ourney.tech/j/', auth: AuthStatus.signedIn),
+        '/join/$kMalformedInviteSegment',
+      );
+      expect(
+        r('https://ourney.tech/j/ABCD1234/extra', auth: AuthStatus.signedIn),
+        '/join/$kMalformedInviteSegment',
+      );
+      expect(
+        r('ourney://j/', auth: AuthStatus.signedIn),
+        '/join/$kMalformedInviteSegment',
+      );
+      expect(
+        r('https://ourney.tech/f/', auth: AuthStatus.signedIn),
+        '/f/$kMalformedInviteSegment',
+      );
+      expect(
+        r('ourney://f/', auth: AuthStatus.signedIn),
+        '/f/$kMalformedInviteSegment',
+      );
     });
   });
 

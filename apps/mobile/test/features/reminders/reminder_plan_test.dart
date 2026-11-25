@@ -386,6 +386,24 @@ void main() {
         ],
       );
       expect(wall(plan.single.fireAt, hcm), '2026-10-16 21:00');
+      expect(plan.single.journeyTimezone, hcm);
+      // 00:00 on 2026-10-17 in HCM (UTC+7) is 17:00Z on 2026-10-16 = 13:00 in NY (UTC-4).
+      expect(
+        plan.single.deadlineLocalTime(hcm),
+        const ReminderTime(0, 0),
+      );
+      expect(
+        plan.single.deadlineLocalTime(ny),
+        const ReminderTime(13, 0),
+      );
+      expect(
+        streakDeadlineInDeviceZone(
+          journeyTimezone: hcm,
+          deviceTimezone: 'Asia/Tokyo',
+          journeyDate: d('2026-10-16'),
+        ),
+        const ReminderTime(2, 0),
+      );
     });
 
     test('alerts can be switched off', () {

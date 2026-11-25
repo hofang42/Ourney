@@ -24,7 +24,13 @@ class CoupleRitualsL10nEn extends CoupleRitualsL10n {
 
   @override
   String couple_rituals_checkInsLabel(int count) {
-    return '$count check-ins';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count check-ins',
+      one: '1 check-in',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -49,7 +55,19 @@ class CoupleRitualsL10nEn extends CoupleRitualsL10n {
 
   @override
   String couple_rituals_mosaicTitle(int days, int moments) {
-    return '$days DAYS · $moments MOMENTS';
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days DAYS',
+      one: '1 DAY',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      moments,
+      locale: localeName,
+      other: '$moments MOMENTS',
+      one: '1 MOMENT',
+    );
+    return '$_temp0 · $_temp1';
   }
 
   @override

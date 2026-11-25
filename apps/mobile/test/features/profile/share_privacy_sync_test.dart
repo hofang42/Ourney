@@ -22,21 +22,29 @@ class _User extends CurrentUserId {
 
 void main() {
   Future<(WidgetRef, FakeJourneyRepository, ProviderContainer)> pump(
-    WidgetTester tester,
-  ) async {
-    final prefs = await tester.runAsync(() => testPrefs({}));
-    final repo = FakeJourneyRepository(
-      journeys: [
-        testJourney(id: 'kg', metricName: 'Cân nặng', metricUnit: 'kg'),
-        testJourney(id: 'min', metricName: 'Thời gian', metricUnit: 'phút'),
-        testJourney(
-          id: 'old',
-          status: JourneyStatus.archived,
-          metricName: 'Cân nặng',
-          metricUnit: 'kg',
-        ),
-      ],
+    WidgetTester tester, {
+    FakeJourneyRepository? journeys,
+    bool hideWeight = false,
+    Stream<void>? serverPulls,
+    bool lifecycle = false,
+  }) async {
+    final prefs = await tester.runAsync(
+      () => testPrefs({SharePrivacyPrefs.hideWeight: hideWeight}),
     );
+    final repo =
+        journeys ??
+        FakeJourneyRepository(
+          journeys: [
+            testJourney(id: 'kg', metricName: 'Cân nặng', metricUnit: 'kg'),
+            testJourney(id: 'min', metricName: 'Thời gian', metricUnit: 'phút'),
+            testJourney(
+              id: 'old',
+              status: JourneyStatus.archived,
+              metricName: 'Cân nặng',
+              metricUnit: 'kg',
+            ),
+          ],
+        );
     late WidgetRef ref;
     late ProviderContainer container;
     await tester.pumpWidget(
@@ -50,13 +58,106 @@ void main() {
           builder: (context, r, _) {
             ref = r;
             container = ProviderScope.containerOf(context);
-            return const SizedBox();
+            return lifecycle
+                ? SharePrivacyHealHook(
+                    serverPulls: serverPulls,
+                    child: const SizedBox(),
+                  )
+                : const SizedBox();
           },
         ),
       ),
     );
     return (ref, repo, container);
   }
+
+  testWidgets('startup and resume reconcile weight without a pending failure', (
+    tester,
+  ) async {
+    final old = Journey(
+      id: 'previous-link',
+      ownerId: 'user-a',
+      kind: JourneyKind.solo,
+      templateId: TemplateId.custom,
+      title: 'Weight log',
+      emoji: '📝',
+      startDate: const LocalDate(2026, 10, 10),
+      timezone: testTz,
+      metricName: 'Reading',
+      metricUnit: 'lbs',
+      status: JourneyStatus.archived,
+      visibility: JourneyVisibility.link,
+      publicToken: 'a' * 40,
+    );
+    final study = testJourney(
+      id: 'study',
+      templateId: TemplateId.custom,
+      metricName: 'Time',
+      metricUnit: 'min',
+    ).copyWith(layout: PersonaSkinId.quietTransformer);
+    final hidden = testJourney(id: 'already-hidden', metricUnit: 'lb');
+    final repo = FakeJourneyRepository(
+      journeys: [old, study, hidden],
+      memberships: {
+        old.id: testMembership(old),
+        study.id: testMembership(study),
+        hidden.id: testMembership(hidden, hideMetric: true),
+      },
+    );
+    final (_, _, container) = await pump(
+      tester,
+      journeys: repo,
+      hideWeight: true,
+      lifecycle: true,
+    );
+    await tester.pumpAndSettle();
+    expect(pendingSharePrivacy(container), isEmpty);
+    expect(repo.prefUpdates, [(id: old.id, hideMetric: true, blurMedia: null)]);
+
+    repo.prefUpdates.clear();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(repo.prefUpdates, [(id: old.id, hideMetric: true, blurMedia: null)]);
+  });
+
+  testWidgets(
+    'a completed startup pull also reconciles newly loaded journeys',
+    (tester) async {
+      final pulls = StreamController<void>();
+      addTearDown(pulls.close);
+      final hidden = testJourney(id: 'hidden', metricUnit: 'lb');
+      final repo = FakeJourneyRepository(
+        journeys: [hidden],
+        memberships: {hidden.id: testMembership(hidden, hideMetric: true)},
+      );
+      await pump(
+        tester,
+        journeys: repo,
+        hideWeight: true,
+        lifecycle: true,
+        serverPulls: pulls.stream,
+      );
+      await tester.pumpAndSettle();
+      expect(repo.prefUpdates, isEmpty);
+      final imported = await repo.create(
+        JourneyDraft(
+          kind: JourneyKind.solo,
+          templateId: TemplateId.custom,
+          title: 'Old diary',
+          emoji: '📝',
+          startDate: const LocalDate(2026, 10, 10),
+          timezone: testTz,
+          metricUnit: 'lb',
+        ),
+      );
+      pulls.add(null);
+      await tester.pumpAndSettle();
+      expect(repo.prefUpdates, [
+        (id: imported.id, hideMetric: true, blurMedia: null),
+      ]);
+    },
+  );
 
   testWidgets('switch on: only kg journeys get hide-kg, archived included', (
     tester,

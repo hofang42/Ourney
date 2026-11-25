@@ -154,6 +154,31 @@ void main() {
       expect(find.byKey(const ValueKey('friends-screen')), findsOneWidget);
     });
 
+    testWidgets('UX-30: changing the invite token resets acceptance', (
+      tester,
+    ) async {
+      final fakes = SocialFakes();
+      final router = await pumpSocial(
+        tester,
+        location: SocialPaths.invite('abc'),
+        fakes: fakes,
+      );
+      final accepted = find.byKey(const ValueKey('invite-accepted'));
+      final invalid = find.byKey(const ValueKey('invite-not-found'));
+      expect(accepted, findsOneWidget);
+
+      router.go(SocialPaths.invite(kMalformedInviteSegment));
+      await tester.pumpAndSettle();
+      expect(accepted, findsNothing);
+      expect(invalid, findsOneWidget);
+
+      router.go(SocialPaths.invite('def'));
+      await tester.pumpAndSettle();
+      expect(accepted, findsOneWidget);
+      expect(invalid, findsNothing);
+      expect(fakes.friends.calls, ['acceptInvite:abc', 'acceptInvite:def']);
+    });
+
     for (final (code, key) in [
       (OurneyErrorCode.notFound, 'invite-not-found'),
       (OurneyErrorCode.invalid, 'invite-own'),

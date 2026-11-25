@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/config.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/features/camera/capture_services.dart'
+    show galleryPickerProvider;
 import 'package:ourney/features/checkin/captured_photo.dart';
 import 'package:ourney/features/checkin/checkin_clock.dart';
 import 'package:ourney/features/checkin/checkin_success.dart';
@@ -16,6 +19,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
 import '../reminders/reminders_fakes.dart';
+import '../sharing/sharing_fakes.dart' show FakeSharingRepository, person;
 import 'fakes.dart';
 
 void main() {
@@ -45,13 +49,19 @@ void main() {
     bool noPhoto = false,
     Map<String, Object> prefsValues = const {},
     Brightness brightness = Brightness.light,
+    AppConfig config = const AppConfig.localOnly(),
     void Function(ProviderContainer)? before,
     List<Override> overrides = const [],
   }) async {
     final prefs = await testPrefs(prefsValues);
     final container = ProviderContainer(
       overrides: [
-        ...baseOverrides(prefs: prefs, journeys: journeys, checkIns: checkIns),
+        ...baseOverrides(
+          prefs: prefs,
+          journeys: journeys,
+          checkIns: checkIns,
+          config: config,
+        ),
         photoCompressorProvider.overrideWithValue(compressor),
         checkinClockProvider.overrideWithValue(FakeCheckinClock()),
         ...overrides,
@@ -84,6 +94,50 @@ void main() {
     await tester.pump(CheckinSuccessView.autoCloseDelay);
     await tester.pumpAndSettle();
   }
+
+  testWidgets('UX-03: post while audience stream is loading, then resolve it', (
+    tester,
+  ) async {
+    final sharing = _AudienceStream(viewers: [person('friend')]);
+    addTearDown(sharing.updates.close);
+    await pump(
+      tester,
+      config: testBackendConfig,
+      overrides: [sharingRepositoryProvider.overrideWithValue(sharing)],
+    );
+    expect(find.text('Trong hành trình này'), findsOneWidget);
+    expect(find.text('Chỉ mình bạn'), findsNothing);
+
+    await tapPost(tester);
+    expect(find.text('Đã lưu vào hành trình của bạn.'), findsOneWidget);
+    expect(find.text('Đã lưu. Chỉ mình bạn thấy.'), findsNothing);
+
+    sharing.updates.add(sharing.state);
+    await tester.pump();
+    expect(find.text('Đã hiển thị trên hành trình chia sẻ.'), findsOneWidget);
+    await finishSuccess(tester);
+  });
+
+  testWidgets('UX-03: compose and completion stay neutral when sharing fails', (
+    tester,
+  ) async {
+    final sharing = _AudienceStream();
+    addTearDown(sharing.updates.close);
+    await pump(
+      tester,
+      config: testBackendConfig,
+      overrides: [sharingRepositoryProvider.overrideWithValue(sharing)],
+    );
+    sharing.updates.addError(const OurneyException(OurneyErrorCode.offline));
+    await tester.pump();
+    expect(find.text('Trong hành trình này'), findsOneWidget);
+    expect(find.text('Chỉ mình bạn'), findsNothing);
+
+    await tapPost(tester);
+    expect(find.text('Đã lưu vào hành trình của bạn.'), findsOneWidget);
+    expect(find.text('Đã lưu. Chỉ mình bạn thấy.'), findsNothing);
+    await finishSuccess(tester);
+  });
 
   testWidgets('one tap on Post saves through the repository (FR-C4/C5)', (
     tester,
@@ -194,6 +248,7 @@ void main() {
   testWidgets('library photo shows the from-library label (FR-C3)', (
     tester,
   ) async {
+    final gallery = FakeGalleryPicker('/tmp/lib-repicked.jpg');
     await pump(
       tester,
       extra: CapturedPhoto(
@@ -202,8 +257,13 @@ void main() {
         capturedAt: testNowUtc,
         fromLibrary: true,
       ),
+      overrides: [galleryPickerProvider.overrideWithValue(gallery)],
     );
     expect(find.byKey(const ValueKey('checkin-from-library')), findsOneWidget);
+    expect(find.text('Chọn ảnh khác'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('checkin-retake')));
+    await tester.pumpAndSettle();
+    expect(gallery.calls, 1);
     await tapPost(tester);
     expect(checkIns.submitted.single.fromLibrary, isTrue);
     await finishSuccess(tester);
@@ -496,7 +556,12 @@ void main() {
       expect(find.text('Chỉ mình bạn thấy số này'), findsNothing);
     });
 
-    testWidgets('invalid value blocks posting', (tester) async {
+    testWidgets('invalid value blocks posting and scrolls field into view (UX-17)', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 460);
+      addTearDown(tester.view.reset);
       journeys = FakeJourneyRepository(
         journeys: [testJourney(metricName: 'Phút')],
       );
@@ -505,8 +570,18 @@ void main() {
         find.byKey(const ValueKey('checkin-metric')),
         '1.2.3',
       );
-      await tapPost(tester);
+      // Scroll back to the very top so the metric field at the bottom is off-screen.
+      final scrollable = tester.state<ScrollableState>(
+        find.byType(Scrollable).first,
+      );
+      scrollable.position.jumpTo(0);
+      await tester.pump();
+      expect(scrollable.position.pixels, 0);
+
+      await tester.tap(find.byKey(const ValueKey('checkin-post')));
+      await tester.pumpAndSettle();
       expect(find.text('Nhập một số hợp lệ'), findsOneWidget);
+      expect(scrollable.position.pixels, greaterThan(0));
       expect(checkIns.submitted, isEmpty);
     });
 
@@ -666,6 +741,15 @@ void main() {
       expect(find.byKey(const ValueKey('stub-capture')), findsOneWidget);
     });
   });
+}
+
+class _AudienceStream extends FakeSharingRepository {
+  _AudienceStream({super.viewers});
+
+  final updates = StreamController<JourneyShareState>.broadcast();
+
+  @override
+  Stream<JourneyShareState> watchShareState(String journeyId) => updates.stream;
 }
 
 class _SlowGateway extends FakeNotificationGateway {

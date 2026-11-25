@@ -3,7 +3,7 @@
   "quiet_transformer_name": "Quiet Transformer",
   "quiet_transformer_dayLabel": "Day {day}",
   "quiet_transformer_streakLabel": "{streak}-day streak",
-  "quiet_transformer_checkInsLabel": "{count} check-ins",
+  "quiet_transformer_checkInsLabel": "{count, plural, =1{1 check-in} other{{count} check-ins}}",
   "quiet_transformer_vaultPill": "Private Vault · Day {day}",
   "quiet_transformer_ghostOn": "Ghost Align: ON (30%)",
   "quiet_transformer_ghostOff": "Ghost Align: OFF",

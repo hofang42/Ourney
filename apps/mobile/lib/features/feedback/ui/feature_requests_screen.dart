@@ -155,14 +155,6 @@ class _FeatureRequestsScreenState extends ConsumerState<FeatureRequestsScreen> {
             onBack: onBack,
             backLabel: backLabel,
             title: l10n.feedback_title,
-            trailing: serverOutdated
-                ? null
-                : UiBarIconButton(
-                    key: const ValueKey('feedback-add-icon'),
-                    glyph: const OurneyIcon(name: 'plus', size: 21),
-                    label: l10n.feedback_newAction,
-                    onPressed: _openCreateSheet,
-                  ),
           ),
           if (serverOutdated)
             Expanded(
@@ -567,9 +559,6 @@ class _BoardBody extends ConsumerWidget {
         glyph: const OurneyIcon(name: 'edit', size: 34, active: true),
         title: l10n.feedback_emptyMineTitle,
         body: l10n.feedback_emptyMineBody,
-        actionLabel: l10n.feedback_newCta,
-        actionKey: const ValueKey('feedback-empty-mine-cta'),
-        onAction: onOpenCreate,
       );
     }
     return switch (query.tab) {
@@ -578,9 +567,6 @@ class _BoardBody extends ConsumerWidget {
           glyph: const OurneyIcon(name: 'sparkle', size: 34, active: true),
           title: l10n.feedback_emptyPopularTitle,
           body: l10n.feedback_emptyPopularBody,
-          actionLabel: l10n.feedback_emptyPopularCta,
-          actionKey: const ValueKey('feedback-empty-popular-cta'),
-          onAction: onOpenCreate,
         ),
       FeatureRequestTab.planned => UiEmptyState(
           key: const ValueKey('feedback-empty-planned'),

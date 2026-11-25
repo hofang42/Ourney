@@ -77,10 +77,11 @@ class ReminderScheduler {
     try {
       final gateway = _gateway;
       await gateway.initialize();
+      final deviceTz = await _ref.read(reminderDeviceTimezoneProvider.future);
       final planned = await gateway.isPermissionGranted()
-          ? await buildPlan()
+          ? await buildPlan(deviceTimezone: deviceTz)
           : const <PlannedNotification>[];
-      await _apply(gateway, planned);
+      await _apply(gateway, planned, deviceTimezone: deviceTz);
       lastPlanned.value = List.unmodifiable(planned);
     } on Object catch (e, st) {
       debugPrint('reminders: reschedule skipped: $e');
@@ -91,7 +92,7 @@ class ReminderScheduler {
   }
 
   /// The notifications that should be pending right now.
-  Future<List<PlannedNotification>> buildPlan() async {
+  Future<List<PlannedNotification>> buildPlan({String? deviceTimezone}) async {
     // Signed out: nothing of the previous account may still fire (its cache
     // is being wiped).
     if (_ref.read(authStatusProvider) == AuthStatus.signedOut) {
@@ -112,7 +113,9 @@ class ReminderScheduler {
       if (time == null && !streakAlerts) continue;
       inputs.add(await _inputFor(j, time));
     }
-    final deviceTz = await _ref.read(reminderDeviceTimezoneProvider.future);
+    final String deviceTz =
+        deviceTimezone ??
+        await _ref.read(reminderDeviceTimezoneProvider.future);
     return planReminders(
       now: _ref.read(remindersClockProvider).now(),
       deviceTimezone: deviceTz,
@@ -153,12 +156,26 @@ class ReminderScheduler {
 
   Future<void> _apply(
     NotificationGateway gateway,
-    List<PlannedNotification> planned,
-  ) async {
+    List<PlannedNotification> planned, {
+    required String deviceTimezone,
+  }) async {
     final l10n = lookupRemindersL10n(_ref.read(reminderLocaleProvider));
     for (var i = 0; i < planned.length && i < kMaxPendingNotifications; i++) {
       final p = planned[i];
       final isAlert = p.kind == PlannedKind.streakAlert;
+      final String body;
+      if (isAlert) {
+        final deadline = p.deadlineLocalTime(deviceTimezone);
+        body = deadline == const ReminderTime(0, 0)
+            ? l10n.reminders_alertBody(p.journeyTitle, p.streak)
+            : l10n.reminders_alertBodyAt(
+                p.journeyTitle,
+                p.streak,
+                deadline.toString(),
+              );
+      } else {
+        body = l10n.reminders_notifBody(p.journeyTitle);
+      }
       await gateway.schedule(
         NotificationRequest(
           id: kReminderIdBase + i,
@@ -166,9 +183,7 @@ class ReminderScheduler {
           title: isAlert
               ? l10n.reminders_alertTitle
               : l10n.reminders_notifTitle,
-          body: isAlert
-              ? l10n.reminders_alertBody(p.journeyTitle, p.streak)
-              : l10n.reminders_notifBody(p.journeyTitle),
+          body: body,
           payload: p.journeyId,
         ),
       );
@@ -222,6 +237,8 @@ class _ReminderLifecycleHookState extends ConsumerState<ReminderLifecycleHook>
     with WidgetsBindingObserver {
   Timer? _bannerTimer;
   ValueNotifier<List<PlannedNotification>>? _plannedListenable;
+  ({ReminderBannerData banner, LocalDate date, String journeyTimezone})?
+  _shownStreak;
   bool _foreground = true;
 
   @override
@@ -284,6 +301,7 @@ class _ReminderLifecycleHookState extends ConsumerState<ReminderLifecycleHook>
     var skinId = 'quiet';
     var day = 1;
     var name = p.journeyTitle;
+    var journeyTimezone = p.journeyTimezone;
     try {
       final activeJourneys = await ref
           .read(journeyRepositoryProvider)
@@ -306,27 +324,79 @@ class _ReminderLifecycleHookState extends ConsumerState<ReminderLifecycleHook>
         return;
       }
       name = journey.title;
+      journeyTimezone = journey.timezone;
       skinId = uiSkinIdFor(personaSkinOf(journey));
       final computedDay = journey.startDate.daysUntil(p.journeyDate) + 1;
       if (computedDay > 0) day = computedDay;
     } on Object {
       if (!mounted) return;
     }
-    ref
-        .read(reminderBannerProvider.notifier)
-        .show(
-          ReminderBannerData(
-            journeyId: p.journeyId,
-            journeyName: name,
-            skinId: skinId,
-            kind: p.kind == PlannedKind.streakAlert
-                ? ReminderBannerKind.streak
-                : ReminderBannerKind.daily,
-            streak: p.streak,
-            day: day,
-          ),
-        );
+    final deadline = await _deadlineFor(journeyTimezone, p.journeyDate);
+    if (!mounted || !_foreground) return;
+    final banner = ReminderBannerData(
+      journeyId: p.journeyId,
+      journeyName: name,
+      skinId: skinId,
+      kind: p.kind == PlannedKind.streakAlert
+          ? ReminderBannerKind.streak
+          : ReminderBannerKind.daily,
+      streak: p.streak,
+      day: day,
+      deadline: deadline ?? '00:00',
+    );
+    ref.read(reminderBannerProvider.notifier).show(banner);
+    _shownStreak = banner.kind == ReminderBannerKind.streak
+        ? (
+            banner: banner,
+            date: p.journeyDate,
+            journeyTimezone: journeyTimezone,
+          )
+        : null;
     _armNextBanner(p.fireAt);
+  }
+
+  Future<void> _refreshVisibleDeadline() async {
+    final shown = _shownStreak;
+    if (shown == null || ref.read(reminderBannerProvider) != shown.banner) {
+      return;
+    }
+    final deadline = await _deadlineFor(shown.journeyTimezone, shown.date);
+    final current = shown.banner;
+    if (!mounted ||
+        !_foreground ||
+        deadline == null ||
+        deadline == current.deadline ||
+        ref.read(reminderBannerProvider) != current) {
+      return;
+    }
+    final updated = ReminderBannerData(
+      journeyId: current.journeyId,
+      journeyName: current.journeyName,
+      skinId: current.skinId,
+      kind: current.kind,
+      streak: current.streak,
+      day: current.day,
+      deadline: deadline,
+    );
+    _shownStreak = (
+      banner: updated,
+      date: shown.date,
+      journeyTimezone: shown.journeyTimezone,
+    );
+    ref.read(reminderBannerProvider.notifier).show(updated);
+  }
+
+  Future<String?> _deadlineFor(String journeyTimezone, LocalDate date) async {
+    try {
+      final deviceTz = await ref.read(reminderDeviceTimezoneProvider.future);
+      return streakDeadlineInDeviceZone(
+        journeyTimezone: journeyTimezone,
+        deviceTimezone: deviceTz,
+        journeyDate: date,
+      ).toString();
+    } on Object {
+      return null;
+    }
   }
 
   @override
@@ -334,7 +404,9 @@ class _ReminderLifecycleHookState extends ConsumerState<ReminderLifecycleHook>
     switch (state) {
       case AppLifecycleState.resumed:
         _foreground = true;
+        ref.invalidate(reminderDeviceTimezoneProvider);
         unawaited(ref.read(reminderSchedulerProvider).reschedule());
+        unawaited(_refreshVisibleDeadline());
       case AppLifecycleState.hidden:
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:

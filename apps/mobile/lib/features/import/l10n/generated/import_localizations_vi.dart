@@ -179,6 +179,14 @@ class ImportL10nVi extends ImportL10n {
   String get import_removePhoto => 'Xóa ảnh';
 
   @override
+  String import_photoRemoved(int count) {
+    return 'Đã bỏ $count ảnh khỏi danh sách.';
+  }
+
+  @override
+  String get import_undo => 'Hoàn tác';
+
+  @override
   String get import_sourceExif => 'Ngày chụp';
 
   @override

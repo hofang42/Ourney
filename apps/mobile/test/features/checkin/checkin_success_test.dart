@@ -4,12 +4,15 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/checkin/checkin_progress.dart';
 import 'package:ourney/features/checkin/checkin_success.dart';
 import 'package:ourney/ui/ui.dart' show UiPolaroid, UiStamp;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
+import '../groups/groups_fakes.dart' show FakeGroupRepository, memberToday;
+import '../sharing/sharing_fakes.dart' show FakeSharingRepository, person;
 import 'fakes.dart';
 
 void main() {
@@ -186,4 +189,129 @@ void main() {
       });
     }
   }
+
+  testWidgets('UX-03: completion copy reflects actual journey audience', (
+    tester,
+  ) async {
+    Future<void> pumpAudience(
+      Journey j, {
+      int? activeMemberCount,
+      bool? hasSharedViewers,
+      int streakAfter = 3,
+      Locale locale = const Locale('vi'),
+    }) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          key: UniqueKey(),
+          overrides: [
+            appConfigProvider.overrideWithValue(testBackendConfig),
+            sharingRepositoryProvider.overrideWithValue(
+              FakeSharingRepository(
+                viewers: hasSharedViewers == true ? [person('friend')] : [],
+              ),
+            ),
+            groupRepositoryProvider.overrideWithValue(
+              FakeGroupRepository(
+                today: {
+                  j.id: [
+                    for (var i = 0; i < (activeMemberCount ?? 0); i++)
+                      memberToday('u$i', 'Member $i'),
+                  ],
+                },
+              ),
+            ),
+          ],
+          child: testApp(
+            CheckinSuccessView(
+              outcome: CheckInOutcome(
+                checkIn: testCheckIn(j.startDate),
+                streakBefore: streakAfter - 1,
+                streakAfter: streakAfter,
+              ),
+              journey: j,
+              haptics: false,
+              onDone: () {},
+              onShare: () {},
+            ),
+            locale: locale,
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    await pumpAudience(testJourney());
+    expect(find.text('Đã lưu. Chỉ mình bạn thấy.'), findsOneWidget);
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
+
+    // Solo journey shared with friends (UX-03).
+    await pumpAudience(testJourney(), hasSharedViewers: true);
+    expect(find.text('Đã hiển thị trên hành trình chia sẻ.'), findsOneWidget);
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
+
+    // 1-member group / couple before partner or friends join (UX-03).
+    await pumpAudience(
+      testJourney(
+        kind: JourneyKind.group,
+        maxMembers: 2,
+        visibility: JourneyVisibility.group,
+      ),
+      activeMemberCount: 1,
+    );
+    expect(
+      find.text('Đã lưu. Người tham gia sau có thể xem ảnh này.'),
+      findsOneWidget,
+    );
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
+
+    // Multi-member squad using Couple visual layout override (UX-03).
+    final squadWithCoupleLayout = Journey(
+      id: 'j-squad',
+      ownerId: 'u1',
+      kind: JourneyKind.group,
+      templateId: TemplateId.englishDaily,
+      title: 'Squad',
+      emoji: '📚',
+      startDate: const LocalDate(2026, 10, 10),
+      durationDays: 30,
+      timezone: 'Asia/Ho_Chi_Minh',
+      visibility: JourneyVisibility.group,
+      status: JourneyStatus.active,
+      maxMembers: 5,
+      layout: PersonaSkinId.coupleRituals,
+    );
+    await pumpAudience(squadWithCoupleLayout, activeMemberCount: 3);
+    expect(find.text('Đã chia sẻ với cả nhóm.'), findsOneWidget);
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
+
+    await pumpAudience(
+      testJourney(kind: JourneyKind.group, visibility: JourneyVisibility.group),
+    );
+    expect(find.text('Đã lưu vào hành trình của bạn.'), findsOneWidget);
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
+
+    await pumpAudience(
+      testJourney(
+        kind: JourneyKind.group,
+        maxMembers: 2,
+        visibility: JourneyVisibility.group,
+      ),
+      activeMemberCount: 2,
+    );
+    expect(find.text('Nửa của bạn đã được gửi.'), findsOneWidget);
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
+
+    await pumpAudience(testJourney(visibility: JourneyVisibility.link));
+    expect(find.text('Đã hiển thị trên hành trình chia sẻ.'), findsOneWidget);
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
+
+    // UX-44: English singular 1 DAY STRAIGHT on Day 1 flexer check-in.
+    await pumpAudience(
+      testJourney(templateId: TemplateId.workout30),
+      streakAfter: 1,
+      locale: const Locale('en'),
+    );
+    expect(find.text('DAY 1. 1 DAY STRAIGHT.'), findsOneWidget);
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
+  });
 }

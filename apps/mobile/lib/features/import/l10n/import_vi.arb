@@ -230,6 +230,19 @@
   "@import_removePhoto": {
     "description": "Retell a past journey flow."
   },
+  "import_photoRemoved": "Đã bỏ {count} ảnh khỏi danh sách.",
+  "@import_photoRemoved": {
+    "description": "Thông báo sau khi bỏ ảnh ở bước 2.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "import_undo": "Hoàn tác",
+  "@import_undo": {
+    "description": "Nút hoàn tác bỏ ảnh."
+  },
   "import_sourceExif": "Ngày chụp",
   "@import_sourceExif": {
     "description": "Retell a past journey flow."

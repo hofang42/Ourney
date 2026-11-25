@@ -893,14 +893,26 @@ abstract class SharingL10n {
   /// Views delta.
   ///
   /// In vi, this message translates to:
-  /// **'+{count} người xem mới tuần này'**
+  /// **'{count, plural, =0{Chưa có người xem mới tuần này} other{+{count} người xem mới tuần này}}'**
   String sharing_newViewersWeek(int count);
 
   /// Likes / started delta.
   ///
   /// In vi, this message translates to:
-  /// **'+{count} tuần này'**
+  /// **'{count, plural, =0{Chưa có thêm tuần này} other{+{count} tuần này}}'**
   String sharing_thisWeek(int count);
+
+  /// Toast sau khi gỡ quyền xem hành trình của một người bạn.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã gỡ quyền xem của {name}.'**
+  String sharing_removedFriendToast(String name);
+
+  /// Nút hoàn tác trên toast gỡ quyền xem.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hoàn tác'**
+  String get sharing_undo;
 
   /// Chart caption.
   ///

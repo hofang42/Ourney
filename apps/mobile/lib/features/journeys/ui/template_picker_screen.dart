@@ -13,6 +13,7 @@ class TemplatePickerScreen extends StatelessWidget {
   const TemplatePickerScreen({
     this.resume = false,
     this.initialWho,
+    this.inviteHandle,
     super.key,
   });
 
@@ -23,9 +24,16 @@ class TemplatePickerScreen extends StatelessWidget {
   /// along?"), e.g. when starting a journey together from a friend sheet.
   final CreateWho? initialWho;
 
+  /// `?invite=<handle>`: friend handle to auto-invite when creating a squad
+  /// journey from a friend's sheet.
+  final String? inviteHandle;
+
   static CreateWho? parseWho(String? raw) => CreateFlowScreen.parseWho(raw);
 
   @override
-  Widget build(BuildContext context) =>
-      CreateFlowScreen(resume: resume, initialWho: initialWho);
+  Widget build(BuildContext context) => CreateFlowScreen(
+    resume: resume,
+    initialWho: initialWho,
+    inviteHandle: inviteHandle,
+  );
 }

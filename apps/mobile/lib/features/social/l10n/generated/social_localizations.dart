@@ -518,6 +518,42 @@ abstract class SocialL10n {
   /// **'Từ chối tất cả'**
   String get social_declineAll;
 
+  /// Confirm title when declining all friend requests from a public journey.
+  ///
+  /// In vi, this message translates to:
+  /// **'Từ chối tất cả lời mời kết bạn?'**
+  String get social_declineAllTitle;
+
+  /// Confirm body when declining all friend requests from a public journey.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count, plural, =1{Từ chối 1 lời mời kết bạn từ hành trình này?} other{Từ chối cả {count} lời mời kết bạn từ hành trình này?}}'**
+  String social_declineAllBody(int count);
+
+  /// Confirm title when deleting a chat message for the current user.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xóa tin nhắn này phía bạn?'**
+  String get social_deleteMessageTitle;
+
+  /// Confirm body when deleting a chat message for the current user.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tin nhắn sẽ ẩn khỏi máy bạn nhưng người kia vẫn nhìn thấy.'**
+  String get social_deleteMessageBody;
+
+  /// Confirm title before sending a picked photo in chat.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi ảnh này?'**
+  String get social_sendPhotoTitle;
+
+  /// Confirm button to send a picked photo in chat.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi ảnh'**
+  String get social_sendPhotoConfirm;
+
   /// Empty inbox.
   ///
   /// In vi, this message translates to:
@@ -655,6 +691,12 @@ abstract class SocialL10n {
   /// In vi, this message translates to:
   /// **'Tuần này'**
   String get social_groupWeek;
+
+  /// No description provided for @social_groupEarlier.
+  ///
+  /// In vi, this message translates to:
+  /// **'Trước đó'**
+  String get social_groupEarlier;
 
   /// No description provided for @social_offlineStrip.
   ///

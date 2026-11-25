@@ -28,7 +28,9 @@ class ShareCardL10nEn extends ShareCardL10n {
   String get share_card_numberStreak => 'Streak';
 
   @override
-  String get share_card_numberDay => 'Day N';
+  String share_card_numberDay(int day) {
+    return 'Day $day';
+  }
 
   @override
   String share_card_captionStreak(int count) {
@@ -192,7 +194,13 @@ class ShareCardL10nEn extends ShareCardL10n {
 
   @override
   String share_card_steadyDays(int n) {
-    return '$n steady days';
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n steady days',
+      one: '1 steady day',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -218,12 +226,30 @@ class ShareCardL10nEn extends ShareCardL10n {
 
   @override
   String share_card_coupleTitle(int days, int moments) {
-    return '$days DAYS TOGETHER · $moments MOMENTS';
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days DAYS TOGETHER',
+      one: '1 DAY TOGETHER',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      moments,
+      locale: localeName,
+      other: '$moments MOMENTS',
+      one: '1 MOMENT',
+    );
+    return '$_temp0 · $_temp1';
   }
 
   @override
   String share_card_activeDays(int n) {
-    return '$n ACTIVE DAYS';
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n ACTIVE DAYS',
+      one: '1 ACTIVE DAY',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -233,7 +259,13 @@ class ShareCardL10nEn extends ShareCardL10n {
 
   @override
   String share_card_minimalDaysOpen(int done) {
-    return '$done DAYS';
+    String _temp0 = intl.Intl.pluralLogic(
+      done,
+      locale: localeName,
+      other: '$done DAYS',
+      one: '1 DAY',
+    );
+    return '$_temp0';
   }
 
   @override

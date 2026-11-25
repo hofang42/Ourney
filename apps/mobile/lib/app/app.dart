@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart' show JourneyStatus;
 
+import '../data/data_providers.dart' show serverPullsProvider;
 import '../features/import/data/import_providers.dart'
     show importResumeProvider;
 import '../features/journeys/data/journeys_providers.dart'
@@ -50,6 +51,7 @@ class OurneyApp extends ConsumerWidget {
     final skin = ref.watch(activePersonaSkinProvider);
     final locale = ref.watch(localeOverrideProvider);
     final onboarded = ref.watch(onboardingCompleteProvider);
+    final serverPulls = ref.watch(serverPullsProvider);
     final a11y =
         WidgetsBinding.instance.platformDispatcher.accessibilityFeatures;
     final reduceMotion = a11y.disableAnimations || a11y.reduceMotion;
@@ -72,6 +74,7 @@ class OurneyApp extends ConsumerWidget {
       // the journey was deleted.
       builder: (context, child) => DayTicker(
         child: SharePrivacyHealHook(
+          serverPulls: serverPulls,
           child: ReminderLifecycleHook(
             onOpenJourney: (id) =>
                 unawaited(_openReminderJourney(ref, router, id)),

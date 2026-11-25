@@ -32,19 +32,27 @@ class BlockedUsersScreen extends ConsumerWidget {
 class _BlockedList extends ConsumerWidget {
   const _BlockedList();
 
+  static String? _resolvedName(PersonSummary? person) {
+    final display = person?.displayName.trim() ?? '';
+    if (display.isNotEmpty) return display;
+    return _resolvedHandle(person);
+  }
+
+  static String? _resolvedHandle(PersonSummary? person) {
+    final username = person?.username.trim() ?? '';
+    return username.isEmpty ? null : '@$username';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = SafetyL10n.of(context);
     final blocked = ref.watch(blockedUserIdsProvider);
-    final cached = ref.watch(blockedNamesProvider);
     final people =
-        ref.watch(blockedPeopleProvider).value ??
+        ref.watch(blockedPeopleProvider).asData?.value ??
         const <String, PersonSummary>{};
-    // Server names first (fresh device), then the names cached here.
-    final names = {
-      ...cached,
-      for (final p in people.values)
-        if (p.displayName.isNotEmpty) p.userId: p.displayName,
+    final names = <String, String>{
+      for (final entry in people.entries)
+        if (_resolvedName(entry.value) case final String name) entry.key: name,
     };
     return blocked.when(
       loading: () => Padding(
@@ -75,30 +83,35 @@ class _BlockedList extends ConsumerWidget {
           ..sort((a, b) => (names[a] ?? '~$a').compareTo(names[b] ?? '~$b'));
         return Column(
           children: [
-            for (final id in sorted) _row(context, l10n, id, names[id]),
+            for (final id in sorted)
+              _row(context, l10n, id, person: people[id], name: names[id]),
           ],
         );
       },
     );
   }
 
-  Widget _row(BuildContext context, SafetyL10n l10n, String id, String? name) {
-    final shown = name ?? l10n.safety_unknownUser;
+  Widget _row(
+    BuildContext context,
+    SafetyL10n l10n,
+    String id, {
+    required PersonSummary? person,
+    required String? name,
+  }) {
+    final shown = name ?? l10n.safety_blockedAccount;
+    final handle = _resolvedHandle(person);
     return UiRow(
       key: ValueKey('safety-blocked-$id'),
       leading: UiAvatar(
-        name: shown,
+        name: name != null && name == handle ? name.substring(1) : shown,
         colorIndex: UiAvatar.indexFor(id),
         size: 40,
       ),
       title: shown,
-      // Without a cached name every row would read "User": add a short id.
-      subtitle: name == null
+      subtitle: handle != null && handle != shown
           ? Text(
-              l10n.safety_unknownUserId(
-                id.length > 8 ? id.substring(0, 8) : id,
-              ),
-              key: ValueKey('safety-blocked-id-$id'),
+              handle,
+              key: ValueKey('safety-blocked-handle-$id'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: UiText.body(
@@ -112,7 +125,7 @@ class _BlockedList extends ConsumerWidget {
       trailing: UiTextAction(
         key: ValueKey('safety-unblock-$id'),
         label: l10n.safety_unblockConfirm,
-        onPressed: () => confirmUnblock(context, userId: id, name: name),
+        onPressed: () => confirmUnblock(context, userId: id, name: shown),
       ),
     );
   }

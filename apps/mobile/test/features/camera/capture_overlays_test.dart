@@ -170,7 +170,9 @@ void main() {
     expect(picked, 'j2');
   });
 
-  testWidgets('picker groups not shot / shot / ended', (tester) async {
+  testWidgets('picker groups not shot / shot and excludes ended (UX-16)', (
+    tester,
+  ) async {
     final list = [
       testJourney(id: 'a', title: 'Alpha'),
       testJourney(id: 'b', title: 'Beta'),
@@ -194,9 +196,14 @@ void main() {
     );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    for (final k in ['not-shot', 'shot', 'ended']) {
+    for (final k in ['not-shot', 'shot']) {
       expect(find.byKey(ValueKey('journey-picker-section-$k')), findsOneWidget);
     }
+    expect(
+      find.byKey(const ValueKey('journey-picker-section-ended')),
+      findsNothing,
+    );
+    expect(find.byKey(const ValueKey('journey-picker-c')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

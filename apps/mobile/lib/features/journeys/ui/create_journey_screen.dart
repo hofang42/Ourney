@@ -143,6 +143,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
     setState(() => _submitted = true);
     if (!form.validate().isValid || _busy) return;
     final repo = ref.read(journeyRepositoryProvider);
+    final container = ProviderScope.containerOf(context, listen: false);
     final now = ref.read(journeysClockProvider).now();
     final reminders = ref.read(reminderSchedulerProvider);
     var extrasRejected = false;
@@ -187,6 +188,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
           }
         }
       }
+      await reconcileHiddenWeight(container);
       final frame = widget.frame;
       if (frame != null && _basedOn) {
         try {

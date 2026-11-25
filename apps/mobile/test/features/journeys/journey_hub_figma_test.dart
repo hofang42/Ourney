@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/journeys/data/create_progress.dart';
+import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney/features/journeys/ui/home/journey_home_intro.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -138,6 +141,49 @@ void main() {
       );
       expect(_key('journeys-loading'), findsOneWidget);
     });
+
+    testWidgets(
+      'UX-21: Hub hero never shows 0 streak or partial remaining count while check-ins load',
+      (tester) async {
+        final j1 = testJourney(id: 'j1', title: 'Run');
+        final j2 = testJourney(id: 'j2', title: 'Read');
+        final pendingCheckIns = StreamController<List<CheckIn>>();
+        addTearDown(pendingCheckIns.close);
+        await pumpJourneys(
+          tester,
+          locale: const Locale('en'),
+          journeys: FakeJourneyRepository(
+            journeys: [j1, j2],
+            memberships: {
+              j1.id: testMembership(j1),
+              j2.id: testMembership(j2),
+            },
+          ),
+          extraOverrides: [
+            // j1 has emitted (not checked in today), while j2 is still loading.
+            myCheckInsProvider('j1').overrideWith(
+              (ref) => Stream.value(const <CheckIn>[]),
+            ),
+            myCheckInsProvider('j2').overrideWith(
+              (ref) => pendingCheckIns.stream,
+            ),
+          ],
+        );
+        await tester.pump();
+        final hero = tester.widget<UiStreakHero>(_key('journeys-hub-hero'));
+        expect(hero.loading, isTrue);
+        expect(hero.title, 'Loading');
+        expect(hero.semanticLabel, 'Loading');
+        expect(
+          find.descendant(of: _key('journeys-hub-hero'), matching: find.text('—')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: _key('journeys-hub-hero'), matching: find.text('0')),
+          findsNothing,
+        );
+      },
+    );
 
     for (final dark in [false, true]) {
       for (final empty in [false, true]) {

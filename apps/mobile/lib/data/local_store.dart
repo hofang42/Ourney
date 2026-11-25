@@ -90,6 +90,7 @@ class LocalStore {
       await (db.delete(
         db.reactions,
       )..where((t) => t.userId.equals(userId))).go();
+      await files.deleteFolder('avatars/$userId');
     }
   }
 

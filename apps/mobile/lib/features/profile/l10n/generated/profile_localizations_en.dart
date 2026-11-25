@@ -57,6 +57,9 @@ class ProfileL10nEn extends ProfileL10n {
   String get profile_usernameTaken => 'That username is already taken';
 
   @override
+  String get profile_usernameUnavailable => 'That username isn\'t available';
+
+  @override
   String get profile_displayNameLabel => 'Display name';
 
   @override
@@ -103,6 +106,10 @@ class ProfileL10nEn extends ProfileL10n {
   @override
   String get profile_saveError =>
       'Couldn\'t save your profile. Please try again.';
+
+  @override
+  String get profile_saveContentPolicy =>
+      'Try a different username or display name.';
 
   @override
   String get profile_offlineError =>

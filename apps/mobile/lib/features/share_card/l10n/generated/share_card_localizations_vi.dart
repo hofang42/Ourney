@@ -28,7 +28,9 @@ class ShareCardL10nVi extends ShareCardL10n {
   String get share_card_numberStreak => 'Chuỗi ngày';
 
   @override
-  String get share_card_numberDay => 'Ngày thứ N';
+  String share_card_numberDay(int day) {
+    return 'Ngày $day';
+  }
 
   @override
   String share_card_captionStreak(int count) {

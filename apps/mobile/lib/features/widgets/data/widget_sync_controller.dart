@@ -27,8 +27,7 @@ import '../../reminders/data/notification_gateway.dart'
 import '../../reminders/data/reminder_scheduler.dart'
     show reminderDeviceTimezoneProvider;
 import '../../reminders/data/reminder_settings.dart';
-import '../../safety/data/safety_providers.dart'
-    show blockedNamesProvider, hiddenCheckInIdsProvider;
+import '../../safety/data/safety_providers.dart' show hiddenCheckInIdsProvider;
 import '../domain/live_activity_planner.dart';
 import '../domain/widget_snapshot.dart';
 import 'widget_bridge_gateway.dart';
@@ -699,7 +698,6 @@ class _WidgetLifecycleHookState extends ConsumerState<WidgetLifecycleHook>
       ..listen(hideWeightOnShareProvider, trigger, onError: ignoreError)
       ..listen(blurPhotosOnShareProvider, trigger, onError: ignoreError)
       ..listen(hiddenCheckInIdsProvider, trigger, onError: ignoreError)
-      ..listen(blockedNamesProvider, trigger, onError: ignoreError)
       ..listen(reminderSettingsProvider, trigger, onError: ignoreError)
       ..listen(streakAlertsEnabledProvider, trigger, onError: ignoreError)
       ..listen(widgetPhotoModeProvider, trigger, onError: ignoreError)

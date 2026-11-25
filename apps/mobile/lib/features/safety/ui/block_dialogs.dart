@@ -80,8 +80,8 @@ class _ConfirmSheet extends StatelessWidget {
 /// Asks "Block `name`?" and blocks [userId] on confirm (FR-F2). Shows a
 /// snack bar with the result. Returns true when the user is now blocked.
 ///
-/// [name] is the display name shown in the dialog and remembered for the
-/// blocked list. Works from any widget under the app's `ProviderScope`.
+/// [name] is the display name shown in the dialog and confirmation. Works
+/// from any widget under the app's `ProviderScope`.
 Future<bool> confirmBlock(
   BuildContext context, {
   required String userId,
@@ -132,7 +132,7 @@ Future<bool> blockUser(
 }) async {
   final shown = (name == null || name.isEmpty) ? l10n.safety_unknownUser : name;
   try {
-    await container.read(safetyActionsProvider).block(userId, name: name);
+    await container.read(safetyActionsProvider).block(userId);
     _toast(toastContext, messenger, l10n.safety_blocked(shown));
     return true;
   } on Object catch (e) {

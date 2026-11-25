@@ -281,8 +281,9 @@ select throws_ok($$ select tests.checkin(tests.c(94), tests.j(11), now() - inter
 select throws_ok($$ select tests.checkin(tests.c(95), tests.j(11), now()) $$,
   'P0001', 'ended', 'C-B11: also a live one');
 -- U16: my_blocked_people lists only the caller's own blocks, with names.
--- (User 9 is deleted above, so this uses a fresh block between two live users.)
-do $$ begin perform tests.as_user(tests.u(3)); perform public.block_user(tests.u(4)); end $$;
+-- Current profile policy requires a visible relationship when blocking.
+do $$ begin perform tests.befriend(tests.u(3), tests.u(4));
+  perform tests.as_user(tests.u(3)); perform public.block_user(tests.u(4)); end $$;
 select results_eq($$ select b->>'username' from json_array_elements(public.my_blocked_people()) b $$,
   $$ values ('bsuser4') $$, 'U16: the blocker sees the person they blocked, with the real name');
 do $$ begin perform tests.as_user(tests.u(4)); end $$;

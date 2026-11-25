@@ -66,6 +66,10 @@
   "@profile_usernameTaken": {
     "description": "Server rejected the username because it is not unique."
   },
+  "profile_usernameUnavailable": "Tên này không dùng được",
+  "@profile_usernameUnavailable": {
+    "description": "A username cannot be used. The lookup does not give a reason."
+  },
   "profile_displayNameLabel": "Tên hiển thị",
   "@profile_displayNameLabel": {
     "description": "Display name field label."
@@ -131,6 +135,10 @@
   "profile_saveError": "Không lưu được hồ sơ. Thử lại nhé.",
   "@profile_saveError": {
     "description": "Generic save error."
+  },
+  "profile_saveContentPolicy": "Hãy thử tên người dùng hoặc tên hiển thị khác.",
+  "@profile_saveContentPolicy": {
+    "description": "The profile was rejected by the content policy, which does not identify the field."
   },
   "profile_offlineError": "Không có mạng. Kết nối lại rồi thử nhé.",
   "@profile_offlineError": {
@@ -213,7 +221,7 @@
   "@profile_back": {
     "description": "Back button tooltip."
   },
-  "profile_statSnaps": "tổng ngày check-in",
+  "profile_statSnaps": "tổng lần check-in",
   "@profile_statSnaps": {
     "description": "Stat label."
   },

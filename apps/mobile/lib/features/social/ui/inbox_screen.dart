@@ -81,12 +81,23 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         }
       });
 
-  void _declineAll(List<Friendship> requests) => _act('all', () async {
-    final repo = ref.read(friendRepositoryProvider);
-    for (final r in requests) {
-      await repo.respond(r.person.userId, accept: false);
-    }
-  });
+  Future<void> _declineAll(List<Friendship> requests) async {
+    final l10n = SocialL10n.of(context);
+    final ok = await confirmSocialAction(
+      context,
+      title: l10n.social_declineAllTitle,
+      message: l10n.social_declineAllBody(requests.length),
+      confirmLabel: l10n.social_declineAll,
+      destructive: true,
+    );
+    if (!ok || !mounted) return;
+    await _act('all', () async {
+      final repo = ref.read(friendRepositoryProvider);
+      for (final r in requests) {
+        await repo.respond(r.person.userId, accept: false);
+      }
+    });
+  }
 
   void _retry() {
     ref
@@ -364,13 +375,25 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       return l.year == now.year && l.month == now.month && l.day == now.day;
     }
 
+    bool isThisWeek(DateTime? at) {
+      if (at == null || isToday(at)) return false;
+      final l = at.toLocal();
+      final todayDate = DateTime(now.year, now.month, now.day);
+      final itemDate = DateTime(l.year, l.month, l.day);
+      return todayDate.difference(itemDate).inDays < 7;
+    }
+
     final today = [
       for (final i in items)
         if (isToday(i.at)) i,
     ];
+    final thisWeek = [
+      for (final i in items)
+        if (isThisWeek(i.at)) i,
+    ]..sort((a, b) => b.at!.compareTo(a.at!));
     final earlier = [
       for (final i in items)
-        if (!isToday(i.at)) i,
+        if (!isToday(i.at) && !isThisWeek(i.at)) i,
     ]..sort((a, b) => b.at!.compareTo(a.at!));
     if (!_autoRead && items.isNotEmpty) {
       _autoRead = true;
@@ -406,9 +429,9 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     }
 
     if (!_hasPlayedInitialEntrance &&
-        (today.isNotEmpty || earlier.isNotEmpty)) {
+        (today.isNotEmpty || thisWeek.isNotEmpty || earlier.isNotEmpty)) {
       _hasPlayedInitialEntrance = true;
-      for (final i in [...today, ...earlier].take(4)) {
+      for (final i in [...today, ...thisWeek, ...earlier].take(4)) {
         _initialWaveIds.add(i.id);
       }
     }
@@ -447,8 +470,12 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       group(l10n.social_groupToday);
       rows(today);
     }
-    if (earlier.isNotEmpty) {
+    if (thisWeek.isNotEmpty) {
       group(l10n.social_groupWeek);
+      rows(thisWeek);
+    }
+    if (earlier.isNotEmpty) {
+      group(l10n.social_groupEarlier);
       rows(earlier);
     }
 
@@ -1082,13 +1109,19 @@ class _ConversationRow extends StatelessWidget {
   }
 }
 
-/// "07:12" for today, weekday abbreviation (T2, T3 ... / Mon ...) otherwise.
+/// "07:12" for today, weekday abbreviation (T2, T3 ... / Mon ...) within 7
+/// days, or date (dd/MM) for older items.
 String feedTime(BuildContext context, DateTime at, {DateTime? now}) {
   final local = at.toLocal();
   final today = (now ?? DateTime.now()).toLocal();
   if (local.year == today.year &&
       local.month == today.month &&
       local.day == today.day) {
+    return socialTime(context, at, now: now);
+  }
+  final todayDate = DateTime(today.year, today.month, today.day);
+  final itemDate = DateTime(local.year, local.month, local.day);
+  if (todayDate.difference(itemDate).inDays >= 7) {
     return socialTime(context, at, now: now);
   }
   return SocialL10n.of(context).social_weekdayShort('${local.weekday}');

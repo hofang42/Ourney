@@ -31,7 +31,7 @@ import 'providers.dart';
 const List<String> accountPrefsKeys = [
   OnboardingQuizNotifier.prefsKey,
   SafetyPrefs.eulaAccepted,
-  SafetyPrefs.blockedNames,
+  SafetyPrefs.legacyBlockedNames,
   ActiveJourneyId.prefsKey,
   CreateProgressPrefs.key,
   CreateProgressPrefs.draftKey,
@@ -87,7 +87,6 @@ Future<void> resetAccountLocalState(
   ref
     ..invalidate(onboardingQuizProvider)
     ..invalidate(eulaAcceptedProvider)
-    ..invalidate(blockedNamesProvider)
     ..invalidate(hiddenCheckInIdsProvider)
     ..invalidate(hiddenFeatureRequestIdsProvider)
     ..invalidate(feedbackDraftProvider)

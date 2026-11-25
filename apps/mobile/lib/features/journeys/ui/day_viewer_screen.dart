@@ -17,9 +17,9 @@ import 'journey_extras.dart';
 import 'journey_photo.dart';
 
 /// `/journey/:id/day/:date`: the caller's photos of that day (swipe through
-/// several, B-B6) with caption and metric, on the camera black. The metric starts
-/// hidden when the journey or the caller hides it (FR-B7) and can be
-/// revealed on this device.
+/// several, B-B6) with caption and metric, on the camera black. Because
+/// [DayViewerScreen] only ever displays the caller's own check-ins, their own
+/// metric is always shown to them directly (UX-25).
 class DayViewerScreen extends ConsumerStatefulWidget {
   const DayViewerScreen({
     required this.journeyId,
@@ -45,7 +45,6 @@ class DayViewerScreen extends ConsumerStatefulWidget {
 
 class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
     with SingleTickerProviderStateMixin {
-  bool _revealMetric = false;
   // Created once the day's photos are known: it opens on the latest one.
   PageController? _pages;
   int _page = 0;
@@ -182,7 +181,6 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
     final app = AppLocalizations.of(context);
     final reduced = UiMotion.reduced(context);
     final journey = ref.watch(journeyByIdProvider(widget.journeyId)).value;
-    final membership = ref.watch(myMembershipProvider(widget.journeyId)).value;
     final checkIns = ref.watch(myCheckInsProvider(widget.journeyId));
     final date = widget.date;
     // Every photo of the day, oldest first (several a day since `0014`).
@@ -200,9 +198,6 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
     final index = count == 0 ? 0 : _page.clamp(0, count - 1);
     final checkIn = count == 0 ? null : dayCheckIns[index];
 
-    final hidden =
-        (membership?.hideMetric ?? journey?.hideMetricDefault ?? false) &&
-        !_revealMetric;
     final dateText = date == null
         ? ''
         : MaterialLocalizations.of(context).formatFullDate(displayDate(date));
@@ -373,11 +368,6 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
               name: journey?.metricName,
               unit: journey?.metricUnit,
               value: checkIn.metricValue!,
-              hidden: hidden,
-              onReveal: () {
-                unawaited(UiHaptics.selection());
-                setState(() => _revealMetric = true);
-              },
             ),
           ],
         ],
@@ -477,19 +467,14 @@ class _MetricRow extends StatelessWidget {
     required this.name,
     required this.unit,
     required this.value,
-    required this.hidden,
-    required this.onReveal,
   });
 
   final String? name;
   final String? unit;
   final double value;
-  final bool hidden;
-  final VoidCallback onReveal;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = JourneysL10n.of(context);
     final number = value == value.roundToDouble()
         ? value.toStringAsFixed(0)
         : value.toStringAsFixed(1);
@@ -515,39 +500,10 @@ class _MetricRow extends StatelessWidget {
               color: UiCamera.onPhoto.withValues(alpha: 0.64),
             ),
           ),
-        UiFadeThroughSwitcher(
-          duration: UiMotion.fast,
-          scaleBegin: 1.0,
-          instantOnReduceMotion: true,
-          alignment: AlignmentDirectional.centerStart,
-          child: hidden
-              ? Row(
-                  key: const ValueKey('journey-day-metric-hidden'),
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const OurneyIcon(
-                      name: 'eye-off',
-                      size: 18,
-                      flat: true,
-                      color: UiCamera.onPhoto,
-                    ),
-                    const SizedBox(width: UiSpace.xs),
-                    Text(l10n.journeys_metricHidden, style: strong),
-                    const SizedBox(width: UiSpace.sm),
-                    UiTextAction(
-                      key: const ValueKey('journey-day-reveal'),
-                      label: l10n.journeys_showMetric,
-                      color: UiCamera.onPhoto,
-                      underline: true,
-                      onPressed: onReveal,
-                    ),
-                  ],
-                )
-              : Text(
-                  shown,
-                  key: const ValueKey('journey-day-metric-shown'),
-                  style: strong,
-                ),
+        Text(
+          shown,
+          key: const ValueKey('journey-day-metric-shown'),
+          style: strong,
         ),
       ],
     );

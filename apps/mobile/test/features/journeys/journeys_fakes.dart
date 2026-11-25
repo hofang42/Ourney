@@ -10,6 +10,7 @@ import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney_core/ourney_core.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
 import '../../app/test_helpers.dart';
 
@@ -383,6 +384,7 @@ Future<JourneysHarness> pumpJourneys(
   Locale locale = const Locale('vi'),
   List<Override> extraOverrides = const [],
   MediaStore? mediaStore,
+  SharedPreferencesAsyncPlatform Function(Map<String, Object>)? prefsPlatform,
 }) async {
   tester.platformDispatcher.accessibilityFeaturesTestValue =
       const FakeAccessibilityFeatures(disableAnimations: true);
@@ -398,6 +400,7 @@ Future<JourneysHarness> pumpJourneys(
     config: config,
     locale: locale,
     auth: userId == null ? null : FakeAuthRepository(userId: userId),
+    prefsPlatform: prefsPlatform,
     overrides: [
       journeyRepositoryProvider.overrideWithValue(repo),
       checkInRepositoryProvider.overrideWithValue(ci),

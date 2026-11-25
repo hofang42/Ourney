@@ -173,6 +173,35 @@
   "@social_publicJourneyFallback": {"description": "Used in social_publicSummary when the journey title is unknown."},
   "social_declineAll": "Từ chối tất cả",
   "@social_declineAll": {"description": "Decline every public-journey request of one journey."},
+  "social_declineAllTitle": "Từ chối tất cả lời mời kết bạn?",
+  "@social_declineAllTitle": {
+    "description": "Confirm title when declining all friend requests from a public journey."
+  },
+  "social_declineAllBody": "{count, plural, =1{Từ chối 1 lời mời kết bạn từ hành trình này?} other{Từ chối cả {count} lời mời kết bạn từ hành trình này?}}",
+  "@social_declineAllBody": {
+    "description": "Confirm body when declining all friend requests from a public journey.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "social_deleteMessageTitle": "Xóa tin nhắn này phía bạn?",
+  "@social_deleteMessageTitle": {
+    "description": "Confirm title when deleting a chat message for the current user."
+  },
+  "social_deleteMessageBody": "Tin nhắn sẽ ẩn khỏi máy bạn nhưng người kia vẫn nhìn thấy.",
+  "@social_deleteMessageBody": {
+    "description": "Confirm body when deleting a chat message for the current user."
+  },
+  "social_sendPhotoTitle": "Gửi ảnh này?",
+  "@social_sendPhotoTitle": {
+    "description": "Confirm title before sending a picked photo in chat."
+  },
+  "social_sendPhotoConfirm": "Gửi ảnh",
+  "@social_sendPhotoConfirm": {
+    "description": "Confirm button to send a picked photo in chat."
+  },
   "social_inboxEmpty": "Câu trả lời và lời mời từ bạn bè sẽ ở đây",
   "@social_inboxEmpty": {"description": "Empty inbox."},
   "social_unread": "{count, plural, other{{count} tin chưa đọc}}",
@@ -228,6 +257,7 @@
   "social_activityTitle": "hoạt động.",
   "social_groupToday": "Hôm nay",
   "social_groupWeek": "Tuần này",
+  "social_groupEarlier": "Trước đó",
   "social_offlineStrip": "Đang xem bản đã lưu.",
   "social_activityEmptyTitle": "chưa có gì mới.",
   "social_activityEmptyBody": "Những cập nhật từ hành trình sẽ xuất hiện ở đây.",

@@ -150,6 +150,42 @@ void main() {
     expect(find.text('Tuần này'), findsOneWidget);
   });
 
+  testWidgets('UX-21: items older than 7 days group under Earlier / Trước đó', (
+    tester,
+  ) async {
+    final fakes = SocialFakes(
+      friends: FakeFriendRepository([
+        request(
+          'recent',
+          name: 'Recent Friend',
+          createdAt: DateTime.now().subtract(const Duration(days: 2)),
+        ),
+        request(
+          'old',
+          name: 'Old Friend',
+          createdAt: DateTime.now().subtract(const Duration(days: 30)),
+        ),
+      ]),
+      insights: FakeInsightsRepository(
+        const InboxCounts(
+          friendRequests: 2,
+          publicRequests: 0,
+          newShares: 0,
+          unreadMessages: 0,
+          consentRequests: 0,
+        ),
+      ),
+    );
+    await pumpSocial(
+      tester,
+      location: SocialPaths.inbox,
+      fakes: fakes,
+      locale: const Locale('vi'),
+    );
+    expect(find.text('Tuần này'), findsOneWidget);
+    expect(find.text('Trước đó'), findsOneWidget);
+  });
+
   testWidgets('rows carry a full-sentence label and a weekday time', (
     tester,
   ) async {
@@ -219,6 +255,13 @@ void main() {
     await tester.ensureVisible(all);
     await tester.pumpAndSettle();
     await tester.tap(all);
+    await tester.pumpAndSettle();
+    expect(find.text('Decline all friend requests?'), findsOneWidget);
+    expect(
+      find.text('Decline all 2 friend requests from this journey?'),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey('social-confirm')));
     await tester.pumpAndSettle();
     expect(fakes.friends.calls, ['decline:tuan', 'decline:mia']);
     expect(summary, findsNothing);

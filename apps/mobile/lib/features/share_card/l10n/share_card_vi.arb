@@ -24,9 +24,14 @@
   "@share_card_numberStreak": {
     "description": "Chip: big number shows the streak (or finished/checked-in days)."
   },
-  "share_card_numberDay": "Ngày thứ N",
+  "share_card_numberDay": "Ngày {day}",
   "@share_card_numberDay": {
-    "description": "Chip: big number shows today's day N of the journey."
+    "description": "Chip: big number shows today's day N of the journey.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
   },
   "share_card_captionStreak": "{count, plural, other{ngày liên tiếp}}",
   "@share_card_captionStreak": {

@@ -28,6 +28,7 @@ void main() {
 
       await tester.enterText(byKey('profile-display-name'), 'Linh Tran');
       await tester.enterText(byKey('profile-username'), 'linh.tran');
+      await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
       // Valid username gets the green check.
       expect(

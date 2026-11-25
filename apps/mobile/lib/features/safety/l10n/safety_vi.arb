@@ -204,15 +204,9 @@
   "@safety_unknownUser": {
     "description": "Fallback name for a user whose name is not known on this device."
   },
-  "safety_unknownUserId": "Mã {id}",
-  "@safety_unknownUserId": {
-    "description": "Short account id shown under an unnamed blocked user so several unknown accounts can be told apart.",
-    "placeholders": {
-      "id": {
-        "type": "String",
-        "example": "3fa85f64"
-      }
-    }
+  "safety_blockedAccount": "Tài khoản đã chặn",
+  "@safety_blockedAccount": {
+    "description": "Neutral fallback label shown for a blocked user when their profile is unavailable."
   },
   "safety_blockedEmptyTitle": "Bạn chưa chặn ai",
   "@safety_blockedEmptyTitle": {

@@ -431,6 +431,7 @@ enum UiPageTransition { sharedZ, sharedX, verticalSheet, fadeThrough }
 CustomTransitionPage<T> buildUiPage<T>({
   required GoRouterState state,
   required Widget child,
+  ValueKey<String>? pageKey,
   BuildContext? context,
   UiPageTransition kind = UiPageTransition.sharedZ,
   Duration transitionDuration = UiMotion.page,
@@ -453,11 +454,12 @@ CustomTransitionPage<T> buildUiPage<T>({
           .accessibilityFeatures
           .reduceMotion;
 
+  final key = pageKey ?? state.pageKey;
   return _UiTransitionPage<T>(
-    key: state.pageKey,
+    key: key,
     name: name ?? state.name ?? state.fullPath,
     arguments: arguments ?? state.extra,
-    restorationId: restorationId ?? state.pageKey.value,
+    restorationId: restorationId ?? key.value,
     maintainState: maintainState,
     fullscreenDialog: fullscreenDialog,
     opaque: opaque,

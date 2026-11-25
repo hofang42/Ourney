@@ -263,6 +263,33 @@ class SocialL10nEn extends SocialL10n {
   String get social_declineAll => 'Decline all';
 
   @override
+  String get social_declineAllTitle => 'Decline all friend requests?';
+
+  @override
+  String social_declineAllBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Decline all $count friend requests from this journey?',
+      one: 'Decline 1 friend request from this journey?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get social_deleteMessageTitle => 'Delete this message for you?';
+
+  @override
+  String get social_deleteMessageBody =>
+      'This hides the message on your device. The other person can still see it.';
+
+  @override
+  String get social_sendPhotoTitle => 'Send this photo?';
+
+  @override
+  String get social_sendPhotoConfirm => 'Send photo';
+
+  @override
   String get social_inboxEmpty => 'Replies and invites from friends land here';
 
   @override
@@ -351,6 +378,9 @@ class SocialL10nEn extends SocialL10n {
   String get social_groupWeek => 'This week';
 
   @override
+  String get social_groupEarlier => 'Earlier';
+
+  @override
   String get social_offlineStrip => 'Viewing the saved version.';
 
   @override
@@ -396,7 +426,13 @@ class SocialL10nEn extends SocialL10n {
 
   @override
   String social_groupInviteMembers(int count, int max) {
-    return '$count of $max members';
+    String _temp0 = intl.Intl.pluralLogic(
+      max,
+      locale: localeName,
+      other: '$count of $max members',
+      one: '$count of 1 member',
+    );
+    return '$_temp0';
   }
 
   @override

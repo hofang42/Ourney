@@ -314,6 +314,18 @@ abstract class ImportL10n {
   /// **'Xóa ảnh'**
   String get import_removePhoto;
 
+  /// Thông báo sau khi bỏ ảnh ở bước 2.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã bỏ {count} ảnh khỏi danh sách.'**
+  String import_photoRemoved(int count);
+
+  /// Nút hoàn tác bỏ ảnh.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hoàn tác'**
+  String get import_undo;
+
   /// Retell a past journey flow.
   ///
   /// In vi, this message translates to:
