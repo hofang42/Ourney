@@ -59,7 +59,7 @@ void main() {
     await tester.tap(_key('share-card-share'));
     await tester.pumpAndSettle();
     expect(_key('share-card-sheet-title'), findsOneWidget);
-    expect(find.text('Tin nhắn'), findsOneWidget);
+    expect(_key('share-card-sheet-share'), findsOneWidget);
     expect(find.text('Lưu ảnh'), findsOneWidget);
     expect(find.text('Tắt'), findsOneWidget);
     await tester.tap(_key('share-card-sheet-brand'));

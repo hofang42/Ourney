@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/locale_override.dart';
+import 'package:ourney/app/overlays/reminder_banner.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/reminders/data/notification_gateway.dart';
 import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
@@ -319,9 +321,109 @@ void main() {
       await h.container.read(reminderSchedulerProvider).reschedule();
       expect(gateway.scheduled[kReminderIdBase]!.title, 'Time to check in');
     });
+
+    test(
+      'UX-27: streak alert notification and banner deadline use journey-timezone midnight in device timezone',
+      () async {
+        final gateway = FakeNotificationGateway(granted: true);
+        // Journey is in Asia/Ho_Chi_Minh (UTC+7), device is in Asia/Tokyo (UTC+9):
+        // journey midnight (00:00 UTC+7) is 02:00 device time.
+        final h = await reminderHarness(
+          gateway: gateway,
+          prefs: reminderOn('j1'),
+          locale: const Locale('en'),
+          deviceTimezone: 'Asia/Tokyo',
+        );
+        addTearDown(h.container.dispose);
+        h.checkIns.byJourney['j1'] = [reminderCheckIn('j1', today.addDays(-1))];
+
+        await h.container.read(reminderSchedulerProvider).reschedule();
+        final alerts = gateway.scheduled.values
+            .where((n) => n.title == 'Still time for today')
+            .toList();
+        expect(alerts, hasLength(1));
+        expect(
+          alerts.single.body,
+          contains('is open until 02:00 (journey midnight)'),
+        );
+      },
+    );
   });
 
   group('ReminderLifecycleHook', () {
+    testWidgets(
+      'UX-27: resume reads the OS zone for scheduled and visible reminders',
+      (tester) async {
+        final gateway = FakeNotificationGateway(granted: true);
+        var zone = 'Asia/Tokyo';
+        final zonesRead = <String>[];
+        final messenger = tester.binding.defaultBinaryMessenger;
+        const channel = MethodChannel('flutter_timezone');
+        messenger.setMockMethodCallHandler(channel, (call) async {
+          if (call.method != 'getLocalTimezone') throw MissingPluginException();
+          zonesRead.add(zone);
+          return zone;
+        });
+        addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+        final h = await reminderHarness(
+          gateway: gateway,
+          // 09:00 Asia/Tokyo (00:00Z) is already past reminderNow (03:00Z),
+          // so the next planned notification is today's 21:00 ICT streak alert (14:00Z).
+          prefs: reminderOn('j1', '09:00'),
+          locale: const Locale('en'),
+          deviceTimezone: null,
+        );
+        addTearDown(h.container.dispose);
+        h.checkIns.byJourney['j1'] = [reminderCheckIn('j1', today.addDays(-1))];
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: h.container,
+            child: const ReminderLifecycleHook(child: SizedBox()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        NotificationRequest alert() => gateway.scheduled.values.singleWhere(
+          (n) => n.title == 'Still time for today',
+        );
+        final fireAt = alert().fireAt;
+        expect(alert().body, contains('is open until 02:00'));
+
+        Future<void> resumeIn(String newZone) async {
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.paused,
+          );
+          zone = newZone;
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+          await tester.pumpAndSettle();
+        }
+
+        await resumeIn('Asia/Singapore');
+        expect(zonesRead, ['Asia/Tokyo', 'Asia/Singapore']);
+        expect(
+          h.container.read(reminderDeviceTimezoneProvider).value,
+          'Asia/Singapore',
+        );
+        expect(alert().fireAt, fireAt);
+        expect(alert().body, contains('is open until 01:00'));
+
+        await tester.pump(const Duration(hours: 11));
+        await tester.pump();
+
+        final banner = h.container.read(reminderBannerProvider);
+        expect(banner, isNotNull);
+        expect(banner!.kind, ReminderBannerKind.streak);
+        expect(banner.deadline, '01:00');
+
+        await resumeIn('Asia/Bangkok');
+        expect(alert().fireAt, fireAt);
+        expect(alert().body, contains('is open until midnight'));
+        expect(h.container.read(reminderBannerProvider)?.deadline, '00:00');
+      },
+    );
     testWidgets('reschedules on start and on resume, routes taps', (
       tester,
     ) async {

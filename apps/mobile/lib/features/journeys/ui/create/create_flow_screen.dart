@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../app/app_routes.dart';
 import '../../../../app/providers.dart';
 import '../../../../ui/ui.dart';
+import '../../../groups/data/groups_providers.dart';
 import '../../../onboarding/onboarding_providers.dart';
 import '../../../profile/share_privacy_sync.dart';
 import '../../../reminders/data/reminder_scheduler.dart';
@@ -48,6 +49,7 @@ class CreateFlowScreen extends ConsumerStatefulWidget {
   const CreateFlowScreen({
     this.resume = false,
     this.initialWho,
+    this.inviteHandle,
     super.key,
   });
 
@@ -57,6 +59,9 @@ class CreateFlowScreen extends ConsumerStatefulWidget {
   /// Preselected value for step 3 ("Who is coming along?", e.g. `?who=group`
   /// when launched from a friend's sheet, DE-20).
   final CreateWho? initialWho;
+
+  /// Friend username to auto-invite when creating a group journey (`?invite=`).
+  final String? inviteHandle;
 
   static CreateWho? parseWho(String? raw) => switch (raw) {
     'solo' => CreateWho.solo,
@@ -107,6 +112,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   /// One id per flow: a retry after a lost response returns the same journey.
   /// Saved in the draft so a resumed submit reuses it too (U8).
   String _clientId = const Uuid().v4();
+  late String? _inviteHandle = widget.inviteHandle;
 
   @override
   void dispose() {
@@ -382,15 +388,15 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     final tz = ref.read(deviceTimezoneProvider).value;
     if (tz != null) form.timezone = tz;
     final repo = ref.read(journeyRepositoryProvider);
-    final container = ProviderScope.containerOf(context, listen: false);
     final today = _today(form);
     final start = _start != null && !_start!.isBefore(today) ? _start! : today;
     final reminders = ref.read(reminderSchedulerProvider);
     // Read before any await: the screen may be gone when the work finishes.
     final progress = ref.read(createProgressProvider.notifier);
     final activeJourney = ref.read(activeJourneyIdProvider.notifier);
+    final container = ProviderScope.containerOf(context, listen: false);
     final title = _finalTitle(form);
-    var extrasRejected = false;
+    var settingsNotSaved = false;
     setState(() => _busy = true);
     try {
       final journey = await repo.create(
@@ -418,24 +424,47 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           color: _variant,
           layout: _isCouple ? PersonaSkinId.coupleRituals : null,
         ),
-        onExtrasRejected: () => extrasRejected = true,
+        onExtrasRejected: () => settingsNotSaved = true,
       );
       // The journey exists: the saved draft must not resurrect it (U8).
       unawaited(progress.clear());
-      final prefs = ref.read(sharedPreferencesProvider);
-      if (!_weightSkipped && _dna['weight'] is num) {
-        await prefs.setDouble(
-          journeyStartingWeightPrefKey(journey.id),
-          (_dna['weight'] as num).toDouble(),
-        );
+      final invite = _inviteHandle?.trim();
+      if (invite != null &&
+          invite.isNotEmpty &&
+          journey.kind == JourneyKind.group) {
+        try {
+          await container
+              .read(groupInviteRepositoryProvider)
+              .send(journey.id, handle: invite);
+        } on Object {
+          // Non-fatal: the journey exists; the owner can still invite from the journey screen.
+        }
       }
-      if (_dna['ghostRequested'] is bool) {
-        await prefs.setBool(
-          journeyGhostGuidePrefKey(journey.id),
-          _dna['ghostRequested']! as bool,
-        );
+      final weight = _dna['weight'];
+      if (!_weightSkipped && weight is num) {
+        try {
+          await container
+              .read(sharedPreferencesProvider)
+              .setDouble(
+                journeyStartingWeightPrefKey(journey.id),
+                weight.toDouble(),
+              );
+        } on Object {
+          settingsNotSaved = true;
+        }
       }
-      if (mounted && extrasRejected) {
+      final ghost = _dna['ghostRequested'];
+      if (ghost is bool) {
+        try {
+          await container
+              .read(sharedPreferencesProvider)
+              .setBool(journeyGhostGuidePrefKey(journey.id), ghost);
+        } on Object {
+          settingsNotSaved = true;
+        }
+      }
+      if (!mounted) return;
+      if (settingsNotSaved) {
         showJourneySnack(
           context,
           JourneysL10n.of(context).journeys_createSettingsNotSaved,
@@ -640,6 +669,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                               showErrors: _attempted.contains(2),
                               nameLeftController: _nameLeft,
                               nameRightController: _nameRight,
+                              inviteHandle: _inviteHandle,
                               onPick: (who) => setState(() {
                                 _who = who;
                                 _applyWho(_form!);
@@ -668,6 +698,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                               start: _start,
                               nameLeftController: _nameLeft,
                               nameRightController: _nameRight,
+                              inviteHandle: _inviteHandle,
                               selfOnRight: _dna['side'] == 'right',
                               isRunning:
                                   (_dna['sport'] == null ||
@@ -745,6 +776,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       'reason': _reason.text,
       'start': _start?.toString(),
       'variant': _variant,
+      'inviteHandle': _inviteHandle,
     };
   }
 
@@ -758,6 +790,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
         _clientId = id;
       }
       _reminder = d['reminder'] as String?;
+      _inviteHandle = (d['inviteHandle'] as String?) ?? widget.inviteHandle;
       form
         ..title = d['title']! as String
         ..emoji = d['emoji']! as String

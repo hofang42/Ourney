@@ -76,6 +76,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get common_save => 'Save';
 
   @override
+  String get common_openSettings => 'Settings';
+
+  @override
+  String get common_photoSavePermissionDenied =>
+      'Photo library access is needed to save images.';
+
+  @override
   String get common_loading => 'Loading…';
 
   @override

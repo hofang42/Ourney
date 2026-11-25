@@ -11,7 +11,13 @@ class MemoryCollectorsL10nEn extends MemoryCollectorsL10n {
 
   @override
   String memory_collectors_daysHeader(String title, int days) {
-    return '$title · $days DAYS';
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$title · $days DAYS',
+      one: '$title · 1 DAY',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -46,7 +52,13 @@ class MemoryCollectorsL10nEn extends MemoryCollectorsL10n {
 
   @override
   String memory_collectors_contactSheetSubtitle(int count) {
-    return '$count MOMENTS · 35MM FILM';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count MOMENTS · 35MM FILM',
+      one: '1 MOMENT · 35MM FILM',
+    );
+    return '$_temp0';
   }
 
   @override

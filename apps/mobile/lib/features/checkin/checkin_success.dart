@@ -6,6 +6,7 @@ import 'dart:ui' show lerpDouble;
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -13,6 +14,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
 import '../groups/ui/group_photo.dart';
+import 'checkin_audience.dart';
 import 'checkin_progress.dart';
 import 'l10n/generated/checkin_localizations.dart';
 
@@ -22,7 +24,7 @@ import 'l10n/generated/checkin_localizations.dart';
 /// confetti climax (Rank #2), then Done (and Share at a milestone). Without a
 /// milestone the screen closes by itself so a check-in stays within 3 taps
 /// (FR-C4).
-class CheckinSuccessView extends StatefulWidget {
+class CheckinSuccessView extends ConsumerStatefulWidget {
   const CheckinSuccessView({
     required this.outcome,
     required this.haptics,
@@ -48,10 +50,10 @@ class CheckinSuccessView extends StatefulWidget {
   static const autoCloseDelay = Duration(milliseconds: 1800);
 
   @override
-  State<CheckinSuccessView> createState() => _CheckinSuccessViewState();
+  ConsumerState<CheckinSuccessView> createState() => _CheckinSuccessViewState();
 }
 
-class _CheckinSuccessViewState extends State<CheckinSuccessView>
+class _CheckinSuccessViewState extends ConsumerState<CheckinSuccessView>
     with SingleTickerProviderStateMixin {
   Timer? _autoClose;
   bool _started = false;
@@ -333,13 +335,19 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
     final milestone = outcome.milestone;
     // Figma Done screens: a per-skin hero, the streak, one calm line.
     final headline = _headline(l10n, skin, day ?? 1, outcome.streakAfter);
+    final audienceMessage = switch (watchCheckinAudience(ref, journey)) {
+      CheckinAudience.unknown => l10n.checkin_done_saved,
+      CheckinAudience.private => l10n.checkin_done_savedPrivate,
+      CheckinAudience.shared => l10n.checkin_done_sharedLink,
+      CheckinAudience.couple => l10n.checkin_done_coupleSent,
+      CheckinAudience.squad => l10n.checkin_done_sharedSquad,
+      CheckinAudience.futureMembers => l10n.checkin_done_futureMembers,
+    };
     final message = outcome.extraPhoto
         ? l10n.checkin_photoAdded(outcome.photoOfDay)
         : milestoneTitle != null
         ? l10n.checkin_milestoneMessage
-        : skin == 'couple'
-        ? l10n.checkin_done_coupleSent
-        : l10n.checkin_done_savedPrivate;
+        : audienceMessage;
     final shout = skin == 'flexer' || skin == 'minimal';
 
     final shareButton = milestoneTitle == null

@@ -144,7 +144,11 @@ class SharingL10nEn extends SharingL10n {
 
   @override
   String sharing_statsLine(String views, String likes, String started) {
-    return '$views views · $likes ❤️ · $started started';
+    String _temp0 = intl.Intl.selectLogic(views, {
+      '1': '1 view',
+      'other': '$views views',
+    });
+    return '$_temp0 · $likes ❤️ · $started started';
   }
 
   @override
@@ -370,7 +374,13 @@ class SharingL10nEn extends SharingL10n {
 
   @override
   String sharing_counts(int likes, int follows) {
-    return '❤️ $likes · $follows people did this journey';
+    String _temp0 = intl.Intl.pluralLogic(
+      follows,
+      locale: localeName,
+      other: '$follows people did this journey',
+      one: '1 person did this journey',
+    );
+    return '❤️ $likes · $_temp0';
   }
 
   @override
@@ -487,13 +497,35 @@ class SharingL10nEn extends SharingL10n {
 
   @override
   String sharing_newViewersWeek(int count) {
-    return '+$count new viewers this week';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '+$count new viewers this week',
+      one: '+1 new viewer this week',
+      zero: 'No new viewers this week',
+    );
+    return '$_temp0';
   }
 
   @override
   String sharing_thisWeek(int count) {
-    return '+$count this week';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '+$count this week',
+      one: '+1 this week',
+      zero: 'None this week',
+    );
+    return '$_temp0';
   }
+
+  @override
+  String sharing_removedFriendToast(String name) {
+    return 'Removed $name.';
+  }
+
+  @override
+  String get sharing_undo => 'Undo';
 
   @override
   String get sharing_viewsPerDay => 'People who viewed each day';
@@ -503,7 +535,13 @@ class SharingL10nEn extends SharingL10n {
 
   @override
   String sharing_chartSemantics(int max) {
-    return 'Views over the last 30 days, at most $max people a day';
+    String _temp0 = intl.Intl.pluralLogic(
+      max,
+      locale: localeName,
+      other: 'Views over the last 30 days, at most $max people a day',
+      one: 'Views over the last 30 days, at most 1 person a day',
+    );
+    return '$_temp0';
   }
 
   @override

@@ -539,7 +539,7 @@ class JourneysL10nVi extends JourneysL10n {
   }
 
   @override
-  String get journeys_shareMakeCard => 'Tạo thẻ hoặc video';
+  String get journeys_shareMakeCard => 'Tạo thẻ chia sẻ';
 
   @override
   String get journeys_shareMakeCardHint => 'Chia sẻ một khoảnh khắc';
@@ -1554,6 +1554,9 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_wrapped_blur => 'Làm mờ ảnh';
 
   @override
+  String get journeys_wrapped_blurLocked => 'Luôn bật với kiểu thẻ này';
+
+  @override
   String get journeys_wrapped_on => 'Bật';
 
   @override
@@ -1591,6 +1594,17 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_wrapped_otherApps => 'Ứng dụng khác';
+
+  @override
+  String get journeys_wrapped_saveCard => 'Lưu ảnh';
+
+  @override
+  String get journeys_wrapped_cardSaved => 'Đã lưu thẻ.';
+
+  @override
+  String journeys_create_invitingFriend(String handle) {
+    return 'Sẽ gửi lời mời tới @$handle';
+  }
 
   @override
   String get journeys_wrapped_open => 'Xem hành trình đã về đích';

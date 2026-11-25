@@ -13,6 +13,7 @@ import '../data/groups_providers.dart';
 import '../domain/invite_code.dart';
 import '../l10n/generated/groups_localizations.dart';
 import 'group_errors.dart';
+import 'invite_sheet.dart';
 
 /// `/groups/:journeyId/invite`: invite code, copy, share link
 /// `ourney://join/<code>` and a QR code (FR-D1). The owner can rotate the
@@ -224,6 +225,13 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
               onPressed: _busy ? null : _rotate,
             ),
           ],
+          const SizedBox(height: UiSpace.xl),
+          Container(height: 1, color: ui.divider),
+          const SizedBox(height: UiSpace.xl),
+          GroupInviteSheet(
+            journeyId: widget.journeyId,
+            showCodeLink: false,
+          ),
         ],
       ),
     );

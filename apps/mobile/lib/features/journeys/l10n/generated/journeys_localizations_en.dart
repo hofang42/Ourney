@@ -542,7 +542,7 @@ class JourneysL10nEn extends JourneysL10n {
   }
 
   @override
-  String get journeys_shareMakeCard => 'Make a card or video';
+  String get journeys_shareMakeCard => 'Create a share card';
 
   @override
   String get journeys_shareMakeCardHint => 'Share a moment from this journey';
@@ -560,7 +560,13 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String journeys_albumMoments(int count) {
-    return '$count moments';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count moments',
+      one: '1 moment',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -789,7 +795,13 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String journeys_memoryFilmRoll(int count) {
-    return 'FILM ROLL · $count FRAMES';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'FILM ROLL · $count FRAMES',
+      one: 'FILM ROLL · 1 FRAME',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1468,7 +1480,19 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String journeys_wrapped_moments(int moments, int days) {
-    return '$moments moments over $days days';
+    String _temp0 = intl.Intl.pluralLogic(
+      moments,
+      locale: localeName,
+      other: '$moments moments',
+      one: '1 moment',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$_temp0 over $_temp1';
   }
 
   @override
@@ -1481,7 +1505,13 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String journeys_wrapped_checkIns(int n) {
-    return '$n check-ins';
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n check-ins',
+      one: '1 check-in',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1489,12 +1519,24 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String journeys_wrapped_frames(int n) {
-    return '$n frames';
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n frames',
+      one: '1 frame',
+    );
+    return '$_temp0';
   }
 
   @override
   String journeys_wrapped_daysTogether(int n) {
-    return '$n days together';
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n days together',
+      one: '1 day together',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1536,17 +1578,41 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String journeys_wrapped_sumMemory(int total, String name) {
-    return '$total DAYS · $name';
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total DAYS · $name',
+      one: '1 DAY · $name',
+    );
+    return '$_temp0';
   }
 
   @override
   String journeys_wrapped_sumCouple(int total, int moments) {
-    return '$total DAYS TOGETHER · $moments MOMENTS';
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total DAYS TOGETHER',
+      one: '1 DAY TOGETHER',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      moments,
+      locale: localeName,
+      other: '$moments MOMENTS',
+      one: '1 MOMENT',
+    );
+    return '$_temp0 · $_temp1';
   }
 
   @override
   String journeys_wrapped_sumFlexer(int total, String km) {
-    return '$total DAYS · $km KM';
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total DAYS · $km KM',
+      one: '1 DAY · $km KM',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1559,6 +1625,9 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_wrapped_blur => 'Blur photos';
+
+  @override
+  String get journeys_wrapped_blurLocked => 'Always on for this card style';
 
   @override
   String get journeys_wrapped_on => 'On';
@@ -1600,6 +1669,17 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_wrapped_otherApps => 'Other apps';
 
   @override
+  String get journeys_wrapped_saveCard => 'Save image';
+
+  @override
+  String get journeys_wrapped_cardSaved => 'Card saved.';
+
+  @override
+  String journeys_create_invitingFriend(String handle) {
+    return 'Will invite @$handle';
+  }
+
+  @override
   String get journeys_wrapped_open => 'See the finished journey';
 
   @override
@@ -1607,7 +1687,13 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String journeys_home_squadChip(String title, int days) {
-    return '$title · $days DAYS';
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$title · $days DAYS',
+      one: '$title · 1 DAY',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1643,7 +1729,13 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String journeys_home_coupleLine(int total, String ritual) {
-    return '$total DAYS $ritual';
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total DAYS $ritual',
+      one: '1 DAY $ritual',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1691,7 +1783,13 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String journeys_home_minimalMonth(String month, int streak) {
-    return '$month · STREAK $streak DAYS';
+    String _temp0 = intl.Intl.pluralLogic(
+      streak,
+      locale: localeName,
+      other: '$month · STREAK $streak DAYS',
+      one: '$month · STREAK 1 DAY',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1927,6 +2025,12 @@ class JourneysL10nEn extends JourneysL10n {
       other: '$days days',
       one: '1 day',
     );
-    return 'Starts in $_temp0 · $total days';
+    String _temp1 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total days',
+      one: '1 day',
+    );
+    return 'Starts in $_temp0 · $_temp1';
   }
 }

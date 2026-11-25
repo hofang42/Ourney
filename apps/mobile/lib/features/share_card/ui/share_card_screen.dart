@@ -12,6 +12,7 @@ import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../personas/persona_contract.dart' show personaSkinOf;
 import '../../../ui/ui.dart';
+import '../../camera/capture_services.dart' show appSettingsOpenerProvider;
 import '../../journeys/domain/journey_progress.dart';
 import '../../profile/settings_providers.dart';
 import '../../sharing/data/sharing_providers.dart';
@@ -213,6 +214,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       hideBrand: hideBrand,
       onHideBrand: (v) => setState(() => _hideBrand = v),
       onAction: () => _share(journey: journey, photo: photo, skinId: skinId),
+      onSave: () => _save(journey: journey, photo: photo),
     );
     final actionLabel = switch (skinId) {
       'quiet' => l10n.share_card_export,
@@ -501,6 +503,21 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                         : openSheet,
                   ),
                 ),
+                if (quiet) ...[
+                  const SizedBox(height: UiSpace.sm),
+                  UiButton.secondary(
+                    key: const ValueKey('share-card-save'),
+                    label: l10n.share_card_sheetSave,
+                    glyph: const OurneyIcon(
+                      name: 'download',
+                      size: 18,
+                      flat: true,
+                    ),
+                    onPressed: _busy || !(stateReady || stateFailed)
+                        ? null
+                        : () => _save(journey: journey, photo: photo),
+                  ),
+                ],
                 const SizedBox(height: UiSpace.xl),
                 _SectionLabel(l10n.share_card_moreOptions),
                 if (skinId != 'memory' && skinId != 'couple') ...[
@@ -515,7 +532,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                         ),
                         UiSegment(
                           value: ShareCardNumber.day,
-                          label: l10n.share_card_numberDay,
+                          label: l10n.share_card_numberDay(effectiveDayNumber),
                         ),
                       ],
                       value: _number,
@@ -670,6 +687,57 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
         text: '${l10n.share_card_shareText(journey.emoji, journey.title)}\n$link',
         origin: _shareOrigin(),
       );
+    } on Object {
+      if (mounted) _snack(l10n.share_card_shareError);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _save({
+    required Journey journey,
+    required ImageProvider? photo,
+  }) async {
+    final l10n = ShareCardL10n.of(context);
+    final format = _format;
+    final exporter = ref.read(shareCardExporterProvider);
+    final saver = ref.read(shareCardSaverProvider);
+    setState(() => _busy = true);
+    try {
+      if (photo != null) {
+        await precacheImage(
+          photo,
+          context,
+          onError: (_, _) {},
+        ).timeout(_photoWait, onTimeout: () {});
+      }
+      await WidgetsBinding.instance.endOfFrame;
+      final boundary =
+          _boundaryKeys[format]?.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
+      if (boundary == null) throw StateError('share card not laid out');
+      final file = await exporter.export(
+        boundary,
+        format,
+        baseName: shareCardBaseName(journey.id, format),
+      );
+      await saver.saveImage(path: file.path, mimeType: file.mimeType);
+      if (mounted) _snack(l10n.share_card_exportSaved);
+    } on ShareCardSaveException catch (e) {
+      if (mounted) {
+        if (e.isPermissionDenied) {
+          final app = AppLocalizations.of(context);
+          final opener = ref.read(appSettingsOpenerProvider);
+          showUiToast(
+            context,
+            app.common_photoSavePermissionDenied,
+            actionLabel: opener.supported ? app.common_openSettings : null,
+            onAction: opener.supported ? () => unawaited(opener.open()) : null,
+          );
+        } else {
+          _snack(l10n.share_card_shareError);
+        }
+      }
     } on Object {
       if (mounted) _snack(l10n.share_card_shareError);
     } finally {

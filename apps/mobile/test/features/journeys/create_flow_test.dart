@@ -8,6 +8,7 @@ import 'package:ourney/app/config.dart';
 import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/theme/app_theme.dart';
+import 'package:ourney/features/groups/data/groups_providers.dart';
 import 'package:ourney/features/journeys/data/create_progress.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney/features/journeys/ui/create/create_flow_screen.dart';
@@ -20,10 +21,13 @@ import 'package:ourney/features/reminders/data/notification_gateway.dart';
 import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
+import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+import 'package:shared_preferences_platform_interface/types.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../app/test_helpers.dart';
+import '../groups/groups_fakes.dart' show FakeGroupInviteRepository;
 import '../reminders/reminders_fakes.dart' show FakeNotificationGateway;
 import 'journeys_fakes.dart';
 
@@ -871,6 +875,78 @@ void _dnaGroup() {
     );
 
     testWidgets(
+      'UX-14: /journeys/new?who=group&invite=nam shows friend note on Step 3 & Step 5 and auto-sends invite on submit',
+      (tester) async {
+        final invites = FakeGroupInviteRepository();
+        final h = await pumpJourneys(
+          tester,
+          location: '${AppRoutes.journeyNew}?who=group&invite=nam',
+          locale: const Locale('en'),
+          config: testBackendConfig,
+          userId: 'u1',
+          extraOverrides: [
+            groupInviteRepositoryProvider.overrideWithValue(invites),
+          ],
+        );
+        await _pick(tester, 'template-workout_30');
+        // Step 2 (name) -> Next -> Step 3 (who).
+        await _tap(tester, 'create-next');
+        expect(_key('create-inviting-friend'), findsOneWidget);
+        expect(find.text('Will invite @nam'), findsOneWidget);
+
+        // Step 3 -> Next -> Step 4 (rhythm) -> Next -> Step 5 (review).
+        await _tap(tester, 'create-next');
+        await _tap(tester, 'create-next');
+        expect(_key('create-review-inviting-friend'), findsOneWidget);
+        expect(find.text('Will invite @nam'), findsOneWidget);
+
+        await _tap(tester, 'journey-create');
+        expect(h.journeys.created.single.kind, JourneyKind.group);
+        expect(invites.calls, ['send:${h.journeys.journeys.last.id}']);
+      },
+    );
+
+    testWidgets(
+      'UX-14: failed weight preference preserves invitation and creation',
+      (tester) async {
+        final invites = FakeGroupInviteRepository();
+        late _FailingWeightPreferences platform;
+        final h = await pumpJourneys(
+          tester,
+          location: '${AppRoutes.journeyNew}?who=group&invite=nam',
+          locale: const Locale('en'),
+          config: testBackendConfig,
+          userId: 'u1',
+          prefsPlatform: (values) =>
+              platform = _FailingWeightPreferences(values),
+          extraOverrides: [
+            groupInviteRepositoryProvider.overrideWithValue(invites),
+          ],
+        );
+        await _tap(tester, 'template-weight_loss');
+        await _tap(tester, 'dna-choice-goal-lose');
+        await _tap(tester, 'create-next');
+        await _tap(tester, 'create-next');
+        await _tap(tester, 'dna-ghost-later');
+        await finish(tester);
+
+        final journeyId = h.journeys.journeys.last.id;
+        expect(h.journeys.created.single.kind, JourneyKind.group);
+        expect(invites.calls, ['send:$journeyId']);
+        expect(platform.failedKeys, [journeyStartingWeightPrefKey(journeyId)]);
+        expect(
+          await platform.getBool(
+            journeyGhostGuidePrefKey(journeyId),
+            const SharedPreferencesOptions(),
+          ),
+          isFalse,
+        );
+        expect(h.location, AppRoutes.journey(journeyId));
+        expect(find.text("Some settings couldn't be saved"), findsOneWidget);
+      },
+    );
+
+    testWidgets(
       'weight loss: 0.1 kg precision and ghost guide preference are persisted on device (UX-02)',
       (tester) async {
         final h = await _open(tester);
@@ -930,4 +1006,20 @@ void _dnaGroup() {
       },
     );
   });
+}
+
+final class _FailingWeightPreferences extends InMemorySharedPreferencesAsync {
+  _FailingWeightPreferences(super.data) : super.withData();
+
+  final failedKeys = <String>[];
+
+  @override
+  Future<bool> setDouble(
+    String key,
+    double value,
+    SharedPreferencesOptions options,
+  ) async {
+    failedKeys.add(key);
+    throw StateError('Preference storage unavailable');
+  }
 }

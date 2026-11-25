@@ -51,6 +51,7 @@ class FakeSharingRepository implements SharingRepository {
     this.frame,
     JourneyStory story = const JourneyStory(),
     this.hideGate,
+    this.unshareGate,
   }) : _state = _Live(
          JourneyShareState(
            journeyId: 'j1',
@@ -72,6 +73,7 @@ class FakeSharingRepository implements SharingRepository {
   SharedJourneyView? view;
   JourneyFrame? frame;
   final List<String> calls = [];
+  final Completer<void>? unshareGate;
   Object? shareError;
   Object? linkError;
   Object? viewError;
@@ -121,6 +123,7 @@ class FakeSharingRepository implements SharingRepository {
     bool all = false,
   }) async {
     calls.add('unshare:${friendId ?? ''}:$all');
+    if (unshareGate case final gate?) await gate.future;
     _setState(
       viewers: [
         for (final v in state.viewers)

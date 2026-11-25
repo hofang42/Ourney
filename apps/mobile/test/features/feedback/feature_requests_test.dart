@@ -522,6 +522,25 @@ void main() {
     );
 
     testWidgets(
+      'UX-31: empty board shows only the pinned bottom create CTA without duplicate buttons',
+      (tester) async {
+        final repo = FakeFeatureRequestRepository()..items.clear();
+        await _pumpFeedbackRouter(tester, repo: repo);
+
+        expect(
+          find.byKey(const ValueKey('feedback-empty-popular')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('feedback-create-cta')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const ValueKey('feedback-add-icon')), findsNothing);
+        expect(find.text('Gửi đề xuất mới'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
       'optimistic vote updates immediately, coalesces rapid taps, and rolls back on failure',
       (tester) async {
         final repo = FakeFeatureRequestRepository();

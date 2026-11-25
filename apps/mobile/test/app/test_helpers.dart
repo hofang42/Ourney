@@ -33,8 +33,10 @@ Widget testApp(
 /// In-memory shared preferences seeded with [values].
 Future<SharedPreferencesWithCache> testPrefs([
   Map<String, Object> values = const {},
+  SharedPreferencesAsyncPlatform Function(Map<String, Object>)? prefsPlatform,
 ]) {
   SharedPreferencesAsyncPlatform.instance =
+      prefsPlatform?.call(values) ??
       InMemorySharedPreferencesAsync.withData(values);
   return SharedPreferencesWithCache.create(
     cacheOptions: const SharedPreferencesWithCacheOptions(),
@@ -57,6 +59,7 @@ Future<ProviderContainer> pumpOurneyApp(
   List<Override> overrides = const [],
   Locale locale = const Locale('vi'),
   Map<String, Object> initialPrefs = const {},
+  SharedPreferencesAsyncPlatform Function(Map<String, Object>)? prefsPlatform,
 }) async {
   tester.platformDispatcher.localesTestValue = [locale];
   addTearDown(tester.platformDispatcher.clearLocalesTestValue);
@@ -67,7 +70,7 @@ Future<ProviderContainer> pumpOurneyApp(
       SafetyPrefs.termsVersionFor(auth?.currentUserId ?? 'u1'): kTermsVersion,
     },
     ...initialPrefs,
-  });
+  }, prefsPlatform);
   final container = ProviderContainer(
     overrides: [
       appConfigProvider.overrideWithValue(config),

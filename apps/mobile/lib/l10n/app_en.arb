@@ -52,6 +52,8 @@
   "common_ok": "OK",
   "common_close": "Close",
   "common_save": "Save",
+  "common_openSettings": "Settings",
+  "common_photoSavePermissionDenied": "Photo library access is needed to save images.",
   "common_loading": "Loading…",
   "common_errorGeneric": "Something went wrong. Please try again.",
   "common_serverOutdated": "Ourney is being updated. Update the app or try again later.",

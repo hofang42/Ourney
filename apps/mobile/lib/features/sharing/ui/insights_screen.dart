@@ -7,6 +7,7 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../personas/persona_contract.dart';
+import '../../../shared/journey_style_name.dart';
 import '../../../ui/ui.dart';
 import '../data/sharing_providers.dart';
 import '../l10n/generated/sharing_localizations.dart';
@@ -58,7 +59,7 @@ class InsightsScreen extends ConsumerWidget {
     final subtitle = journey == null
         ? l10n.sharing_insightsTitle
         : '${l10n.sharing_insightsTitle} · '
-              '${uiStyleForSkin(personaSkinOf(journey)).name}';
+              '${journeyStyleName(context, uiStyleForSkin(personaSkinOf(journey)))}';
 
     return SharingPage(
       scaffoldKey: const ValueKey('insights'),
@@ -108,7 +109,13 @@ class _InsightsBody extends ConsumerWidget {
     final days = fillDays(i.viewsByDay, today: _today());
     final peak = days.fold<int>(0, (m, d) => math.max(m, d.count));
 
-    Widget tile(String key, String label, int value, String delta) => Expanded(
+    Widget tile(
+      String key,
+      String label,
+      int value,
+      String delta, {
+      required bool positive,
+    }) => Expanded(
       child: UiCard(
         key: ValueKey(key),
         radius: UiRadius.menu,
@@ -127,7 +134,13 @@ class _InsightsBody extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 6),
-            Text(delta, style: UiText.body(size: 11, color: ui.success)),
+            Text(
+              delta,
+              style: UiText.body(
+                size: 11,
+                color: positive ? ui.success : ui.inkMuted,
+              ),
+            ),
           ],
         ),
       ),
@@ -155,6 +168,7 @@ class _InsightsBody extends ConsumerWidget {
                 l10n.sharing_views,
                 i.views,
                 l10n.sharing_newViewersWeek(i.viewsThisWeek),
+                positive: i.viewsThisWeek > 0,
               ),
               const SizedBox(width: 6),
               tile(
@@ -162,6 +176,7 @@ class _InsightsBody extends ConsumerWidget {
                 l10n.sharing_likes,
                 i.likesFromFriends + i.likesFromStrangers,
                 l10n.sharing_thisWeek(i.likesThisWeek),
+                positive: i.likesThisWeek > 0,
               ),
               const SizedBox(width: 6),
               tile(
@@ -169,6 +184,7 @@ class _InsightsBody extends ConsumerWidget {
                 l10n.sharing_started,
                 i.started,
                 l10n.sharing_thisWeek(i.startedThisWeek),
+                positive: i.startedThisWeek > 0,
               ),
             ],
           ),

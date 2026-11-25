@@ -92,6 +92,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('chat-library')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('chat-photo-send')));
+    await tester.pumpAndSettle();
     expect(fakes.chat.replyTo, [null]);
   });
 
@@ -121,8 +123,18 @@ void main() {
     await pumpSocial(tester, location: SocialPaths.chat('c1'), fakes: fakes);
     await tester.tap(find.byKey(const ValueKey('chat-library')));
     await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('chat-photo-preview-sheet')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey('chat-photo-send')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('chat-camera')));
     await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('chat-photo-preview-sheet')),
+      findsNothing,
+    );
     expect(fakes.picker.picks, [false, true]);
     expect(fakes.chat.photos, hasLength(2));
     expect(fakes.chat.photos.first, [1, 2, 3, 4]);
@@ -137,6 +149,8 @@ void main() {
     // My own message: no Report.
     expect(find.byKey(const ValueKey('message-report')), findsNothing);
     await tester.tap(find.byKey(const ValueKey('message-delete')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('social-confirm')));
     await tester.pumpAndSettle();
     expect(fakes.chat.calls, contains('hide:m2'));
     expect(find.text('chapter 6'), findsNothing);

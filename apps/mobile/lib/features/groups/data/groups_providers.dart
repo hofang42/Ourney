@@ -80,6 +80,11 @@ final groupClipboardProvider = Provider<Future<void> Function(String text)>(
       (text) => Clipboard.setData(ClipboardData(text: text)),
 );
 
+/// Reads plain text from the clipboard. Override in tests.
+final groupClipboardReaderProvider = Provider<Future<String?> Function()>(
+  (ref) => () async => (await Clipboard.getData(Clipboard.kTextPlain))?.text,
+);
+
 /// Join-code preview and group invitations (migration 0008). Built on the
 /// data layer; falls back to an always-offline repository when the data layer
 /// is not wired (tests, local-only), so screens degrade instead of crashing.

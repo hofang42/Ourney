@@ -24,6 +24,7 @@ class CreateReviewStep extends StatelessWidget {
     required this.nameRightController,
     required this.onChangeVariant,
     required this.onEdit,
+    this.inviteHandle,
     this.selfOnRight = false,
     this.isRunning = true,
     super.key,
@@ -41,6 +42,7 @@ class CreateReviewStep extends StatelessWidget {
   final TextEditingController nameRightController;
   final VoidCallback onChangeVariant;
   final VoidCallback onEdit;
+  final String? inviteHandle;
   final bool selfOnRight;
   final bool isRunning;
 
@@ -81,6 +83,7 @@ class CreateReviewStep extends StatelessWidget {
               if (n >= 1 && n <= days) l10n.journeys_ticketMilestone('$n'),
           }.toList();
     final couple = who == CreateWho.couple;
+    final invite = inviteHandle?.trim();
     final selfName = couple && nameLeftController.text.trim().isNotEmpty
         ? nameLeftController.text.trim()
         : l10n.journeys_ticketYou;
@@ -91,6 +94,16 @@ class CreateReviewStep extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         StepHeading(l10n.journeys_createReviewTitle),
+        if (invite != null && invite.isNotEmpty && who != CreateWho.solo) ...[
+          KeyedSubtree(
+            key: const ValueKey('create-review-inviting-friend'),
+            child: StepNote(
+              icon: 'squad',
+              text: l10n.journeys_create_invitingFriend(invite),
+            ),
+          ),
+          const SizedBox(height: UiSpace.sm),
+        ],
         KeyedSubtree(
           key: const ValueKey('journey-create-design-preview'),
           child: Semantics(

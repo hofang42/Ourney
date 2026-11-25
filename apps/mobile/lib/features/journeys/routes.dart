@@ -103,6 +103,7 @@ final List<RouteBase> journeysRoutes = [
             initialWho: TemplatePickerScreen.parseWho(
               state.uri.queryParameters['who'],
             ),
+            inviteHandle: state.uri.queryParameters['invite'],
           ),
         ),
         routes: [

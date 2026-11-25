@@ -762,9 +762,10 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     Journey? journey,
     UiJourneyStyle? style,
   ) {
+    if (_phase != _Phase.ready) return const <Widget>[];
     final l10n = CameraL10n.of(context);
     final session = _session;
-    final hasFlash = _phase == _Phase.ready && (session?.hasFlash ?? false);
+    final hasFlash = session?.hasFlash ?? false;
     // The state is carried by the glyph shape (slashed bolt, bolt with an A,
     // filled accent disc), not by colour alone.
     final (flashEmphasis, flashLabel) = switch (_flash) {

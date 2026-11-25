@@ -106,7 +106,23 @@ class CheckinL10nEn extends CheckinL10n {
   String get checkin_shareSkinQuiet => 'Make a card';
 
   @override
+  String get checkin_done_saved => 'Saved to your journey.';
+
+  @override
   String get checkin_done_savedPrivate => 'Saved. Only you can see it.';
+
+  @override
+  String get checkin_done_futureMembers =>
+      'Saved. People who join can see this photo.';
+
+  @override
+  String get checkin_done_sharedSquad => 'Shared with your squad.';
+
+  @override
+  String get checkin_done_sharedLink => 'Visible on your shared journey.';
+
+  @override
+  String get checkin_chooseAnother => 'Choose another';
 
   @override
   String get checkin_done_stampChecked => 'CHECKED IN';
@@ -138,7 +154,13 @@ class CheckinL10nEn extends CheckinL10n {
 
   @override
   String checkin_done_flexerDay(int day, int streak) {
-    return 'DAY $day. $streak DAYS STRAIGHT.';
+    String _temp0 = intl.Intl.pluralLogic(
+      streak,
+      locale: localeName,
+      other: 'DAY $day. $streak DAYS STRAIGHT.',
+      one: 'DAY $day. 1 DAY STRAIGHT.',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -180,6 +202,15 @@ class CheckinL10nEn extends CheckinL10n {
   String get checkin_privacyPrivate => 'Only you';
 
   @override
+  String get checkin_privacyPending => 'For this journey';
+
+  @override
+  String get checkin_privacyFutureMembers => 'Visible to people who join';
+
+  @override
+  String get checkin_privacyShared => 'Shared';
+
+  @override
   String get checkin_privacyCouple => 'Couple';
 
   @override
@@ -192,7 +223,13 @@ class CheckinL10nEn extends CheckinL10n {
 
   @override
   String checkin_calendarSemantics(int days) {
-    return 'Calendar of the last $days days, today has a photo';
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Calendar of the last $days days, today has a photo',
+      one: 'Calendar of the last 1 day, today has a photo',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -259,7 +296,13 @@ class CheckinL10nEn extends CheckinL10n {
 
   @override
   String checkin_extraHeartsValue(int count) {
-    return '$count hearts';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hearts',
+      one: '1 heart',
+    );
+    return '$_temp0';
   }
 
   @override

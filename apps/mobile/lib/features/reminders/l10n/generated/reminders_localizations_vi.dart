@@ -101,6 +101,11 @@ class RemindersL10nVi extends RemindersL10n {
   }
 
   @override
+  String reminders_alertBodyAt(String journey, int count, String time) {
+    return '$journey: chuỗi $count ngày còn mở đến $time (00:00 theo múi giờ hành trình). Một tấm ảnh nhỏ là đủ.';
+  }
+
+  @override
   String get reminders_channelName => 'Nhắc check-in';
 
   @override

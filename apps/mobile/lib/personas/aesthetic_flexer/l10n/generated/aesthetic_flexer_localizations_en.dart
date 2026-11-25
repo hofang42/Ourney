@@ -24,7 +24,13 @@ class AestheticFlexerL10nEn extends AestheticFlexerL10n {
 
   @override
   String aesthetic_flexer_checkInsLabel(int count) {
-    return '$count check-ins';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count check-ins',
+      one: '1 check-in',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -66,7 +72,13 @@ class AestheticFlexerL10nEn extends AestheticFlexerL10n {
 
   @override
   String aesthetic_flexer_daysActiveBadge(int count) {
-    return '$count DAYS ACTIVE';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count DAYS ACTIVE',
+      one: '1 DAY ACTIVE',
+    );
+    return '$_temp0';
   }
 
   @override

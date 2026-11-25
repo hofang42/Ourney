@@ -267,13 +267,17 @@ void main() {
           )
           .opacity;
 
-      // Starting: shutter is dimmed to 0.5.
+      // Starting: shutter is dimmed to 0.5, and top-bar camera tools are hidden (UX-16).
       expect(shutterOpacity(), 0.5);
+      expect(find.byKey(const ValueKey('capture-grid')), findsNothing);
+      expect(find.byKey(const ValueKey('capture-flash')), findsNothing);
 
-      // Ready: shutter animates to full opacity.
+      // Ready: shutter animates to full opacity and tools appear.
       slow.startGate!.complete();
       await tester.pumpAndSettle();
       expect(shutterOpacity(), 1.0);
+      expect(find.byKey(const ValueKey('capture-grid')), findsOneWidget);
+      expect(find.byKey(const ValueKey('capture-flash')), findsOneWidget);
 
       // Capture in flight (_busy): shutter must not dim back to 0.5.
       await tester.tap(find.byKey(const ValueKey('capture-shutter')));

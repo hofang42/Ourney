@@ -106,7 +106,23 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_shareSkinQuiet => 'Tạo thiệp';
 
   @override
+  String get checkin_done_saved => 'Đã lưu vào hành trình của bạn.';
+
+  @override
   String get checkin_done_savedPrivate => 'Đã lưu. Chỉ mình bạn thấy.';
+
+  @override
+  String get checkin_done_futureMembers =>
+      'Đã lưu. Người tham gia sau có thể xem ảnh này.';
+
+  @override
+  String get checkin_done_sharedSquad => 'Đã chia sẻ với cả nhóm.';
+
+  @override
+  String get checkin_done_sharedLink => 'Đã hiển thị trên hành trình chia sẻ.';
+
+  @override
+  String get checkin_chooseAnother => 'Chọn ảnh khác';
 
   @override
   String get checkin_done_stampChecked => 'ĐÃ ĐIỂM DANH';
@@ -177,6 +193,15 @@ class CheckinL10nVi extends CheckinL10n {
 
   @override
   String get checkin_privacyPrivate => 'Chỉ mình bạn';
+
+  @override
+  String get checkin_privacyPending => 'Trong hành trình này';
+
+  @override
+  String get checkin_privacyFutureMembers => 'Người tham gia sau có thể xem';
+
+  @override
+  String get checkin_privacyShared => 'Đã chia sẻ';
 
   @override
   String get checkin_privacyCouple => 'Cặp đôi';

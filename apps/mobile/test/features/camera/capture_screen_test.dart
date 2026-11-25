@@ -8,6 +8,7 @@ import 'package:ourney/features/camera/camera_session.dart';
 import 'package:ourney/features/camera/capture_services.dart';
 import 'package:ourney/features/camera/routes.dart';
 import 'package:ourney/features/checkin/captured_photo.dart';
+import 'package:ourney_core/ourney_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/test_helpers.dart';
@@ -328,6 +329,22 @@ void main() {
     await pump(tester);
     await tester.pumpWidget(const SizedBox());
     expect(camera.stops, greaterThanOrEqualTo(1));
+  });
+
+  testWidgets('UX-16: journey picker sheet excludes ended journeys', (
+    tester,
+  ) async {
+    journeys = FakeJourneyRepository(
+      journeys: [
+        testJourney(id: 'j1', title: 'Đang chạy'),
+        testJourney(id: 'j-ended', title: 'Đã xong', status: JourneyStatus.ended),
+      ],
+    );
+    await pump(tester);
+    await tester.tap(find.byKey(const ValueKey('capture-journey-chip')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('journey-picker-j1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('journey-picker-j-ended')), findsNothing);
   });
 
   test('pickInitialJourney prefers the remembered active journey', () {

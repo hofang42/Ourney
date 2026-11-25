@@ -148,7 +148,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('friend-start-journey')));
       await tester.pumpAndSettle();
       expect(find.text('create-journey-screen'), findsOneWidget);
-      expect(router.state.uri.toString(), '/journeys/new?who=group');
+      expect(router.state.uri.toString(), '/journeys/new?who=group&invite=nam');
     },
   );
 

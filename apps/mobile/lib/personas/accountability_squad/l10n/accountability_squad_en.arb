@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "accountability_squad_daysDuration": "{days} DAYS",
+  "accountability_squad_daysDuration": "{days, plural, =1{1 DAY} other{{days} DAYS}}",
   "accountability_squad_openDuration": "DAILY",
   "accountability_squad_dayGoalTrophy": "DAY {day} GOAL",
   "accountability_squad_dayStartLabel": "DAY {day} · START",

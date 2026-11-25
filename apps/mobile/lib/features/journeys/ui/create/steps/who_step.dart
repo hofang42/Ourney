@@ -17,6 +17,7 @@ class CreateWhoStep extends StatelessWidget {
     required this.nameRightController,
     required this.onPick,
     required this.onNamesChanged,
+    this.inviteHandle,
     super.key,
   });
 
@@ -27,14 +28,26 @@ class CreateWhoStep extends StatelessWidget {
   final TextEditingController nameRightController;
   final ValueChanged<CreateWho> onPick;
   final VoidCallback onNamesChanged;
+  final String? inviteHandle;
 
   @override
   Widget build(BuildContext context) {
     final l10n = JourneysL10n.of(context);
+    final invite = inviteHandle?.trim();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         StepHeading(l10n.journeys_createWhoTitle),
+        if (invite != null && invite.isNotEmpty && who != CreateWho.solo) ...[
+          KeyedSubtree(
+            key: const ValueKey('create-inviting-friend'),
+            child: StepNote(
+              icon: 'squad',
+              text: l10n.journeys_create_invitingFriend(invite),
+            ),
+          ),
+          const SizedBox(height: UiSpace.sm),
+        ],
         CreateChoiceCard(
           key: const ValueKey('journey-kind-solo'),
           title: l10n.journeys_kindSolo,

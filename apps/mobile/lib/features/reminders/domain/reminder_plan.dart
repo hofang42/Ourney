@@ -131,6 +131,7 @@ class PlannedNotification {
     required this.journeyTitle,
     required this.fireAt,
     required this.journeyDate,
+    this.journeyTimezone = 'UTC',
     this.streak = 0,
   });
 
@@ -144,13 +145,65 @@ class PlannedNotification {
   /// Journey-local day the notification is about.
   final LocalDate journeyDate;
 
+  /// IANA zone of the journey whose day rolls over at local midnight.
+  final String journeyTimezone;
+
   /// For [PlannedKind.streakAlert]: the streak that breaks at midnight.
   final int streak;
+
+  /// UTC instant when [journeyDate] ends (`00:00` of the next day in
+  /// [journeyTimezone]).
+  DateTime get deadlineUtc => streakDeadlineUtc(
+    journeyTimezone: journeyTimezone,
+    journeyDate: journeyDate,
+  );
+
+  /// Device-local wall-clock time (`HH:mm`) when the streak for [journeyDate]
+  /// breaks.
+  ReminderTime deadlineLocalTime(String deviceTimezone) =>
+      streakDeadlineInDeviceZone(
+        journeyTimezone: journeyTimezone,
+        deviceTimezone: deviceTimezone,
+        journeyDate: journeyDate,
+      );
 
   @override
   String toString() =>
       'PlannedNotification(${kind.name}, $journeyId, $journeyDate, '
       '${fireAt.toIso8601String()}, streak: $streak)';
+}
+
+/// The UTC instant at which [journeyDate] ends (local midnight `00:00` of the
+/// next day in [journeyTimezone]), i.e. when an unchecked streak for
+/// [journeyDate] breaks.
+DateTime streakDeadlineUtc({
+  required String journeyTimezone,
+  required LocalDate journeyDate,
+}) {
+  final zone = _location(journeyTimezone);
+  return wallClockToUtc(
+    zone,
+    journeyDate.addDays(1),
+    const ReminderTime(0, 0),
+  );
+}
+
+/// Device-local wall-clock time (`HH:mm`, `'00:00'` when [deviceTimezone] has
+/// the same UTC offset as [journeyTimezone], or shifted when travelling across
+/// timezones) at which the streak for [journeyDate] breaks. Used by both the
+/// in-app [ReminderBanner] and OS streak-alert notifications.
+ReminderTime streakDeadlineInDeviceZone({
+  required String journeyTimezone,
+  required String deviceTimezone,
+  required LocalDate journeyDate,
+}) {
+  final deadlineUtc = streakDeadlineUtc(
+    journeyTimezone: journeyTimezone,
+    journeyDate: journeyDate,
+  );
+  final deviceLoc = _location(deviceTimezone);
+  final local = tz.TZDateTime.from(deadlineUtc, deviceLoc);
+  return ReminderTime(local.hour, local.minute);
 }
 
 /// Plans the pending notifications for the next [windowDays] days.
@@ -207,6 +260,7 @@ List<PlannedNotification> planReminders({
             journeyTitle: j.title,
             fireAt: fireAt,
             journeyDate: day,
+            journeyTimezone: j.timezone,
           ),
         );
       }
@@ -228,6 +282,7 @@ List<PlannedNotification> planReminders({
             journeyTitle: j.title,
             fireAt: fireAt,
             journeyDate: day,
+            journeyTimezone: j.timezone,
             streak: streak,
           ),
         );

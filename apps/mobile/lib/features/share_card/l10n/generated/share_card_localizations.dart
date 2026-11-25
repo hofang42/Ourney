@@ -137,8 +137,8 @@ abstract class ShareCardL10n {
   /// Chip: big number shows today's day N of the journey.
   ///
   /// In vi, this message translates to:
-  /// **'Ngày thứ N'**
-  String get share_card_numberDay;
+  /// **'Ngày {day}'**
+  String share_card_numberDay(int day);
 
   /// Under the big streak number on the card.
   ///

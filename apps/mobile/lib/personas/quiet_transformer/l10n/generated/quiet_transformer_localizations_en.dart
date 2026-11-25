@@ -24,7 +24,13 @@ class QuietTransformerL10nEn extends QuietTransformerL10n {
 
   @override
   String quiet_transformer_checkInsLabel(int count) {
-    return '$count check-ins';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count check-ins',
+      one: '1 check-in',
+    );
+    return '$_temp0';
   }
 
   @override

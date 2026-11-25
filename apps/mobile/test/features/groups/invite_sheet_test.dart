@@ -87,6 +87,8 @@ void main() {
         find.byKey(const ValueKey('invite-pending-empty')),
         findsOneWidget,
       );
+      // UX-15: GroupInviteSheet offers "Share the code instead" link.
+      expect(find.byKey(const ValueKey('invite-share-code')), findsOneWidget);
     });
   }
 }

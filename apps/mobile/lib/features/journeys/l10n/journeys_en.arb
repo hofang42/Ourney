@@ -151,12 +151,12 @@
   "journeys_todayRest": "Everything else",
   "journeys_openJourneys": "Open my journeys",
   "journeys_doneOf": "{done}/{total} done",
-  "journeys_shareMakeCard": "Make a card or video",
+  "journeys_shareMakeCard": "Create a share card",
   "journeys_shareMakeCardHint": "Share a moment from this journey",
   "journeys_shareJourney": "Share this journey",
   "journeys_shareJourneyHint": "Choose friends who can follow along",
   "journeys_albumDays": "{done}/{total} days",
-  "journeys_albumMoments": "{count} moments",
+  "journeys_albumMoments": "{count, plural, =1{1 moment} other{{count} moments}}",
   "journeys_streakDaysLabel": "streak",
   "journeys_ticketPrivate": "PRIVATE PROFILE",
   "journeys_ticketMemory": "MEMORY TICKET",
@@ -357,7 +357,7 @@
       }
     }
   },
-  "journeys_memoryFilmRoll": "FILM ROLL · {count} FRAMES",
+  "journeys_memoryFilmRoll": "{count, plural, =1{FILM ROLL · 1 FRAME} other{FILM ROLL · {count} FRAMES}}",
   "@journeys_memoryFilmRoll": {
     "placeholders": {
       "count": {
@@ -709,7 +709,7 @@
       }
     }
   },
-  "journeys_wrapped_moments": "{moments} moments over {days} days",
+  "journeys_wrapped_moments": "{moments, plural, =1{1 moment} other{{moments} moments}} over {days, plural, =1{1 day} other{{days} days}}",
   "@journeys_wrapped_moments": {
     "placeholders": {
       "moments": {
@@ -729,7 +729,7 @@
     }
   },
   "journeys_wrapped_quietEnd": "You made it.",
-  "journeys_wrapped_checkIns": "{n} check-ins",
+  "journeys_wrapped_checkIns": "{n, plural, =1{1 check-in} other{{n} check-ins}}",
   "@journeys_wrapped_checkIns": {
     "placeholders": {
       "n": {
@@ -738,7 +738,7 @@
     }
   },
   "journeys_wrapped_squadEnd": "Finished, everyone!",
-  "journeys_wrapped_frames": "{n} frames",
+  "journeys_wrapped_frames": "{n, plural, =1{1 frame} other{{n} frames}}",
   "@journeys_wrapped_frames": {
     "placeholders": {
       "n": {
@@ -746,7 +746,7 @@
       }
     }
   },
-  "journeys_wrapped_daysTogether": "{n} days together",
+  "journeys_wrapped_daysTogether": "{n, plural, =1{1 day together} other{{n} days together}}",
   "@journeys_wrapped_daysTogether": {
     "placeholders": {
       "n": {
@@ -813,7 +813,7 @@
       }
     }
   },
-  "journeys_wrapped_sumMemory": "{total} DAYS · {name}",
+  "journeys_wrapped_sumMemory": "{total, plural, =1{1 DAY · {name}} other{{total} DAYS · {name}}}",
   "@journeys_wrapped_sumMemory": {
     "placeholders": {
       "total": {
@@ -824,7 +824,7 @@
       }
     }
   },
-  "journeys_wrapped_sumCouple": "{total} DAYS TOGETHER · {moments} MOMENTS",
+  "journeys_wrapped_sumCouple": "{total, plural, =1{1 DAY TOGETHER} other{{total} DAYS TOGETHER}} · {moments, plural, =1{1 MOMENT} other{{moments} MOMENTS}}",
   "@journeys_wrapped_sumCouple": {
     "placeholders": {
       "total": {
@@ -835,7 +835,7 @@
       }
     }
   },
-  "journeys_wrapped_sumFlexer": "{total} DAYS · {km} KM",
+  "journeys_wrapped_sumFlexer": "{total, plural, =1{1 DAY · {km} KM} other{{total} DAYS · {km} KM}}",
   "@journeys_wrapped_sumFlexer": {
     "placeholders": {
       "total": {
@@ -862,6 +862,7 @@
   },
   "journeys_wrapped_hideKg": "Hide kg",
   "journeys_wrapped_blur": "Blur photos",
+  "journeys_wrapped_blurLocked": "Always on for this card style",
   "journeys_wrapped_on": "On",
   "journeys_wrapped_off": "Off",
   "journeys_wrapped_ctaPoster": "Share the trip poster",
@@ -875,9 +876,19 @@
   "journeys_wrapped_hideBrand": "Hide the ourney wordmark",
   "journeys_wrapped_messages": "Messages",
   "journeys_wrapped_otherApps": "Other apps",
+  "journeys_wrapped_saveCard": "Save image",
+  "journeys_wrapped_cardSaved": "Card saved.",
+  "journeys_create_invitingFriend": "Will invite @{handle}",
+  "@journeys_create_invitingFriend": {
+    "placeholders": {
+      "handle": {
+        "type": "String"
+      }
+    }
+  },
   "journeys_wrapped_open": "See the finished journey",
   "journeys_wrapped_menu": "Finish story",
-  "journeys_home_squadChip": "{title} · {days} DAYS",
+  "journeys_home_squadChip": "{days, plural, =1{{title} · 1 DAY} other{{title} · {days} DAYS}}",
   "@journeys_home_squadChip": {
     "placeholders": {
       "title": {
@@ -936,7 +947,7 @@
       }
     }
   },
-  "journeys_home_coupleLine": "{total} DAYS {ritual}",
+  "journeys_home_coupleLine": "{total, plural, =1{1 DAY {ritual}} other{{total} DAYS {ritual}}}",
   "@journeys_home_coupleLine": {
     "placeholders": {
       "total": {
@@ -1002,7 +1013,7 @@
       }
     }
   },
-  "journeys_home_minimalMonth": "{month} · STREAK {streak} DAYS",
+  "journeys_home_minimalMonth": "{streak, plural, =1{{month} · STREAK 1 DAY} other{{month} · STREAK {streak} DAYS}}",
   "@journeys_home_minimalMonth": {
     "placeholders": {
       "month": {
@@ -1127,6 +1138,6 @@
   "journeys_clearYear": "Clear {year} filter",
   "@journeys_clearYear": {"placeholders": {"year": {"type": "int"}}},
   "journeys_range30Pace": "Few values in 30 days, showing check-ins",
-  "journeys_startsIn": "Starts in {days, plural, one{1 day} other{{days} days}} · {total} days",
+  "journeys_startsIn": "Starts in {days, plural, one{1 day} other{{days} days}} · {total, plural, one{1 day} other{{total} days}}",
   "@journeys_startsIn": {"placeholders": {"days": {"type": "int"}, "total": {"type": "int"}}}
 }

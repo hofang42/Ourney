@@ -14,7 +14,13 @@ import 'redirect.dart';
 
 export 'app_routes.dart';
 export 'redirect.dart'
-    show AuthStatus, ProfileGateStatus, kDeepLinkScheme, normalizeDeepLink;
+    show
+        AuthStatus,
+        ProfileGateStatus,
+        kDeepLinkScheme,
+        kMalformedInviteSegment,
+        malformedInviteFallback,
+        normalizeDeepLink;
 
 /// Builds the app router from the per-feature route registry
 /// ([FeatureRoutes]). [redirect] defaults to deep-link normalisation only;
@@ -35,7 +41,9 @@ GoRouter createRouter({
     redirect:
         redirect ??
         (context, state) => (state.uri.hasScheme || state.uri.hasAuthority)
-            ? (normalizeDeepLink(state.uri) ?? AppRoutes.capture)
+            ? (normalizeDeepLink(state.uri) ??
+                  malformedInviteFallback(state.uri) ??
+                  AppRoutes.capture)
             : null,
     routes: [
       StatefulShellRoute(

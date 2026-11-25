@@ -11,7 +11,13 @@ class AccountabilitySquadL10nEn extends AccountabilitySquadL10n {
 
   @override
   String accountability_squad_daysDuration(int days) {
-    return '$days DAYS';
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days DAYS',
+      one: '1 DAY',
+    );
+    return '$_temp0';
   }
 
   @override

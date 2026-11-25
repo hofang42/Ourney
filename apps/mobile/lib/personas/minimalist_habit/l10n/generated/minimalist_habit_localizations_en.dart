@@ -24,7 +24,13 @@ class MinimalistHabitL10nEn extends MinimalistHabitL10n {
 
   @override
   String minimalist_habit_checkInsLabel(int count) {
-    return '$count check-ins';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count check-ins',
+      one: '1 check-in',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -47,7 +53,13 @@ class MinimalistHabitL10nEn extends MinimalistHabitL10n {
 
   @override
   String minimalist_habit_summaryOpen(int done) {
-    return '$done DAYS COMPLETED';
+    String _temp0 = intl.Intl.pluralLogic(
+      done,
+      locale: localeName,
+      other: '$done DAYS COMPLETED',
+      one: '1 DAY COMPLETED',
+    );
+    return '$_temp0';
   }
 
   @override

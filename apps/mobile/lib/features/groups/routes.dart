@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_routes.dart';
@@ -64,12 +65,16 @@ final List<RouteBase> groupsRoutes = [
     routes: [
       GoRoute(
         path: ':code',
-        pageBuilder: (context, state) => buildUiPage<void>(
-          context: context,
-          state: state,
-          kind: UiPageTransition.verticalSheet,
-          child: JoinScreen(initialCode: state.pathParameters['code']),
-        ),
+        pageBuilder: (context, state) {
+          final code = state.pathParameters['code']!;
+          return buildUiPage<void>(
+            context: context,
+            state: state,
+            pageKey: ValueKey('${state.pageKey.value}:$code'),
+            kind: UiPageTransition.verticalSheet,
+            child: JoinScreen(initialCode: code),
+          );
+        },
       ),
     ],
   ),
