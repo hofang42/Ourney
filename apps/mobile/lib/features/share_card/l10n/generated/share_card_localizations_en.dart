@@ -155,6 +155,16 @@ class ShareCardL10nEn extends ShareCardL10n {
   String get share_card_linkCopy => 'Copy link';
 
   @override
+  String get share_card_linkAlreadyActive => 'A link is already active';
+
+  @override
+  String get share_card_linkConflict =>
+      'The current link includes a journey title. Resetting it will break the old link.';
+
+  @override
+  String get share_card_linkResetAndCopy => 'Reset and copy';
+
+  @override
   String get share_card_linkCopied => 'Link copied';
 
   @override

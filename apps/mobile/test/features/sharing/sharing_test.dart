@@ -7,6 +7,7 @@ import 'package:ourney/app/config.dart';
 import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/theme/app_theme.dart';
+import 'package:ourney/features/sharing/data/sharing_providers.dart';
 import 'package:ourney/features/sharing/sharing.dart';
 import 'package:ourney/features/sharing/ui/insights_screen.dart';
 import 'package:ourney/ui/ui.dart';
@@ -180,11 +181,65 @@ void main() {
         insights: FakeInsightsRepository(testInsights()),
       );
       await _tap(tester, _key('share-link-switch'));
+      await _tap(tester, _key('share-link-neutral'));
       expect(sharing.calls, contains('link:true:false'));
       expect(_key('share-copy-link'), findsOneWidget);
       expect(_key('share-show-counts'), findsOneWidget);
       expect(find.textContaining('1.2K views'), findsOneWidget);
     });
+
+    for (final reset in [false, true]) {
+      testWidgets(
+        'a stale ${reset ? 'reset' : 'enable'} shows the current address and feedback',
+        (tester) async {
+          const replacement = 'other-title-abcdefghijklmnop';
+          final sharing =
+              FakeSharingRepository(
+                  token: reset ? 'old-title-abcdefghijklmnop' : null,
+                )
+                ..linkResult = const PublicLinkResult(
+                  issued: false,
+                  slug: replacement,
+                  title: 'Other title',
+                );
+          final refreshed = Completer<JourneyShareState>();
+          var reads = 0;
+          await pumpSharing(
+            tester,
+            location: '/sharing/j1',
+            sharing: sharing,
+            journeys: _journeys(),
+            locale: Locale(reset ? 'vi' : 'en'),
+            extraOverrides: [
+              shareStateProvider('j1').overrideWith(
+                (_) => reads++ == 0
+                    ? Stream.value(sharing.state)
+                    : refreshed.future.asStream(),
+              ),
+            ],
+          );
+          await _tap(
+            tester,
+            _key(reset ? 'share-reset-link' : 'share-link-switch'),
+          );
+          await _tap(tester, _key('share-link-neutral'));
+
+          expect(sharing.calls, contains('link:true:$reset'));
+          expect(
+            find.text(
+              reset
+                  ? 'Liên kết đã thay đổi trong lúc bạn chọn.'
+                  : 'The link changed while you were choosing.',
+            ),
+            findsOneWidget,
+          );
+          expect(
+            tester.widget<Text>(_key('share-link-url')).data,
+            'https://ourney.tech/p/$replacement',
+          );
+        },
+      );
+    }
 
     testWidgets('under 18: forbidden explains the age rule', (tester) async {
       final sharing = FakeSharingRepository()
@@ -196,6 +251,7 @@ void main() {
         journeys: _journeys(),
       );
       await _tap(tester, _key('share-link-switch'));
+      await _tap(tester, _key('share-link-neutral'));
       expect(_key('share-under18'), findsOneWidget);
       expect(
         tester.widget<UiSwitchRow>(_key('share-link-switch')).onChanged,
@@ -276,19 +332,19 @@ void main() {
       expect(_key('share-stop'), findsNothing);
     });
 
-    testWidgets('owner: link on shows one ellipsized URL line (U22)', (
+    testWidgets('owner: link on displays the readable URL (U22)', (
       tester,
     ) async {
       await pumpSharing(
         tester,
         location: '/sharing/j1',
-        sharing: FakeSharingRepository(token: 'tok${'0' * 37}'),
+        sharing: FakeSharingRepository(token: '7-ngay-da-lat-abcdefghijklmnop'),
         journeys: _journeys(),
         friends: _friends,
       );
       final url = tester.widget<Text>(_key('share-link-url'));
-      expect(url.data, 'https://ourney.tech/p/tok${'0' * 37}');
-      expect(url.maxLines, 1);
+      expect(url.data, 'https://ourney.tech/p/7-ngay-da-lat-abcdefghijklmnop');
+      expect(url.maxLines, 3);
       expect(url.overflow, TextOverflow.ellipsis);
       expect(
         tester.widget<UiSwitchRow>(_key('share-link-switch')).subtitle,

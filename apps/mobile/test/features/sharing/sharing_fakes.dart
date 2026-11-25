@@ -76,6 +76,7 @@ class FakeSharingRepository implements SharingRepository {
   final Completer<void>? unshareGate;
   Object? shareError;
   Object? linkError;
+  PublicLinkResult? linkResult;
   Object? viewError;
   JourneyStory? savedStory;
   ImportedJourneyDraft? importedDraft;
@@ -159,15 +160,33 @@ class FakeSharingRepository implements SharingRepository {
   }
 
   @override
-  Future<String?> setPublicLink(
+  Future<PublicLinkResult> setPublicLink(
     String journeyId, {
     required bool enabled,
     bool reset = false,
+    String? approvedTitle,
+    bool hideWeight = false,
+    bool existingOnly = false,
+    String? expectedAddress,
   }) async {
     calls.add('link:$enabled:$reset');
     if (linkError case final e?) throw e;
-    _setState(token: enabled ? 'tok' : null, clearToken: !enabled);
-    return enabled ? 'tok' : null;
+    if (linkResult case final result?) return result;
+    if (expectedAddress != null && expectedAddress != state.publicToken) {
+      return PublicLinkResult(issued: false, legacyToken: state.publicToken);
+    }
+    if (!existingOnly) {
+      _setState(token: enabled ? 'tok' : null, clearToken: !enabled);
+    }
+    final token = existingOnly
+        ? state.publicToken
+        : enabled
+        ? 'tok'
+        : null;
+    return PublicLinkResult(
+      issued: enabled && !existingOnly,
+      legacyToken: token,
+    );
   }
 
   @override

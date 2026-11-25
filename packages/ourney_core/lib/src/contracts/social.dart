@@ -6,6 +6,7 @@
 // Wire values cross the boundary through `wireName` / `fromWire` only.
 
 import '../models.dart';
+import '../paths.dart';
 
 T _fromWire<T extends Enum>(
         List<T> values, String wire, String Function(T) name) =>
@@ -212,6 +213,28 @@ class PublicSettings {
   final bool allowViewerRequests;
 }
 
+/// The current public addresses after an owner link operation.
+class PublicLinkResult {
+  const PublicLinkResult({
+    required this.issued,
+    this.legacyToken,
+    this.slug,
+    this.title,
+  });
+
+  /// True when a new link was created or reset. An alias may be filled in on
+  /// an already active link without replacing its original token.
+  final bool issued;
+  final String? legacyToken;
+  final String? slug;
+
+  /// The exact title included in a titled alias. Null for neutral links.
+  final String? title;
+
+  String? address({bool hideTitle = false}) =>
+      hideTitle && title != null ? legacyToken : slug ?? legacyToken;
+}
+
 /// The owner's (or a member's own) view of who a journey is shared with.
 class JourneyShareState {
   const JourneyShareState({
@@ -221,6 +244,7 @@ class JourneyShareState {
     required this.publicSettings,
     required this.hiddenCheckInIds,
     this.publicToken,
+    this.legacyPublicToken,
   });
 
   final String journeyId;
@@ -233,8 +257,14 @@ class JourneyShareState {
   /// Check-ins hidden from every share (S11).
   final Set<String> hiddenCheckInIds;
   final String? publicToken;
+  final String? legacyPublicToken;
 
   bool get linkOn => publicToken != null;
+
+  String? publicAddress({required bool hideTitle}) =>
+      hideTitle && isTitledPublicSlug(publicToken)
+          ? legacyPublicToken
+          : publicToken;
 }
 
 /// One entry of the Hub's "Shared with me" segment (S8, S26).
@@ -468,9 +498,19 @@ abstract interface class SharingRepository {
 
   /// Turns the public link on / off or rotates it ("Reset link"). Only for
   /// ended journeys or imported ones on the shelf (S9) → else `invalid`;
-  /// `forbidden` under 18 (R2-07) or for non-owners. Returns the token.
-  Future<String?> setPublicLink(String journeyId,
-      {required bool enabled, bool reset = false});
+  /// `forbidden` under 18 (R2-07) or for non-owners. Returns the readable slug.
+  /// [approvedTitle] is the exact title the owner agreed to put in a new URL.
+  /// [existingOnly] checks a link before copying without enabling it.
+  /// [expectedAddress] guards a confirmed reset against a changed address.
+  Future<PublicLinkResult> setPublicLink(
+    String journeyId, {
+    required bool enabled,
+    bool reset = false,
+    String? approvedTitle,
+    bool hideWeight = false,
+    bool existingOnly = false,
+    String? expectedAddress,
+  });
 
   /// Hub → Shared with me, newest first (friend grants + saved, S8, S26).
   Stream<List<SharedJourneySummary>> watchSharedWithMe();

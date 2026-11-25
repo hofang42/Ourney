@@ -13,6 +13,16 @@ RemoteRow _map(Object? v) => switch (v) {
   _ => throw FormatException('expected a JSON object', '$v'),
 };
 
+PublicLinkResult publicLinkFromJson(Object? json) {
+  final row = _map(json);
+  return PublicLinkResult(
+    issued: row['issued'] as bool,
+    legacyToken: row['public_token'] as String?,
+    slug: row['public_slug'] as String?,
+    title: row['style'] == 'titled' ? row['title'] as String : null,
+  );
+}
+
 /// The rows of a `setof json` RPC (null → empty).
 List<RemoteRow> rowsOf(Object? v) => switch (v) {
   null => const [],
@@ -140,7 +150,8 @@ JourneyShareState shareStateFromJson(Object? json) {
       for (final id in r['hidden_checkin_ids'] as List<dynamic>? ?? const [])
         id as String,
     },
-    publicToken: r['public_token'] as String?,
+    publicToken: (r['public_slug'] ?? r['public_token']) as String?,
+    legacyPublicToken: r['public_token'] as String?,
   );
 }
 

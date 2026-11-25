@@ -71,6 +71,11 @@ void main() {
         normalizeDeepLink(Uri.parse('https://ourney.tech/p/pubtok123')),
         '/p/pubtok123',
       );
+      const slug = '7-ngay-da-lat-abcdefghijklmnop';
+      expect(
+        normalizeDeepLink(Uri.parse('https://ourney.tech/p/$slug')),
+        '/p/$slug',
+      );
       expect(normalizeDeepLink(Uri.parse('ourney://')), AppRoutes.capture);
       expect(normalizeDeepLink(Uri.parse('ourney://capture')), AppRoutes.capture);
       expect(

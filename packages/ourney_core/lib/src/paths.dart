@@ -29,10 +29,24 @@ String avatarPath(String userId, String fileId) =>
 const String deleteAccountFunction = 'delete-account';
 const String publicJourneyFunction = 'public-journey';
 
-final RegExp _publicToken = RegExp(r'^[a-z0-9]{40}$');
+final RegExp _legacyPublicToken = RegExp(r'^[a-z0-9]{32,64}$');
+final RegExp _readablePublicSlug = RegExp(
+  r'^[a-z0-9]+(?:-[a-z0-9]+)*-[a-z2-7]{16}$',
+);
 
-/// `journeys.public_token` as issued by `set_public_link` / `create_journey`.
-bool isValidPublicToken(String token) => _publicToken.hasMatch(token);
+/// A public journey's legacy token or readable slug.
+bool isValidPublicToken(String token) =>
+    _legacyPublicToken.hasMatch(token) ||
+    (token.length <= 40 && _readablePublicSlug.hasMatch(token));
+
+final RegExp _neutralPublicSlug = RegExp(r'^journey-[a-z2-7]{16}$');
+
+/// A readable address whose prefix may contain the owner's title.
+bool isTitledPublicSlug(String? token) =>
+    token != null &&
+    token.length <= 40 &&
+    _readablePublicSlug.hasMatch(token) &&
+    !_neutralPublicSlug.hasMatch(token);
 
 /// Canonical public web host for Ourney share links.
 const String ourneyWebHost = 'ourney.tech';

@@ -137,6 +137,19 @@ void main() {
     expect(s.linkOn, isFalse);
   });
 
+  test(
+    'share state prefers its readable URL and falls back to the legacy token',
+    () {
+      final row = <String, dynamic>{
+        'journey_id': 'j1',
+        'public_token': 'a' * 40,
+      };
+      expect(shareStateFromJson(row).publicToken, 'a' * 40);
+      row['public_slug'] = 'doc-sach-abcdefghijklmnop';
+      expect(shareStateFromJson(row).publicToken, row['public_slug']);
+    },
+  );
+
   test('shared with me summary', () {
     final s = sharedSummaryFromJson({
       'journey_id': 'j1',

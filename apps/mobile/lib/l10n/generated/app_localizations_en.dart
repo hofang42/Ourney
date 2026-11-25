@@ -61,6 +61,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nav_profile => 'Profile and settings';
 
   @override
+  String common_usePlace(String place) {
+    return 'Use “$place”';
+  }
+
+  @override
   String get common_retry => 'Retry';
 
   @override

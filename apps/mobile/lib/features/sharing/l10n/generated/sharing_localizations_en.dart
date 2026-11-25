@@ -108,6 +108,9 @@ class SharingL10nEn extends SharingL10n {
   String get sharing_linkCopied => 'Link copied';
 
   @override
+  String get sharing_linkChanged => 'The link changed while you were choosing.';
+
+  @override
   String get sharing_resetLink => 'Reset link';
 
   @override
@@ -116,6 +119,19 @@ class SharingL10nEn extends SharingL10n {
   @override
   String get sharing_resetConfirmBody =>
       'The old link stops working. Counts so far are kept.';
+
+  @override
+  String get sharing_linkTitleChoice => 'Choose a link address';
+
+  @override
+  String get sharing_linkTitleBody =>
+      'Anyone who sees the URL can read the title in it. Use a neutral address if the title contains private details.';
+
+  @override
+  String get sharing_linkUseNeutral => 'Use a neutral address';
+
+  @override
+  String get sharing_linkUseTitle => 'Use the journey title';
 
   @override
   String get sharing_linkHelper =>

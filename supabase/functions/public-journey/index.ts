@@ -1,7 +1,7 @@
 // public-journey (FR-E3, docs/contracts/sharing.md v1.3): read-only JSON view of a journey that
 // holds a public token (solo with visibility `link`, or an ended group whose owner turned the
-// link on, S32), addressed by its revocable token (public.set_public_link rotates/revokes it).
-//   GET /functions/v1/public-journey?token=<40 chars [a-z0-9]>
+// link on, S32), addressed by its revocable token or readable slug.
+//   GET /functions/v1/public-journey?token=<legacy token or readable slug>
 // Media is returned only as short-lived signed URLs. Privacy:
 //   - photos hidden in share (S11), soft-deleted / moderated photos, photos of authors who left
 //     and (group) of authors without an `accepted` share consent (S30) are never returned;
@@ -14,7 +14,9 @@
 // supabase.co domain, so this returns JSON for a static page (e.g. GitHub Pages) to render.
 import { adminClient, chunk, json } from "../_shared/admin.ts";
 
-const TOKEN_RE = /^[a-z0-9]{40}$/;
+const LEGACY_TOKEN_RE = /^[a-z0-9]{32,64}$/;
+const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*-[a-z2-7]{16}$/;
+const MAX_SLUG_LENGTH = 40;
 const SIGNED_URL_TTL_SECONDS = 600;
 const MAX_CHECKINS = 4000; // up to 10 members x 366 days
 const SIGN_BATCH_SIZE = 200;
@@ -28,6 +30,7 @@ const cors = {
 type JourneyRow = {
   id: string;
   owner_id: string;
+  public_token: string;
   kind: "solo" | "group";
   template_id: string;
   title: string;
@@ -89,20 +92,24 @@ export async function handle(
   if (req.method !== "GET") return json({ error: "method_not_allowed" }, 405, { ...cors, Allow: "GET" });
 
   const token = new URL(req.url).searchParams.get("token") ?? "";
-  // Same response for malformed, unknown and revoked tokens.
+  // Same response for malformed, unknown and revoked links.
   const notFound = () => json({ error: "not_found" }, 404, cors);
-  if (!TOKEN_RE.test(token)) return notFound();
+  const isSlug = token.length <= MAX_SLUG_LENGTH && SLUG_RE.test(token);
+  if (token !== token.trim() || (!isSlug && !LEGACY_TOKEN_RE.test(token))) {
+    return notFound();
+  }
 
   const admin = (deps.createAdmin ?? adminClient)();
-  const { data: journeyData, error } = await admin
+  const lookup = admin
     .from("journeys")
     .select(
-      "id, owner_id, kind, template_id, title, emoji, metric_name, metric_unit, start_date, duration_days, " +
+      "id, owner_id, public_token, kind, template_id, title, emoji, metric_name, metric_unit, start_date, duration_days, " +
         "timezone, status, origin, layout, color, cover, story_title, story_intro, story_lessons, cover_checkin_id, show_counts",
     )
-    .eq("public_token", token)
-    .is("deleted_at", null)
-    .maybeSingle();
+    .eq(isSlug ? "public_slug" : "public_token", token)
+    .is("deleted_at", null);
+  if (isSlug) lookup.not("public_token", "is", null);
+  const { data: journeyData, error } = await lookup.maybeSingle();
   if (error) {
     console.error("journey lookup failed", error.message);
     return json({ error: "internal" }, 500, cors);
@@ -243,7 +250,8 @@ export async function handle(
   // One anonymous view per browser per journey-local day (S19, FS-23).
   const day = journeyLocalDay(journey.timezone);
   const salt = `${day}|${deps.viewSalt ?? Deno.env.get("VIEW_SALT") ?? ""}`;
-  const viewerKey = await sha256Hex(`${token}|${req.headers.get("user-agent") ?? ""}|${salt}`);
+  // The legacy token and readable slug identify the same share for view counting.
+  const viewerKey = await sha256Hex(`${journey.public_token}|${req.headers.get("user-agent") ?? ""}|${salt}`);
   const view = await admin.rpc("record_journey_view", { p_journey: journey.id, p_viewer_key: `web:${viewerKey}` });
   if (view.error) console.error("record_journey_view failed", view.error.message); // never fatal
 

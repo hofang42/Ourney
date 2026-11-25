@@ -104,6 +104,9 @@ class SharingL10nVi extends SharingL10n {
   String get sharing_linkCopied => 'Đã sao chép liên kết';
 
   @override
+  String get sharing_linkChanged => 'Liên kết đã thay đổi trong lúc bạn chọn.';
+
+  @override
   String get sharing_resetLink => 'Đặt lại';
 
   @override
@@ -112,6 +115,19 @@ class SharingL10nVi extends SharingL10n {
   @override
   String get sharing_resetConfirmBody =>
       'Liên kết cũ sẽ không mở được nữa. Số liệu đã đếm vẫn giữ.';
+
+  @override
+  String get sharing_linkTitleChoice => 'Chọn địa chỉ liên kết';
+
+  @override
+  String get sharing_linkTitleBody =>
+      'Ai thấy đường dẫn cũng có thể đọc tên hành trình trong đó. Nếu tên có thông tin riêng tư, hãy dùng địa chỉ trung tính.';
+
+  @override
+  String get sharing_linkUseNeutral => 'Dùng địa chỉ trung tính';
+
+  @override
+  String get sharing_linkUseTitle => 'Dùng tên hành trình';
 
   @override
   String get sharing_linkHelper =>

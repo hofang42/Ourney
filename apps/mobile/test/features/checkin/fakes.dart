@@ -80,6 +80,9 @@ class FakeJourneyRepository implements JourneyRepository {
       : Stream.value(List.of(journeys));
 
   @override
+  Future<List<Journey>> allMine() async => List.of(journeys);
+
+  @override
   Stream<Journey?> watch(String journeyId) =>
       Stream.value(journeys.where((j) => j.id == journeyId).firstOrNull);
 

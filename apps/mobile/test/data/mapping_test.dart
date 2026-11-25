@@ -82,6 +82,16 @@ void main() {
     expect(() => journeyFromRemote(row), throwsFormatException);
   });
 
+  test('server journey rows prefer readable URLs and accept legacy rows', () {
+    final row = journeyRow('j1', ownerId: 'u1', visibility: 'link')
+      ..['public_token'] = 'a' * 40;
+    expect(journeyFromRemote(row).publicToken.value, 'a' * 40);
+    row['public_slug'] = 'doc-sach-abcdefghijklmnop';
+    expect(journeyFromRemote(row).publicToken.value, row['public_slug']);
+    row['public_slug'] = null;
+    expect(journeyFromRemote(row).publicToken.value, 'a' * 40);
+  });
+
   test('check-in upsert body and numeric metric parsing', () {
     final remote = {
       'id': 'c1',

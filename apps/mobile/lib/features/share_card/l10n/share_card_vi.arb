@@ -193,6 +193,9 @@
     "description": "Button: enable the public link and copy it."
   },
   "share_card_linkCopy": "Sao chép link",
+  "share_card_linkAlreadyActive": "Đã có link chia sẻ",
+  "share_card_linkConflict": "Link hiện tại chứa tên hành trình. Nếu tạo lại link, link cũ sẽ ngừng hoạt động.",
+  "share_card_linkResetAndCopy": "Tạo lại và sao chép link",
   "@share_card_linkCopy": {
     "description": "Button: copy the existing public link."
   },

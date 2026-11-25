@@ -3,8 +3,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:ourney_core/ourney_core.dart' show durationMax, durationMin;
+import 'package:ourney_core/ourney_core.dart'
+    show dnaPlaceMax, durationMax, durationMin;
 
+import '../../../../shared/places/place_picker.dart';
 import '../../../../ui/ui.dart';
 import '../../l10n/generated/journeys_localizations.dart';
 import 'create_widgets.dart';
@@ -430,162 +432,33 @@ class _SilhouettePainter extends CustomPainter {
   bool shouldRepaint(_SilhouettePainter old) => false;
 }
 
-/// Place search with suggestion rows (`place-question`).
+/// Trip destination field in the create flow.
 class DnaPlacePicker extends StatelessWidget {
   const DnaPlacePicker({
     required this.controller,
-    required this.place,
     required this.onChanged,
+    this.recent = const [],
     super.key,
   });
 
   final TextEditingController controller;
-  final String place;
   final ValueChanged<String> onChanged;
-
-  static const _cities = ['place_dalat', 'place_hoian', 'place_phuquoc'];
-
-  static String _foldDiacritics(String input) {
-    var s = input.trim().toLowerCase();
-    const map = <String, String>{
-      'à': 'a', 'á': 'a', 'ả': 'a', 'ã': 'a', 'ạ': 'a',
-      'ă': 'a', 'ằ': 'a', 'ắ': 'a', 'ẳ': 'a', 'ẵ': 'a', 'ặ': 'a',
-      'â': 'a', 'ầ': 'a', 'ấ': 'a', 'ẩ': 'a', 'ẫ': 'a', 'ậ': 'a',
-      'đ': 'd',
-      'è': 'e', 'é': 'e', 'ẻ': 'e', 'ẽ': 'e', 'ẹ': 'e',
-      'ê': 'e', 'ề': 'e', 'ế': 'e', 'ể': 'e', 'ễ': 'e', 'ệ': 'e',
-      'ì': 'i', 'í': 'i', 'ỉ': 'i', 'ĩ': 'i', 'ị': 'i',
-      'ò': 'o', 'ó': 'o', 'ỏ': 'o', 'õ': 'o', 'ọ': 'o',
-      'ô': 'o', 'ồ': 'o', 'ố': 'o', 'ổ': 'o', 'ỗ': 'o', 'ộ': 'o',
-      'ơ': 'o', 'ờ': 'o', 'ớ': 'o', 'ở': 'o', 'ỡ': 'o', 'ợ': 'o',
-      'ù': 'u', 'ú': 'u', 'ủ': 'u', 'ũ': 'u', 'ụ': 'u',
-      'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ử': 'u', 'ữ': 'u', 'ự': 'u',
-      'ỳ': 'y', 'ý': 'y', 'ỷ': 'y', 'ỹ': 'y', 'ỵ': 'y',
-    };
-    map.forEach((k, v) => s = s.replaceAll(k, v));
-    return s;
-  }
-
-  static List<String> _filteredCities(JourneysL10n l10n, String rawQuery) {
-    final trimmed = rawQuery.trim();
-    if (trimmed.isEmpty) return _cities;
-    for (final id in _cities) {
-      if (dnaText(l10n, id) == trimmed) return _cities;
-    }
-    final q = _foldDiacritics(trimmed);
-    return [
-      for (final id in _cities)
-        if (_foldDiacritics(dnaText(l10n, id)).contains(q) ||
-            _foldDiacritics(l10n.journeys_dna_place_country).contains(q))
-          id,
-    ];
-  }
+  final List<String> recent;
 
   @override
   Widget build(BuildContext context) {
-    final ui = context.ui;
     final l10n = JourneysL10n.of(context);
-    final cities = _filteredCities(l10n, place);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        UiTextField(
-          fieldKey: const ValueKey('dna-place-field'),
-          pill: true,
-          label: l10n.journeys_dna_place_search,
-          hint: l10n.journeys_dna_place_search,
-          controller: controller,
-          leading: OurneyIcon(name: 'map-pin', size: 20),
-          onChanged: onChanged,
-        ),
-        if (cities.isNotEmpty) const SizedBox(height: UiSpace.md),
-        for (final id in cities)
-          Builder(
-            builder: (context) {
-              final name = dnaText(l10n, id);
-              final selected = place == name;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: UiSpace.sm),
-                child: UiPressable(
-                  key: ValueKey('dna-$id'),
-                  onPressed: () {
-                    unawaited(UiHaptics.selection());
-                    controller.text = name;
-                    onChanged(name);
-                  },
-                  selected: selected,
-                  pressOffset: UiShadow.tiny,
-                  semanticLabel: '$name, ${l10n.journeys_dna_place_country}',
-                  excludeChildSemantics: true,
-                  borderRadius: BorderRadius.circular(UiRadius.input),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: UiSpace.lg,
-                      vertical: UiSpace.md,
-                    ),
-                    decoration: BoxDecoration(
-                      color: selected ? createSelectedFill(ui) : ui.surface,
-                      borderRadius: BorderRadius.circular(UiRadius.input),
-                      border: Border.all(
-                        color: selected ? ui.outline : ui.border,
-                        width: selected ? 3 : 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        OurneyIcon(name: 'map-pin', size: 21),
-                        const SizedBox(width: UiSpace.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: UiText.h2(
-                                  color: ui.ink,
-                                  size: 17,
-                                ).copyWith(height: 1.3),
-                              ),
-                              Text(
-                                l10n.journeys_dna_place_country,
-                                style: UiText.muted(color: ui.inkMuted)
-                                    .copyWith(height: 1.4),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (selected) OurneyIcon(name: 'check', size: 19),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        if (place == l10n.journeys_dna_place_dalat)
-          Padding(
-            padding: const EdgeInsets.only(top: UiSpace.sm),
-            child: Row(
-              key: const ValueKey('dna-pine'),
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                OurneyIcon(name: 'pine', size: 24),
-                const SizedBox(width: UiSpace.sm),
-                Flexible(
-                  child: Text(
-                    l10n.journeys_dna_place_pine,
-                    style: UiText.h2(
-                      color: ui.ink,
-                      size: 15,
-                    ).copyWith(height: 1.4),
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
+    final label = l10n.journeys_dna_place_search;
+    return PlacePicker(
+      controller: controller,
+      onChanged: onChanged,
+      fieldKey: const ValueKey('dna-place-field'),
+      label: label,
+      hint: label,
+      recent: recent,
+      browseWhenEmpty: true,
+      maxRunes: dnaPlaceMax,
+      limitMessage: l10n.journeys_dna_place_limit(dnaPlaceMax),
     );
   }
 }

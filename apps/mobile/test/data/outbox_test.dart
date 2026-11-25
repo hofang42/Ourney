@@ -6,8 +6,10 @@ import 'package:drift/drift.dart'
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/data/db/app_database.dart';
+import 'package:ourney/data/remote/error_mapping.dart';
 import 'package:ourney/data/sync/outbox.dart';
 import 'package:ourney_core/ourney_core.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
 import 'data_test_helpers.dart';
 
@@ -189,6 +191,29 @@ void main() {
       await outbox.flush(force: true);
       expect(executed, ['upsert_check_in:1', 'upsert_check_in:2']);
       expect(await outbox.watchPending().first, 0);
+    });
+
+    test('55P03 on a privacy update retries the membership write', () async {
+      final outbox = build(db);
+      await outbox.enqueue(OutboxKind.updateMembership, 'membership:1', {
+        'n': 1,
+        'hide_metric': true,
+      });
+      final error = mapRemoteError(
+        const PostgrestException(
+          message: 'could not obtain lock on row in relation "journeys"',
+          code: '55P03',
+        ),
+      );
+      expect(error.error, OurneyErrorCode.internal);
+      failures.add(error);
+      await outbox.flush();
+      expect((await outbox.pendingRows()).single.attempts, 1);
+      expect(timers.delays.single, const Duration(seconds: 2));
+      clock.advance(const Duration(seconds: 2));
+      await outbox.flush();
+      expect(executed, ['update_membership:1']);
+      expect(await outbox.pendingRows(), isEmpty);
     });
 
     test('permanent rejection marks the item dead and moves on', () async {

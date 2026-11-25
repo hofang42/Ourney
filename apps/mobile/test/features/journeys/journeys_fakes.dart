@@ -229,6 +229,7 @@ class FakeJourneyRepository implements JourneyRepository {
       metricName: draft.metricName,
       metricUnit: draft.metricUnit,
       hideMetricDefault: draft.hideMetricDefault,
+      dna: draft.dna,
     );
     _journeys.set([..._journeys.value, j]);
     return j;
@@ -287,8 +288,15 @@ class FakeJourneyRepository implements JourneyRepository {
   }
 
   @override
-  Future<String?> setPublicLink(String journeyId, {required bool enabled}) =>
-      throw UnimplementedError();
+  Future<PublicLinkResult> setPublicLink(
+    String journeyId, {
+    required bool enabled,
+    String? approvedTitle,
+    bool hideWeight = false,
+    bool existingOnly = false,
+    bool reset = false,
+    String? expectedAddress,
+  }) => throw UnimplementedError();
 
   @override
   Future<void> updateMyMembership(

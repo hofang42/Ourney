@@ -119,6 +119,10 @@
   "@sharing_linkCopied": {
     "description": "Snack after copying."
   },
+  "sharing_linkChanged": "Liên kết đã thay đổi trong lúc bạn chọn.",
+  "@sharing_linkChanged": {
+    "description": "Shown when a concurrent link change takes precedence over the owner's choice."
+  },
   "sharing_resetLink": "Đặt lại",
   "@sharing_resetLink": {
     "description": "Rotates the public token."
@@ -131,6 +135,14 @@
   "@sharing_resetConfirmBody": {
     "description": "Confirm dialog body."
   },
+  "sharing_linkTitleChoice": "Chọn địa chỉ liên kết",
+  "@sharing_linkTitleChoice": {"description": "Asks the owner to choose between a neutral URL and one containing the journey title."},
+  "sharing_linkTitleBody": "Ai thấy đường dẫn cũng có thể đọc tên hành trình trong đó. Nếu tên có thông tin riêng tư, hãy dùng địa chỉ trung tính.",
+  "@sharing_linkTitleBody": {"description": "Explains that title text is visible in the URL itself."},
+  "sharing_linkUseNeutral": "Dùng địa chỉ trung tính",
+  "@sharing_linkUseNeutral": {"description": "Creates a public link with a neutral prefix."},
+  "sharing_linkUseTitle": "Dùng tên hành trình",
+  "@sharing_linkUseTitle": {"description": "Approves using the shown journey title in the public link."},
   "sharing_linkHelper": "Ai có liên kết cũng có thể xem và làm theo hành trình.",
   "@sharing_linkHelper": {
     "description": "Under the link actions."
