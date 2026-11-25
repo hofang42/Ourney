@@ -224,12 +224,12 @@
           <!-- Tactile Code Ticket Box -->
           <div class="link-code-ticket" id="j-code-box">
             <span class="link-code-label" data-i18n="j_code_label">MÃ MỜI VÀO SQUAD</span>
-            <output class="link-code-value" id="squad-code-val" translate="no">—</output>
+            <output class="link-code-value sr" id="squad-code-val" translate="no">—</output>
             <div class="link-code-slots" id="squad-code-slots" aria-hidden="true"></div>
           </div>
 
           <div class="link-actions link-actions-split">
-            <a class="btn btn-primary link-btn-grow" id="open-app-btn" href="ourney://capture">
+            <a class="btn btn-primary link-btn-grow" id="open-app-btn" href="#qr-panel">
               <svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-squad"/></svg>
               <span data-i18n="open_in_app">Mở trong app</span>
             </a>
@@ -242,6 +242,7 @@
               <span id="copy-code-label" data-i18n="copy_code">Sao chép mã</span>
             </button>
           </div>
+          <p class="link-inapp-hint" id="inapp-hint" data-i18n="inapp_hint" hidden>Đang mở từ ứng dụng chat? Chạm “Mở trong app”, hoặc chọn Mở bằng trình duyệt (Safari / Chrome) ở góc màn hình nếu nút không phản hồi.</p>
           <p class="sr" id="copy-live-msg" role="status" aria-live="polite"></p>
         </section>
 
@@ -273,7 +274,7 @@
           </div>
         </section>
 
-        <!-- Fallbacks: Android APK, iOS TestFlight / Waitlist, Desktop QR Code -->
+        <!-- Fallbacks: Android APK, iOS Beta Waitlist, Desktop QR Code -->
         <aside class="card link-fallback-card" aria-labelledby="fallback-heading">
           <div class="link-fallback-main">
             <p class="link-fallback-kicker" id="fallback-heading" data-i18n="fallback_title">Chưa có ứng dụng Ourney trên máy?</p>
@@ -283,9 +284,9 @@
                 <span data-i18n="fallback_android">Tải APK</span>
                 <span class="link-plat-badge" translate="no">Android</span>
               </a>
-              <a class="btn btn-secondary link-fallback-btn" id="fallback-ios" href="/#beta-waitlist-box" data-waitlist-link>
+              <a class="btn btn-secondary link-fallback-btn" id="fallback-ios" href="/?plat=ios#beta-waitlist-box" data-waitlist-link data-waitlist-plat="ios">
                 <svg class="o-sticker" width="22" height="22" aria-hidden="true"><use href="#i-sparkle"/></svg>
-                <span data-i18n="fallback_ios">Tham gia beta TestFlight / waitlist</span>
+                <span data-i18n="fallback_ios">iOS · đăng ký danh sách chờ beta</span>
                 <span class="link-plat-badge" translate="no">iOS</span>
               </a>
             </div>

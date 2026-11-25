@@ -2087,6 +2087,19 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   border-top: 2px dashed #1A1A1A;
   scroll-margin-top: 96px;
 }
+:root[data-platform="ios"] #hero-android-dl,
+:root[data-platform="ios"] #beta-apk-box,
+:root[data-platform="android"] #hero-ios-beta {
+  display: none !important;
+}
+:root[data-platform="ios"] .beta-waitlist-box {
+  padding-top: 0;
+  border-top: 0;
+}
+.platform-group[aria-invalid="true"] .plat-pill {
+  border-color: #B3261E;
+  box-shadow: 3px 3px 0 #B3261E;
+}
 .beta-ios-lead {
   font: 700 1rem/1.4 var(--heading);
   color: #1A1A1A;
@@ -2642,6 +2655,16 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
 .link-actions-split .link-btn-copy {
   flex: 1 1 150px;
 }
+.link-inapp-hint {
+  margin-top: 2px;
+  padding: 10px 14px;
+  border: 1.5px dashed var(--outline);
+  border-radius: 12px;
+  background: var(--fill);
+  color: var(--soft);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
 
 /* Public Journey Header, Stats & Photo Grid */
 .link-journey-header {
@@ -2901,6 +2924,16 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   background: var(--pastel-study);
   color: #1A1A1A;
 }
+:root[data-platform="ios"] #fallback-android,
+:root[data-platform="android"] #fallback-ios,
+:root[data-platform="ios"] #qr-panel,
+:root[data-platform="android"] #qr-panel {
+  display: none !important;
+}
+:root[data-platform="ios"] .link-fallback-card,
+:root[data-platform="android"] .link-fallback-card {
+  grid-template-columns: 1fr;
+}
 .link-fallback-note {
   font-size: 0.82rem;
   line-height: 1.45;
@@ -2915,6 +2948,12 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   display: flex;
   align-items: center;
   gap: 14px;
+  transition: box-shadow 220ms ease, border-color 220ms ease, transform 220ms ease;
+}
+.link-qr-panel.is-highlighted {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary), var(--shadow-md);
+  transform: translate(-1px, -1px);
 }
 @media (min-width: 680px) {
   .link-qr-panel {
