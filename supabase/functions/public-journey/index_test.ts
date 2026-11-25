@@ -264,7 +264,7 @@ Deno.test("public-journey sends only a keyed hash of the Cloudflare ingress IP",
     },
   } as unknown as ReturnType<typeof createClient>;
   const url = `https://public-journey.example.test/?token=${"a".repeat(40)}`;
-  const cases = [
+  const cases: Record<string, string>[] = [
     { "cf-connecting-ip": "2001:db8::7", "x-forwarded-for": "203.0.113.8" },
     { "cf-connecting-ip": "2001:0db8:0:0:0:0:0:0007", "x-real-ip": "203.0.113.9" },
     { "cf-connecting-ip": "198.51.100.25" },
@@ -272,12 +272,12 @@ Deno.test("public-journey sends only a keyed hash of the Cloudflare ingress IP",
     { "cf-connecting-ip": "198.51.100.1, 198.51.100.2" },
   ];
   for (const headers of cases) {
-    await handle(new Request(url, { headers: new Headers(Object.entries(headers)) }), {
+    await handle(new Request(url, { headers }), {
       createAdmin: () => client,
       rateLimitSecret: "test-key",
     });
   }
-  await handle(new Request(url, { headers: cases[0] as Record<string, string> }), {
+  await handle(new Request(url, { headers: cases[0] }), {
     createAdmin: () => client,
     rateLimitSecret: "different-key",
   });
