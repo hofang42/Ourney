@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(54);
+select plan(57);
 
 create schema tests;
 grant usage on schema tests to authenticated;
@@ -160,6 +160,14 @@ select throws_ok(format('select public.public_journey_by_token(%L)', :'kg_titled
 select is(public.public_journey_by_token(:'kg_token')->>'role', 'member',
   'local Hide Weight preserves the opaque credential');
 
+select link->>'public_slug' as replacement_titled, link->>'public_token' as replacement_token
+  from public.set_readable_public_link(tests.j(9), true, true, 'At 78 kg') as link \gset
+select is(public.set_readable_public_link(tests.j(9), true, true, hide_weight => true,
+  expected_address => :'kg_titled')->>'public_token', :'replacement_token',
+  'a stale confirmed reset preserves the replacement link token');
+select throws_ok(format('select public.public_journey_by_token(%L)', :'replacement_titled'), 'P0001', 'not_found',
+  'local Hide Weight retires the active title even on a stale reset');
+
 select link->>'public_slug' as old_title_slug, link->>'public_token' as old_title_token
   from public.set_readable_public_link(tests.j(10), true, false, 'Old title') as link \gset
 update public.memberships set hide_metric = true
@@ -175,7 +183,7 @@ update public.memberships set hide_metric = false
  where journey_id = tests.j(10) and user_id = tests.u(1);
 select is(public.journey_share_state(tests.j(10))->>'public_slug', :'private_slug',
   'making the metric visible again does not restore the retired title');
-select is(public.set_readable_public_link(tests.j(10), true, true, expected_slug => :'old_title_slug')->>'issued',
+select is(public.set_readable_public_link(tests.j(10), true, true, expected_address => :'old_title_slug')->>'issued',
   'false', 'a reset confirmed for a retired address leaves the current link alone');
 
 select link->>'public_slug' as before_rename, link->>'public_token' as rename_token
@@ -206,6 +214,8 @@ select matches(:'lazy_slug'::text, '^journey-[a-z2-7]{16}$', 'the first copy ass
 select is(:'lazy_issued'::text, 'false', 'lazy alias creation leaves the same link active');
 select is(public.journey_share_state(tests.j(11))->>'public_token', :'old_token',
   'lazy alias creation preserves the opaque token');
+select is(public.set_readable_public_link(tests.j(11), true, true, expected_address => :'old_token')->>'issued', 'false',
+  'a reset confirmed for an alias-less row cannot reset its new address');
 select is(public.set_readable_public_link(tests.j(8), true, existing_only => true)->>'public_token', null::text,
   'a stale copy request does not re-enable a revoked link');
 

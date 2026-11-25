@@ -103,6 +103,7 @@ class DataSharingRepository implements SharingRepository {
     String? approvedTitle,
     bool hideWeight = false,
     bool existingOnly = false,
+    String? expectedAddress,
   }) async {
     await _flushFirst();
     final result = await social.call('set_readable_public_link', {
@@ -112,6 +113,7 @@ class DataSharingRepository implements SharingRepository {
       'approved_title': ?approvedTitle,
       if (hideWeight) 'hide_weight': true,
       if (existingOnly) 'existing_only': true,
+      'expected_address': ?expectedAddress,
     }, publicLinkFromJson);
     await _cachePublicToken(journeyId, result.address());
     social.changed();

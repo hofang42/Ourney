@@ -166,9 +166,13 @@ class FakeSharingRepository implements SharingRepository {
     String? approvedTitle,
     bool hideWeight = false,
     bool existingOnly = false,
+    String? expectedAddress,
   }) async {
     calls.add('link:$enabled:$reset');
     if (linkError case final e?) throw e;
+    if (expectedAddress != null && expectedAddress != state.publicToken) {
+      return PublicLinkResult(issued: false, legacyToken: state.publicToken);
+    }
     if (!existingOnly) {
       _setState(token: enabled ? 'tok' : null, clearToken: !enabled);
     }

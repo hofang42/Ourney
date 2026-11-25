@@ -290,18 +290,20 @@ String? activePublicToken(Journey journey) {
   return token;
 }
 
-/// A cached title may have been retired on another device. Recheck titled
-/// addresses before adding them to an outgoing share caption.
+/// Check that a cached link still exists before adding an address to a
+/// caption. A different title-bearing address needs a fresh copy action.
 Future<String?> publicAddressForCaption(
   Journey journey,
   SharingRepository Function() sharing, {
-  required bool hideTitle,
+  required bool Function() hideTitle,
 }) async {
   final token = activePublicToken(journey);
-  if (!isTitledPublicSlug(token)) return token;
+  if (token == null) return null;
   try {
     final state = await sharing().watchShareState(journey.id).first;
-    return state.publicAddress(hideTitle: hideTitle);
+    return state.publicAddress(
+      hideTitle: hideTitle() || state.publicToken != token,
+    );
   } on OurneyException {
     return null;
   }

@@ -235,9 +235,10 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
     }
   }
 
-  Future<void> _setLink(bool enabled, {bool reset = false}) async {
+  Future<void> _setLink(bool enabled, {String? expectedAddress}) async {
     final l10n = SharingL10n.of(context);
     final journey = _journey;
+    final reset = expectedAddress != null;
     String? approvedTitle;
     if (enabled && !reset && _sensitive) {
       if (!await showSensitiveLinkWarning(context) || !mounted) return;
@@ -269,6 +270,7 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
             reset: reset,
             approvedTitle: _hideLinkTitleNow ? null : approvedTitle,
             hideWeight: ref.read(hideWeightOnShareProvider),
+            expectedAddress: expectedAddress,
           );
     } on Object catch (e) {
       if (!mounted) return;
@@ -479,7 +481,11 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
           linkUri: publicAddress == null ? null : _linkUri(publicAddress),
           onCopy: () => _copyLink(publicAddress),
           onLink: (on) => _setLink(on),
-          onReset: () => _setLink(true, reset: true),
+          onReset: () {
+            if (state.publicToken case final address?) {
+              _setLink(true, expectedAddress: address);
+            }
+          },
           onPublic: _setPublic,
           onInsights: () => _open(SharingPaths.insights(_journey.id)),
         ),

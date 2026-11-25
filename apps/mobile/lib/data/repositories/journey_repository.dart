@@ -761,7 +761,7 @@ class DataJourneyRepository implements JourneyRepository {
     bool hideWeight = false,
     bool existingOnly = false,
     bool reset = false,
-    String? expectedSlug,
+    String? expectedAddress,
   }) async {
     final remote = ctx.requireRemote();
     await _flushFirst();
@@ -773,7 +773,7 @@ class DataJourneyRepository implements JourneyRepository {
         if (hideWeight) 'hide_weight': true,
         if (existingOnly) 'existing_only': true,
         if (reset) 'reset': true,
-        'expected_slug': ?expectedSlug,
+        'expected_address': ?expectedAddress,
       }),
     );
     final value = result.address();

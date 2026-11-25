@@ -156,7 +156,7 @@ class FakeJourneyRepository implements JourneyRepository {
   final List<String> calls = [];
   String? lastApprovedTitle;
   PublicLinkResult? serverLink;
-  String? lastExpectedSlug;
+  String? lastExpectedAddress;
   bool lastHideWeight = false;
 
   @override
@@ -195,7 +195,7 @@ class FakeJourneyRepository implements JourneyRepository {
     bool hideWeight = false,
     bool existingOnly = false,
     bool reset = false,
-    String? expectedSlug,
+    String? expectedAddress,
   }) async {
     final action = existingOnly
         ? ':existing'
@@ -204,7 +204,7 @@ class FakeJourneyRepository implements JourneyRepository {
         : '';
     calls.add('setPublicLink:$journeyId:$enabled$action');
     lastApprovedTitle = approvedTitle;
-    lastExpectedSlug = expectedSlug;
+    lastExpectedAddress = expectedAddress;
     lastHideWeight = hideWeight;
     if (linkError case final e?) {
       linkError = null;
@@ -214,6 +214,14 @@ class FakeJourneyRepository implements JourneyRepository {
     final current =
         serverLink ??
         PublicLinkResult(issued: false, legacyToken: cached.publicToken);
+    if (expectedAddress != null && expectedAddress != current.address()) {
+      return PublicLinkResult(
+        issued: false,
+        legacyToken: current.legacyToken,
+        slug: current.slug,
+        title: current.title,
+      );
+    }
     final issued =
         enabled && (reset || current.address() == null) && !existingOnly;
     final result = !enabled

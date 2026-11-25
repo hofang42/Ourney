@@ -501,6 +501,7 @@ abstract interface class SharingRepository {
   /// `forbidden` under 18 (R2-07) or for non-owners. Returns the readable slug.
   /// [approvedTitle] is the exact title the owner agreed to put in a new URL.
   /// [existingOnly] checks a link before copying without enabling it.
+  /// [expectedAddress] guards a confirmed reset against a changed address.
   Future<PublicLinkResult> setPublicLink(
     String journeyId, {
     required bool enabled,
@@ -508,6 +509,7 @@ abstract interface class SharingRepository {
     String? approvedTitle,
     bool hideWeight = false,
     bool existingOnly = false,
+    String? expectedAddress,
   });
 
   /// Hub → Shared with me, newest first (friend grants + saved, S8, S26).

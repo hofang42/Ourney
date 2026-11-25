@@ -188,7 +188,7 @@ abstract interface class JourneyRepository {
 
   /// Enables a public link for a finished journey. Pass [approvedTitle] only
   /// after the owner agrees to put that title in a new URL. [existingOnly]
-  /// checks a link before copying without enabling it. [expectedSlug] guards
+  /// checks a link before copying without enabling it. [expectedAddress] guards
   /// a reset confirmed for a specific address. Disabling revokes both forms.
   Future<PublicLinkResult> setPublicLink(
     String journeyId, {
@@ -197,7 +197,7 @@ abstract interface class JourneyRepository {
     bool hideWeight = false,
     bool existingOnly = false,
     bool reset = false,
-    String? expectedSlug,
+    String? expectedAddress,
   });
 
   /// The caller's own `memberships` row (role, status, joinedAt, prefs).

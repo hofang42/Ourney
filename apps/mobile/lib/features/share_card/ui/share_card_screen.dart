@@ -610,7 +610,10 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                   ),
                 if (showLink) ...[
                   const SizedBox(height: UiSpace.xl),
-                  PublicLinkSection(journey: journey),
+                  PublicLinkSection(
+                    journey: journey,
+                    forceHideMetric: widget.initialHideMetric ?? false,
+                  ),
                 ],
               ],
             ),
@@ -681,12 +684,14 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       final token = await publicAddressForCaption(
         journey,
         () => ref.read(sharingRepositoryProvider),
-        hideTitle: shareMetricHidden(
-          journey,
-          ref.read(shareMembershipProvider(journey.id)).value,
-          forceHideMetric: false,
-          hideWeight: ref.read(hideWeightOnShareProvider),
-        ),
+        hideTitle: () =>
+            !mounted ||
+            shareMetricHidden(
+              journey,
+              ref.read(shareMembershipProvider(journey.id)).value,
+              forceHideMetric: widget.initialHideMetric ?? false,
+              hideWeight: ref.read(hideWeightOnShareProvider),
+            ),
       );
       if (!mounted) return;
       final link = token != null

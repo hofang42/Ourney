@@ -667,10 +667,7 @@ void main() {
       expect(expected, 'https://ourney.tech/p/$testSlug');
       expect(h.clipboard, [expected]);
       expect(find.text('Đã sao chép link'), findsOneWidget);
-      expect(
-        tester.widget<SelectableText>(_key('share-card-link-url')).data,
-        expected,
-      );
+      expect(tester.widget<Text>(_key('share-card-link-url')).data, expected);
 
       // Copying an existing link does not rotate the token.
       await _tap(tester, _key('share-card-link-copy'));
@@ -696,6 +693,41 @@ void main() {
       await _tap(tester, _key('share-card-link-copy'));
       expect(h.journeys.calls, ['setPublicLink:j1:true:existing']);
       expect(h.clipboard.single, 'https://ourney.tech/p/$testNeutralSlug');
+    });
+
+    testWidgets('a cached titled link stays hidden until share state loads', (
+      tester,
+    ) async {
+      final j = testJourney(
+        status: JourneyStatus.ended,
+        visibility: JourneyVisibility.link,
+        publicToken: testSlug,
+      );
+      final state = StreamController<JourneyShareState>();
+      addTearDown(state.close);
+      await pumpShare(
+        tester,
+        journey: j,
+        backend: true,
+        overrides: [shareStateProvider(j.id).overrideWith((_) => state.stream)],
+      );
+      expect(_key('share-card-link-url'), findsNothing);
+      state.add(
+        JourneyShareState(
+          journeyId: j.id,
+          viewers: const [],
+          story: const JourneyStory(),
+          publicSettings: const PublicSettings(
+            showCounts: false,
+            allowPublicReactions: false,
+            allowViewerRequests: false,
+          ),
+          hiddenCheckInIds: const {},
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(_key('share-card-link-url'), findsNothing);
+      expect(_key('share-card-link-create'), findsOneWidget);
     });
 
     for (final action in ['cancel', 'copy', 'reset']) {
@@ -725,7 +757,7 @@ void main() {
             case 'reset':
               expect(h.clipboard, [publicJourneyLink(testNeutralSlug)]);
               expect(h.journeys.calls.last, 'setPublicLink:j1:true:reset');
-              expect(h.journeys.lastExpectedSlug, testSlug);
+              expect(h.journeys.lastExpectedAddress, testSlug);
             case 'cancel':
               expect(h.clipboard, isEmpty);
               expect(h.journeys.calls, ['setPublicLink:j1:true']);
@@ -733,6 +765,36 @@ void main() {
           }
         },
       );
+    }
+
+    for (final action in ['copy', 'reset']) {
+      testWidgets('stale confirmation cannot $action a replacement link', (
+        tester,
+      ) async {
+        final j = testJourney(status: JourneyStatus.ended);
+        final h = await pumpShare(tester, journey: j, backend: true);
+        h.journeys.serverLink = PublicLinkResult(
+          issued: false,
+          legacyToken: testToken,
+          slug: testSlug,
+          title: j.title,
+        );
+        await _tap(tester, _key('share-card-link-create'));
+        await _tap(tester, _key('share-link-neutral'));
+        const replacement = 'new-title-abcdefghijklmnop';
+        h.journeys.serverLink = PublicLinkResult(
+          issued: false,
+          legacyToken: testToken,
+          slug: replacement,
+          title: 'New title',
+        );
+
+        await _tap(tester, _key('share-card-link-conflict-$action'));
+
+        expect(h.clipboard, isEmpty);
+        expect(h.journeys.serverLink?.slug, replacement);
+        expect(find.text(publicJourneyLink(replacement)), findsOneWidget);
+      });
     }
 
     testWidgets('Hide Weight suppresses title approval for custom kg metrics', (

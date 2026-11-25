@@ -658,17 +658,23 @@ class _SummaryState extends ConsumerState<_Summary> {
             _boundaryKey.currentContext?.findRenderObject()
                 as RenderRepaintBoundary?;
         if (boundary == null) throw StateError('wrapped card not laid out');
-        final membership = ref.read(membershipProvider);
-        final hideWeight = ref.read(hideWeightOnShareProvider);
+        final file = await exporter.export(
+          boundary,
+          format,
+          baseName: shareCardBaseName(journey.id, format),
+        );
+        if (!context.mounted) return;
         final address = await publicAddressForCaption(
           journey,
           () => ref.read(sharingRepositoryProvider),
-          hideTitle: shareMetricHidden(
-            journey,
-            membership.value,
-            forceHideMetric: false,
-            hideWeight: hideWeight,
-          ),
+          hideTitle: () =>
+              !context.mounted ||
+              shareMetricHidden(
+                journey,
+                ref.read(membershipProvider).value,
+                forceHideMetric: quiet && hideKg,
+                hideWeight: ref.read(hideWeightOnShareProvider),
+              ),
         );
         if (!context.mounted) return;
         final text = wrappedShareText(
@@ -677,13 +683,11 @@ class _SummaryState extends ConsumerState<_Summary> {
           skin,
           stats,
           publicAddress: address,
-          hideKg: _hideExportKg(membership, hideWeight),
+          hideKg: _hideExportKg(
+            ref.read(membershipProvider),
+            ref.read(hideWeightOnShareProvider),
+          ),
           hideBrand: hideWordmark,
-        );
-        final file = await exporter.export(
-          boundary,
-          format,
-          baseName: shareCardBaseName(journey.id, format),
         );
         await sharer.shareImage(
           path: file.path,

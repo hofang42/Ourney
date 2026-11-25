@@ -23,34 +23,38 @@ import '../l10n/generated/share_card_localizations.dart';
 /// * Link on: copy the existing link (no rotation), or revoke it with
 ///   `setPublicLink(id, enabled: false)` after a confirmation.
 class PublicLinkSection extends ConsumerStatefulWidget {
-  const PublicLinkSection({required this.journey, super.key});
+  const PublicLinkSection({
+    required this.journey,
+    this.forceHideMetric = false,
+    super.key,
+  });
 
   final Journey journey;
+  final bool forceHideMetric;
 
   @override
   ConsumerState<PublicLinkSection> createState() => _PublicLinkSectionState();
 }
 
 class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
-  /// Result of our last setPublicLink call, until the repository stream
-  /// reports a new token.
-  bool _overridden = false;
-  String? _token;
+  /// The latest RPC result until share state refreshes.
+  PublicLinkResult? _linkResult;
   bool _busy = false;
 
   @override
   void didUpdateWidget(PublicLinkSection old) {
     super.didUpdateWidget(old);
-    if (old.journey.publicToken != widget.journey.publicToken ||
-        old.journey.visibility != widget.journey.visibility) {
-      _overridden = false;
+    if (old.journey.id != widget.journey.id ||
+        (old.journey.publicToken != widget.journey.publicToken &&
+            widget.journey.publicToken != _linkResult?.address())) {
+      _linkResult = null;
     }
   }
 
   bool _hideTitle(Membership? membership, bool hideWeight) => shareMetricHidden(
     widget.journey,
     membership,
-    forceHideMetric: false,
+    forceHideMetric: widget.forceHideMetric,
     hideWeight: hideWeight,
   );
 
@@ -75,14 +79,21 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
       ref.watch(shareMembershipProvider(journey.id)).value,
       ref.watch(hideWeightOnShareProvider),
     );
-    final cachedToken = _overridden ? _token : activePublicToken(journey);
-    final state = ref.watch(shareStateProvider(journey.id)).value;
-    final token =
-        isTitledPublicSlug(cachedToken) && (hideTitle || state?.linkOn == true)
+    final provider = shareStateProvider(journey.id);
+    final state = ref.watch(provider).asData?.value;
+    ref.listen(provider, (_, next) {
+      if (next.asData != null && _linkResult != null) {
+        setState(() => _linkResult = null);
+      }
+    });
+    final result = _linkResult;
+    final token = result == null
         ? state?.publicAddress(hideTitle: hideTitle)
-        : cachedToken;
+        : result.address(hideTitle: hideTitle);
     final uri = _uriFor(token);
-    final hasLink = cachedToken != null;
+    final hasLink = result == null
+        ? state?.linkOn ?? (activePublicToken(journey) != null)
+        : result.address() != null;
     // S9: a running journey cannot get a link yet (revoking one stays).
     final eligible = publicLinkEligible(widget.journey);
 
@@ -134,10 +145,11 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
             )
           else ...[
             if (uri != null)
-              SelectableText(
+              Text(
                 uri.toString(),
                 key: const ValueKey('share-card-link-url'),
                 maxLines: 3,
+                overflow: TextOverflow.ellipsis,
                 style: UiText.body(size: 12, height: 1.45, color: ui.inkMuted),
               ),
             const SizedBox(height: UiSpace.md),
@@ -181,10 +193,7 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
     if (ref.read(provider).value?.publicToken != result.address()) {
       ref.invalidate(provider);
     }
-    setState(() {
-      _overridden = true;
-      _token = result.address(hideTitle: _hideTitleNow);
-    });
+    setState(() => _linkResult = result);
   }
 
   Future<void> _getAndCopy({
@@ -206,7 +215,7 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
       );
       if (!mounted) return;
       _showLink(result);
-      final uri = _uriFor(_token);
+      final uri = _uriFor(result.address(hideTitle: _hideTitleNow));
       if (uri == null && existingOnly) return;
       if (uri != null &&
           !result.issued &&
@@ -220,7 +229,7 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
             id,
             enabled: true,
             reset: true,
-            expectedSlug: result.slug,
+            expectedAddress: result.address(),
             approvedTitle: _hideTitleNow ? null : title,
             hideWeight: ref.read(hideWeightOnShareProvider),
           );
@@ -236,7 +245,7 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
           );
           if (!mounted) return;
           _showLink(result);
-          if (_uriFor(_token) != uri) return;
+          if (_uriFor(result.address(hideTitle: _hideTitleNow)) != uri) return;
         }
       }
       final address = result.address(hideTitle: _hideTitleNow);
@@ -345,14 +354,11 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
     if (confirmed != true || !mounted) return;
     setState(() => _busy = true);
     try {
-      await ref
+      final result = await ref
           .read(journeyRepositoryProvider)
           .setPublicLink(widget.journey.id, enabled: false);
       if (!mounted) return;
-      setState(() {
-        _overridden = true;
-        _token = null;
-      });
+      _showLink(result);
       _snack(l10n.share_card_linkRevoked);
     } on Object catch (e) {
       if (mounted) _snack(_errorMessage(e));

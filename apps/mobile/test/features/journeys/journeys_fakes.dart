@@ -294,7 +294,7 @@ class FakeJourneyRepository implements JourneyRepository {
     bool hideWeight = false,
     bool existingOnly = false,
     bool reset = false,
-    String? expectedSlug,
+    String? expectedAddress,
   }) => throw UnimplementedError();
 
   @override
