@@ -55,9 +55,14 @@ select is(
 select is(
   (select count(*)::int
      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')),
+    where n.nspname = 'public'
+      and has_function_privilege('anon', p.oid, 'execute')
+      and p.oid not in (
+        'public.preview_friend_invite(text)'::regprocedure,
+        'public.preview_group_invite(text)'::regprocedure
+      )),
   0,
-  'anon cannot execute any public function'
+  'anon cannot execute any public function except preview_friend_invite and preview_group_invite'
 );
 
 select ok(

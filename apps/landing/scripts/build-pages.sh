@@ -23,7 +23,7 @@ for entry in "$LANDING_DIR"/*; do
   [ -e "$entry" ] || continue
   name=$(basename -- "$entry")
   case "$name" in
-    og-src|scripts|dist|vercel.json|.vercelignore|.gitignore)
+    og-src|scripts|dist|functions|vercel.json|.vercelignore|.gitignore)
       continue
       ;;
   esac

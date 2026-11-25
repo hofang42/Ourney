@@ -5,17 +5,25 @@ import {
   type FilterDryRunResult,
   type ObjectionableWordRow,
 } from '../lib/adminRpc'
-import { useI18n } from '../lib/i18n'
+import {
+  formatWordCategory,
+  formatWordLang,
+  formatWordMatchMode,
+  useI18n,
+} from '../lib/i18n'
 import { OIcon } from '../ui/Icon'
+import { AccessibleModal } from '../ui/Modal'
 
 export function WordsPage() {
-  const { t } = useI18n()
+  const { lang, t } = useI18n()
   const [words, setWords] = useState<ObjectionableWordRow[]>([])
   const [search, setSearch] = useState('')
   const [langFilter, setLangFilter] = useState('all')
   const [modeFilter, setModeFilter] = useState('all')
   const [catFilter, setCatFilter] = useState('all')
-  const [enabledFilter, setEnabledFilter] = useState<'all' | 'enabled' | 'disabled'>('all')
+  const [enabledFilter, setEnabledFilter] = useState<
+    'all' | 'enabled' | 'disabled'
+  >('all')
 
   const [sampleText, setSampleText] = useState('')
   const [dryRunResult, setDryRunResult] = useState<FilterDryRunResult | null>(
@@ -30,6 +38,10 @@ export function WordsPage() {
   const [newCategory, setNewCategory] = useState<
     'csae' | 'self_harm' | 'violence' | 'sexual' | 'slur' | 'profanity'
   >('profanity')
+
+  const [deleteTarget, setDeleteTarget] =
+    useState<ObjectionableWordRow | null>(null)
+  const [deleteReason, setDeleteReason] = useState('')
 
   const [statusMsg, setStatusMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -47,7 +59,7 @@ export function WordsPage() {
       })
       setWords(list)
     } catch (err) {
-      const msg = await handleRpcError(err, 'list_objectionable_words')
+      const msg = await handleRpcError(err, 'list_objectionable_words', lang)
       setErrorMsg(msg)
     }
   }
@@ -64,7 +76,7 @@ export function WordsPage() {
       const res = await adminApi.testContentFilter(sampleText)
       setDryRunResult(res)
     } catch (err) {
-      const msg = await handleRpcError(err, 'test_content_filter')
+      const msg = await handleRpcError(err, 'test_content_filter', lang)
       setErrorMsg(msg)
     }
   }
@@ -99,7 +111,7 @@ export function WordsPage() {
       setNewTerm('')
       await loadWords()
     } catch (err) {
-      const msg = await handleRpcError(err, 'upsert_objectionable_word')
+      const msg = await handleRpcError(err, 'upsert_objectionable_word', lang)
       setErrorMsg(msg)
     }
   }
@@ -110,19 +122,30 @@ export function WordsPage() {
       await adminApi.setObjectionableWordEnabled(row.term, !row.enabled)
       await loadWords()
     } catch (err) {
-      const msg = await handleRpcError(err, 'set_objectionable_word_enabled')
+      const msg = await handleRpcError(
+        err,
+        'set_objectionable_word_enabled',
+        lang,
+      )
       setErrorMsg(msg)
     }
   }
 
-  const handleDeleteWord = async (term: string) => {
+  const handleConfirmDeleteWord = async () => {
+    if (!deleteTarget) return
     setErrorMsg(null)
     try {
-      await adminApi.deleteObjectionableWord(term, 'Deleted from Words page')
+      const term = deleteTarget.term
+      await adminApi.deleteObjectionableWord(
+        term,
+        deleteReason.trim() || 'Deleted from Words page',
+      )
       setStatusMsg(t(`Đã xóa từ khóa: ${term}`, `Deleted word: ${term}`))
+      setDeleteTarget(null)
+      setDeleteReason('')
       await loadWords()
     } catch (err) {
-      const msg = await handleRpcError(err, 'delete_objectionable_word')
+      const msg = await handleRpcError(err, 'delete_objectionable_word', lang)
       setErrorMsg(msg)
     }
   }
@@ -132,10 +155,7 @@ export function WordsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">
-            {t(
-              'Bộ lọc Từ khóa Chặn (private.objectionable_words)',
-              'Content Filter Words (private.objectionable_words)',
-            )}
+            {t('Bộ lọc Từ khóa Chặn', 'Content Filter Words')}
           </h1>
           <p className="page-subtitle">
             {t(
@@ -162,7 +182,7 @@ export function WordsPage() {
         <div className="card">
           <h3 style={{ marginBottom: 6 }}>
             {t(
-              'Trình kiểm thử bộ lọc trực tiếp (Dry-Run Tester)',
+              'Trình kiểm thử bộ lọc trực tiếp',
               'Live Filter Dry-Run Tester',
             )}
           </h3>
@@ -197,21 +217,20 @@ export function WordsPage() {
             >
               <button type="submit" className="btn btn-primary">
                 <OIcon name="filter" size={18} />
-                <span>
-                  {t('Kiểm thử bộ lọc / Test Filter', 'Test Filter')}
-                </span>
+                <span>{t('Kiểm thử bộ lọc', 'Test Filter')}</span>
               </button>
 
               {dryRunResult && (
                 <div>
                   {!dryRunResult.blocked ? (
                     <span className="badge badge-success">
-                      PASS ({t('Cho phép', 'Allowed')})
+                      {t('HỢP LỆ (Cho phép)', 'PASS (Allowed)')}
                     </span>
                   ) : (
                     <span className="badge badge-danger">
-                      BLOCKED (content_policy) · {dryRunResult.term} (
-                      {dryRunResult.match_mode} / {dryRunResult.category})
+                      {t('BỊ CHẶN', 'BLOCKED')} · {dryRunResult.term} (
+                      {formatWordMatchMode(dryRunResult.match_mode, lang)} /{' '}
+                      {formatWordCategory(dryRunResult.category, lang)})
                     </span>
                   )}
                 </div>
@@ -232,7 +251,7 @@ export function WordsPage() {
                 minLength={2}
                 maxLength={64}
                 aria-label={t('Từ khóa chặn mới', 'New filter word term')}
-                placeholder={t('Nhập từ khóa (NFC lowercase)...', 'Term...')}
+                placeholder={t('Nhập từ khóa chữ thường...', 'Term...')}
                 value={newTerm}
                 onChange={(e) => setNewTerm(e.target.value)}
                 required
@@ -245,9 +264,9 @@ export function WordsPage() {
                   setNewLang(e.target.value as 'vi' | 'en' | 'any')
                 }
               >
-                <option value="vi">vi</option>
-                <option value="en">en</option>
-                <option value="any">any</option>
+                <option value="vi">{formatWordLang('vi', lang)}</option>
+                <option value="en">{formatWordLang('en', lang)}</option>
+                <option value="any">{formatWordLang('any', lang)}</option>
               </select>
             </div>
 
@@ -262,9 +281,15 @@ export function WordsPage() {
                   )
                 }
               >
-                <option value="diacritic_word">diacritic_word</option>
-                <option value="word">word</option>
-                <option value="substring">substring</option>
+                <option value="diacritic_word">
+                  {formatWordMatchMode('diacritic_word', lang)}
+                </option>
+                <option value="word">
+                  {formatWordMatchMode('word', lang)}
+                </option>
+                <option value="substring">
+                  {formatWordMatchMode('substring', lang)}
+                </option>
               </select>
 
               <select
@@ -283,12 +308,20 @@ export function WordsPage() {
                   )
                 }
               >
-                <option value="profanity">profanity</option>
-                <option value="slur">slur</option>
-                <option value="sexual">sexual</option>
-                <option value="violence">violence</option>
-                <option value="self_harm">self_harm</option>
-                <option value="csae">csae</option>
+                <option value="profanity">
+                  {formatWordCategory('profanity', lang)}
+                </option>
+                <option value="slur">{formatWordCategory('slur', lang)}</option>
+                <option value="sexual">
+                  {formatWordCategory('sexual', lang)}
+                </option>
+                <option value="violence">
+                  {formatWordCategory('violence', lang)}
+                </option>
+                <option value="self_harm">
+                  {formatWordCategory('self_harm', lang)}
+                </option>
+                <option value="csae">{formatWordCategory('csae', lang)}</option>
               </select>
 
               <button type="submit" className="btn btn-primary">
@@ -316,9 +349,9 @@ export function WordsPage() {
           onChange={(e) => setLangFilter(e.target.value)}
         >
           <option value="all">{t('Mọi ngôn ngữ', 'All languages')}</option>
-          <option value="vi">vi</option>
-          <option value="en">en</option>
-          <option value="any">any</option>
+          <option value="vi">{formatWordLang('vi', lang)}</option>
+          <option value="en">{formatWordLang('en', lang)}</option>
+          <option value="any">{formatWordLang('any', lang)}</option>
         </select>
         <select
           aria-label={t('Lọc chế độ khớp', 'Filter match mode')}
@@ -329,9 +362,13 @@ export function WordsPage() {
           <option value="all">
             {t('Mọi chế độ khớp', 'All match modes')}
           </option>
-          <option value="diacritic_word">diacritic_word</option>
-          <option value="word">word</option>
-          <option value="substring">substring</option>
+          <option value="diacritic_word">
+            {formatWordMatchMode('diacritic_word', lang)}
+          </option>
+          <option value="word">{formatWordMatchMode('word', lang)}</option>
+          <option value="substring">
+            {formatWordMatchMode('substring', lang)}
+          </option>
         </select>
         <select
           aria-label={t('Lọc danh mục', 'Filter category')}
@@ -340,12 +377,18 @@ export function WordsPage() {
           onChange={(e) => setCatFilter(e.target.value)}
         >
           <option value="all">{t('Mọi danh mục', 'All categories')}</option>
-          <option value="csae">csae</option>
-          <option value="self_harm">self_harm</option>
-          <option value="violence">violence</option>
-          <option value="sexual">sexual</option>
-          <option value="slur">slur</option>
-          <option value="profanity">profanity</option>
+          <option value="csae">{formatWordCategory('csae', lang)}</option>
+          <option value="self_harm">
+            {formatWordCategory('self_harm', lang)}
+          </option>
+          <option value="violence">
+            {formatWordCategory('violence', lang)}
+          </option>
+          <option value="sexual">{formatWordCategory('sexual', lang)}</option>
+          <option value="slur">{formatWordCategory('slur', lang)}</option>
+          <option value="profanity">
+            {formatWordCategory('profanity', lang)}
+          </option>
         </select>
         <select
           aria-label={t('Lọc trạng thái bật/tắt', 'Filter enabled status')}
@@ -358,10 +401,8 @@ export function WordsPage() {
           <option value="all">
             {t('Mọi trạng thái', 'All enabled states')}
           </option>
-          <option value="enabled">{t('Đang bật (Enabled)', 'Enabled')}</option>
-          <option value="disabled">
-            {t('Đang tắt (Disabled)', 'Disabled')}
-          </option>
+          <option value="enabled">{t('Đang bật', 'Enabled')}</option>
+          <option value="disabled">{t('Đang tắt', 'Disabled')}</option>
         </select>
       </div>
 
@@ -369,7 +410,7 @@ export function WordsPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>{t('Từ khóa (Term)', 'Term')}</th>
+              <th>{t('Từ khóa', 'Term')}</th>
               <th>{t('Ngôn ngữ', 'Lang')}</th>
               <th>{t('Chế độ khớp', 'Match Mode')}</th>
               <th>{t('Danh mục', 'Category')}</th>
@@ -382,13 +423,17 @@ export function WordsPage() {
               <tr key={w.term}>
                 <td style={{ fontWeight: 700 }}>{w.term}</td>
                 <td>
-                  <span className="badge">{w.lang}</span>
+                  <span className="badge">{formatWordLang(w.lang, lang)}</span>
                 </td>
                 <td>
-                  <span className="badge badge-sky">{w.match_mode}</span>
+                  <span className="badge badge-sky">
+                    {formatWordMatchMode(w.match_mode, lang)}
+                  </span>
                 </td>
                 <td>
-                  <span className="badge badge-warn">{w.category}</span>
+                  <span className="badge badge-warn">
+                    {formatWordCategory(w.category, lang)}
+                  </span>
                 </td>
                 <td>
                   <button
@@ -396,16 +441,16 @@ export function WordsPage() {
                     aria-pressed={w.enabled}
                     aria-label={
                       w.enabled
-                        ? `${t('Đang bật (Enabled)', 'Enabled')} ${w.term}`
-                        : `${t('Đang tắt (Disabled)', 'Disabled')} ${w.term}`
+                        ? `${t('Đang bật', 'Enabled')} ${w.term}`
+                        : `${t('Đang tắt', 'Disabled')} ${w.term}`
                     }
                     className={`btn ${w.enabled ? 'btn-success' : ''}`}
                     onClick={() => void handleToggleWord(w)}
                   >
                     <span>
                       {w.enabled
-                        ? t('Đang bật (Enabled)', 'Enabled')
-                        : t('Đang tắt (Disabled)', 'Disabled')}
+                        ? t('Đang bật', 'Enabled')
+                        : t('Đang tắt', 'Disabled')}
                     </span>
                   </button>
                 </td>
@@ -414,7 +459,7 @@ export function WordsPage() {
                     type="button"
                     aria-label={`${t('Xóa', 'Delete')} ${w.term}`}
                     className="btn btn-danger"
-                    onClick={() => void handleDeleteWord(w.term)}
+                    onClick={() => setDeleteTarget(w)}
                   >
                     <OIcon name="trash" size={16} />
                     <span>{t('Xóa', 'Delete')}</span>
@@ -425,6 +470,65 @@ export function WordsPage() {
           </tbody>
         </table>
       </div>
+
+      {deleteTarget && (
+        <AccessibleModal
+          title={t(
+            'Xác nhận xóa từ khóa chặn',
+            'Confirm Filter Word Deletion',
+          )}
+          onClose={() => {
+            setDeleteTarget(null)
+            setDeleteReason('')
+          }}
+        >
+          <h3>
+            {t('Xác nhận xóa từ khóa chặn', 'Confirm Filter Word Deletion')}
+          </h3>
+          <p className="page-subtitle">
+            <strong>{deleteTarget.term}</strong> (
+            {formatWordCategory(deleteTarget.category, lang)}) —{' '}
+            {t(
+              'Sau khi xóa, từ khóa này sẽ không còn bị chặn tự động trên hồ sơ, chú thích ảnh, tin nhắn hay đề xuất tính năng.',
+              'Removing this word immediately stops blocking it across profiles, check-ins, messages, and feature requests.',
+            )}
+          </p>
+          <label className="field-group">
+            <span className="field-label">
+              {t('Lý do xóa', 'Deletion Reason')}
+            </span>
+            <input
+              type="text"
+              className="input"
+              value={deleteReason}
+              onChange={(e) => setDeleteReason(e.target.value)}
+              placeholder={t(
+                'Từ khóa gây chặn nhầm hoặc không còn phù hợp...',
+                'False positive or obsolete term...',
+              )}
+            />
+          </label>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                setDeleteTarget(null)
+                setDeleteReason('')
+              }}
+            >
+              {t('Hủy', 'Cancel')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={() => void handleConfirmDeleteWord()}
+            >
+              {t('Xác nhận xóa', 'Confirm Delete')}
+            </button>
+          </div>
+        </AccessibleModal>
+      )}
     </div>
   )
 }

@@ -1095,6 +1095,16 @@ a {
   border-color: var(--success);
 }
 
+.status-banner.warn {
+  background: var(--warn-bg);
+  border-color: var(--warn);
+}
+
+.data-table tr.failed-row {
+  background: var(--danger-bg);
+}
+
+
 @media (max-width: 1024px) {
   .admin-shell {
     grid-template-columns: 1fr;

@@ -1,4 +1,4 @@
-import { useI18n } from '../lib/i18n'
+import { fmtDateShort, useI18n } from '../lib/i18n'
 import type { OverviewStats } from '../lib/adminRpc'
 
 const FUNNEL_STEP_LABELS: Record<string, { vi: string; en: string }> = {
@@ -198,7 +198,9 @@ export function LineAreaChart({
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <span className="badge badge-success">DAU</span>
-          <span className="badge badge-primary">Check-ins</span>
+          <span className="badge badge-primary">
+            {t('Ảnh check-in', 'Check-ins')}
+          </span>
         </div>
       </div>
       <svg
@@ -338,7 +340,7 @@ export function CohortHeatmap({
 }: {
   cohorts: OverviewStats['cohort_retention']
 }) {
-  const { t } = useI18n()
+  const { lang, t } = useI18n()
   const cellBg = (pct: number) => {
     if (!pct || pct <= 0) return 'var(--fill)'
     const alpha = Math.min(0.92, Math.max(0.18, pct / 100))
@@ -386,7 +388,9 @@ export function CohortHeatmap({
           <tbody>
             {cohorts.map((c) => (
               <tr key={c.cohort_week}>
-                <td style={{ fontWeight: 700 }}>{c.cohort_week}</td>
+                <td style={{ fontWeight: 700 }}>
+                  {fmtDateShort(c.cohort_week, lang)}
+                </td>
                 <td className="tabular">{c.cohort_size}</td>
                 {(['d1_pct', 'd7_pct', 'd14_pct', 'd30_pct'] as const).map(
                   (k) => (

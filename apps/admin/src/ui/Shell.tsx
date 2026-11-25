@@ -7,7 +7,7 @@ import {
   supabase,
   type AdminIdentity,
 } from '../lib/adminRpc'
-import { useI18n } from '../lib/i18n'
+import { formatAdminError, useI18n } from '../lib/i18n'
 import { OIcon, type OIconName } from './Icon'
 
 interface NavItem {
@@ -99,8 +99,8 @@ export function AdminAuthGuard({
         await adminApi.signOut()
         setErrorMsg(
           t(
-            'Tài khoản này không có quyền quản trị viên (42501). Đã tự động đăng xuất.',
-            'This account does not have admin privileges (42501). Signed out automatically.',
+            'Tài khoản này không có quyền quản trị viên. Đã tự động đăng xuất.',
+            'This account does not have admin privileges. Signed out automatically.',
           ),
         )
       }
@@ -120,8 +120,8 @@ export function AdminAuthGuard({
       setErrorMsg(
         reason === 'forbidden'
           ? t(
-              'Quyền quản trị viên đã bị thu hồi hoặc tài khoản bị khóa (42501). Đã tự động đăng xuất.',
-              'Admin privileges were revoked or account was suspended (42501). Signed out automatically.',
+              'Quyền quản trị viên đã bị thu hồi hoặc tài khoản bị khóa. Đã tự động đăng xuất.',
+              'Admin privileges were revoked or account was suspended. Signed out automatically.',
             )
           : t(
               'Phiên đăng nhập đã hết hạn. Vui lòng xác thực lại.',
@@ -162,8 +162,8 @@ export function AdminAuthGuard({
         ),
       )
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'OTP send failed'
-      setErrorMsg(message)
+      console.debug('[OurneyAdmin Auth Error] signInWithOtp', err)
+      setErrorMsg(formatAdminError(err, lang))
     } finally {
       setSubmitting(false)
     }
@@ -179,9 +179,8 @@ export function AdminAuthGuard({
       setOtp('')
       await verifyAdminSession()
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'OTP verification failed'
-      setErrorMsg(message)
+      console.debug('[OurneyAdmin Auth Error] verifyOtp', err)
+      setErrorMsg(formatAdminError(err, lang))
     } finally {
       setSubmitting(false)
     }
