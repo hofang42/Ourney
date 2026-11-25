@@ -100,12 +100,14 @@ class DataSharingRepository implements SharingRepository {
     String journeyId, {
     required bool enabled,
     bool reset = false,
+    String? approvedTitle,
   }) async {
     await _flushFirst();
-    final token = await social.call('set_public_link', {
+    final token = await social.call('set_readable_public_link', {
       'journey': journeyId,
       'enabled': enabled,
       'reset': reset,
+      if (approvedTitle != null) 'approved_title': approvedTitle,
     }, (json) => json is String ? json : null);
     await _cachePublicToken(journeyId, token);
     social.changed();

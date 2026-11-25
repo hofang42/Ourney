@@ -51,7 +51,7 @@ String wrappedShareText(
   final token = activePublicToken(journey);
   final String? footer;
   if (token != null) {
-    final url = 'https://ourney.tech/p/$token';
+    final url = publicJourneyLink(token);
     footer = hideBrand ? url : 'ourney · $url';
   } else {
     footer = hideBrand ? null : 'ourney · https://ourney.tech';

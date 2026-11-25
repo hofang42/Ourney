@@ -180,6 +180,7 @@ void main() {
         insights: FakeInsightsRepository(testInsights()),
       );
       await _tap(tester, _key('share-link-switch'));
+      await _tap(tester, _key('share-link-neutral'));
       expect(sharing.calls, contains('link:true:false'));
       expect(_key('share-copy-link'), findsOneWidget);
       expect(_key('share-show-counts'), findsOneWidget);
@@ -196,6 +197,7 @@ void main() {
         journeys: _journeys(),
       );
       await _tap(tester, _key('share-link-switch'));
+      await _tap(tester, _key('share-link-neutral'));
       expect(_key('share-under18'), findsOneWidget);
       expect(
         tester.widget<UiSwitchRow>(_key('share-link-switch')).onChanged,
@@ -276,19 +278,19 @@ void main() {
       expect(_key('share-stop'), findsNothing);
     });
 
-    testWidgets('owner: link on shows one ellipsized URL line (U22)', (
+    testWidgets('owner: link on displays the readable URL (U22)', (
       tester,
     ) async {
       await pumpSharing(
         tester,
         location: '/sharing/j1',
-        sharing: FakeSharingRepository(token: 'tok${'0' * 37}'),
+        sharing: FakeSharingRepository(token: '7-ngay-da-lat-abcdefghijklmnop'),
         journeys: _journeys(),
         friends: _friends,
       );
       final url = tester.widget<Text>(_key('share-link-url'));
-      expect(url.data, 'https://ourney.tech/p/tok${'0' * 37}');
-      expect(url.maxLines, 1);
+      expect(url.data, 'https://ourney.tech/p/7-ngay-da-lat-abcdefghijklmnop');
+      expect(url.maxLines, 3);
       expect(url.overflow, TextOverflow.ellipsis);
       expect(
         tester.widget<UiSwitchRow>(_key('share-link-switch')).subtitle,

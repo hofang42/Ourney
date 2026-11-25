@@ -756,12 +756,14 @@ class DataJourneyRepository implements JourneyRepository {
   Future<String?> setPublicLink(
     String journeyId, {
     required bool enabled,
+    String? approvedTitle,
   }) async {
     final remote = ctx.requireRemote();
     await _flushFirst();
-    final token = await remote.rpc('set_public_link', {
+    final token = await remote.rpc('set_readable_public_link', {
       'journey': journeyId,
       'enabled': enabled,
+      if (approvedTitle != null) 'approved_title': approvedTitle,
     });
     final value = token is String ? token : null;
     final local = await (_db.select(

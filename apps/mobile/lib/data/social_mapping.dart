@@ -140,7 +140,7 @@ JourneyShareState shareStateFromJson(Object? json) {
       for (final id in r['hidden_checkin_ids'] as List<dynamic>? ?? const [])
         id as String,
     },
-    publicToken: r['public_token'] as String?,
+    publicToken: (r['public_slug'] ?? r['public_token']) as String?,
   );
 }
 

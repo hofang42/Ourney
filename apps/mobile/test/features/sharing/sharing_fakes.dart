@@ -163,6 +163,7 @@ class FakeSharingRepository implements SharingRepository {
     String journeyId, {
     required bool enabled,
     bool reset = false,
+    String? approvedTitle,
   }) async {
     calls.add('link:$enabled:$reset');
     if (linkError case final e?) throw e;

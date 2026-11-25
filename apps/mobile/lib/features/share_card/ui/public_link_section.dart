@@ -8,7 +8,11 @@ import '../../../app/theme/motion.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../sharing/ui/share_journey_sheet.dart'
-    show isSensitiveTemplate, showSensitiveLinkWarning;
+    show
+        canUsePublicLinkTitle,
+        choosePublicLinkTitle,
+        isSensitiveTemplate,
+        showSensitiveLinkWarning;
 import '../domain/share_card_content.dart';
 import '../l10n/generated/share_card_localizations.dart';
 
@@ -136,15 +140,25 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
   }
 
   Future<void> _create() async {
+    final journey = widget.journey;
+    String? approvedTitle;
     // S10: a sensitive journey asks before it gets a public link.
-    if (isSensitiveTemplate(widget.journey.templateId)) {
+    if (isSensitiveTemplate(journey.templateId)) {
       if (!await showSensitiveLinkWarning(context) || !mounted) return;
+    } else if (canUsePublicLinkTitle(journey)) {
+      final useTitle = await choosePublicLinkTitle(context, journey);
+      if (useTitle == null || !mounted) return;
+      if (useTitle) approvedTitle = journey.title;
     }
     setState(() => _busy = true);
     try {
       final token = await ref
           .read(journeyRepositoryProvider)
-          .setPublicLink(widget.journey.id, enabled: true);
+          .setPublicLink(
+            journey.id,
+            enabled: true,
+            approvedTitle: approvedTitle,
+          );
       if (!mounted) return;
       if (token == null || !isValidPublicToken(token)) {
         throw const OurneyException(OurneyErrorCode.unknown, 'bad token');

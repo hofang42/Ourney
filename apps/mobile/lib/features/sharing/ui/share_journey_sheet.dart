@@ -222,10 +222,20 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
 
   Future<void> _setLink(bool enabled, {bool reset = false}) async {
     final l10n = SharingL10n.of(context);
+    final journey = _journey;
+    String? approvedTitle;
     if (enabled && !reset && _sensitive) {
       if (!await showSensitiveLinkWarning(context) || !mounted) return;
     }
-    if (reset) {
+    if (enabled && canUsePublicLinkTitle(journey)) {
+      final useTitle = await choosePublicLinkTitle(
+        context,
+        journey,
+        reset: reset,
+      );
+      if (useTitle == null || !mounted) return;
+      if (useTitle) approvedTitle = journey.title;
+    } else if (reset) {
       final ok = await confirmSharingAction(
         context,
         title: l10n.sharing_resetConfirmTitle,
@@ -238,7 +248,12 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
     try {
       await ref
           .read(sharingRepositoryProvider)
-          .setPublicLink(_journey.id, enabled: enabled, reset: reset);
+          .setPublicLink(
+            journey.id,
+            enabled: enabled,
+            reset: reset,
+            approvedTitle: approvedTitle,
+          );
     } on Object catch (e) {
       if (!mounted) return;
       if (sharingErrorCode(e) == OurneyErrorCode.forbidden) {
@@ -915,14 +930,14 @@ class _LinkBlock extends ConsumerWidget {
           value: state.linkOn,
           onChanged: under18 || busy ? null : onLink,
         ),
-        // The raw server URL is long: one line, the full link is copied.
+        // Keep the full address visible on narrow screens.
         if (state.linkOn && linkUri != null)
           Padding(
             padding: const EdgeInsets.only(top: UiSpace.sm),
             child: Text(
               linkUri!.toString(),
               key: const ValueKey('share-link-url'),
-              maxLines: 1,
+              maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: UiText.body(size: 12, height: 1.4, color: ui.inkMuted),
             ),
@@ -1083,6 +1098,70 @@ class _LinkBlock extends ConsumerWidget {
       children: children,
     );
   }
+}
+
+bool canUsePublicLinkTitle(Journey journey) =>
+    !isSensitiveTemplate(journey.templateId) && !journey.hideMetricDefault;
+
+/// True includes the shown title, false uses a neutral address, null cancels.
+Future<bool?> choosePublicLinkTitle(
+  BuildContext context,
+  Journey journey, {
+  bool reset = false,
+}) {
+  final l10n = SharingL10n.of(context);
+  return showUiSheet<bool>(
+    context: context,
+    builder: (context) {
+      final ui = context.ui;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            reset
+                ? l10n.sharing_resetConfirmTitle
+                : l10n.sharing_linkTitleChoice,
+            style: UiText.h2(color: ui.ink),
+          ),
+          const SizedBox(height: UiSpace.sm),
+          if (reset) ...[
+            Text(
+              l10n.sharing_resetConfirmBody,
+              style: UiText.body(size: 14, color: ui.ink),
+            ),
+            const SizedBox(height: UiSpace.sm),
+          ],
+          Text(
+            l10n.sharing_linkTitleBody,
+            style: UiText.body(size: 14, color: ui.ink),
+          ),
+          const SizedBox(height: UiSpace.sm),
+          Text(
+            journey.title,
+            style: UiText.body(size: 14, height: 1.4, color: ui.ink),
+          ),
+          const SizedBox(height: UiSpace.lg),
+          UiButton(
+            key: const ValueKey('share-link-neutral'),
+            label: l10n.sharing_linkUseNeutral,
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          const SizedBox(height: UiSpace.sm),
+          UiButton.secondary(
+            key: const ValueKey('share-link-use-title'),
+            label: l10n.sharing_linkUseTitle,
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+          const SizedBox(height: UiSpace.sm),
+          UiButton.ghost(
+            label: MaterialLocalizations.of(context).cancelButtonLabel,
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      );
+    },
+  );
 }
 
 /// Warm warning before a sensitive journey gets a public link (S10, R2-06).

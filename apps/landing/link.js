@@ -271,7 +271,9 @@
 
   /* --- 6. Parse & Validate Route Parameters (/f/:token, /j/:code, /join/:code, /p/:token) --- */
   const FRIEND_TOKEN_RE = /^[a-z0-9]{12}$/;
-  const TOKEN_RE = /^[A-Za-z0-9_-]{1,64}$/;
+  const LEGACY_JOURNEY_TOKEN_RE = /^[a-z0-9]{32,64}$/;
+  const JOURNEY_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*-[a-z2-7]{16}$/;
+  const MAX_JOURNEY_SLUG_LENGTH = 40;
   const SQUAD_CODE_RE = /^[A-Z0-9]{8}$/;
 
   function parseRoute() {
@@ -322,7 +324,8 @@
     }
 
     if (kind === 'journey') {
-      const valid = TOKEN_RE.test(rawParam);
+      const valid = LEGACY_JOURNEY_TOKEN_RE.test(rawParam)
+        || (rawParam.length <= MAX_JOURNEY_SLUG_LENGTH && JOURNEY_SLUG_RE.test(rawParam));
       return {
         kind: 'journey',
         valid,
@@ -1724,7 +1727,7 @@
     const { url, headers } = getPublicJourneyRequest();
 
     try {
-      const res = await fetch(url, { method: 'GET', headers });
+      const res = await fetch(url, { method: 'GET', headers, cache: 'no-store' });
       if (res.status === 404 || res.status === 400 || res.status === 410) {
         showJourneyState('expired');
         return;

@@ -11,11 +11,11 @@ function assertEquals(actual: unknown, expected: unknown, field: string): void {
   }
 }
 
-Deno.test("public-journey redacts metrics and the follow frame on an existing link", async () => {
+Deno.test("public-journey resolves both links with the same privacy rules and revokes both", async () => {
   const baseUrl = "https://public-journey.example.test";
   const publicToken = "a".repeat(40);
-  const publicUrl =
-    `${baseUrl}/functions/v1/public-journey?token=${publicToken}`;
+  const publicSlug = "7-ngay-da-lat-k3f2x7d6yk3gp5tb";
+  const recordedViewerKeys: string[] = [];
   const journeyId = "11111111-1111-4111-8111-111111111111";
   const ownerId = "22222222-2222-4222-8222-222222222222";
   const checkInId = "33333333-3333-4333-8333-333333333333";
@@ -26,7 +26,8 @@ Deno.test("public-journey redacts metrics and the follow frame on an existing li
   const journey = {
     id: journeyId,
     owner_id: ownerId,
-    public_token: publicToken,
+    public_token: publicToken as string | null,
+    public_slug: publicSlug,
     kind: "solo",
     template_id: "custom",
     title: "Daily log",
@@ -73,10 +74,13 @@ Deno.test("public-journey redacts metrics and the follow frame on an existing li
       detectSessionInUrl: false,
     },
     global: {
-      fetch: (input, init) => {
-        const url = new URL(new Request(input, init).url);
+      fetch: async (input, init) => {
+        const request = new Request(input, init);
+        const url = new URL(request.url);
         if (url.pathname === "/rest/v1/rpc/record_journey_view") {
-          return Promise.resolve(Response.json(null));
+          const { p_viewer_key } = await request.json();
+          recordedViewerKeys.push(p_viewer_key);
+          return Response.json(null);
         }
 
         const table = url.pathname.slice("/rest/v1/".length);
@@ -85,12 +89,25 @@ Deno.test("public-journey redacts metrics and the follow frame on an existing li
         if (!rows || !columns) {
           throw new Error(`Unexpected Supabase request: ${url}`);
         }
+        let matchingRows = rows;
         if (table === "journeys") {
+          const slugFilter = url.searchParams.get("public_slug");
+          const tokenFilter = url.searchParams.get("public_token");
           assertEquals(
-            url.searchParams.get("public_token"),
-            `eq.${journey.public_token}`,
-            "token filter",
+            url.searchParams.get("deleted_at"),
+            "is.null",
+            "deleted journey filter",
           );
+          if (slugFilter) {
+            assertEquals(tokenFilter, "not.is.null", "active token filter");
+            matchingRows = rows.filter((row) =>
+              slugFilter === `eq.${row.public_slug}` && row.public_token !== null
+            );
+          } else {
+            matchingRows = rows.filter((row) =>
+              tokenFilter === `eq.${row.public_token}`
+            );
+          }
         }
         if (table === "memberships") {
           assertEquals(
@@ -99,21 +116,29 @@ Deno.test("public-journey redacts metrics and the follow frame on an existing li
             "membership filter",
           );
         }
-        return Promise.resolve(
-          Response.json(
-            rows.map((row) =>
-              Object.fromEntries(columns.map((column) => [column, row[column]]))
-            ),
+        return Response.json(
+          matchingRows.map((row) =>
+            Object.fromEntries(columns.map((column) => [column, row[column]]))
           ),
         );
       },
     },
   });
   const deps = { createAdmin: () => client, viewSalt: "" };
+  const openLink = (identifier: string) =>
+    handle(
+      new Request(`${baseUrl}/functions/v1/public-journey?token=${identifier}`),
+      deps,
+    );
 
-  for (const hideMetric of [false, true]) {
+  for (const [identifier, hideMetric] of [
+    [publicToken, false],
+    [publicSlug, false],
+    [publicToken, true],
+    [publicSlug, true],
+  ] as const) {
     membership.hide_metric = hideMetric;
-    const response = await handle(new Request(publicUrl), deps);
+    const response = await openLink(identifier);
     assertEquals(response.status, 200, "status");
     assertEquals(
       response.headers.get("Cache-Control"),
@@ -121,7 +146,10 @@ Deno.test("public-journey redacts metrics and the follow frame on an existing li
       "cache policy",
     );
 
-    const body = await response.json();
+    const json = await response.text();
+    assertEquals(json.includes(publicToken), false, "token stays out of payload");
+    assertEquals(json.includes(publicSlug), false, "slug stays out of payload");
+    const body = JSON.parse(json);
     assertEquals(body.journey.title, journey.title, "journey title");
     assertEquals(body.check_ins.length, 1, "visible check-ins");
     assertEquals(body.check_ins[0].checkin_id, checkInId, "check-in ID");
@@ -156,5 +184,49 @@ Deno.test("public-journey redacts metrics and the follow frame on an existing li
       hideMetric ? null : metricUnit,
       "follow frame metric unit",
     );
+  }
+
+  assertEquals(recordedViewerKeys.length, 4, "recorded view count");
+  assertEquals(
+    recordedViewerKeys[0],
+    recordedViewerKeys[1],
+    "legacy and readable links deduplicate the same viewer",
+  );
+
+  for (const identifier of ["b".repeat(40), `missing-${"b".repeat(16)}`]) {
+    const response = await openLink(identifier);
+    assertEquals(response.status, 404, "unknown link status");
+    assertEquals((await response.json()).error, "not_found", "unknown link body");
+  }
+
+  journey.public_token = null;
+  for (const identifier of [publicToken, publicSlug]) {
+    const response = await openLink(identifier);
+    assertEquals(response.status, 404, "revoked link status");
+    assertEquals((await response.json()).error, "not_found", "revoked link body");
+  }
+  assertEquals(recordedViewerKeys.length, 4, "failed links do not record views");
+});
+
+Deno.test("public-journey rejects missing and malformed identifiers before lookup", async () => {
+  const baseUrl = "https://public-journey.example.test/functions/v1/public-journey";
+  const deps = {
+    createAdmin: () => {
+      throw new Error("Invalid requests must not create an admin client");
+    },
+  };
+  const invalidQueries = [
+    "",
+    "?token=",
+    "?token=too-short",
+    `?token=title-${"0".repeat(16)}`,
+    `?token=${"a".repeat(24)}-${"b".repeat(16)}`,
+    `?token=${"a".repeat(40)}%0A`,
+  ];
+
+  for (const query of invalidQueries) {
+    const response = await handle(new Request(`${baseUrl}${query}`), deps);
+    assertEquals(response.status, 404, "invalid link status");
+    assertEquals((await response.json()).error, "not_found", "invalid link body");
   }
 });

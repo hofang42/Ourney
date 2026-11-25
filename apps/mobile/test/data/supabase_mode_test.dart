@@ -654,10 +654,11 @@ void main() {
     );
   });
 
-  test('RPC argument names follow 0004_rpc.sql', () async {
+  test('RPC argument names follow the server signatures', () async {
     final j = await layer.journeys.create(soloDraft());
-    remote.rpcHandlers['set_public_link'] = (_) => 'a' * 40;
-    expect(await layer.journeys.setPublicLink(j.id, enabled: true), 'a' * 40);
+    const slug = 'journey-abcdefghijklmnop';
+    remote.rpcHandlers['set_readable_public_link'] = (_) => slug;
+    expect(await layer.journeys.setPublicLink(j.id, enabled: true), slug);
     expect(
       (await layer.journeys.watch(j.id).first)!.visibility,
       JourneyVisibility.link,
@@ -666,7 +667,10 @@ void main() {
     await layer.safety.block(other);
     await layer.groups.leave(j.id);
     final rpcs = {for (final c in remote.callsOf('rpc')) c.target: c.args};
-    expect(rpcs['set_public_link'], {'journey': j.id, 'enabled': true});
+    expect(rpcs['set_readable_public_link'], {
+      'journey': j.id,
+      'enabled': true,
+    });
     expect(rpcs['report_content'], {
       'p_checkin': 'c',
       'p_user': null,

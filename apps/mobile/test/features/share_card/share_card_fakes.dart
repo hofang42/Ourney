@@ -23,6 +23,7 @@ final testNow = DateTime.utc(2026, 10, 16, 5);
 
 /// A valid `[a-z0-9]{40}` public token.
 final testToken = 'tok${'0' * 37}';
+const testSlug = 'doc-sach-abcdefghijklmnop';
 
 /// A value plus a broadcast of its changes; new listeners get the current
 /// value first (like the real repositories' local DB streams).
@@ -152,6 +153,7 @@ class FakeJourneyRepository implements JourneyRepository {
   final Map<String, _Live<Membership?>> _memberships;
 
   final List<String> calls = [];
+  String? lastApprovedTitle;
 
   @override
   Stream<List<Journey>> watchArchived() => Stream.value(const []);
@@ -185,13 +187,15 @@ class FakeJourneyRepository implements JourneyRepository {
   Future<String?> setPublicLink(
     String journeyId, {
     required bool enabled,
+    String? approvedTitle,
   }) async {
     calls.add('setPublicLink:$journeyId:$enabled');
+    lastApprovedTitle = approvedTitle;
     if (linkError case final e?) {
       linkError = null;
       throw e;
     }
-    final token = enabled ? testToken : null;
+    final token = enabled ? testSlug : null;
     if (echoLinkChanges) {
       _journeys.set([
         for (final j in _journeys.value)

@@ -114,6 +114,19 @@ class SharingL10nVi extends SharingL10n {
       'Liên kết cũ sẽ không mở được nữa. Số liệu đã đếm vẫn giữ.';
 
   @override
+  String get sharing_linkTitleChoice => 'Chọn địa chỉ liên kết';
+
+  @override
+  String get sharing_linkTitleBody =>
+      'Ai thấy đường dẫn cũng có thể đọc tên hành trình trong đó. Nếu tên có thông tin riêng tư, hãy dùng địa chỉ trung tính.';
+
+  @override
+  String get sharing_linkUseNeutral => 'Dùng địa chỉ trung tính';
+
+  @override
+  String get sharing_linkUseTitle => 'Dùng tên hành trình';
+
+  @override
   String get sharing_linkHelper =>
       'Ai có liên kết cũng có thể xem và làm theo hành trình.';
 

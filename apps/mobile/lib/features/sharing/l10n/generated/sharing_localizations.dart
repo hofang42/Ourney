@@ -272,6 +272,30 @@ abstract class SharingL10n {
   /// **'Liên kết cũ sẽ không mở được nữa. Số liệu đã đếm vẫn giữ.'**
   String get sharing_resetConfirmBody;
 
+  /// Asks the owner to choose between a neutral URL and one containing the journey title.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn địa chỉ liên kết'**
+  String get sharing_linkTitleChoice;
+
+  /// Explains that title text is visible in the URL itself.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ai thấy đường dẫn cũng có thể đọc tên hành trình trong đó. Nếu tên có thông tin riêng tư, hãy dùng địa chỉ trung tính.'**
+  String get sharing_linkTitleBody;
+
+  /// Creates a public link with a neutral prefix.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dùng địa chỉ trung tính'**
+  String get sharing_linkUseNeutral;
+
+  /// Approves using the shown journey title in the public link.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dùng tên hành trình'**
+  String get sharing_linkUseTitle;
+
   /// Under the link actions.
   ///
   /// In vi, this message translates to:

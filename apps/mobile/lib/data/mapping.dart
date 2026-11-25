@@ -41,7 +41,7 @@ JourneysCompanion journeyFromRemote(RemoteRow r) => JourneysCompanion(
   status: Value(JourneyStatus.fromWire(r['status'] as String).wireName),
   inviteCode: Value(r['invite_code'] as String?),
   maxMembers: Value((r['max_members'] as num?)?.toInt() ?? 10),
-  publicToken: Value(r['public_token'] as String?),
+  publicToken: Value((r['public_slug'] ?? r['public_token']) as String?),
   // Absent before v1.3 (0006): every older journey is lived.
   origin: Value(
     JourneyOrigin.fromWire(r['origin'] as String? ?? 'live').wireName,

@@ -186,11 +186,14 @@ abstract interface class JourneyRepository {
   /// via the Storage API (own-objects delete policy).
   Future<void> delete(String journeyId);
 
-  /// `set_public_link` (solo journeys only). `enabled: true` creates or
-  /// rotates the token (old links stop working) and returns it; `false`
-  /// revokes it and returns null. Throws `invalid` for group journeys,
-  /// `forbidden`, `ended` (archived), `notFound`.
-  Future<String?> setPublicLink(String journeyId, {required bool enabled});
+  /// Enables a public link for a finished journey and returns its readable
+  /// slug. Pass [approvedTitle] only after the owner agrees to put that title
+  /// in a new URL. Disabling revokes both URL forms and returns null.
+  Future<String?> setPublicLink(
+    String journeyId, {
+    required bool enabled,
+    String? approvedTitle,
+  });
 
   /// The caller's own `memberships` row (role, status, joinedAt, prefs).
   /// Use `joinedAt` with `computeMemberStreak` / `effectiveStreakStart`.

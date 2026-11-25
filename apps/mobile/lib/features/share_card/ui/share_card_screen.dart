@@ -679,7 +679,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       );
       final token = activePublicToken(journey);
       final link = token != null
-          ? 'https://ourney.tech/p/$token'
+          ? publicJourneyLink(token)
           : 'https://ourney.tech';
       await sharer.shareImage(
         path: file.path,

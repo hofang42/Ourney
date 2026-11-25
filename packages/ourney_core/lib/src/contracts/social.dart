@@ -468,9 +468,14 @@ abstract interface class SharingRepository {
 
   /// Turns the public link on / off or rotates it ("Reset link"). Only for
   /// ended journeys or imported ones on the shelf (S9) → else `invalid`;
-  /// `forbidden` under 18 (R2-07) or for non-owners. Returns the token.
-  Future<String?> setPublicLink(String journeyId,
-      {required bool enabled, bool reset = false});
+  /// `forbidden` under 18 (R2-07) or for non-owners. Returns the readable slug.
+  /// [approvedTitle] is the exact title the owner agreed to put in a new URL.
+  Future<String?> setPublicLink(
+    String journeyId, {
+    required bool enabled,
+    bool reset = false,
+    String? approvedTitle,
+  });
 
   /// Hub → Shared with me, newest first (friend grants + saved, S8, S26).
   Stream<List<SharedJourneySummary>> watchSharedWithMe();

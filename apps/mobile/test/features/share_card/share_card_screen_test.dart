@@ -650,6 +650,7 @@ void main() {
       expect(h.journeys.calls, isEmpty);
       await _tap(tester, _key('share-warning-confirm'));
       expect(h.journeys.calls, ['setPublicLink:j1:true']);
+      expect(h.journeys.lastApprovedTitle, isNull);
     });
 
     testWidgets('create & copy, then revoke', (tester) async {
@@ -658,9 +659,12 @@ void main() {
       expect(_key('share-card-link'), findsOneWidget);
 
       await _tap(tester, _key('share-card-link-create'));
+      expect(h.journeys.calls, isEmpty);
+      await _tap(tester, _key('share-link-use-title'));
       expect(h.journeys.calls, ['setPublicLink:j1:true']);
-      final expected = publicJourneyLink(testToken);
-      expect(expected, 'https://ourney.tech/p/$testToken');
+      expect(h.journeys.lastApprovedTitle, j.title);
+      final expected = publicJourneyLink(testSlug);
+      expect(expected, 'https://ourney.tech/p/$testSlug');
       expect(h.clipboard, [expected]);
       expect(find.text('Đã sao chép link'), findsOneWidget);
       expect(
@@ -701,6 +705,7 @@ void main() {
       final h = await pumpShare(tester, journey: j, backend: true);
       h.journeys.echoLinkChanges = false;
       await _tap(tester, _key('share-card-link-create'));
+      await _tap(tester, _key('share-link-neutral'));
       expect(_key('share-card-link-url'), findsOneWidget);
       await _tap(tester, _key('share-card-link-revoke'));
       await _tap(tester, _key('share-card-link-revoke-confirm'));
@@ -717,6 +722,7 @@ void main() {
       );
       h.journeys.linkError = const OurneyException(OurneyErrorCode.ended);
       await _tap(tester, _key('share-card-link-create'));
+      await _tap(tester, _key('share-link-neutral'));
       expect(h.clipboard, isEmpty);
       expect(
         find.text("This journey is archived, so it can't get a link."),

@@ -287,8 +287,11 @@ class FakeJourneyRepository implements JourneyRepository {
   }
 
   @override
-  Future<String?> setPublicLink(String journeyId, {required bool enabled}) =>
-      throw UnimplementedError();
+  Future<String?> setPublicLink(
+    String journeyId, {
+    required bool enabled,
+    String? approvedTitle,
+  }) => throw UnimplementedError();
 
   @override
   Future<void> updateMyMembership(
