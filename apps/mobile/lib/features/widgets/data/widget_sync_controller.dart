@@ -28,6 +28,7 @@ import '../../reminders/data/reminder_scheduler.dart'
     show reminderDeviceTimezoneProvider;
 import '../../reminders/data/reminder_settings.dart';
 import '../../safety/data/safety_providers.dart' show hiddenCheckInIdsProvider;
+import '../../update/data/update_providers.dart';
 import '../domain/live_activity_planner.dart';
 import '../domain/widget_snapshot.dart';
 import 'widget_bridge_gateway.dart';
@@ -80,6 +81,7 @@ class WidgetSyncController {
   bool _pendingConsumeNativeState = false;
   bool _pendingForceSync = false;
   bool _disposed = false;
+  bool _paused = false;
   int _epoch = 0;
   bool _nativeClearedForSignedOut = false;
 
@@ -95,9 +97,16 @@ class WidgetSyncController {
   WidgetThumbPreparer get _thumbPreparer =>
       _ref.read(widgetThumbPreparerProvider);
 
+  void _setPaused(bool paused) {
+    _paused = paused;
+    if (!paused) return;
+    _epoch++;
+    _debounceTimer?.cancel();
+  }
+
   /// Schedules a coalesced sync after [debounceDuration] (`250ms` by default).
   void scheduleSync({bool consumeNativeState = false}) {
-    if (_disposed) return;
+    if (_disposed || _paused) return;
     if (consumeNativeState) _pendingConsumeNativeState = true;
     _debounceTimer?.cancel();
     _debounceTimer = Timer(debounceDuration, () {
@@ -113,7 +122,7 @@ class WidgetSyncController {
     bool consumeNativeState = false,
     bool force = false,
   }) {
-    if (_disposed) return;
+    if (_disposed || _paused) return;
     if (consumeNativeState) _pendingConsumeNativeState = true;
     if (force) _pendingForceSync = true;
     if (_microtaskScheduled) return;
@@ -130,11 +139,8 @@ class WidgetSyncController {
 
   /// Immediately executes a snapshot + Live Activity sync, cancelling any
   /// pending debounce timer. Serialized so concurrent callers never race.
-  Future<void> syncNow({
-    bool consumeNativeState = false,
-    bool force = false,
-  }) {
-    if (_disposed) return Future.value();
+  Future<void> syncNow({bool consumeNativeState = false, bool force = false}) {
+    if (_disposed || _paused) return Future.value();
     if (consumeNativeState) _pendingConsumeNativeState = true;
     final effectiveForce = force || _pendingForceSync;
     _pendingForceSync = false;
@@ -593,6 +599,11 @@ class WidgetSyncController {
 
 final widgetSyncControllerProvider = Provider<WidgetSyncController>((ref) {
   final controller = WidgetSyncController(ref);
+  controller._setPaused(ref.read(appUpdateWorkPausedProvider));
+  ref.listen(
+    appUpdateWorkPausedProvider,
+    (_, forced) => controller._setPaused(forced),
+  );
   ref.onDispose(controller.dispose);
   return controller;
 });

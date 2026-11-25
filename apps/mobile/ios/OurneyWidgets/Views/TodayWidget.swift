@@ -12,19 +12,22 @@ public struct OurneyWidgetEntry: TimelineEntry {
   public let state: WidgetInteractiveState
   public let pinnedId: String?
   public let isPreview: Bool
+  public let appGroupAvailable: Bool
 
   public init(
     date: Date,
     snapshot: WidgetSnapshot?,
     state: WidgetInteractiveState = WidgetInteractiveState(),
     pinnedId: String? = nil,
-    isPreview: Bool = false
+    isPreview: Bool = false,
+    appGroupAvailable: Bool = true
   ) {
     self.date = date
     self.snapshot = snapshot
     self.state = state
     self.pinnedId = WidgetSnapshot.normalizedPinnedId(pinnedId)
     self.isPreview = isPreview
+    self.appGroupAvailable = appGroupAvailable
   }
 }
 
@@ -36,50 +39,46 @@ public struct OurneyTimelineProvider: TimelineProvider {
     pinnedId: String? = nil
   ) -> OurneyWidgetEntry {
     let now = Date()
-    let state = WidgetSnapshotStore.loadState()
-    let normalizedPinned = WidgetSnapshot.normalizedPinnedId(pinnedId)
-    if let loaded = WidgetSnapshotStore.loadSnapshot(at: now) {
+    let sharedRoot = WidgetSnapshotStore.sharedRootDirectory()
+    if let sharedRoot, let loaded = WidgetSnapshotStore.loadSnapshot(at: now, rootDirectory: sharedRoot) {
       return OurneyWidgetEntry(
         date: now,
         snapshot: loaded,
-        state: state,
-        pinnedId: normalizedPinned,
+        state: WidgetSnapshotStore.loadState(rootDirectory: sharedRoot),
+        pinnedId: pinnedId,
         isPreview: isPreview
       )
     } else if isPreview {
       return OurneyWidgetEntry(
         date: now,
         snapshot: WidgetPreviewFixtures.sampleTodaySnapshot,
-        state: state,
-        pinnedId: normalizedPinned,
+        pinnedId: pinnedId,
         isPreview: true
       )
     } else {
       return OurneyWidgetEntry(
         date: now,
         snapshot: nil,
-        state: state,
-        pinnedId: normalizedPinned,
-        isPreview: false
+        pinnedId: pinnedId,
+        appGroupAvailable: sharedRoot != nil
       )
     }
   }
 
   public static func buildTimeline(pinnedId: String? = nil) -> Timeline<OurneyWidgetEntry> {
     let now = Date()
-    let state = WidgetSnapshotStore.loadState()
-    let normalizedPinned = WidgetSnapshot.normalizedPinnedId(pinnedId)
-    guard let baseSnapshot = WidgetSnapshotStore.loadSnapshot(at: now) else {
+    let sharedRoot = WidgetSnapshotStore.sharedRootDirectory()
+    guard let sharedRoot, let baseSnapshot = WidgetSnapshotStore.loadSnapshot(at: now, rootDirectory: sharedRoot) else {
       let emptyEntry = OurneyWidgetEntry(
         date: now,
         snapshot: nil,
-        state: state,
-        pinnedId: normalizedPinned,
-        isPreview: false
+        pinnedId: pinnedId,
+        appGroupAvailable: sharedRoot != nil
       )
       let nextReload = now.addingTimeInterval(3600)
       return Timeline(entries: [emptyEntry], policy: .after(nextReload))
     }
+    let state = WidgetSnapshotStore.loadState(rootDirectory: sharedRoot)
 
     // Build up to 4 zero-budget scheduled entries (now, 18:00 evening cue, 21:00 streak alert, 00:00 midnight rollover).
     let dates = baseSnapshot.scheduledTimelineDates(from: now)
@@ -89,7 +88,7 @@ public struct OurneyTimelineProvider: TimelineProvider {
         date: entryDate,
         snapshot: evaluated,
         state: state,
-        pinnedId: normalizedPinned,
+        pinnedId: pinnedId,
         isPreview: false
       )
     }
@@ -153,7 +152,8 @@ public struct TodayWidgetEntryView: View {
     let cardState = WidgetSnapshot.resolveTodayCardState(
       snapshot: snapshot,
       pinnedId: entry.pinnedId,
-      state: entry.state
+      state: entry.state,
+      appGroupAvailable: entry.appGroupAvailable
     )
     let featured: WidgetJourneyItem? = {
       if case .ready(let journey) = cardState { return journey }
@@ -175,6 +175,8 @@ public struct TodayWidgetEntryView: View {
           : OurneyDeepLinks.capture(journeyId: journey.id)
       case .unsynced, .signedOut:
         return OurneyDeepLinks.syncJourneys
+      case .appGroupUnavailable:
+        return OurneyDeepLinks.journeys
       case .noJourneys:
         return OurneyDeepLinks.newJourney
       }
@@ -211,6 +213,8 @@ public struct TodayWidgetEntryView: View {
             )
           }
         }
+      case .appGroupUnavailable:
+        AppGroupUnavailableWidgetView(locale: locale, theme: theme, isSmall: family == .systemSmall)
       case .unsynced:
         OurneyEmptyWidgetView(
           iconName: "sparkle",
@@ -866,6 +870,24 @@ struct TodayPhaseStatusBadge: View {
         .lineLimit(1)
         .minimumScaleFactor(0.75)
     }
+  }
+}
+
+struct AppGroupUnavailableWidgetView: View {
+  let locale: String
+  let theme: OurneyWidgetTheme
+  let isSmall: Bool
+
+  var body: some View {
+    OurneyEmptyWidgetView(
+      iconName: "lock",
+      title: WidgetL10n.appGroupUnavailableTitle(locale: locale),
+      subtitle: WidgetL10n.appGroupUnavailableSubtitle(locale: locale),
+      ctaLabel: WidgetL10n.openOurney(locale: locale),
+      destination: OurneyDeepLinks.journeys,
+      theme: theme,
+      isSmall: isSmall
+    )
   }
 }
 

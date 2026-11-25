@@ -68,7 +68,7 @@ class WidgetCapabilities {
       widgets: raw['widgets'] == true,
       liveActivity: raw['liveActivity'] == true,
       promotedLiveUpdates: raw['promotedLiveUpdates'] == true,
-      appGroup: raw['appGroup'] == true,
+      appGroup: (raw['appGroupAvailable'] ?? raw['appGroup']) == true,
     );
   }
 

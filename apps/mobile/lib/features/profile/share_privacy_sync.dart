@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/providers.dart';
 import '../share_card/domain/share_card_content.dart';
+import '../update/data/update_providers.dart';
 import 'settings_providers.dart';
 
 Future<void>? _pendingPush;
@@ -243,6 +244,7 @@ Future<void> healSharePrivacy(ProviderContainer container) async {
 /// catches newly classified journeys after a creation, edit or server pull.
 Future<void> reconcileHiddenWeight(ProviderContainer container) {
   try {
+    if (container.read(appUpdateWorkPausedProvider)) return Future.value();
     if (!container.read(hideWeightOnShareProvider)) return Future.value();
   } on Object {
     return Future.value();
@@ -261,6 +263,7 @@ Future<void> _healFailedSharePrivacy(ProviderContainer container) async {
   final JourneyRepository repo;
   final String? userId;
   try {
+    if (container.read(appUpdateWorkPausedProvider)) return;
     prefs = container.read(sharedPreferencesProvider);
     repo = container.read(journeyRepositoryProvider);
     userId = container.read(currentUserIdProvider);
@@ -271,6 +274,7 @@ Future<void> _healFailedSharePrivacy(ProviderContainer container) async {
   if (userId == null || pending.isEmpty) return;
   String? current() {
     try {
+      if (container.read(appUpdateWorkPausedProvider)) return null;
       return container.read(currentUserIdProvider);
     } on Object {
       return null;
@@ -484,7 +488,8 @@ Future<void> _pushSharePrivacyToMemberships(
 
   bool sameAccount() {
     try {
-      return container.read(currentUserIdProvider) == userId;
+      return (!reconcile || !container.read(appUpdateWorkPausedProvider)) &&
+          container.read(currentUserIdProvider) == userId;
     } on Object {
       return false;
     }

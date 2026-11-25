@@ -33,7 +33,8 @@ public struct SquadWidgetEntryView: View {
     let themeMode = snapshot?.themeMode ?? "system"
     let cardState = WidgetSnapshot.resolveSquadCardState(
       snapshot: snapshot,
-      pinnedId: entry.pinnedId
+      pinnedId: entry.pinnedId,
+      appGroupAvailable: entry.appGroupAvailable
     )
     let squad: WidgetSquadItem? = {
       if case .ready(let item) = cardState { return item }
@@ -52,6 +53,8 @@ public struct SquadWidgetEntryView: View {
         return OurneyDeepLinks.group(id: item.journeyId)
       case .unsynced, .signedOut:
         return OurneyDeepLinks.syncJourneys
+      case .appGroupUnavailable:
+        return OurneyDeepLinks.journeys
       case .soloOnly, .noSquads:
         return OurneyDeepLinks.groups
       }
@@ -67,6 +70,8 @@ public struct SquadWidgetEntryView: View {
             SquadMediumView(snapshot: snap, squad: item, theme: theme)
           }
         }
+      case .appGroupUnavailable:
+        AppGroupUnavailableWidgetView(locale: locale, theme: theme, isSmall: false)
       case .unsynced:
         OurneyEmptyWidgetView(
           iconName: "sparkle",

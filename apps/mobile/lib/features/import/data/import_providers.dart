@@ -8,6 +8,7 @@ import '../../checkin/photo_compressor.dart';
 import '../../journeys/data/journeys_providers.dart';
 import '../../profile/share_privacy_sync.dart';
 import '../../reminders/data/reminder_scheduler.dart';
+import '../../update/data/update_providers.dart';
 import 'import_files.dart';
 import 'import_job.dart';
 import 'import_job_runner.dart';
@@ -30,6 +31,7 @@ final importJobRunnerProvider = Provider<ImportJobRunner>((ref) {
     },
     discardFiles: (paths) => ref.read(draftFilesProvider).discard(paths),
     now: () => ref.read(journeysClockProvider).now(),
+    policyPaused: () => ref.read(appUpdateWorkPausedProvider),
     onJourneyCreated: (journey) async {
       // The Settings share-privacy switches apply to the new membership.
       unawaited(applySharePrivacyToJourney(ref.read, journey.id));
@@ -55,6 +57,7 @@ final importJobProvider = StreamProvider.autoDispose.family<ImportJob?, String>(
 /// Finishes jobs a kill interrupted. Watched once from the app root; it only
 /// runs for a signed-in person with a server (retell needs one).
 final importResumeProvider = Provider<void>((ref) {
+  if (ref.watch(appUpdateWorkPausedProvider)) return;
   if (ref.watch(appConfigProvider).localOnly) return;
   if (ref.watch(currentUserIdProvider) == null) return;
   final ImportJobRunner runner;

@@ -68,6 +68,7 @@ class ImportJobRunner {
     required this.submit,
     required this.discardFiles,
     required this.now,
+    this.policyPaused,
     this.onJourneyCreated,
     this.onFinished,
   });
@@ -84,12 +85,18 @@ class ImportJobRunner {
   /// Deletes compressed copies (never throws).
   final Future<void> Function(Iterable<String> paths) discardFiles;
   final DateTime Function() now;
+  final bool Function()? policyPaused;
   final Future<void> Function(Journey journey)? onJourneyCreated;
   final Future<void> Function(ImportJob job)? onFinished;
 
   /// Ids of the jobs being run right now.
   final ValueNotifier<Set<String>> active = ValueNotifier(const {});
   final Set<String> _cancelled = {};
+  final _running = <String, Future<ImportRunResult>>{};
+  Future<void> _resumeTail = Future.value();
+
+  bool get _policyPaused => policyPaused?.call() ?? false;
+  static const _pausedResult = ImportRunResult(ImportRunEnd.paused);
 
   bool isRunning(String jobId) => active.value.contains(jobId);
 
@@ -130,10 +137,24 @@ class ImportJobRunner {
 
   /// Finishes (or tidies) every stored job; called at app launch and when the
   /// signed-in account changes.
-  Future<void> resumeAll() async {
+  Future<void> resumeAll() {
+    final next = _resumeTail.then((_) => _resumeAll());
+    _resumeTail = next.then((_) {}, onError: (Object _, StackTrace _) {});
+    return next;
+  }
+
+  Future<void> _resumeAll() async {
+    if (_policyPaused) return;
+    // The gate may have cleared while a current step was settling. Let it
+    // checkpoint before deciding which jobs still need to resume.
+    await Future.wait([
+      for (final run in _running.values)
+        run.then((_) {}, onError: (Object _, StackTrace _) {}),
+    ]);
     final me = currentUserId();
-    if (me == null) return;
+    if (_policyPaused || me == null) return;
     for (final job in await store.unfinished()) {
+      if (_policyPaused || currentUserId() != me) return;
       if (isRunning(job.id)) continue;
       if (job.ownerId != me) {
         // Another account's leftover: never run, never kept.
@@ -152,7 +173,7 @@ class ImportJobRunner {
         await run(job.id);
       }
     }
-    await sweepOrphans();
+    if (!_policyPaused) await sweepOrphans();
   }
 
   /// Deletes job folders that no stored job (and no job being stored or
@@ -169,16 +190,19 @@ class ImportJobRunner {
   }
 
   /// Runs [jobId] from wherever it stopped (also clears a pause).
-  Future<ImportRunResult> run(String jobId) async {
-    if (isRunning(jobId)) return const ImportRunResult(ImportRunEnd.finished);
+  Future<ImportRunResult> run(String jobId) {
+    if (_policyPaused) return Future.value(_pausedResult);
+    if (isRunning(jobId)) {
+      return Future.value(const ImportRunResult(ImportRunEnd.finished));
+    }
     _cancelled.remove(jobId);
     _setActive(jobId, on: true);
-    try {
-      return await _run(jobId);
-    } finally {
+    final run = _run(jobId).whenComplete(() {
+      _running.remove(jobId);
       _cancelled.remove(jobId);
       _setActive(jobId, on: false);
-    }
+    });
+    return _running[jobId] = run;
   }
 
   bool _stop(String id) => _cancelled.contains(id);
@@ -206,12 +230,14 @@ class ImportJobRunner {
     var job = await store.get(id);
     if (job == null) return const ImportRunResult(ImportRunEnd.finished);
     final owner = job.ownerId;
+    if (_policyPaused) return _pausedResult;
     if (await _own(id, owner) == null) return _lost(id, owner);
     if (job.paused) await store.setPaused(id, paused: false);
 
     if (job.phase == ImportPhase.preparing) {
       for (final photo in job.photos) {
         if (_stop(id)) return _pausePreparing(id);
+        if (_policyPaused) return _pausePreparing(id, userPaused: false);
         if (photo.state == ImportPhotoState.saved || photo.prepared) continue;
         if (photo.state == ImportPhotoState.failed &&
             photo.failure == ImportFailure.unreadable &&
@@ -219,12 +245,14 @@ class ImportJobRunner {
           continue; // nothing to read
         }
         if (await _own(id, owner) == null) return _lost(id, owner);
+        if (_policyPaused) return _pausePreparing(id, userPaused: false);
         await _prepare(id, photo);
       }
       final now = await _own(id, owner);
       if (now == null) return _lost(id, owner);
       job = now;
       if (_stop(id)) return _pausePreparing(id);
+      if (_policyPaused) return _pausedResult;
       if (!job.photos.any((p) => p.prepared)) {
         // Nothing usable: the photos stay marked failed, no journey is made.
         return const ImportRunResult(ImportRunEnd.finished);
@@ -235,7 +263,9 @@ class ImportJobRunner {
 
     if (job.phase == ImportPhase.creating) {
       if (await _own(id, owner) == null) return _lost(id, owner);
+      if (_policyPaused) return _pausedResult;
       await store.setCreateFailure(id, null);
+      if (_policyPaused) return _pausedResult;
       // A zone the database does not know is refused for good: say so without
       // asking the server (the person can not fix it by trying again).
       if (job.timezone.isNotEmpty && !isKnownTimeZone(job.timezone)) {
@@ -247,8 +277,13 @@ class ImportJobRunner {
       }
       try {
         final journey = await createJourney(job.draft);
+        if (_policyPaused) return _pausedResult;
         await onJourneyCreated?.call(journey);
       } on Object catch (e, st) {
+        if (_policyPaused ||
+            e is OurneyException && e.error == OurneyErrorCode.clientOutdated) {
+          return _pausedResult;
+        }
         logImportError('create journey failed', e, st);
         if (await _own(id, owner) == null) return _lost(id, owner);
         await store.setCreateFailure(id, _createFailureOf(e));
@@ -264,15 +299,17 @@ class ImportJobRunner {
           await store.setPaused(id, paused: true);
           return const ImportRunResult(ImportRunEnd.paused);
         }
+        if (_policyPaused) return _pausedResult;
         if (photo.state != ImportPhotoState.pending) continue;
         final current = await _own(id, owner);
         if (current == null) return _lost(id, owner);
         await _upload(current, photo);
       }
+      if (_policyPaused) return _pausedResult;
       if (await _own(id, owner) == null) return _lost(id, owner);
       await store.setPhase(id, ImportPhase.done);
       final done = await store.get(id);
-      if (done != null) await onFinished?.call(done);
+      if (!_policyPaused && done != null) await onFinished?.call(done);
     }
     return const ImportRunResult(ImportRunEnd.finished);
   }
@@ -280,7 +317,10 @@ class ImportJobRunner {
   /// A real pause while preparing: every picked file that is not in the job
   /// folder yet is moved there first (cheap: renames), so the screen closing
   /// afterwards can not strand the job. Compression waits for Continue.
-  Future<ImportRunResult> _pausePreparing(String id) async {
+  Future<ImportRunResult> _pausePreparing(
+    String id, {
+    bool userPaused = true,
+  }) async {
     final job = await store.get(id);
     if (job != null) {
       for (final photo in job.photos) {
@@ -302,8 +342,8 @@ class ImportJobRunner {
         }
       }
     }
-    await store.setPaused(id, paused: true);
-    return const ImportRunResult(ImportRunEnd.paused);
+    if (userPaused) await store.setPaused(id, paused: true);
+    return _pausedResult;
   }
 
   /// Moves [photo]'s picked file into the job folder, then compresses it.
@@ -350,9 +390,11 @@ class ImportJobRunner {
   Future<void> _upload(ImportJob job, ImportJobPhoto photo) async {
     var current = photo;
     if (!current.prepared) {
+      if (_policyPaused) return;
       current = await _prepare(job.id, photo);
       if (!current.prepared) return;
     }
+    if (_policyPaused) return;
     try {
       await submit(
         CheckInDraft(
@@ -380,6 +422,7 @@ class ImportJobRunner {
         clearSource: true,
       );
     } on Object catch (e, st) {
+      if (_policyPaused) return;
       logImportError('photo ${current.id} failed', e, st);
       await store.updatePhoto(
         job.id,

@@ -14,6 +14,7 @@ import '../app/providers.dart';
 import '../features/import/data/import_job_store.dart';
 import '../features/profile/profile_providers.dart'
     show accountInsightsRepositoryProvider;
+import '../features/update/data/update_providers.dart';
 import 'data_layer.dart';
 import 'db/app_database.dart';
 import 'dead_uploads.dart';
@@ -90,7 +91,12 @@ DataLayer dataLayer(Ref ref) {
       connectivity: env.connectivity?.call(),
       listenLifecycle: env.listenLifecycle,
       autoSync: env.autoSync,
+      syncPaused: ref.read(appUpdateWorkPausedProvider),
     );
+    ref.listen(appUpdateWorkPausedProvider, (_, forced) {
+      layer.setSyncPaused(forced);
+      if (!forced && env.autoSync) unawaited(layer.syncNow());
+    });
   }
   ref.onDispose(layer.dispose);
   return layer;

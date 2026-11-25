@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/foundation.dart' show debugPrint, debugPrintStack;
 import 'package:ourney_core/ourney_core.dart';
 
 import 'data_context.dart';
@@ -69,6 +68,7 @@ class DataLayer {
     Stream<List<ConnectivityResult>>? connectivity,
     bool listenLifecycle = true,
     bool autoSync = true,
+    bool syncPaused = false,
     Duration? socialPollInterval = socialPollInterval,
     PeriodicTimerFactory? socialPeriodic,
   }) {
@@ -110,6 +110,7 @@ class DataLayer {
         periodic: socialPeriodic,
       ),
     );
+    layer.setSyncPaused(syncPaused);
     if (autoSync) {
       layer._triggers = SyncTriggers(
         onTrigger: () => unawaited(layer.syncNow()),
@@ -117,13 +118,7 @@ class DataLayer {
         listenLifecycle: listenLifecycle,
       );
       layer._authSub = remote.watchUserId().listen((id) {
-        if (id != null) {
-          unawaited(
-            sync.ensureOwner(id).catchError((Object e, StackTrace st) {
-              debugPrint('sync: ensureOwner failed: $e');
-              debugPrintStack(stackTrace: st);
-            }),
-          );
+        if (id != null && !sync.isPaused) {
           final authRepo = layer.auth;
           if (authRepo is SupabaseAuthRepository) {
             unawaited(authRepo.syncWhenProfileReady());
@@ -177,6 +172,13 @@ class DataLayer {
 
   bool get isLocalOnly => ctx.localOnly;
 
+  /// Stops new sync work and invalidates the current pass without dropping
+  /// any queued rows. The provider triggers a fresh pass when the gate clears.
+  void setSyncPaused(bool paused) {
+    ctx.outbox?.setPaused(paused);
+    ctx.sync?.setPaused(paused);
+  }
+
   /// Pushes the outbox (ignoring backoff) then pulls server changes. Never
   /// throws; returns [SyncOk] in local-only mode.
   Future<SyncResult> syncNow() async {
@@ -184,6 +186,7 @@ class DataLayer {
     if (sync == null || ctx.remote?.currentUserId == null) {
       return ctx.localOnly ? const SyncOk() : const SyncFailed('signed out');
     }
+    if (sync.isPaused) return const SyncFailed('update required');
     try {
       // Pull first: it claims the cache for the signed-in user (wiping
       // another user's leftovers) before anything is pushed.

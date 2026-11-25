@@ -42,6 +42,18 @@ jobs:
           dart run tool/gen_l10n.dart
           git diff --exit-code
 
+      - name: Test widget App Group resolution
+        if: github.event_name == 'workflow_dispatch'
+        working-directory: apps/mobile
+        run: |
+          flutter build ios --simulator --config-only
+          device_id=$(xcrun simctl list devices available -j | jq -er \
+            '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
+          xcodebuild test -workspace ios/Runner.xcworkspace -scheme Runner \
+            -destination "platform=iOS Simulator,id=$device_id" \
+            -parallel-testing-enabled NO -only-testing:RunnerTests/WidgetAppGroupTests \
+            CODE_SIGNING_ALLOWED=NO
+
       # Optional build-time config. Secrets are passed via env (never interpolated into the script).
       # On release tags (v*), SUPABASE_URL and SUPABASE_ANON_KEY are mandatory (FS-34).
       # SUPPORT_EMAIL is only added when set (an empty key would be useless; the app falls back to its default).
@@ -73,7 +85,38 @@ jobs:
           fi
           flutter build ios "${args[@]}"
 
-      - name: Package unsigned IPA
+      - name: Ad-hoc sign IPA bundles for re-signing
+        working-directory: apps/mobile
+        shell: bash
+        run: |
+          app=build/ios/iphoneos/Runner.app
+          widget="$app/PlugIns/OurneyWidgetsExtension.appex"
+
+          # Sign nested code before sealing its enclosing bundles.
+          find "$app" -depth \( -type d -name '*.framework' -o -type f -name '*.dylib' \) -print0 |
+            while IFS= read -r -d '' nested; do
+              codesign --force --sign - "$nested"
+            done
+          codesign --force --sign - --entitlements ios/OurneyWidgets/OurneyWidgets.entitlements "$widget"
+          codesign --force --sign - --entitlements ios/Runner/Runner.entitlements "$app"
+
+      - name: Verify IPA App Group entitlements
+        working-directory: apps/mobile
+        shell: bash
+        run: |
+          app=build/ios/iphoneos/Runner.app
+          group=group.com.hofang42.ourney
+          for bundle in "$app" "$app/PlugIns/OurneyWidgetsExtension.appex"; do
+            if ! codesign -d --entitlements :- "$bundle" |
+              plutil -convert json -o - - |
+              jq -e --arg group "$group" '."com.apple.security.application-groups" | type == "array" and index($group) != null' >/dev/null; then
+              echo "::error::Missing App Group $group in ${bundle##*/} signature."
+              exit 1
+            fi
+            echo "Verified App Group $group in ${bundle##*/}."
+          done
+
+      - name: Package IPA for re-signing
         run: scripts/ios/package_ipa.sh apps/mobile/build/ios/iphoneos/Runner.app Ourney-unsigned.ipa
 
       - uses: actions/upload-artifact@v7

@@ -10,12 +10,17 @@ import 'app/app.dart';
 import 'app/config.dart';
 import 'app/data_overrides.dart';
 import 'app/providers.dart';
+import 'features/update/data/update_providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Pre-warm the Liquid Glass shaders (no first-frame flash on the dock). Not
   // awaited: the camera must open fast, and the dock falls back to blur until ready.
   unawaited(LiquidGlassWidgets.initialize(enablePerformanceMonitor: false));
+  final packageInfo = readUpdatePackageInfo().timeout(
+    const Duration(milliseconds: 250),
+    onTimeout: () => null,
+  );
 
   final config = AppConfig.fromEnvironment();
   // FR-A5: without SUPABASE_URL/SUPABASE_ANON_KEY run local-only and never
@@ -37,6 +42,7 @@ Future<void> main() async {
       overrides: [
         appConfigProvider.overrideWithValue(config),
         sharedPreferencesProvider.overrideWithValue(prefs),
+        packageInfoProvider.overrideWithValue(await packageInfo),
         ...dataOverrides,
       ],
       child: const OurneyApp(),
