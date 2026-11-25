@@ -21,6 +21,7 @@
       nav_lang_aria: 'Chuyển ngôn ngữ sang tiếng Anh',
       nav_theme_aria: 'Đổi giao diện sáng hoặc tối',
       open_in_app: 'Mở trong app',
+      inapp_hint: 'Đang mở từ ứng dụng chat? Chạm “Mở trong app”, hoặc chọn Mở bằng trình duyệt (Safari / Chrome) ở góc màn hình nếu nút không phản hồi.',
       back_home: 'Về trang chủ Ourney',
       copy_code: 'Sao chép mã',
       copy_done: 'Đã sao chép mã',
@@ -111,6 +112,7 @@
       nav_lang_aria: 'Switch language to Vietnamese',
       nav_theme_aria: 'Toggle light or dark theme',
       open_in_app: 'Open in app',
+      inapp_hint: 'Opening from a chat app? Tap “Open in app”, or choose Open in browser (Safari / Chrome) from the corner menu if nothing happens.',
       back_home: 'Back to Ourney home',
       copy_code: 'Copy code',
       copy_done: 'Code copied',
@@ -236,15 +238,36 @@
     else if (saved === 'en' || saved === 'vi') curLang = saved;
   } catch (e) {}
 
-  /* --- 5. Detect Platform (Android / iOS / Desktop) --- */
+  /* --- 5. Detect Platform (Android / iOS / Desktop) & In-App WebView --- */
   const detectPlatform = () => {
     const ua = navigator.userAgent || '';
-    if (/Android/i.test(ua)) return 'android';
-    if (/iPhone|iPad|iPod/i.test(ua)) return 'ios';
+    const uaPlat = (navigator.userAgentData && typeof navigator.userAgentData.platform === 'string')
+      ? navigator.userAgentData.platform
+      : '';
+    const touchPoints = Number(navigator.maxTouchPoints || 0);
+    if (/^android$/i.test(uaPlat)) return 'android';
+    if (/^(ios|ipad|ipados|iphone|ipod)$/i.test(uaPlat)) return 'ios';
+    if (/iPhone|iPad|iPod|FBIOS/i.test(ua) || (/Macintosh/i.test(ua) && touchPoints > 1)) {
+      return 'ios';
+    }
+    if (
+      /Android/i.test(ua) ||
+      (/X11;\s*Linux/i.test(ua) && touchPoints > 1 && matchMedia('(pointer: coarse)').matches)
+    ) {
+      return 'android';
+    }
     return 'desktop';
   };
+  const detectInAppBrowser = () => {
+    const ua = navigator.userAgent || '';
+    return /\b(FBAN|FBAV|FB_IAB|FBIOS|Instagram|Zalo|ZaloTheme|Line|MicroMessenger|BytedanceWebview|TikTok|Musical\.ly|Threads|Snapchat)\b/i.test(ua);
+  };
   const platform = detectPlatform();
+  const isInAppBrowser = detectInAppBrowser();
   root.dataset.platform = platform;
+  if (isInAppBrowser) {
+    root.dataset.inapp = '1';
+  }
 
   /* --- 6. Parse & Validate Route Parameters (/f/:token, /j/:code, /join/:code, /p/:token) --- */
   const FRIEND_TOKEN_RE = /^[a-z0-9]{12}$/;
@@ -319,6 +342,12 @@
   /* --- 7. Auto-Attempt to Open App on Mobile Once (Non-Breaking Pattern) --- */
   function attemptOpenAppOnce(deepLink) {
     if (!deepLink) return;
+    /* Do not auto-navigate to ourney:// on desktop, inside in-app WebViews
+       (Messenger, Zalo, Instagram, TikTok, Line, WeChat), or on iOS while
+       Ourney is waitlist-only; users still have the explicit #open-app-btn. */
+    if (platform === 'desktop' || platform === 'ios' || isInAppBrowser || navigator.webdriver) {
+      return;
+    }
     const params = new URLSearchParams(location.search);
     if (params.get('noapp') === '1') return;
 
@@ -329,11 +358,6 @@
     } catch (e) {}
 
     root.dataset.autoOpenAttempted = '1';
-
-    /* Only trigger custom scheme auto-launch on real mobile User-Agents so desktop
-       browsers never show an unhandled protocol prompt. */
-    const ua = navigator.userAgent || '';
-    if (!/Android|iPhone|iPad|iPod/i.test(ua) || navigator.webdriver) return;
 
     setTimeout(() => {
       if (document.hidden) return;
@@ -699,6 +723,10 @@
   }
 
   function wireOpenAppButton(openBtn) {
+    const inappHint = $('inapp-hint');
+    if (inappHint) {
+      inappHint.hidden = !isInAppBrowser;
+    }
     if (!openBtn) return;
     if (route.deepLink) {
       openBtn.dataset.deepLink = route.deepLink;
@@ -1190,13 +1218,23 @@
   }
 
   /* --- 11. Render Public Journey Page (/p/:token) --- */
+  const MAX_IMG_ERROR_RETRIES = 1;
+  const MAX_AUTO_REFRESHES = 3;
+  const ERROR_BATCH_DELAY_MS = 120;
+  const VISIBILITY_DEBOUNCE_MS = 250;
+
   let loadedJourneyData = null;
   let journeyPageState = 'loading'; // 'loading' | 'loaded' | 'expired' | 'error'
   let journeyFetchedAt = 0;
   let journeyTtlMs = 600 * 1000;
   let journeyFetchBatch = 0;
+  let journeyAutoRefreshCount = 0;
+  let journeyRefreshFailCount = 0;
+  let journeyLastRefreshAttemptAt = 0;
   let journeyRefreshPromise = null;
   let journeyTtlTimer = null;
+  let journeyErrorBatchTimer = null;
+  let journeyVisDebounceTimer = null;
 
   const TEMPLATE_ICONS = {
     english_daily: '#i-book',
@@ -1274,12 +1312,38 @@
     return { url, headers };
   }
 
+  function getMinExpiryAgeMs() {
+    return Math.min(30000, Math.max(500, Math.floor(journeyTtlMs * 0.5)));
+  }
+
+  function getRefreshCooldownMs() {
+    const baseMs = Math.min(30000, Math.max(500, Math.floor(journeyTtlMs * 0.5)));
+    return baseMs * Math.pow(2, Math.min(journeyRefreshFailCount, 4));
+  }
+
+  function hasUnloadedOrRetryableImages() {
+    const gridEl = $('p-photo-grid');
+    if (!gridEl) return false;
+    const imgs = gridEl.querySelectorAll('img.link-polaroid-img');
+    if (imgs.length === 0) return false;
+    return Array.from(imgs).some((img) => {
+      if (img.dataset.exhausted === '1') return false;
+      const retries = Number(img.dataset.retryCount || '0');
+      const isBroken = img.dataset.loadFailed === '1' || (img.complete && img.naturalWidth === 0);
+      if (isBroken) return retries < MAX_IMG_ERROR_RETRIES;
+      const isHealthyLoaded = img.complete && img.naturalWidth > 0;
+      return !isHealthyLoaded;
+    });
+  }
+
   function scheduleProactiveUrlRefresh() {
     clearTimeout(journeyTtlTimer);
-    if (!loadedJourneyData || !route.valid) return;
+    if (!loadedJourneyData || !route.valid || journeyAutoRefreshCount >= MAX_AUTO_REFRESHES) return;
+    const checkIns = Array.isArray(loadedJourneyData.check_ins) ? loadedJourneyData.check_ins : [];
+    if (checkIns.length === 0 || !hasUnloadedOrRetryableImages()) return;
     const delayMs = Math.max(15000, Math.floor(journeyTtlMs * 0.85));
     journeyTtlTimer = setTimeout(() => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && hasUnloadedOrRetryableImages()) {
         refreshPublicJourneyUrls();
       }
     }, delayMs);
@@ -1303,27 +1367,56 @@
     gridEl.querySelectorAll('img.link-polaroid-img').forEach((img, idx) => {
       const key = img.dataset.checkinKey || `idx:${idx}`;
       const freshUrl = urlByKey.get(key) || urlByKey.get(`idx:${idx}`);
-      if (!freshUrl) return;
+      /* Never overwrite src on already-decoded healthy images */
+      const isHealthyLoaded = img.complete && img.naturalWidth > 0 && img.dataset.loadFailed !== '1';
+      if (isHealthyLoaded) return;
+
       const isBroken = img.dataset.loadFailed === '1' || (img.complete && img.naturalWidth === 0);
-      if (img.getAttribute('src') !== freshUrl || isBroken) {
-        img.dataset.loadFailed = '0';
-        img.dataset.retriedBatch = String(journeyFetchBatch);
-        img.src = freshUrl;
+      if (isBroken) {
+        const retries = Number(img.dataset.retryCount || '0');
+        if (retries >= MAX_IMG_ERROR_RETRIES || img.dataset.exhausted === '1' || !freshUrl) {
+          img.dataset.retryCount = String(Math.max(retries, MAX_IMG_ERROR_RETRIES));
+          img.dataset.exhausted = '1';
+          return;
+        }
+        img.dataset.retryCount = String(retries + 1);
       }
+      if (!freshUrl) return;
+
+      img.dataset.loadFailed = '0';
+      img.dataset.retriedBatch = String(journeyFetchBatch);
+      img.src = freshUrl;
     });
   }
 
   async function refreshPublicJourneyUrls() {
     if (!route.valid || route.kind !== 'journey') return null;
     if (journeyRefreshPromise) return journeyRefreshPromise;
+    if (journeyAutoRefreshCount >= MAX_AUTO_REFRESHES) return null;
+
+    const now = Date.now();
+    if (journeyLastRefreshAttemptAt > 0 && (now - journeyLastRefreshAttemptAt) < getRefreshCooldownMs()) {
+      return null;
+    }
+
+    /* Stamp attempt & increment counter BEFORE fetch so 500/429/network errors back off cleanly */
+    journeyLastRefreshAttemptAt = now;
+    journeyAutoRefreshCount += 1;
 
     const { url, headers } = getPublicJourneyRequest();
     journeyRefreshPromise = (async () => {
       try {
         const res = await fetch(url, { method: 'GET', headers, cache: 'no-store' });
-        if (!res.ok) return null;
+        if (!res.ok) {
+          journeyRefreshFailCount += 1;
+          return null;
+        }
         const data = await res.json();
-        if (!data || typeof data !== 'object' || !data.journey) return null;
+        if (!data || typeof data !== 'object' || !data.journey) {
+          journeyRefreshFailCount += 1;
+          return null;
+        }
+        journeyRefreshFailCount = 0;
         journeyFetchBatch += 1;
         journeyFetchedAt = Date.now();
         if (typeof data.signed_url_ttl_seconds === 'number' && data.signed_url_ttl_seconds > 0) {
@@ -1334,6 +1427,7 @@
         scheduleProactiveUrlRefresh();
         return data;
       } catch (_) {
+        journeyRefreshFailCount += 1;
         return null;
       } finally {
         journeyRefreshPromise = null;
@@ -1343,14 +1437,33 @@
     return journeyRefreshPromise;
   }
 
+  function scheduleBatchedErrorRefresh() {
+    if (journeyErrorBatchTimer || journeyRefreshPromise) return;
+    if (journeyAutoRefreshCount >= MAX_AUTO_REFRESHES) return;
+    const elapsedSinceLastRefresh = journeyLastRefreshAttemptAt > 0
+      ? Date.now() - journeyLastRefreshAttemptAt
+      : Infinity;
+    const cooldownRemaining = journeyLastRefreshAttemptAt > 0
+      ? Math.max(0, getRefreshCooldownMs() - elapsedSinceLastRefresh)
+      : 0;
+    const delayMs = Math.max(ERROR_BATCH_DELAY_MS, cooldownRemaining);
+    journeyErrorBatchTimer = setTimeout(() => {
+      journeyErrorBatchTimer = null;
+      if (hasUnloadedOrRetryableImages()) {
+        refreshPublicJourneyUrls();
+      }
+    }, delayMs);
+  }
+
   function handleJourneyImageError(img) {
     if (!img) return;
     img.dataset.loadFailed = '1';
-    if (img.dataset.retriedBatch === String(journeyFetchBatch) && (Date.now() - journeyFetchedAt) < 3000) {
+    const retries = Number(img.dataset.retryCount || '0');
+    if (retries >= MAX_IMG_ERROR_RETRIES || img.dataset.exhausted === '1') {
+      img.dataset.exhausted = '1';
       return;
     }
-    img.dataset.retriedBatch = String(journeyFetchBatch);
-    refreshPublicJourneyUrls();
+    scheduleBatchedErrorRefresh();
   }
 
   function renderPublicJourneyData(data) {
@@ -1518,6 +1631,9 @@
             img.width = 360;
             img.height = 450;
             img.dataset.checkinKey = item.checkin_id ? String(item.checkin_id) : `idx:${idx}`;
+            img.dataset.retriedBatch = String(journeyFetchBatch);
+            img.dataset.retryCount = '0';
+            img.dataset.loadFailed = '0';
             img.src = rawUrl;
             img.alt = dict.p_photo_alt(title, dayLabel, dateStr, caption);
             img.addEventListener('error', () => {
@@ -1618,8 +1734,15 @@
         return;
       }
       const data = await res.json();
+      clearTimeout(journeyErrorBatchTimer);
+      clearTimeout(journeyVisDebounceTimer);
+      journeyErrorBatchTimer = null;
+      journeyVisDebounceTimer = null;
       journeyFetchBatch += 1;
       journeyFetchedAt = Date.now();
+      journeyLastRefreshAttemptAt = 0;
+      journeyAutoRefreshCount = 0;
+      journeyRefreshFailCount = 0;
       if (data && typeof data.signed_url_ttl_seconds === 'number' && data.signed_url_ttl_seconds > 0) {
         journeyTtlMs = data.signed_url_ttl_seconds * 1000;
       }
@@ -1635,17 +1758,35 @@
     if (document.visibilityState !== 'visible' || route.kind !== 'journey' || !loadedJourneyData) {
       return;
     }
-    const elapsed = Date.now() - journeyFetchedAt;
+    if (journeyAutoRefreshCount >= MAX_AUTO_REFRESHES) return;
+    const now = Date.now();
+    if (journeyLastRefreshAttemptAt > 0 && (now - journeyLastRefreshAttemptAt) < getRefreshCooldownMs()) {
+      return;
+    }
+    const elapsed = now - journeyFetchedAt;
+
     const gridEl = $('p-photo-grid');
-    const hasBrokenImg = Boolean(
+    const hasRetryableBrokenImg = Boolean(
       gridEl &&
-      Array.from(gridEl.querySelectorAll('img.link-polaroid-img')).some(
-        (img) => img.dataset.loadFailed === '1' || (img.complete && img.naturalWidth === 0)
-      )
+      Array.from(gridEl.querySelectorAll('img.link-polaroid-img')).some((img) => {
+        if (img.dataset.exhausted === '1') return false;
+        const retries = Number(img.dataset.retryCount || '0');
+        const isBroken = img.dataset.loadFailed === '1' || (img.complete && img.naturalWidth === 0);
+        return isBroken && retries < MAX_IMG_ERROR_RETRIES;
+      })
     );
-    if (hasBrokenImg || elapsed >= Math.floor(journeyTtlMs * 0.8)) {
+    const nearExpiryWithPending = elapsed >= Math.floor(journeyTtlMs * 0.8) && hasUnloadedOrRetryableImages();
+    if (hasRetryableBrokenImg || nearExpiryWithPending) {
       refreshPublicJourneyUrls();
     }
+  }
+
+  function scheduleJourneyVisibilityCheck() {
+    clearTimeout(journeyVisDebounceTimer);
+    journeyVisDebounceTimer = setTimeout(() => {
+      journeyVisDebounceTimer = null;
+      checkJourneyImagesOnVisible();
+    }, VISIBILITY_DEBOUNCE_MS);
   }
 
   function initJourneyPage() {
@@ -1655,8 +1796,8 @@
         fetchPublicJourney();
       });
     }
-    document.addEventListener('visibilitychange', checkJourneyImagesOnVisible);
-    window.addEventListener('focus', checkJourneyImagesOnVisible);
+    document.addEventListener('visibilitychange', scheduleJourneyVisibilityCheck);
+    window.addEventListener('focus', scheduleJourneyVisibilityCheck);
     if (route.valid) {
       attemptOpenAppOnce(route.deepLink);
     }
@@ -1680,13 +1821,17 @@
     });
 
     const homeHref = curLang === 'en' ? '/?lang=en' : '/';
-    const platParam = platform === 'ios' ? 'plat=ios' : '';
-    const waitlistQuery = [curLang === 'en' ? 'lang=en' : '', platParam].filter(Boolean).join('&');
-    const waitlistHref = waitlistQuery ? `/?${waitlistQuery}#beta-waitlist-box` : '/#beta-waitlist-box';
     document.querySelectorAll('[data-home-link]').forEach((el) => {
       el.setAttribute('href', homeHref);
     });
     document.querySelectorAll('[data-waitlist-link]').forEach((el) => {
+      const forcedPlat = el.getAttribute('data-waitlist-plat') || (el.id === 'fallback-ios' ? 'ios' : '');
+      const targetPlat = forcedPlat || (platform === 'ios' ? 'ios' : (platform === 'android' ? 'android' : ''));
+      const waitlistQuery = [
+        curLang === 'en' ? 'lang=en' : '',
+        targetPlat ? `plat=${targetPlat}` : ''
+      ].filter(Boolean).join('&');
+      const waitlistHref = waitlistQuery ? `/?${waitlistQuery}#beta-waitlist-box` : '/#beta-waitlist-box';
       el.setAttribute('href', waitlistHref);
     });
 

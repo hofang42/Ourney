@@ -2655,6 +2655,16 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
 .link-actions-split .link-btn-copy {
   flex: 1 1 150px;
 }
+.link-inapp-hint {
+  margin-top: 2px;
+  padding: 10px 14px;
+  border: 1.5px dashed var(--outline);
+  border-radius: 12px;
+  background: var(--fill);
+  color: var(--soft);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
 
 /* Public Journey Header, Stats & Photo Grid */
 .link-journey-header {

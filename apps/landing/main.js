@@ -484,8 +484,21 @@
   /* --- 2b. Detect Platform (Android / iOS / Desktop) & Sync Platform CTAs --- */
   const detectPlatform = () => {
     const ua = navigator.userAgent || '';
-    if (/Android/i.test(ua)) return 'android';
-    if (/iPhone|iPad|iPod/i.test(ua)) return 'ios';
+    const uaPlat = (navigator.userAgentData && typeof navigator.userAgentData.platform === 'string')
+      ? navigator.userAgentData.platform
+      : '';
+    const touchPoints = Number(navigator.maxTouchPoints || 0);
+    if (/^android$/i.test(uaPlat)) return 'android';
+    if (/^(ios|ipad|ipados|iphone|ipod)$/i.test(uaPlat)) return 'ios';
+    if (/iPhone|iPad|iPod|FBIOS/i.test(ua) || (/Macintosh/i.test(ua) && touchPoints > 1)) {
+      return 'ios';
+    }
+    if (
+      /Android/i.test(ua) ||
+      (/X11;\s*Linux/i.test(ua) && touchPoints > 1 && matchMedia('(pointer: coarse)').matches)
+    ) {
+      return 'android';
+    }
     return 'desktop';
   };
   const platform = detectPlatform();
