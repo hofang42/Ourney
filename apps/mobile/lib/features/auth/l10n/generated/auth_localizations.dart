@@ -325,22 +325,22 @@ abstract class AuthL10n {
   /// **'Dùng mã thay thế'**
   String get auth_useCode;
 
-  /// Link to the reset flow.
+  /// Link to the reset / first-time password flow.
   ///
   /// In vi, this message translates to:
-  /// **'Quên mật khẩu?'**
+  /// **'Quên hoặc chưa đặt mật khẩu?'**
   String get auth_forgot;
 
   /// Reset title.
   ///
   /// In vi, this message translates to:
-  /// **'đặt lại mật khẩu.'**
+  /// **'đặt mật khẩu mới.'**
   String get auth_resetTitle;
 
   /// Reset subtitle.
   ///
   /// In vi, this message translates to:
-  /// **'Nhập email, Ourney gửi mã 6 số để đặt mật khẩu mới.'**
+  /// **'Nhập email, Ourney gửi mã 6 số để bạn đặt mật khẩu.'**
   String get auth_resetSubtitle;
 
   /// Button: confirm code + new password.
@@ -355,11 +355,17 @@ abstract class AuthL10n {
   /// **'Quay lại đăng nhập'**
   String get auth_backToSignIn;
 
-  /// Password sign-in error.
+  /// Non-enumerating password sign-in error.
   ///
   /// In vi, this message translates to:
-  /// **'Sai mật khẩu. Thử lại hoặc đăng nhập bằng mã.'**
+  /// **'Mật khẩu chưa đúng, hoặc tài khoản này chưa đặt mật khẩu.'**
   String get auth_errorWrongPassword;
+
+  /// One-tap button after failed password sign-in to send an email OTP code.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi mã đăng nhập cho email này'**
+  String get auth_sendCodeForEmail;
 
   /// Sending a code failed (not offline, not rate limited).
   ///

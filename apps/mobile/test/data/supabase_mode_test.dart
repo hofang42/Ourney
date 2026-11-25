@@ -1,11 +1,15 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/data/data_layer.dart';
 import 'package:ourney/data/db/app_database.dart';
 import 'package:ourney/data/remote/remote_api.dart';
+import 'package:ourney/data/remote/supabase_remote_api.dart';
 import 'package:ourney/data/sync/sync_engine.dart';
 import 'package:ourney_core/ourney_core.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'data_test_helpers.dart';
 
@@ -824,5 +828,517 @@ void main() {
       ),
     );
     expect(await db.select(db.profiles).get(), isEmpty);
+  });
+
+  test(
+    'hasPassword and updatePassword delegate to remote',
+    () async {
+      remote.rpcHandlers['auth_has_password'] = (_) => false;
+      expect(await layer.auth.hasPassword(), isFalse);
+      expect(
+        remote.callsOf('rpc').where((c) => c.target == 'auth_has_password'),
+        hasLength(1),
+      );
+
+      remote.rpcHandlers['auth_has_password'] = (_) => true;
+      expect(await layer.auth.hasPassword(), isTrue);
+
+      await layer.auth.updatePassword(
+        'newpassword123',
+        code: '654321',
+        signOutOthers: true,
+      );
+      final upd = remote.callsOf('updatePassword').single;
+      expect(upd.target, 'newpassword123');
+      expect(upd.args, {
+        'code': '654321',
+        'signOutOthers': true,
+      });
+
+      await layer.auth.cancelPasswordFlow();
+      expect(remote.callsOf('cancelPasswordFlow'), hasLength(1));
+    },
+  );
+
+  group('SupabaseRemoteApi auth & session logic (F-1..F-3, R-2, R-3)', () {
+    late HttpServer server;
+    late SupabaseClient client;
+    late SupabaseRemoteApi api;
+    late DateTime now;
+    final requests = <({String method, String path, String query, Map<String, dynamic>? json})>[];
+    late FutureOr<({int status, Object? body})> Function(
+      String method,
+      String path,
+      String query,
+      Map<String, dynamic>? json,
+    ) handler;
+
+    String fakeJwt(String sub) {
+      String b64(Map<String, Object?> m) =>
+          base64Url.encode(utf8.encode(jsonEncode(m))).replaceAll('=', '');
+      final exp =
+          DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
+          1000;
+      return '${b64({'alg': 'HS256', 'typ': 'JWT'})}.'
+          '${b64({'sub': sub, 'exp': exp, 'role': 'authenticated'})}.sig';
+    }
+
+    Map<String, Object?> userJson({
+      String id = 'u1',
+      String? email = 'user@example.com',
+      String? phone,
+    }) => {
+      'id': id,
+      'aud': 'authenticated',
+      'role': 'authenticated',
+      'email': email,
+      'phone': ?phone,
+      'app_metadata': {'provider': email != null ? 'email' : 'phone'},
+      'user_metadata': <String, Object?>{},
+      'created_at': '2026-10-16T00:00:00.000000Z',
+    };
+
+    Map<String, Object?> sessionJson({
+      String id = 'u1',
+      String? email = 'user@example.com',
+      String? phone,
+    }) => {
+      'access_token': fakeJwt(id),
+      'token_type': 'bearer',
+      'expires_in': 3600,
+      'refresh_token': 'ref-$id',
+      'user': userJson(id: id, email: email, phone: phone),
+    };
+
+    setUp(() async {
+      final prevOverrides = HttpOverrides.current;
+      HttpOverrides.global = null;
+      addTearDown(() => HttpOverrides.global = prevOverrides);
+
+      requests.clear();
+      handler = (method, path, query, body) => (status: 200, body: <String, Object?>{});
+      server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      server.listen((req) async {
+        final raw = await utf8.decoder.bind(req).join();
+        Map<String, dynamic>? decoded;
+        if (raw.isNotEmpty) {
+          final parsed = jsonDecode(raw);
+          if (parsed is Map<String, dynamic>) decoded = parsed;
+        }
+        requests.add((
+          method: req.method,
+          path: req.uri.path,
+          query: req.uri.query,
+          json: decoded,
+        ));
+        final res = await handler(
+          req.method,
+          req.uri.path,
+          req.uri.query,
+          decoded,
+        );
+        req.response.statusCode = res.status;
+        req.response.headers.contentType = ContentType.json;
+        if (res.body != null) {
+          req.response.write(jsonEncode(res.body));
+        }
+        await req.response.close();
+      });
+      client = SupabaseClient(
+        'http://${server.address.host}:${server.port}',
+        'test-anon-key',
+        authOptions: const AuthClientOptions(
+          autoRefreshToken: false,
+          authFlowType: AuthFlowType.implicit,
+        ),
+      );
+      now = DateTime.utc(2026, 11, 25, 12);
+      api = SupabaseRemoteApi(client, now: () => now);
+      addTearDown(() async {
+        await client.dispose();
+        await server.close(force: true);
+      });
+    });
+
+    test(
+      'hasPassword returns false without HTTP when signed out and queries /rpc/auth_has_password when signed in',
+      () async {
+        expect(api.currentUserId, isNull);
+        expect(await api.hasPassword(), isFalse);
+        expect(requests, isEmpty);
+
+        var hasPwResponse = false;
+        handler = (method, path, query, body) {
+          if (path == '/auth/v1/verify') {
+            return (status: 200, body: sessionJson());
+          }
+          if (path == '/rest/v1/rpc/auth_has_password') {
+            return (status: 200, body: hasPwResponse);
+          }
+          return (status: 200, body: <String, Object?>{});
+        };
+
+        await api.verifyOtp('user@example.com', '123456');
+        expect(api.currentUserId, 'u1');
+
+        expect(await api.hasPassword(), isFalse);
+        hasPwResponse = true;
+        expect(await api.hasPassword(), isTrue);
+        expect(
+          requests.where((r) => r.path == '/rest/v1/rpc/auth_has_password'),
+          hasLength(2),
+        );
+      },
+    );
+
+    test(
+      'resetPassword holds currentUserId and watchUserId until updateUser succeeds, skips verifyOTP on retry, and treats same_password as idempotent success with SignOutScope.others',
+      () async {
+        final watchedUserIds = <String?>[];
+        final sub = api.watchUserId().listen(watchedUserIds.add);
+        addTearDown(sub.cancel);
+
+        final putGate = Completer<void>();
+        var putAttempt = 0;
+        handler = (method, path, query, body) async {
+          if (path == '/auth/v1/recover') {
+            return (status: 200, body: <String, Object?>{});
+          }
+          if (path == '/auth/v1/verify') {
+            return (status: 200, body: sessionJson());
+          }
+          if (path == '/auth/v1/user' && method == 'PUT') {
+            putAttempt++;
+            if (putAttempt == 1) {
+              await putGate.future;
+              return (
+                status: 422,
+                body: {
+                  'code': 422,
+                  'error_code': 'weak_password',
+                  'msg': 'Password is too weak',
+                },
+              );
+            }
+            return (
+              status: 422,
+              body: {
+                'code': 422,
+                'error_code': 'same_password',
+                'msg': 'New password should be different from the old password.',
+              },
+            );
+          }
+          if (path == '/auth/v1/logout') {
+            // Simulate a 500 on logout?scope=others to verify best-effort swallowing.
+            return (status: 500, body: {'msg': 'transient logout error'});
+          }
+          return (status: 200, body: <String, Object?>{});
+        };
+
+        await api.sendPasswordReset('  user@example.com ');
+        expect(requests.single.path, '/auth/v1/recover');
+        expect(requests.single.json?['email'], 'user@example.com');
+        requests.clear();
+
+        // Attempt 1: verifyOTP succeeds, PUT /auth/v1/user is in flight, then fails with weak_password.
+        final attempt1 = api.resetPassword(
+          ' user@example.com ',
+          ' 123456 ',
+          'weakpass1',
+        );
+        while (!requests.any((r) => r.path == '/auth/v1/user')) {
+          await Future<void>.delayed(const Duration(milliseconds: 5));
+        }
+        // F-2: While updateUser is in flight, currentUserId is still null and watchUserId has not emitted 'u1'.
+        expect(api.currentUserId, isNull);
+        expect(watchedUserIds, isNot(contains('u1')));
+
+        putGate.complete();
+        await expectLater(
+          attempt1,
+          throwsA(
+            isA<OurneyException>().having(
+              (e) => e.error,
+              'error',
+              OurneyErrorCode.invalid,
+            ),
+          ),
+        );
+        // F-2: Even after updateUser failed, currentUserId remains held at null so router stays on /auth for retry.
+        expect(api.currentUserId, isNull);
+        expect(watchedUserIds, isNot(contains('u1')));
+        expect(
+          requests.where((r) => r.path == '/auth/v1/verify'),
+          hasLength(1),
+        );
+
+        // Attempt 2 (retry with same code): skips /auth/v1/verify, receives 422 same_password,
+        // treats it as idempotent success, calls /auth/v1/logout?scope=others, and releases 'u1'.
+        await api.resetPassword('user@example.com', '123456', 'existingpass123');
+        expect(
+          requests.where((r) => r.path == '/auth/v1/verify'),
+          hasLength(1),
+          reason: 'retry with already-verified recovery code must not re-call /auth/v1/verify',
+        );
+        expect(
+          requests.where((r) => r.path == '/auth/v1/user'),
+          hasLength(2),
+        );
+        final logoutReq = requests.singleWhere((r) => r.path == '/auth/v1/logout');
+        expect(logoutReq.query, contains('scope=others'));
+        await pumpEventQueue();
+        expect(api.currentUserId, 'u1');
+        expect(watchedUserIds, contains('u1'));
+        // R-3: verifyOTP(type: OtpType.recovery) propagated the new JWT to client.realtime.
+        expect(
+          client.realtime.accessToken,
+          equals(client.auth.currentSession?.accessToken),
+        );
+      },
+    );
+
+    test(
+      'updatePassword verifies recovery OTP, propagates new JWT to realtime, keeps verified session across same_password without re-verifying, and respects signOutOthers',
+      () async {
+        var putCall = 0;
+        var verifyCount = 0;
+        handler = (method, path, query, body) {
+          if (path == '/auth/v1/verify') {
+            verifyCount++;
+            return (status: 200, body: sessionJson(id: 'u1'));
+          }
+          if (path == '/auth/v1/user' && method == 'PUT') {
+            putCall++;
+            if (putCall == 1) {
+              return (
+                status: 422,
+                body: {
+                  'code': 422,
+                  'error_code': 'same_password',
+                  'msg': 'New password should be different from the old password.',
+                },
+              );
+            }
+            return (status: 200, body: userJson());
+          }
+          if (path == '/auth/v1/logout') {
+            return (status: 204, body: null);
+          }
+          return (status: 200, body: <String, Object?>{});
+        };
+
+        // Sign in first as email user; simulate stale/cleared realtime token before recovery.
+        await api.verifyOtp('user@example.com', '111111');
+        await client.realtime.setAuth('stale-token');
+        requests.clear();
+        verifyCount = 0;
+
+        // 1. updatePassword with same_password verifies recovery OTP ('654321'),
+        // updates client.realtime.accessToken (R-3), rethrows same_password, and preserves _verifiedRecoveryKey.
+        await expectLater(
+          api.updatePassword(
+            'samepass123',
+            code: ' 654321 ',
+            signOutOthers: true,
+          ),
+          throwsA(
+            isA<OurneyException>()
+                .having((e) => e.error, 'error', OurneyErrorCode.invalid)
+                .having((e) => e.detail, 'detail', contains('same_password')),
+          ),
+        );
+        expect(verifyCount, 1);
+        expect(
+          client.realtime.accessToken,
+          equals(client.auth.currentSession?.accessToken),
+        );
+        expect(
+          requests.where((r) => r.path == '/auth/v1/verify'),
+          hasLength(1),
+        );
+        expect(
+          requests.first.json,
+          containsPair('type', 'recovery'),
+        );
+        expect(
+          requests.first.json,
+          containsPair('token', '654321'),
+        );
+        expect(
+          requests.where((r) => r.path == '/auth/v1/logout'),
+          isEmpty,
+        );
+
+        // 2. Retrying updatePassword with a different password reuses the kept verified
+        // session (skips /auth/v1/verify) and revokes other devices (scope=others).
+        await api.updatePassword(
+          'differentpass123',
+          code: '654321',
+          signOutOthers: true,
+        );
+        expect(
+          requests.where((r) => r.path == '/auth/v1/verify'),
+          hasLength(1),
+          reason: 'kept verified session must not call /auth/v1/verify a second time',
+        );
+        final putRequests = requests.where((r) => r.path == '/auth/v1/user').toList();
+        expect(putRequests, hasLength(2));
+        expect(
+          putRequests.last.json,
+          {'password': 'differentpass123'},
+        );
+        final logoutReq = requests.singleWhere((r) => r.path == '/auth/v1/logout');
+        expect(logoutReq.query, contains('scope=others'));
+
+        // 3. First-time set (signOutOthers: false) verifies the new recovery code and
+        // updates the password without calling /auth/v1/logout?scope=others.
+        requests.clear();
+        await api.updatePassword(
+          'firsttimepass123',
+          code: '999999',
+          signOutOthers: false,
+        );
+        expect(
+          requests.where((r) => r.path == '/auth/v1/verify'),
+          hasLength(1),
+        );
+        expect(
+          requests.where((r) => r.path == '/auth/v1/user'),
+          hasLength(1),
+        );
+        expect(
+          requests.where((r) => r.path == '/auth/v1/logout'),
+          isEmpty,
+        );
+      },
+    );
+
+    test(
+      'R-2: verified recovery key expires after TTL, clears on sendPasswordReset and cancelPasswordFlow, and cancelPasswordFlow signs out half-completed unauthenticated reset',
+      () async {
+        var failUpdate = true;
+        handler = (method, path, query, body) {
+          if (path == '/auth/v1/recover') {
+            return (status: 200, body: <String, Object?>{});
+          }
+          if (path == '/auth/v1/verify') {
+            return (status: 200, body: sessionJson());
+          }
+          if (path == '/auth/v1/user' && method == 'PUT') {
+            if (failUpdate) {
+              return (
+                status: 422,
+                body: {
+                  'code': 422,
+                  'error_code': 'weak_password',
+                  'msg': 'Password is too weak',
+                },
+              );
+            }
+            return (status: 200, body: userJson());
+          }
+          if (path == '/auth/v1/logout') {
+            return (status: 204, body: null);
+          }
+          return (status: 200, body: <String, Object?>{});
+        };
+
+        // 1. Unauthenticated resetPassword fails on updateUser after verifyOTP succeeded;
+        // abandoning via cancelPasswordFlow signs out the half-completed session locally.
+        await expectLater(
+          api.resetPassword('user@example.com', '123456', 'weakpass'),
+          throwsA(isA<OurneyException>()),
+        );
+        expect(api.currentUserId, isNull);
+        expect(client.auth.currentSession, isNotNull);
+
+        await api.cancelPasswordFlow();
+        expect(api.currentUserId, isNull);
+        expect(
+          client.auth.currentSession,
+          isNull,
+          reason: 'abandoned unauthenticated recovery session must be signed out locally',
+        );
+
+        // 2. Signed-in updatePassword caches _verifiedRecoveryKey on failure;
+        // cancelPasswordFlow clears the key WITHOUT signing out the signed-in user.
+        await api.verifyOtp('user@example.com', '111111');
+        requests.clear();
+
+        await expectLater(
+          api.updatePassword('weakpass', code: '222222'),
+          throwsA(isA<OurneyException>()),
+        );
+        expect(
+          requests.where((r) => r.path == '/auth/v1/verify'),
+          hasLength(1),
+        );
+        await api.cancelPasswordFlow();
+        expect(api.currentUserId, 'u1');
+        expect(client.auth.currentSession, isNotNull);
+
+        // Next attempt with '222222' must re-call /auth/v1/verify because cancelPasswordFlow cleared the cache.
+        await expectLater(
+          api.updatePassword('weakpass', code: '222222'),
+          throwsA(isA<OurneyException>()),
+        );
+        expect(
+          requests.where((r) => r.path == '/auth/v1/verify'),
+          hasLength(2),
+        );
+
+        // 3. sendPasswordReset clears _verifiedRecoveryKey.
+        await api.sendPasswordReset('user@example.com');
+        await expectLater(
+          api.updatePassword('weakpass', code: '222222'),
+          throwsA(isA<OurneyException>()),
+        );
+        expect(
+          requests.where((r) => r.path == '/auth/v1/verify'),
+          hasLength(3),
+        );
+
+        // 4. Advancing clock past verifiedRecoveryTtl (5 min) expires _verifiedRecoveryKey.
+        now = now.add(const Duration(minutes: 6));
+        failUpdate = false;
+        await api.updatePassword('validpass123', code: '222222');
+        expect(
+          requests.where((r) => r.path == '/auth/v1/verify'),
+          hasLength(4),
+          reason: 'expired _verifiedRecoveryKey must re-verify with /auth/v1/verify',
+        );
+      },
+    );
+
+    test(
+      'updatePassword rejects phone-only account (no email) without hitting /auth/v1/verify',
+      () async {
+        handler = (method, path, query, body) {
+          if (path == '/auth/v1/verify') {
+            return (
+              status: 200,
+              body: sessionJson(email: null, phone: '+84912345678'),
+            );
+          }
+          return (status: 200, body: <String, Object?>{});
+        };
+
+        await api.verifyPhoneOtp('+84912345678', '123456');
+        requests.clear();
+
+        await expectLater(
+          api.updatePassword('newpass123', code: '654321'),
+          throwsA(
+            isA<OurneyException>().having(
+              (e) => e.error,
+              'error',
+              OurneyErrorCode.invalid,
+            ),
+          ),
+        );
+        expect(requests, isEmpty);
+      },
+    );
   });
 }
