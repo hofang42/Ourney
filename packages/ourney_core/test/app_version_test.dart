@@ -91,9 +91,11 @@ void main() {
       'https://github.com/other/project/releases/latest',
       'https://github.com/hofang42/ourney-releases/releases/%2F..%2FAPK',
     ]) {
+      final parsed =
+          AppUpdateManifest.tryFromJson(manifestJson(downloadUrl: url))!;
+      expect(parsed.downloadUrl, isNull, reason: url);
       expect(
-          AppUpdateManifest.tryFromJson(manifestJson(downloadUrl: url)), isNull,
-          reason: url);
+          AppUpdateManifest.tryFromJson(parsed.toJson())!.downloadUrl, isNull);
     }
     expect(
         isAllowedUpdateUrl(Uri.parse(
@@ -144,6 +146,24 @@ void main() {
         UpdateUrgency.none);
     expect(
         decide(manifestJson(), installed: '1.2.0').urgency, UpdateUrgency.none);
+  });
+
+  test('malformed notes and URL preserve the minimum and kill switch', () {
+    final json = manifestJson(
+      minSupported: '1.1.0',
+      downloadUrl: 'https://example.com/Ourney.apk',
+    )..['notes'] = {
+        'vi': ['', '  ', '  Ourney  '],
+        'en': [null, '\t\n'],
+      };
+    final manifest = AppUpdateManifest.tryFromJson(json)!;
+    expect(manifest.notes.vi, ['Ourney']);
+    expect(manifest.notes.en, isEmpty);
+    expect(manifest.downloadUrl, isNull);
+    expect(decide(json).urgency, UpdateUrgency.forced);
+    json['kill_switch'] = true;
+    expect(AppUpdateManifest.tryFromJson(json)?.killSwitch, isTrue);
+    expect(decide(json).urgency, UpdateUrgency.none);
   });
 
   test('patch, minor, and below-latest but recommended tiers', () {

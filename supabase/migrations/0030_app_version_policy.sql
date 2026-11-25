@@ -1,20 +1,20 @@
 -- Per-platform update policy, readable before sign-in. Release CI publishes it
 -- after the corresponding installation artifact is available.
 
-create function private.semver_parse(p_version text) returns numeric[]
+create or replace function private.semver_parse(p_version text) returns numeric[]
 language sql immutable strict set search_path = ''
 as $$
   select case when p_version ~ '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
               then string_to_array(p_version, '.')::numeric[] end
 $$;
 
-create function private.semver_lt(p_left text, p_right text) returns boolean
+create or replace function private.semver_lt(p_left text, p_right text) returns boolean
 language sql immutable strict set search_path = ''
 as $$
   select private.semver_parse(p_left) < private.semver_parse(p_right)
 $$;
 
-create function private.semver_max(p_left text, p_right text) returns text
+create or replace function private.semver_max(p_left text, p_right text) returns text
 language sql immutable strict set search_path = ''
 as $$
   select case when private.semver_lt(p_left, p_right) then p_right else p_left end
@@ -24,7 +24,7 @@ revoke all on function private.semver_parse(text), private.semver_lt(text, text)
   private.semver_max(text, text) from public, anon, authenticated;
 grant execute on function private.semver_parse(text) to service_role;
 
-create table private.app_version_policy (
+create table if not exists private.app_version_policy (
   platform text primary key check (platform in ('android', 'ios')),
   latest text not null,
   latest_build int not null check (latest_build > 0),
@@ -32,25 +32,41 @@ create table private.app_version_policy (
   min_supported text not null,
   force_on_major boolean not null default true,
   kill_switch boolean not null default false,
-  download_url text check (download_url ~ '^https://[^/[:space:]?#]+[^[:space:]]*$'),
+  download_url text,
   notes_vi jsonb not null default '[]'::jsonb,
   notes_en jsonb not null default '[]'::jsonb,
   updated_at timestamptz not null default now(),
   constraint app_version_policy_version_order check ((
     private.semver_parse(min_supported) <= private.semver_parse(recommended)
     and private.semver_parse(recommended) <= private.semver_parse(latest)
-  ) is true),
-  constraint app_version_policy_notes_arrays check (
-    jsonb_typeof(notes_vi) = 'array' and jsonb_typeof(notes_en) = 'array'
-    and not jsonb_path_exists(notes_vi, '$[*] ? (@.type() != "string")')
-    and not jsonb_path_exists(notes_en, '$[*] ? (@.type() != "string")')
-  )
+  ) is true)
 );
+
+-- Reinstall the named constraints when upgrading a copy of the original table.
+alter table private.app_version_policy
+  drop constraint if exists app_version_policy_download_url_check,
+  drop constraint if exists app_version_policy_notes_arrays,
+  add constraint app_version_policy_download_url_check check (
+    download_url !~ '[[:space:]]' and (
+      download_url ~ '^https://(ourney\.tech|www\.ourney\.tech|objects\.githubusercontent\.com|release-assets\.githubusercontent\.com|play\.google\.com|apps\.apple\.com|testflight\.apple\.com)(:443)?([/?#]|$)'
+      or (
+        download_url ~ '^https://github\.com(:443)?/hofang42/ourney-releases/releases/'
+        and split_part(split_part(download_url, '?', 1), '#', 1)
+          !~* '(%2f|%5c|[\\]|/(\.|%2e){1,2}(/|$))'
+      )
+    )
+  ),
+  add constraint app_version_policy_notes_arrays check (
+    jsonb_typeof(notes_vi) = 'array' and jsonb_typeof(notes_en) = 'array'
+    and not jsonb_path_exists(notes_vi, $path$$[*] ? (@.type() != "string" || @ like_regex "^\\s*$")$path$)
+    and not jsonb_path_exists(notes_en, $path$$[*] ? (@.type() != "string" || @ like_regex "^\\s*$")$path$)
+  );
 
 alter table private.app_version_policy enable row level security;
 revoke all on private.app_version_policy from public, anon, authenticated;
 grant select, update on private.app_version_policy to service_role;
 
+drop trigger if exists app_version_policy_updated on private.app_version_policy;
 create trigger app_version_policy_updated before update on private.app_version_policy
   for each row execute function public.set_updated_at();
 
@@ -58,9 +74,10 @@ insert into private.app_version_policy (
   platform, latest, latest_build, recommended, min_supported, download_url
 ) values
   ('android', '1.0.0', 1, '1.0.0', '1.0.0', 'https://ourney.tech/Ourney.apk'),
-  ('ios', '1.0.0', 1, '1.0.0', '1.0.0', null);
+  ('ios', '1.0.0', 1, '1.0.0', '1.0.0', null)
+on conflict (platform) do nothing;
 
-create function public.get_app_version_policy(p_platform text) returns jsonb
+create or replace function public.get_app_version_policy(p_platform text) returns jsonb
 language sql stable security definer set search_path = ''
 as $$
   select jsonb_build_object(
@@ -82,7 +99,7 @@ $$;
 revoke all on function public.get_app_version_policy(text) from public;
 grant execute on function public.get_app_version_policy(text) to anon, authenticated, service_role;
 
-create function public.admin_service_publish_release(
+create or replace function public.admin_service_publish_release(
   p_platform text,
   p_latest text,
   p_latest_build int,

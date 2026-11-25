@@ -151,21 +151,21 @@ final class AppUpdateManifest {
   final DateTime updatedAt;
 
   /// Accepts unknown fields so newer servers can extend the wire format.
-  /// A malformed policy is treated as a failed check by the caller.
+  /// Malformed policy fields fail the check. Invalid presentation fields
+  /// are dropped so they cannot hide the minimum version or kill switch.
   static AppUpdateManifest? tryFromJson(Object? json) {
     if (json
-        case {
-          'platform': String platformName,
-          'latest': String latestRaw,
-          'latest_build': int build,
-          'recommended': String recommendedRaw,
-          'min_supported': String minRaw,
-          'force_on_major': bool forceOnMajor,
-          'kill_switch': bool killSwitch,
-          'download_url': final rawUrl,
-          'notes': {'vi': List<Object?> vi, 'en': List<Object?> en},
-          'updated_at': String updatedAtRaw,
-        }) {
+        case final Map<Object?, Object?> fields &&
+            {
+              'platform': String platformName,
+              'latest': String latestRaw,
+              'latest_build': int build,
+              'recommended': String recommendedRaw,
+              'min_supported': String minRaw,
+              'force_on_major': bool forceOnMajor,
+              'kill_switch': bool killSwitch,
+              'updated_at': String updatedAtRaw,
+            }) {
       final platform = switch (platformName) {
         'android' => UpdatePlatform.android,
         'ios' => UpdatePlatform.ios,
@@ -175,12 +175,8 @@ final class AppUpdateManifest {
       final recommended = SemVer.tryParse(recommendedRaw);
       final minSupported = SemVer.tryParse(minRaw);
       final updatedAt = DateTime.tryParse(updatedAtRaw);
+      final rawUrl = fields['download_url'];
       final url = rawUrl is String ? Uri.tryParse(rawUrl) : null;
-      if (!killSwitch &&
-          rawUrl != null &&
-          (url == null || !isAllowedUpdateUrl(url))) {
-        return null;
-      }
       if (platform == null ||
           latest == null ||
           recommended == null ||
@@ -188,11 +184,10 @@ final class AppUpdateManifest {
           updatedAt == null ||
           build < 1 ||
           latest.compareTo(recommended) < 0 ||
-          recommended.compareTo(minSupported) < 0 ||
-          vi.any((line) => line is! String || line.trim().isEmpty) ||
-          en.any((line) => line is! String || line.trim().isEmpty)) {
+          recommended.compareTo(minSupported) < 0) {
         return null;
       }
+      final notes = fields['notes'];
       return AppUpdateManifest._(
         platform: platform,
         latest: latest,
@@ -201,17 +196,29 @@ final class AppUpdateManifest {
         minSupported: minSupported,
         forceOnMajor: forceOnMajor,
         killSwitch: killSwitch,
-        downloadUrl: rawUrl == null && platform == UpdatePlatform.android
+        downloadUrl: rawUrl == null &&
+                fields.containsKey('download_url') &&
+                platform == UpdatePlatform.android
             ? _androidDownloadUrl
             : url != null && isAllowedUpdateUrl(url)
                 ? url
                 : null,
-        notes: UpdateReleaseNotes(vi: vi.cast<String>(), en: en.cast<String>()),
+        notes: UpdateReleaseNotes(
+          vi: _noteBullets(notes is Map ? notes['vi'] : null),
+          en: _noteBullets(notes is Map ? notes['en'] : null),
+        ),
         updatedAt: updatedAt,
       );
     }
     return null;
   }
+
+  static List<String> _noteBullets(Object? value) => value is List
+      ? [
+          for (final line in value.whereType<String>())
+            if (line.trim().isNotEmpty) line.trim()
+        ]
+      : const [];
 
   Map<String, Object?> toJson() => {
         'platform': platform.name,
@@ -221,7 +228,10 @@ final class AppUpdateManifest {
         'min_supported': minSupported.toString(),
         'force_on_major': forceOnMajor,
         'kill_switch': killSwitch,
-        'download_url': downloadUrl?.toString(),
+        // An explicit Android null on the wire means use the default APK.
+        // Omit a rejected URL so a cache reload keeps the link unavailable.
+        if (downloadUrl != null || platform == UpdatePlatform.ios)
+          'download_url': downloadUrl?.toString(),
         'notes': notes.toJson(),
         'updated_at': updatedAt.toIso8601String(),
       };

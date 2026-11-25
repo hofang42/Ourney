@@ -4,7 +4,10 @@ import 'package:clock/clock.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/app.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/data/data_providers.dart';
+import 'package:ourney/features/import/data/import_providers.dart';
 import 'package:ourney/features/update/data/update_manifest_source.dart';
 import 'package:ourney/features/update/data/update_prefs.dart';
 import 'package:ourney/features/update/data/update_providers.dart';
@@ -13,6 +16,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/test_helpers.dart';
+import '../../data/data_test_helpers.dart';
 
 class FakeUpdateManifestSource implements UpdateManifestSource {
   late Future<AppUpdateManifest> Function() response;
@@ -104,6 +108,128 @@ void main() {
     expect(read(container).isChecking, isFalse);
     expect(await controller(container).launchUpdate(), isFalse);
   });
+
+  test(
+    'a missing package seed is retried and recovers the cached gate',
+    () async {
+      final prefs = await testPrefs();
+      await UpdatePrefs(prefs)
+          .savePolicy((manifest: manifest(min: '1.1.0'), checkedAt: now));
+      final pending = Completer<AppUpdateManifest>();
+      source.response = () => pending.future;
+      final recovered = Completer<PackageInfo?>();
+      final loadStarted = Completer<void>();
+      var attempts = 0;
+      final container = ProviderContainer.test(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          appUpdateEnabledProvider.overrideWithValue(true),
+          appUpdateClockProvider.overrideWithValue(Clock(() => now)),
+          updatePlatformProvider.overrideWithValue(UpdatePlatform.android),
+          updateManifestSourceProvider.overrideWithValue(source),
+          updatePackageInfoLoaderProvider.overrideWithValue(() async {
+            if (++attempts == 1) return null;
+            return recovered.future;
+          }),
+        ],
+      );
+      await controller(container).refresh();
+      expect(read(container).checkFailed, isTrue);
+      expect(source.calls, 0);
+      final sub = container.listen(appUpdateControllerProvider, (_, next) {
+        if (next.urgency == UpdateUrgency.forced) loadStarted.complete();
+      });
+      addTearDown(sub.close);
+      final retry = controller(container).refresh();
+      recovered.complete(
+        PackageInfo(
+          appName: 'Ourney',
+          packageName: 'com.hofang42.ourney',
+          version: '1.0.0',
+          buildNumber: '1',
+        ),
+      );
+      await loadStarted.future;
+      sub.close();
+      expect(read(container).urgency, UpdateUrgency.forced);
+      pending.complete(manifest(killed: true));
+      await retry;
+      expect(read(container).urgency, UpdateUrgency.none);
+      expect(source.calls, 1);
+    },
+  );
+
+  for (final delayedPackageInfo in [false, true]) {
+    testWidgets(
+      'a cached forced gate never starts sync or import (delayed PackageInfo: $delayedPackageInfo)',
+      (tester) async {
+        final prefs = await testPrefs();
+        await UpdatePrefs(prefs)
+            .savePolicy((manifest: manifest(min: '1.1.0'), checkedAt: now));
+        source.response = () async => throw TimeoutException('offline');
+        final remote = FakeRemoteApi();
+        final packageInfo = PackageInfo(
+          appName: 'Ourney',
+          packageName: 'com.hofang42.ourney',
+          version: '1.0.0',
+          buildNumber: '1',
+        );
+        final packageInfoReply = Completer<PackageInfo>();
+        final container = ProviderContainer.test(
+          overrides: [
+            ...dataOverrides(
+              DataEnvironment(
+                db: memoryDb(),
+                mediaRoot: tempDir(),
+                remote: remote,
+              ),
+            ),
+            supabaseClientProvider.overrideWithValue(null),
+            appConfigProvider.overrideWithValue(testBackendConfig),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            appUpdateEnabledProvider.overrideWithValue(true),
+            appUpdateClockProvider.overrideWithValue(Clock(() => now)),
+            updatePlatformProvider.overrideWithValue(UpdatePlatform.android),
+            appUpdateConnectivityChangesProvider.overrideWithValue(
+              () => const Stream.empty(),
+            ),
+            updateManifestSourceProvider.overrideWithValue(source),
+            if (delayedPackageInfo)
+              updatePackageInfoLoaderProvider.overrideWithValue(
+                () => packageInfoReply.future,
+              )
+            else
+              packageInfoProvider.overrideWithValue(packageInfo),
+          ],
+        );
+        if (delayedPackageInfo) {
+          expect(read(container).waitingForInstalledVersion, isTrue);
+          expect(container.exists(dataLayerProvider), isFalse);
+          expect(container.exists(importResumeProvider), isFalse);
+          expect(source.calls, 0);
+          packageInfoReply.complete(packageInfo);
+          await tester.pump();
+        }
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const OurneyApp(),
+          ),
+        );
+        await tester.pump(const Duration(seconds: 3));
+        expect(
+          find.byKey(const ValueKey('update-gate-screen')),
+          findsOneWidget,
+        );
+        expect(container.exists(dataLayerProvider), isFalse);
+        expect(container.exists(importResumeProvider), isFalse);
+        expect(remote.calls, isEmpty);
+        expect(source.calls, 1);
+        await tester.pumpWidget(const SizedBox.shrink());
+        container.dispose();
+      },
+    );
+  }
 
   test('cached soft policy stays hidden while offline', () async {
     final prefs = await testPrefs();

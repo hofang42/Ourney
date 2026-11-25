@@ -503,6 +503,20 @@ check "preflight never creates a tag" $?
 contains "$(cat "$LOG")" "gh run list --branch main --workflow CI --limit 1 --json"
 check "CI status is read with gh run list" $?
 
+run in_work node "$ROOT/scripts/release/metadata.mjs" lint
+[ "$RC" -eq 0 ] && contains "$OUT" 'release metadata and pubspec version 0.1.0+3'
+check "PR metadata lint reads the pubspec without a release tag" $? "rc=$RC out=$OUT"
+
+jq '.recommended.ios = "0.2.0"' "$WORK/apps/mobile/release-meta.json" > "$TMP/ahead.json"
+cp "$TMP/ahead.json" "$WORK/apps/mobile/release-meta.json"
+run in_work node "$ROOT/scripts/release/metadata.mjs" lint
+[ "$RC" -eq 1 ] && contains "$OUT" 'ios must have min_supported <= recommended <= release version'
+check "PR metadata lint rejects a recommendation ahead of pubspec" $? "rc=$RC out=$OUT"
+run in_work bash "$PREFLIGHT" v0.1.0
+[ "$RC" -eq 1 ] && contains "$OUT" 'ios must have min_supported <= recommended <= release version'
+check "release preflight rejects a recommendation ahead of pubspec" $? "rc=$RC out=$OUT"
+git -C "$WORK" show HEAD:apps/mobile/release-meta.json > "$WORK/apps/mobile/release-meta.json"
+
 run in_work bash "$PREFLIGHT" v0.2.0
 [ "$RC" -eq 1 ] && contains "$OUT" "pubspec version name is '0.1.0', expected '0.2.0'"
 check "fails when pubspec version differs from the tag" $? "rc=$RC out=$OUT"

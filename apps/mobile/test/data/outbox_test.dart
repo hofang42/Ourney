@@ -204,6 +204,26 @@ void main() {
       expect(rows.single.lastError, contains('ended'));
     });
 
+    test('clientOutdated keeps the queue intact beyond maxAttempts', () async {
+      var dead = 0;
+      final outbox = Outbox(
+        db,
+        executor: (_, _) async =>
+            throw const OurneyException(OurneyErrorCode.clientOutdated),
+        maxAttempts: 1,
+        timer: timers.call,
+        onDead: (_) => dead++,
+      );
+      addTearDown(outbox.dispose);
+      await outbox.enqueue(OutboxKind.createJourney, 'journey:1', {});
+      await outbox.enqueue(OutboxKind.upsertCheckIn, 'checkin:1', {});
+      await outbox.flush(force: true);
+      await outbox.flush(force: true);
+      final pending = await outbox.pendingRows();
+      expect(pending.map((row) => row.attempts), [2, 0]);
+      expect(dead, 0);
+    });
+
     test('gives up after maxAttempts non-offline failures', () async {
       final outbox = Outbox(
         db,

@@ -27,14 +27,14 @@ function compareVersions(left, right) {
 function readPubspec(pubspec, expectedVersion, source) {
   const value = pubspec.match(/^version:[ \t]*(['"]?)([^'"\s#]+)\1[ \t]*(?:#.*)?\r?$/m)?.[2];
   const [version, buildText, ...extra] = value?.split('+') ?? [];
-  if (version !== expectedVersion) {
+  if (expectedVersion !== undefined && version !== expectedVersion) {
     throw new Error(`${source}: pubspec version name is '${version ?? '<none>'}', expected '${expectedVersion}'`);
   }
   const build = Number(buildText);
   if (extra.length || !/^[0-9]+$/.test(buildText ?? '') || build < 1 || build > maxInteger) {
     throw new Error(`${source}: pubspec version requires a positive +buildNumber of at most ${maxInteger}`);
   }
-  return build;
+  return { version, build };
 }
 
 function readMetadata(latest) {
@@ -101,7 +101,7 @@ function checkPreviousBuild(latest, build, unmarked) {
 
   // Fetch the previous release by ref without creating or changing local tags.
   git('fetch', '--quiet', '--no-tags', '--no-write-fetch-head', 'origin', previous.ref);
-  const previousBuild = readPubspec(git('show', `${previous.sha}:${pubspecPath}`), previous.version, previous.ref);
+  const { build: previousBuild } = readPubspec(git('show', `${previous.sha}:${pubspecPath}`), previous.version, previous.ref);
   if (build <= previousBuild) {
     throw new Error(`+buildNumber ${build} must be greater than ${previousBuild} from v${previous.version}`);
   }
@@ -115,18 +115,20 @@ function checkPreviousBuild(latest, build, unmarked) {
 }
 
 try {
-  const [command, tag] = process.argv.slice(2);
-  if (!['check', 'request'].includes(command) || !tag?.startsWith('v')) {
-    throw new Error('Usage: node scripts/release/metadata.mjs <check|request> vX.Y.Z');
+  const [command, tag, ...extra] = process.argv.slice(2);
+  if (extra.length || (command === 'lint' ? tag !== undefined :
+    !['check', 'request'].includes(command) || !tag?.startsWith('v'))) {
+    throw new Error('Usage: node scripts/release/metadata.mjs lint | <check|request> vX.Y.Z');
   }
-  const version = tag.slice(1);
-  const latest = versionParts(version, 'tag');
-  const build = readPubspec(readFileSync(pubspecPath, 'utf8'), version, pubspecPath);
+  const tagVersion = tag?.slice(1);
+  if (tagVersion !== undefined) versionParts(tagVersion, 'tag');
+  const { version, build } = readPubspec(readFileSync(pubspecPath, 'utf8'), tagVersion, pubspecPath);
+  const latest = versionParts(version, `${pubspecPath} version`);
   const { meta, minimums } = readMetadata(latest);
   const unmarked = checkMigrations(minimums);
 
-  if (command === 'check') {
-    checkPreviousBuild(latest, build, unmarked);
+  if (command !== 'request') {
+    if (command === 'check') checkPreviousBuild(latest, build, unmarked);
     console.log(`ok    release metadata and pubspec version ${version}+${build}`);
   } else {
     console.log(JSON.stringify({

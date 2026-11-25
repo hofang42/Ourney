@@ -4,6 +4,8 @@ import 'package:clock/clock.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'
+    show Provider, ProviderListenableSelect;
 import 'package:ourney_core/ourney_core.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -26,6 +28,15 @@ Future<PackageInfo?> readUpdatePackageInfo() async {
 /// Seeded before runApp so a cached gate can be evaluated synchronously.
 @Riverpod(keepAlive: true)
 PackageInfo? packageInfo(Ref ref) => null;
+
+/// Used after launch if the synchronous seed was unavailable.
+final updatePackageInfoLoaderProvider =
+    Provider<Future<PackageInfo?> Function()>((ref) => readUpdatePackageInfo);
+
+final appUpdateWorkPausedProvider = appUpdateControllerProvider.select(
+  (state) =>
+      state.waitingForInstalledVersion || state.urgency == UpdateUrgency.forced,
+);
 
 @Riverpod(keepAlive: true)
 UpdatePlatform? updatePlatform(Ref ref) => kIsWeb
@@ -67,8 +78,7 @@ Future<bool> Function(Uri) appUpdateLauncher(Ref ref) =>
 @Riverpod(keepAlive: true)
 void appUpdateLifecycle(Ref ref) {
   if (!ref.watch(appUpdateEnabledProvider) ||
-      ref.watch(updatePlatformProvider) == null ||
-      SemVer.tryParse(ref.watch(packageInfoProvider)?.version) == null) {
+      ref.watch(updatePlatformProvider) == null) {
     return;
   }
   final controller = ref.read(appUpdateControllerProvider.notifier);
@@ -94,6 +104,7 @@ final class AppUpdateState {
     this.isChecking = false,
     this.checkFailed = false,
     this.usingCachedPolicy = false,
+    this.waitingForInstalledVersion = false,
   });
 
   final SemVer? installedVersion;
@@ -104,6 +115,7 @@ final class AppUpdateState {
   final bool isChecking;
   final bool checkFailed;
   final bool usingCachedPolicy;
+  final bool waitingForInstalledVersion;
 
   UpdateUrgency get urgency => decision.urgency;
   bool get showHubBanner => decision.showHubBanner;
@@ -135,12 +147,8 @@ class AppUpdateController extends _$AppUpdateController {
     final platform = ref.read(updatePlatformProvider);
     final info = ref.read(packageInfoProvider);
     final installed = SemVer.tryParse(info?.version);
-    if (ref.read(appUpdateEnabledProvider) &&
-        platform != null &&
-        installed != null) {
-      _prefs = UpdatePrefs(ref.read(sharedPreferencesProvider));
-      final cached = _prefs!.cachedPolicy;
-      if (cached?.manifest.platform == platform) _policy = cached;
+    if (ref.read(appUpdateEnabledProvider) && platform != null) {
+      _loadCachedPolicy(platform);
     }
     return _evaluate(
       platform: platform,
@@ -149,15 +157,22 @@ class AppUpdateController extends _$AppUpdateController {
     );
   }
 
+  void _loadCachedPolicy(UpdatePlatform platform) {
+    final prefs = _prefs = UpdatePrefs(ref.read(sharedPreferencesProvider));
+    final cached = prefs.cachedPolicy;
+    if (cached?.manifest.platform == platform) _policy = cached;
+  }
+
   Future<void> refresh({bool manual = false}) {
-    if (_prefs == null) return Future.value();
+    if (!ref.read(appUpdateEnabledProvider) || state.platform == null) {
+      return Future.value();
+    }
     if (_inFlight case final active?) return active;
     final lastCheckedAt = _lastCheckedAt;
     if (!manual && lastCheckedAt != null) {
       final age = _now.difference(lastCheckedAt);
       if (!age.isNegative && age < _refreshInterval) return Future.value();
     }
-    _lastCheckedAt = _now;
     // Defer execution until the active Future is recorded, including for
     // synchronous listeners reacting to the checking state.
     final refresh = Future<void>.microtask(_fetch);
@@ -172,16 +187,44 @@ class AppUpdateController extends _$AppUpdateController {
 
   Future<void> _fetch() async {
     if (!ref.mounted) return;
-    final prefs = _prefs!;
-    final installed = state.installedVersion!;
     final platform = state.platform!;
+    final knownVersion = state.installedVersion;
+    final SemVer installed;
+    _emit(checking: true);
+    if (knownVersion == null) {
+      PackageInfo? info;
+      try {
+        info = await ref
+            .read(updatePackageInfoLoaderProvider)()
+            .timeout(const Duration(seconds: 2));
+      } on Object {
+        // A later resume, reconnect or manual check can try again.
+      }
+      if (!ref.mounted) return;
+      final parsed = SemVer.tryParse(info?.version);
+      if (parsed == null) {
+        _checkFailed = true;
+        _emit(checking: false);
+        return;
+      }
+      installed = parsed;
+      state = _evaluate(
+        platform: platform,
+        installed: installed,
+        build: info?.buildNumber,
+        checking: true,
+      );
+    } else {
+      installed = knownVersion;
+    }
+    _lastCheckedAt = _now;
+    final prefs = _prefs!;
     if (prefs.firstSeenAt == null) {
       unawaited(_save(() => prefs.recordFirstSeen(_now)));
     }
     if (prefs.lastSeenInstalledVersion == null) {
       unawaited(_save(() => prefs.recordInstalledVersion(installed)));
     }
-    _emit(checking: true);
     try {
       final source = ref.read(updateManifestSourceProvider);
       final manifest = await source?.fetch(platform);
@@ -243,8 +286,8 @@ class AppUpdateController extends _$AppUpdateController {
     final firstSeenAt = prefs?.firstSeenAt;
     final snooze = prefs?.snooze;
     final age = policy == null ? null : now.difference(policy.checkedAt);
-    final isCached =
-        !_fresh || age == null || age.isNegative || age >= updateForcedCacheTtl;
+    final recent = age != null && !age.isNegative && age < updateForcedCacheTtl;
+    final isCached = !_fresh || !recent;
     final decision = evaluateAppUpdatePolicy(
       installed: installed,
       manifest: policy?.manifest,
@@ -280,6 +323,13 @@ class AppUpdateController extends _$AppUpdateController {
       isChecking: checking,
       checkFailed: _checkFailed,
       usingCachedPolicy: isCached && decision.urgency == UpdateUrgency.forced,
+      // Give a recent policy a chance to apply before workers start when
+      // the first PackageInfo read missed the launch deadline.
+      waitingForInstalledVersion:
+          installed == null &&
+          !_checkFailed &&
+          recent &&
+          policy?.manifest.killSwitch == false,
     );
   }
 

@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(23);
+select plan(30);
 
 select ok(
   (select relrowsecurity from pg_class where oid = 'private.app_version_policy'::regclass),
@@ -136,6 +136,34 @@ select throws_ok(
 select throws_ok(
   $$ select public.admin_service_publish_release('android', '1.11.0', 4, '1.9.0', '1.9.0', true, null, '[1]', '["Update"]') $$,
   '23514', null, 'release notes must contain strings'
+);
+select throws_ok(
+  $$ update private.app_version_policy set notes_vi = '[""]' where platform = 'android' $$,
+  '23514', null, 'empty Vietnamese bullets are rejected'
+);
+select throws_ok(
+  $$ update private.app_version_policy set notes_en = '[" \t\n"]' where platform = 'android' $$,
+  '23514', null, 'whitespace-only English bullets are rejected'
+);
+select throws_ok(
+  $$ update private.app_version_policy set download_url = 'http://ourney.tech/Ourney.apk' where platform = 'android' $$,
+  '23514', null, 'download URLs require HTTPS'
+);
+select throws_ok(
+  $$ update private.app_version_policy set download_url = 'https://ourney.tech.example.com/Ourney.apk' where platform = 'android' $$,
+  '23514', null, 'lookalike download hosts are rejected'
+);
+select throws_ok(
+  $$ update private.app_version_policy set download_url = 'https://github.com:444/hofang42/ourney-releases/releases/download/v1.10.0/Ourney.apk' where platform = 'android' $$,
+  '23514', null, 'download URLs reject non-default HTTPS ports'
+);
+select throws_ok(
+  $$ update private.app_version_policy set download_url = 'https://github.com/hofang42/ourney-releases/releases/%2e%2e/issues' where platform = 'android' $$,
+  '23514', null, 'GitHub download URLs cannot leave the release path'
+);
+select lives_ok(
+  $$ update private.app_version_policy set download_url = 'https://github.com/hofang42/ourney-releases/releases/download/v1.10.0/Ourney.apk' where platform = 'android' $$,
+  'the canonical GitHub release artifact URL is allowed'
 );
 select ok(
   public.get_app_version_policy('android') @> '{"latest":"1.10.0","latest_build":3,"min_supported":"1.0.0"}'::jsonb

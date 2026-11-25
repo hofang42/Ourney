@@ -36,12 +36,30 @@ class OurneyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(appUpdateLifecycleProvider);
+    final workPaused = ref.watch(appUpdateWorkPausedProvider);
+    final locale = ref.watch(localeOverrideProvider);
+    final themeMode = ref.watch(themeModeProvider);
+    if (workPaused) {
+      return MaterialApp(
+        onGenerateTitle: (context) => AppLocalizations.of(context).app_name,
+        debugShowCheckedModeBanner: false,
+        locale: locale,
+        theme: OurneyTheme.build(Brightness.light, null),
+        darkTheme: OurneyTheme.build(Brightness.dark, null),
+        themeMode: themeMode,
+        supportedLocales: ourneySupportedLocales,
+        localizationsDelegates: ourneyLocalizationsDelegates,
+        builder: (context, child) => const OurneyTextScaleClamp(
+          child: UpdateGateHost(child: UiSplash(returning: true)),
+        ),
+      );
+    }
     final router = ref.watch(routerProvider);
     // Keep the haptics toggle mirrored into OurneyHaptics.enabled.
     ref.watch(hapticsEnabledProvider);
     // Sign-out / account deletion clears the previous account's local state.
     ref.watch(accountSessionResetProvider);
-    ref.watch(appUpdateLifecycleProvider);
     // A retold journey a kill interrupted is finished in the background.
     ref.watch(importResumeProvider);
     // tz database decoded after the first frame (camera ready < 1 s).
@@ -49,7 +67,6 @@ class OurneyApp extends ConsumerWidget {
     // The active journey's persona colors the whole app; the router is not
     // rebuilt when it changes (docs/06 §1 Q1).
     final skin = ref.watch(activePersonaSkinProvider);
-    final locale = ref.watch(localeOverrideProvider);
     final onboarded = ref.watch(onboardingCompleteProvider);
     final serverPulls = ref.watch(serverPullsProvider);
     final a11y =
@@ -62,7 +79,7 @@ class OurneyApp extends ConsumerWidget {
       locale: locale,
       theme: OurneyTheme.build(Brightness.light, skin),
       darkTheme: OurneyTheme.build(Brightness.dark, skin),
-      themeMode: ref.watch(themeModeProvider),
+      themeMode: themeMode,
       themeAnimationDuration: reduceMotion
           ? UiMotion.reducedFade
           : UiMotion.theme,
@@ -82,15 +99,12 @@ class OurneyApp extends ConsumerWidget {
               child: OurneyTextScaleClamp(
                 // In-app reminder banner (V2 `ReminderNotification`): shown while
                 // `reminderBannerProvider` holds a value; a tap opens the camera.
-                // Suppressed when `UpdateGateHost` presents the forced gate.
                 child: _SplashGate(
                   returning: onboarded,
-                  child: UpdateGateHost(
-                    child: ReminderBannerHost(
-                      onOpenJourneyCamera: (id) =>
-                          unawaited(_openReminderJourney(ref, router, id)),
-                      child: child ?? const SizedBox.shrink(),
-                    ),
+                  child: ReminderBannerHost(
+                    onOpenJourneyCamera: (id) =>
+                        unawaited(_openReminderJourney(ref, router, id)),
+                    child: child ?? const SizedBox.shrink(),
                   ),
                 ),
               ),
@@ -106,6 +120,7 @@ class OurneyApp extends ConsumerWidget {
     GoRouter router,
     String id,
   ) async {
+    if (ref.read(appUpdateWorkPausedProvider)) return;
     var active = true;
     try {
       final journeys = await ref
@@ -123,6 +138,7 @@ class OurneyApp extends ConsumerWidget {
     } on Object {
       active = true;
     }
+    if (!ref.context.mounted || ref.read(appUpdateWorkPausedProvider)) return;
     if (active) {
       unawaited(ref.read(activeJourneyIdProvider.notifier).select(id));
     }

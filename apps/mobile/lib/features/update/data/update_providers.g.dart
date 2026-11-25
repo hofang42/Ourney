@@ -370,7 +370,7 @@ final class AppUpdateLifecycleProvider
 }
 
 String _$appUpdateLifecycleHash() =>
-    r'0e0e2d9b80415e531b47e9865888a8148397ee74';
+    r'92cd51c689bb05a1047d04ad275988540cedc226';
 
 @ProviderFor(AppUpdateController)
 final appUpdateControllerProvider = AppUpdateControllerProvider._();
@@ -405,7 +405,7 @@ final class AppUpdateControllerProvider
 }
 
 String _$appUpdateControllerHash() =>
-    r'c2082ca6da4e001b26a0f0f6ded4305c6326f0cd';
+    r'f1884584980f282ae89a741a1834516d767b4f5a';
 
 abstract class _$AppUpdateController extends $Notifier<AppUpdateState> {
   AppUpdateState build();
