@@ -36,8 +36,8 @@ select public_token as create_token, public_slug as create_slug
   from public.create_journey(tests.j(1), 'solo', 'travel', '7 Ngày Đà Lạt', 'x', null, null,
     false, current_date, 7, 'UTC', p_visibility => 'link')
 \gset
-select matches(:'create_token', '^[a-z0-9]{40}$', 'create_journey still returns a legacy token');
-select matches(:'create_slug', '^journey-[a-z2-7]{16}$', 'link visibility at creation issues a neutral slug');
+select matches(:'create_token'::text, '^[a-z0-9]{40}$', 'create_journey still returns a legacy token');
+select matches(:'create_slug'::text, '^journey-[a-z2-7]{16}$', 'link visibility at creation issues a neutral slug');
 select throws_ok($$ select public.set_readable_public_link(tests.j(1), true, true, '7 Ngày Đà Lạt') $$,
   'P0001', 'invalid', 'active journeys still cannot rotate a link');
 
@@ -68,7 +68,7 @@ $$;
 select public.set_readable_public_link(tests.j(2), true, false,
   normalize('7 Ngày, Đà Lạt!', NFD)) as slug \gset
 select public_token as legacy from public.journeys where id = tests.j(2) \gset
-select matches(:'slug', '^7-ngay-da-lat-[a-z2-7]{16}$',
+select matches(:'slug'::text, '^7-ngay-da-lat-[a-z2-7]{16}$',
   'an approved Vietnamese title folds lowercase letters, accents and punctuation');
 select is(public.set_readable_public_link(tests.j(2), true), :'slug',
   'enabling an active link again preserves its slug');
@@ -105,7 +105,7 @@ select throws_ok($$ select public.set_readable_public_link(tests.j(2), true, tru
 
 do $$ begin perform tests.as_user(tests.u(1)); end $$;
 select public.set_readable_public_link(tests.j(2), true, true) as rotated \gset
-select isnt(:'rotated', :'slug', 'rotation issues a different readable URL');
+select isnt(:'rotated'::text, :'slug'::text, 'rotation issues a different readable URL');
 select throws_ok(format('select public.public_journey_by_token(%L)', :'slug'), 'P0001', 'not_found',
   'rotation invalidates the previous readable URL');
 select throws_ok(format('select public.public_journey_by_token(%L)', :'legacy'), 'P0001', 'not_found',

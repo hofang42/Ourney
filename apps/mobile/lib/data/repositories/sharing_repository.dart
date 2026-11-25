@@ -107,7 +107,7 @@ class DataSharingRepository implements SharingRepository {
       'journey': journeyId,
       'enabled': enabled,
       'reset': reset,
-      if (approvedTitle != null) 'approved_title': approvedTitle,
+      'approved_title': ?approvedTitle,
     }, (json) => json is String ? json : null);
     await _cachePublicToken(journeyId, token);
     social.changed();

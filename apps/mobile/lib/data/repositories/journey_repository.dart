@@ -763,7 +763,7 @@ class DataJourneyRepository implements JourneyRepository {
     final token = await remote.rpc('set_readable_public_link', {
       'journey': journeyId,
       'enabled': enabled,
-      if (approvedTitle != null) 'approved_title': approvedTitle,
+      'approved_title': ?approvedTitle,
     });
     final value = token is String ? token : null;
     final local = await (_db.select(
