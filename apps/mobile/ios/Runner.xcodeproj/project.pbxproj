@@ -24,6 +24,9 @@
 		7D0B00232F10000100000001 /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D0B001A2F10000100000001 /* ActivityKit.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		7D0B00242F10000100000001 /* OurneyWidgetsExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 7D0B00012F10000100000001 /* OurneyWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7D0B00252F10000100000001 /* WidgetSnapshotRolloverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00142F10000100000001 /* WidgetSnapshotRolloverTests.swift */; };
+		7D0B00602F10000100000001 /* WidgetAppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00632F10000100000001 /* WidgetAppGroup.swift */; };
+		7D0B00612F10000100000001 /* WidgetAppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00632F10000100000001 /* WidgetAppGroup.swift */; };
+		7D0B00622F10000100000001 /* WidgetAppGroupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00642F10000100000001 /* WidgetAppGroupTests.swift */; };
 		7D0B00262F10000100000001 /* OurneyCheckInAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00032F10000100000001 /* OurneyCheckInAttributes.swift */; };
 		7D0B00272F10000100000001 /* OurneyWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00042F10000100000001 /* OurneyWidgetsBundle.swift */; };
 		7D0B00282F10000100000001 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00052F10000100000001 /* WidgetSnapshot.swift */; };
@@ -136,6 +139,8 @@
 		7D0B00122F10000100000001 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7D0B00132F10000100000001 /* OurneyWidgets.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = OurneyWidgets.entitlements; sourceTree = "<group>"; };
 		7D0B00142F10000100000001 /* WidgetSnapshotRolloverTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotRolloverTests.swift; sourceTree = "<group>"; };
+		7D0B00632F10000100000001 /* WidgetAppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetAppGroup.swift; sourceTree = "<group>"; };
+		7D0B00642F10000100000001 /* WidgetAppGroupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetAppGroupTests.swift; sourceTree = "<group>"; };
 		7D0B00152F10000100000001 /* BeVietnamPro-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "BeVietnamPro-SemiBold.ttf"; path = "../../assets/fonts/BeVietnamPro-SemiBold.ttf"; sourceTree = "<group>"; };
 		7D0B00162F10000100000001 /* BeVietnamPro-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "BeVietnamPro-Bold.ttf"; path = "../../assets/fonts/BeVietnamPro-Bold.ttf"; sourceTree = "<group>"; };
 		7D0B00172F10000100000001 /* BricolageGrotesque-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "BricolageGrotesque-Variable.ttf"; path = "../../assets/fonts/BricolageGrotesque-Variable.ttf"; sourceTree = "<group>"; };
@@ -175,6 +180,7 @@
 			children = (
 				331C807B294A618700263BE5 /* RunnerTests.swift */,
 				7D0B00142F10000100000001 /* WidgetSnapshotRolloverTests.swift */,
+				7D0B00642F10000100000001 /* WidgetAppGroupTests.swift */,
 			);
 			path = RunnerTests;
 			sourceTree = "<group>";
@@ -183,6 +189,7 @@
 			isa = PBXGroup;
 			children = (
 				7D0B00032F10000100000001 /* OurneyCheckInAttributes.swift */,
+				7D0B00632F10000100000001 /* WidgetAppGroup.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -466,6 +473,7 @@
 			files = (
 				331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */,
 				7D0B00252F10000100000001 /* WidgetSnapshotRolloverTests.swift in Sources */,
+				7D0B00622F10000100000001 /* WidgetAppGroupTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -476,6 +484,7 @@
 				7D0B00262F10000100000001 /* OurneyCheckInAttributes.swift in Sources */,
 				7D0B00272F10000100000001 /* OurneyWidgetsBundle.swift in Sources */,
 				7D0B00282F10000100000001 /* WidgetSnapshot.swift in Sources */,
+				7D0B00612F10000100000001 /* WidgetAppGroup.swift in Sources */,
 				7D0B00292F10000100000001 /* OurneyWidgetTokens.swift in Sources */,
 				7D0B002A2F10000100000001 /* OurneyWidgetIcons.swift in Sources */,
 				7D0B002B2F10000100000001 /* WidgetL10n.swift in Sources */,
@@ -499,6 +508,7 @@
 				7D0B00202F10000100000001 /* OurneyWidgetBridge.swift in Sources */,
 				7D0B00212F10000100000001 /* OurneyCheckInAttributes.swift in Sources */,
 				7D0B00222F10000100000001 /* WidgetSnapshot.swift in Sources */,
+				7D0B00602F10000100000001 /* WidgetAppGroup.swift in Sources */,
 				7D0B004B2F10000100000001 /* WidgetIntents.swift in Sources */,
 				7D0B004D2F10000100000001 /* WidgetL10n.swift in Sources */,
 			);

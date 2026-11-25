@@ -116,6 +116,12 @@ abstract class WidgetsL10n {
   /// **'Đặt chuỗi ngày, mục tiêu hôm nay và tiến độ nhóm ngay trên Màn hình chính hoặc Màn hình khóa. Số cân nặng (kg) và mục tiêu riêng tư không bao giờ xuất hiện trên tiện ích.'**
   String get widgets_intro;
 
+  /// Notice on iOS when the app installation lacks a shared widget data container.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bản cài này chưa cho widget đọc dữ liệu. Widget sẽ hoạt động ở bản TestFlight/App Store hoặc khi cài qua AltStore/SideStore.'**
+  String get widgets_appGroupUnavailable;
+
   /// Section heading for the interactive widget preview gallery.
   ///
   /// In vi, this message translates to:

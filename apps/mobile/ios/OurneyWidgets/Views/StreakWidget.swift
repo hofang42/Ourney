@@ -32,7 +32,8 @@ public struct StreakWidgetEntryView: View {
     let themeMode = snapshot?.themeMode ?? "system"
     let cardState = WidgetSnapshot.resolveStreakCardState(
       snapshot: snapshot,
-      pinnedId: entry.pinnedId
+      pinnedId: entry.pinnedId,
+      appGroupAvailable: entry.appGroupAvailable
     )
     let journey: WidgetJourneyItem? = {
       if case .ready(let item) = cardState { return item }
@@ -53,6 +54,8 @@ public struct StreakWidgetEntryView: View {
           : OurneyDeepLinks.capture(journeyId: item.id)
       case .unsynced, .signedOut:
         return OurneyDeepLinks.syncJourneys
+      case .appGroupUnavailable:
+        return OurneyDeepLinks.journeys
       case .noJourneys:
         return OurneyDeepLinks.newJourney
       }
@@ -64,6 +67,8 @@ public struct StreakWidgetEntryView: View {
         if let snap = snapshot {
           StreakSmallCardView(snapshot: snap, journey: item, entryDate: entry.date, theme: theme)
         }
+      case .appGroupUnavailable:
+        AppGroupUnavailableWidgetView(locale: locale, theme: theme, isSmall: true)
       case .unsynced:
         OurneyEmptyWidgetView(
           iconName: "sparkle",

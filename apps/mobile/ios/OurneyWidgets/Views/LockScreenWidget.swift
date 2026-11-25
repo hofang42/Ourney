@@ -41,7 +41,8 @@ public struct LockScreenWidgetEntryView: View {
     let cardState = WidgetSnapshot.resolveTodayCardState(
       snapshot: snapshot,
       pinnedId: entry.pinnedId,
-      state: entry.state
+      state: entry.state,
+      appGroupAvailable: entry.appGroupAvailable
     )
     let isPinned = snapshot?.isTodayJourneyPinned(entry.pinnedId) ?? false
     let featured: WidgetJourneyItem? = {
@@ -81,7 +82,7 @@ public struct LockScreenWidgetEntryView: View {
 
     let statusTextOverride: String? = {
       switch cardState {
-      case .ready:
+      case .ready, .appGroupUnavailable:
         return nil
       case .unsynced:
         return WidgetL10n.unsyncedLockScreenStatus(locale: locale)
@@ -100,6 +101,8 @@ public struct LockScreenWidgetEntryView: View {
           : OurneyDeepLinks.capture(journeyId: item.id)
       case .unsynced, .signedOut:
         return OurneyDeepLinks.syncJourneys
+      case .appGroupUnavailable:
+        return OurneyDeepLinks.journeys
       case .noJourneys:
         return OurneyDeepLinks.newJourney
       }
@@ -107,7 +110,23 @@ public struct LockScreenWidgetEntryView: View {
 
     Group {
       if #available(iOSApplicationExtension 16.0, iOS 16.0, *) {
-        if family == .accessoryCircular {
+        if case .appGroupUnavailable = cardState {
+          let openLabel = WidgetL10n.openOurney(locale: locale)
+          let message = WidgetL10n.appGroupUnavailableSubtitle(locale: locale)
+          if family == .accessoryRectangular {
+            VStack(alignment: .leading, spacing: 2) {
+              Text(openLabel).font(.caption.bold())
+              Text(message).font(.caption2).lineLimit(2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+          } else {
+            Text(openLabel)
+              .font(.caption2.bold())
+              .multilineTextAlignment(.center)
+              .lineLimit(family == .accessoryCircular ? 2 : 1)
+              .accessibilityLabel(Text(openLabel + ". " + message))
+          }
+        } else if family == .accessoryCircular {
           LockScreenCircularView(
             streak: bestStreak,
             completed: completedCount,

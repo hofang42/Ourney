@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart'
-    show TargetPlatform, defaultTargetPlatform;
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -87,6 +87,10 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
     }
 
     final isAndroid = defaultTargetPlatform == TargetPlatform.android;
+    final showAppGroupNotice =
+        !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.iOS &&
+        ref.watch(widgetCapabilitiesProvider).asData?.value.appGroup == false;
 
     final photoModeNote = switch (photoMode) {
       WidgetPhotoMode.smart => l10n.widgets_photoModeSmartNote,
@@ -111,6 +115,16 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
             l10n.widgets_intro,
             style: UiText.muted(color: ui.inkMuted),
           ),
+          if (showAppGroupNotice) ...[
+            const SizedBox(height: UiSpace.md),
+            UiCard(
+              shadowOffset: 0,
+              child: Text(
+                l10n.widgets_appGroupUnavailable,
+                style: UiText.body(size: 13, height: 1.4, color: ui.inkMuted),
+              ),
+            ),
+          ],
           const SizedBox(height: UiSpace.xl),
           UiListHeading(title: l10n.widgets_secPreview),
           const SizedBox(height: UiSpace.sm),
