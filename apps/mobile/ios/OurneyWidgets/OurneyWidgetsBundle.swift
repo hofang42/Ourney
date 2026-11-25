@@ -3,7 +3,7 @@ import WidgetKit
 
 @main
 enum OurneyWidgetsLauncher {
-  static func main() {
+  @MainActor static func main() {
     #if canImport(AppIntents)
     if #available(iOSApplicationExtension 17.0, iOS 17.0, *) {
       OurneyConfigurableWidgetsBundle.main()

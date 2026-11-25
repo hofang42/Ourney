@@ -465,21 +465,38 @@ public final class OurneyWidgetBridge {
   }
 
   /// Resolves Lock Screen title redaction flag across `syncLiveActivity` payloads,
-  /// prioritizing canonical `redactLockScreenTitles` (top-level, `liveWindow`, and `privacy` dicts)
-  /// before falling back to legacy `redactTitleOnLockScreen` and cached `snapshot_v1.json`.
+  /// always redacting sensitive journeys first, then prioritizing canonical
+  /// `redactLockScreenTitles` (top-level, `liveWindow`, and `privacy` dicts) before
+  /// falling back to legacy `redactTitleOnLockScreen` and cached `snapshot_v1.json`.
   public static func resolveRedactLockScreenTitles(
     topDict: [String: Any],
     windowDict: [String: Any]? = nil,
     cachedSnapshot: WidgetSnapshot? = nil
   ) -> Bool {
     let resolvedWindowDict = windowDict ?? (topDict["liveWindow"] as? [String: Any]) ?? topDict
+    let isExplicitlySensitive = (resolvedWindowDict["isSensitive"] as? Bool)
+      ?? (topDict["isSensitive"] as? Bool)
+      ?? false
+    let skinId = (resolvedWindowDict["skinId"] as? String) ?? (topDict["skinId"] as? String)
+    let typeIcon = (resolvedWindowDict["typeIcon"] as? String) ?? (topDict["typeIcon"] as? String)
+    let journeyId = (resolvedWindowDict["journeyId"] as? String) ?? (topDict["journeyId"] as? String)
+    let matchedJourney = journeyId.flatMap { jId in
+      cachedSnapshot?.journeys.first(where: { $0.id == jId })
+    }
+
+    if isExplicitlySensitive
+      || WidgetJourneyItem.isImplicitlySensitive(skinId: skinId, typeIcon: typeIcon)
+      || matchedJourney?.isEffectiveSensitiveJourney == true {
+      return true
+    }
+
     let privacyDict = topDict["privacy"] as? [String: Any]
     return (topDict["redactLockScreenTitles"] as? Bool)
       ?? (resolvedWindowDict["redactLockScreenTitles"] as? Bool)
       ?? (privacyDict?["redactLockScreenTitles"] as? Bool)
       ?? (topDict["redactTitleOnLockScreen"] as? Bool)
       ?? (resolvedWindowDict["redactTitleOnLockScreen"] as? Bool)
-      ?? cachedSnapshot?.privacy.redactLockScreenTitles
+      ?? cachedSnapshot?.shouldRedactLockScreenTitle(for: matchedJourney)
       ?? true
   }
 

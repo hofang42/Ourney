@@ -406,21 +406,21 @@ public struct WidgetSnapshot: Codable, Equatable {
 
   /// Evaluates whether a journey's title should be redacted to `"Ourney"` on the Lock Screen (§B.5).
   /// - Fail-closed by default:
-  ///   1. Honors explicit `privacy.explicitRedactLockScreenTitles` (`true` or `false`) when present.
-  ///   2. When `explicitRedactLockScreenTitles` is `nil` (current Dart `snapshot_v1.json` wire format),
+  ///   1. Sensitive journeys (`isEffectiveSensitiveJourney`: `isSensitive`, `quiet`, `weightLoss`,
+  ///      `type-weight`) are always redacted on the Lock Screen regardless of toggle state.
+  ///   2. Honors explicit `privacy.explicitRedactLockScreenTitles` (`true` or `false`) when present
+  ///      for non-sensitive journeys.
+  ///   3. When `explicitRedactLockScreenTitles` is `nil` (current Dart `snapshot_v1.json` wire format),
   ///      redacts whenever `privacy.redactLockScreenTitles == true` so the user's Lock Screen toggle is
-  ///      always respected across all journeys.
-  ///   3. When `privacy.redactLockScreenTitles == false`, still redacts sensitive journeys
-  ///      (`isEffectiveSensitiveJourney`: `isSensitive`, `quiet`, `weightLoss`, `type-weight`) so
-  ///      weight-loss titles never leak even on older/partial snapshots.
+  ///      always respected across all journeys, while normal users with the toggle off see titles.
   public func shouldRedactLockScreenTitle(for journey: WidgetJourneyItem?) -> Bool {
+    if journey?.isEffectiveSensitiveJourney == true {
+      return true
+    }
     if let explicit = privacy.explicitRedactLockScreenTitles {
       return explicit
     }
-    if privacy.redactLockScreenTitles {
-      return true
-    }
-    return journey?.isEffectiveSensitiveJourney ?? false
+    return privacy.redactLockScreenTitles
   }
 }
 
@@ -526,11 +526,15 @@ public struct WidgetJourneyItem: Codable, Equatable, Identifiable {
   public var isSensitive: Bool
   public var weekStrip: [WidgetWeekDay]
 
-  public var isImplicitlySensitiveSkin: Bool {
+  public static func isImplicitlySensitive(skinId: String?, typeIcon: String?) -> Bool {
     skinId == "quiet"
       || skinId == "quietTransformer"
       || skinId == "weightLoss"
       || typeIcon == "type-weight"
+  }
+
+  public var isImplicitlySensitiveSkin: Bool {
+    Self.isImplicitlySensitive(skinId: skinId, typeIcon: typeIcon)
   }
 
   public var isEffectiveSensitiveJourney: Bool {

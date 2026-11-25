@@ -499,6 +499,80 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
         cachedSnapshot: nil
       )
     )
+    // Sensitive journeys are ALWAYS redacted on Lock Screen Live Activity even when
+    // the user toggle is OFF (`redactLockScreenTitles: false`), while non-sensitive
+    // journeys with the toggle OFF return `false`.
+    XCTAssertTrue(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [
+          "redactLockScreenTitles": false,
+          "skinId": "quiet",
+          "typeIcon": "type-weight",
+        ]
+      )
+    )
+    XCTAssertTrue(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [
+          "redactLockScreenTitles": false,
+          "isSensitive": true,
+          "skinId": "minimal",
+          "typeIcon": "type-custom",
+        ]
+      )
+    )
+    let sensitiveCachedSnap = WidgetSnapshot(
+      authState: "ready",
+      locale: "vi",
+      privacy: WidgetPrivacySettings(
+        photoMode: "smart",
+        redactLockScreenTitles: false
+      ),
+      journeys: [
+        WidgetJourneyItem(
+          id: "solo-weight",
+          title: "Giảm cân 60 ngày",
+          skinId: "minimal",
+          typeIcon: "type-custom",
+          isSensitive: true
+        ),
+        WidgetJourneyItem(
+          id: "solo-study",
+          title: "Tự học IELTS",
+          skinId: "squad",
+          typeIcon: "type-study",
+          isSensitive: false
+        ),
+      ],
+      squads: []
+    )
+    XCTAssertTrue(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [
+          "redactLockScreenTitles": false,
+          "journeyId": "solo-weight",
+        ],
+        cachedSnapshot: sensitiveCachedSnap
+      )
+    )
+    XCTAssertFalse(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [
+          "redactLockScreenTitles": false,
+          "skinId": "squad",
+          "typeIcon": "type-study",
+        ]
+      )
+    )
+    XCTAssertFalse(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [
+          "redactLockScreenTitles": false,
+          "journeyId": "solo-study",
+        ],
+        cachedSnapshot: sensitiveCachedSnap
+      )
+    )
 
     // (d) Verify Lock Screen redacted title matches UI promise ("Ourney") and non-VI locales default to English.
     XCTAssertEqual(WidgetL10n.lockScreenRedactedTitle(locale: "vi"), "Ourney")
@@ -783,7 +857,7 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
       journeys: [soloWeight, soloStudy],
       squads: []
     )
-    XCTAssertFalse(explicitOptOutSnap.shouldRedactLockScreenTitle(for: soloWeight))
+    XCTAssertTrue(explicitOptOutSnap.shouldRedactLockScreenTitle(for: soloWeight))
     XCTAssertFalse(explicitOptOutSnap.shouldRedactLockScreenTitle(for: soloStudy))
 
     // 6. Bridge write outcome & capabilities
