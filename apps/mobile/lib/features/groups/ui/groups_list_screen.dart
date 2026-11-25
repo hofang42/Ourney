@@ -134,7 +134,9 @@ class _GroupsListScreenState extends ConsumerState<GroupsListScreen> {
     if (groups.hasValue) {
       final list = groups.value!;
       todayState = KeyedSubtree(
-        key: const ValueKey('squad-state-content'),
+        key: ValueKey(
+          list.isEmpty ? 'squad-state-empty' : 'squad-state-content',
+        ),
         child: list.isEmpty
             ? _EmptySquad(onEnterCode: _openJoin)
             : _buildStaggeredStrip(context, list),
@@ -164,18 +166,11 @@ class _GroupsListScreenState extends ConsumerState<GroupsListScreen> {
       );
     }
 
-    final Widget today = AnimatedSwitcher(
-      duration: UiMotion.fadeOf(context, UiMotion.normal),
-      reverseDuration: UiMotion.fadeOf(context, UiMotion.normal),
-      switchInCurve: UiCurves.easeOutStrong,
-      switchOutCurve: Curves.easeOut,
-      layoutBuilder: (currentChild, previousChildren) => Stack(
-        alignment: Alignment.topCenter,
-        children: <Widget>[
-          ...previousChildren,
-          ?currentChild,
-        ],
-      ),
+    final Widget today = UiFadeThroughSwitcher(
+      duration: UiMotion.normal,
+      scaleBegin: 1.0,
+      animateSize: true,
+      alignment: Alignment.topCenter,
       child: todayState,
     );
 

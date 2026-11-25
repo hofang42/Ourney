@@ -710,6 +710,7 @@ void main() {
           find.byKey(const ValueKey('squad-stagger-g4')),
         );
         expect(g4Stagger.enabled, isFalse);
+        await tester.pumpAndSettle();
 
         // 4. Pull-to-refresh on GroupsListScreen mounts 36x36 Neo-Brutalist refresh badge.
         final drag = await tester.startGesture(const Offset(195, 250));

@@ -188,11 +188,10 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     final convAsync = ref.watch(conversationsProvider);
     final countsAsync = ref.watch(inboxCountsProvider);
 
-    Widget wrapState(Widget child) => AnimatedSwitcher(
-      duration: UiMotion.fadeOf(context, UiMotion.normal),
-      reverseDuration: UiMotion.fadeOf(context, UiMotion.normal),
-      switchInCurve: UiCurves.easeOutStrong,
-      switchOutCurve: Curves.easeOut,
+    Widget wrapState(Widget child) => UiFadeThroughSwitcher(
+      duration: UiMotion.normal,
+      scaleBegin: 1.0,
+      alignment: Alignment.topCenter,
       child: child,
     );
 

@@ -258,7 +258,6 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
       );
     }
 
-    final crossfadeDuration = UiMotion.fadeOf(context, UiMotion.normal);
     return DayTicker(
       child: UiRefreshScaffold(
         onRefresh: _handleRefresh,
@@ -273,18 +272,10 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
           child: UiScaffold(
             key: const ValueKey('journeys-list'),
             padBottom: UiSpace.xxl,
-            child: AnimatedSwitcher(
-              duration: crossfadeDuration,
-              reverseDuration: crossfadeDuration,
-              switchInCurve: UiCurves.easeOutStrong,
-              switchOutCurve: Curves.easeOut,
-              layoutBuilder: (currentChild, previousChildren) => Stack(
-                alignment: Alignment.topCenter,
-                children: <Widget>[
-                  ...previousChildren,
-                  ?currentChild,
-                ],
-              ),
+            child: UiFadeThroughSwitcher(
+              duration: UiMotion.normal,
+              scaleBegin: 1.0,
+              alignment: Alignment.topCenter,
               child: body,
             ),
           ),

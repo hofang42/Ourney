@@ -4,7 +4,17 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollDirection;
+import 'package:flutter/rendering.dart'
+    show
+        BoxHitTestResult,
+        BoxParentData,
+        ClipRectLayer,
+        ContainerBoxParentData,
+        ContainerRenderObjectMixin,
+        LayerHandle,
+        RenderAnimatedSize,
+        RenderBoxContainerDefaultsMixin,
+        ScrollDirection;
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
@@ -507,16 +517,671 @@ CustomTransitionPage<T> buildUiPage<T>({
   );
 }
 
-/// Direction-aware step switcher for multi-step flows (Onboarding Quiz,
-/// Create-Journey 5-Step Flow, DNA sub-pages, Journey Wrapped slides, and
-/// Camera viewfinder journey swipe).
+/// Stack layout for [UiFadeThroughSwitcher] and [UiDirectionalSwitcher] that
+/// lays out all children with loosened constraints (like `StackFit.loose`)
+/// while sizing itself strictly to the incoming (`lastChild`) child from frame
+/// `t = 0ms`. This allows an outer [AnimatedSize] to begin interpolating
+/// toward the incoming child's exact dimensions immediately without waiting
+/// for outgoing children to unmount and without forcing outgoing children into
+/// tighter height constraints that could overflow.
+class _IncomingSizedStackParentData extends ContainerBoxParentData<RenderBox> {}
+
+class _IncomingSizedStack extends MultiChildRenderObjectWidget {
+  const _IncomingSizedStack({
+    required this.alignment,
+    required this.textDirection,
+    required super.children,
+    this.clipBehavior = Clip.none,
+  });
+
+  final AlignmentGeometry alignment;
+  final TextDirection textDirection;
+  final Clip clipBehavior;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) {
+    return _RenderIncomingSizedStack(alignment, textDirection, clipBehavior);
+  }
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderIncomingSizedStack renderObject,
+  ) {
+    renderObject
+      ..alignment = alignment
+      ..textDirection = textDirection
+      ..clipBehavior = clipBehavior;
+  }
+}
+
+class _RenderIncomingSizedStack extends RenderBox
+    with
+        ContainerRenderObjectMixin<RenderBox, _IncomingSizedStackParentData>,
+        RenderBoxContainerDefaultsMixin<
+          RenderBox,
+          _IncomingSizedStackParentData
+        > {
+  _RenderIncomingSizedStack(
+    this._alignment,
+    this._textDirection,
+    this._clipBehavior,
+  );
+
+  AlignmentGeometry _alignment;
+  AlignmentGeometry get alignment => _alignment;
+  set alignment(AlignmentGeometry value) {
+    if (_alignment == value) return;
+    _alignment = value;
+    markNeedsLayout();
+  }
+
+  TextDirection _textDirection;
+  TextDirection get textDirection => _textDirection;
+  set textDirection(TextDirection value) {
+    if (_textDirection == value) return;
+    _textDirection = value;
+    markNeedsLayout();
+  }
+
+  Clip _clipBehavior;
+  Clip get clipBehavior => _clipBehavior;
+  set clipBehavior(Clip value) {
+    if (_clipBehavior == value) return;
+    _clipBehavior = value;
+    markNeedsPaint();
+  }
+
+  final LayerHandle<ClipRectLayer> _clipRectLayer =
+      LayerHandle<ClipRectLayer>();
+
+  @override
+  void dispose() {
+    _clipRectLayer.layer = null;
+    super.dispose();
+  }
+
+  @override
+  void setupParentData(RenderBox child) {
+    if (child.parentData is! _IncomingSizedStackParentData) {
+      child.parentData = _IncomingSizedStackParentData();
+    }
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) =>
+      lastChild?.getMinIntrinsicWidth(height) ?? 0.0;
+
+  @override
+  double computeMaxIntrinsicWidth(double height) =>
+      lastChild?.getMaxIntrinsicWidth(height) ?? 0.0;
+
+  @override
+  double computeMinIntrinsicHeight(double width) =>
+      lastChild?.getMinIntrinsicHeight(width) ?? 0.0;
+
+  @override
+  double computeMaxIntrinsicHeight(double width) =>
+      lastChild?.getMaxIntrinsicHeight(width) ?? 0.0;
+
+  @override
+  double? computeDistanceToActualBaseline(TextBaseline baseline) {
+    final current = lastChild;
+    if (current == null) return null;
+    final parentData = current.parentData! as _IncomingSizedStackParentData;
+    final offset = current.getDistanceToActualBaseline(baseline);
+    return offset == null ? null : offset + parentData.offset.dy;
+  }
+
+  @override
+  double? computeDryBaseline(
+    BoxConstraints constraints,
+    TextBaseline baseline,
+  ) {
+    final current = lastChild;
+    if (current == null) return null;
+    final childConstraints = constraints.loosen();
+    final currentSize = current.getDryLayout(childConstraints);
+    final boxSize = constraints.constrain(currentSize);
+    final resolved = _alignment.resolve(_textDirection);
+    final childOffset = resolved
+        .inscribe(currentSize, Offset.zero & boxSize)
+        .topLeft;
+    final baselineOffset = current.getDryBaseline(childConstraints, baseline);
+    return baselineOffset == null ? null : baselineOffset + childOffset.dy;
+  }
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final current = lastChild;
+    if (current == null) return constraints.smallest;
+    final currentSize = current.getDryLayout(constraints.loosen());
+    return constraints.constrain(currentSize);
+  }
+
+  @override
+  void performLayout() {
+    final current = lastChild;
+    if (current == null) {
+      size = constraints.smallest;
+      return;
+    }
+    final childConstraints = constraints.loosen();
+    var child = firstChild;
+    while (child != null) {
+      child.layout(childConstraints, parentUsesSize: true);
+      final parentData = child.parentData! as _IncomingSizedStackParentData;
+      child = parentData.nextSibling;
+    }
+    size = constraints.constrain(current.size);
+    final resolved = _alignment.resolve(_textDirection);
+    child = firstChild;
+    while (child != null) {
+      final parentData = child.parentData! as _IncomingSizedStackParentData;
+      parentData.offset = resolved
+          .inscribe(child.size, Offset.zero & size)
+          .topLeft;
+      child = parentData.nextSibling;
+    }
+  }
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    return defaultHitTestChildren(result, position: position);
+  }
+
+  Rect _effectiveOuterBounds() {
+    final p = parent;
+    if (p is RenderAnimatedSize && p.hasSize) {
+      final pd = parentData;
+      final inParent = pd is BoxParentData ? pd.offset : Offset.zero;
+      return Rect.fromLTWH(
+        -inParent.dx,
+        -inParent.dy,
+        p.size.width,
+        p.size.height,
+      );
+    }
+    return Offset.zero & size;
+  }
+
+  void _paintOutgoingChildren(PaintingContext context, Offset offset) {
+    final incoming = lastChild;
+    var child = firstChild;
+    while (child != null && child != incoming) {
+      final pd = child.parentData! as _IncomingSizedStackParentData;
+      context.paintChild(child, pd.offset + offset);
+      child = pd.nextSibling;
+    }
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final incoming = lastChild;
+    if (firstChild == incoming && _clipBehavior == Clip.none) {
+      _clipRectLayer.layer = null;
+      defaultPaint(context, offset);
+      return;
+    }
+
+    final outerBounds = _effectiveOuterBounds();
+    if (_clipBehavior != Clip.none) {
+      _clipRectLayer.layer = context.pushClipRect(
+        needsCompositing,
+        offset,
+        outerBounds,
+        defaultPaint,
+        clipBehavior: _clipBehavior,
+        oldLayer: _clipRectLayer.layer,
+      );
+      return;
+    }
+
+    var overflowsLeft = false;
+    var overflowsTop = false;
+    var overflowsRight = false;
+    var overflowsBottom = false;
+    var child = firstChild;
+    while (child != null && child != incoming) {
+      final pd = child.parentData! as _IncomingSizedStackParentData;
+      final childRect = pd.offset & child.size;
+      if (childRect.left < outerBounds.left - 0.5) {
+        overflowsLeft = true;
+      }
+      if (childRect.top < outerBounds.top - 0.5) {
+        overflowsTop = true;
+      }
+      if (childRect.right > outerBounds.right + 0.5) {
+        overflowsRight = true;
+      }
+      if (childRect.bottom > outerBounds.bottom + 0.5) {
+        overflowsBottom = true;
+      }
+      child = pd.nextSibling;
+    }
+
+    if (!overflowsLeft &&
+        !overflowsTop &&
+        !overflowsRight &&
+        !overflowsBottom) {
+      _clipRectLayer.layer = null;
+      defaultPaint(context, offset);
+      return;
+    }
+
+    // Clip ONLY the outgoing children when their layout bounds exceed the
+    // animated switcher box during a shrinking transition, while inflating
+    // every non-shrinking edge by the Neo-Brutalist hard-shadow / press-offset
+    // / horizontal-slide extent so shadows and press translations are never
+    // shaved off. The incoming child (`lastChild`) is always painted outside
+    // the clip layer so its +4dp hard shadow and press offset remain unclipped
+    // throughout 0..100% and at rest.
+    const horizontalSlack = 32.0;
+    const topSlack = 8.0;
+    final clipRect = Rect.fromLTRB(
+      overflowsLeft ? outerBounds.left : outerBounds.left - horizontalSlack,
+      overflowsTop ? outerBounds.top : outerBounds.top - topSlack,
+      overflowsRight ? outerBounds.right : outerBounds.right + horizontalSlack,
+      overflowsBottom
+          ? outerBounds.bottom
+          : outerBounds.bottom + UiShadow.large,
+    );
+    _clipRectLayer.layer = context.pushClipRect(
+      needsCompositing,
+      offset,
+      clipRect,
+      _paintOutgoingChildren,
+      oldLayer: _clipRectLayer.layer,
+    );
+    if (incoming != null) {
+      final incomingPd = incoming.parentData! as _IncomingSizedStackParentData;
+      context.paintChild(incoming, incomingPd.offset + offset);
+    }
+  }
+}
+
+/// Stateful per-entry transition wrapper for [UiFadeThroughSwitcher] and
+/// [UiDirectionalSwitcher] that decides incoming vs. outgoing status at entry
+/// insertion time and handles mid-transition re-entrancy (`A -> B -> A` or
+/// `A -> B -> C`) gracefully without opacity snaps, blank gaps, `dx` teleports,
+/// or text overlap.
 ///
-/// When [direction] >= 0 (Next / forward), the incoming child slides in from
-/// the trailing edge (`+slideOffset -> 0` in LTR, `-slideOffset -> 0` in RTL)
-/// while the outgoing child slides toward the leading edge. When
-/// [direction] < 0 (Back / reverse), the directions invert. Under Reduce
-/// Motion, spatial sliding collapses to an opacity-only crossfade over
-/// [UiMotion.reducedFade] (`150ms`).
+/// - **Sequential phases (`split = 0.35`):** Incoming entries wait through
+///   `v in [0.0, 0.35]` at `0.0` opacity and fade in over `v in [0.35, 1.0]`.
+///   When an entry is superseded (`AnimationStatus.reverse`), it latches
+///   `_isOutgoing = true` along with its exact current `(v0, opacity0, scale0,
+///   dx0)` and fades smoothly from `opacity0 -> 0.0` over `v in [v0 - 0.35, v0]`
+///   (`0.35 * duration` wall time), reaching `0.0` on or before the frame the
+///   newly inserted incoming entry crosses `v = 0.35`.
+/// - **Accessibility (`Semantics`) continuity:** Incoming entries pass
+///   `alwaysIncludeSemantics: true` to [FadeTransition] so they are present in
+///   the semantics tree from `t = 0ms`, while outgoing entries are wrapped in
+///   [ExcludeSemantics] and [IgnorePointer].
+class _SequentialSwitchEntry extends StatefulWidget {
+  const _SequentialSwitchEntry({
+    required this.animation,
+    required this.inCurve,
+    required this.outCurve,
+    required this.reduced,
+    required this.scaleBegin,
+    required this.scaleAlignment,
+    required this.slideOffset,
+    required this.slideSign,
+    required this.child,
+  });
+
+  static const double _split = 0.35;
+
+  final Animation<double> animation;
+  final Curve inCurve;
+  final Curve outCurve;
+  final bool reduced;
+  final double scaleBegin;
+  final Alignment scaleAlignment;
+  final double slideOffset;
+  final double slideSign;
+  final Widget child;
+
+  @override
+  State<_SequentialSwitchEntry> createState() => _SequentialSwitchEntryState();
+}
+
+class _SequentialSwitchEntryState extends State<_SequentialSwitchEntry> {
+  final GlobalKey _childKey = GlobalKey();
+
+  late _SequentialValueAnimation _opacityAnimation = _SequentialValueAnimation(
+    parent: widget.animation,
+    valueGetter: () => _currentOpacity,
+  );
+  late _SequentialValueAnimation _scaleAnimation = _SequentialValueAnimation(
+    parent: widget.animation,
+    valueGetter: () => _currentScale,
+  );
+
+  bool _isOutgoing = false;
+  double _revStartValue = 1.0;
+  double _revStartOpacity = 1.0;
+  double _revStartScale = 1.0;
+  double _revStartDx = 0.0;
+  double _exitSign = -1.0;
+
+  double _currentOpacity = 1.0;
+  double _currentScale = 1.0;
+  double _currentDx = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    final status = widget.animation.status;
+    if (status == AnimationStatus.reverse ||
+        status == AnimationStatus.dismissed) {
+      _isOutgoing = true;
+      _revStartValue = widget.animation.value;
+      _revStartOpacity = _incomingProgress(_revStartValue);
+      _revStartScale =
+          widget.scaleBegin + (1.0 - widget.scaleBegin) * _revStartOpacity;
+      _revStartDx =
+          (1.0 - _revStartOpacity) * widget.slideSign * widget.slideOffset;
+      _exitSign = -widget.slideSign;
+    }
+    _recomputeMetrics();
+    widget.animation.addListener(_handleTick);
+    widget.animation.addStatusListener(_handleStatusChange);
+  }
+
+  @override
+  void didUpdateWidget(_SequentialSwitchEntry oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.animation != widget.animation) {
+      oldWidget.animation.removeListener(_handleTick);
+      oldWidget.animation.removeStatusListener(_handleStatusChange);
+      _opacityAnimation = _SequentialValueAnimation(
+        parent: widget.animation,
+        valueGetter: () => _currentOpacity,
+      );
+      _scaleAnimation = _SequentialValueAnimation(
+        parent: widget.animation,
+        valueGetter: () => _currentScale,
+      );
+      widget.animation.addListener(_handleTick);
+      widget.animation.addStatusListener(_handleStatusChange);
+    }
+    // If the parent switcher updated direction on the exact same build frame
+    // that AnimatedSwitcher initiated controller.reverse(), align _exitSign
+    // with the new transition's direction before the first reverse tick.
+    if (_isOutgoing && widget.animation.value == _revStartValue) {
+      _exitSign = -widget.slideSign;
+    }
+    _recomputeMetrics();
+  }
+
+  @override
+  void dispose() {
+    widget.animation.removeListener(_handleTick);
+    widget.animation.removeStatusListener(_handleStatusChange);
+    super.dispose();
+  }
+
+  double _incomingProgress(double v) {
+    const split = _SequentialSwitchEntry._split;
+    if (v <= split) return 0.0;
+    if (v >= 1.0) return 1.0;
+    final t = ((v - split) / (1.0 - split)).clamp(0.0, 1.0);
+    return widget.inCurve.transform(t);
+  }
+
+  void _handleStatusChange(AnimationStatus status) {
+    if (!_isOutgoing &&
+        (status == AnimationStatus.reverse ||
+            status == AnimationStatus.dismissed)) {
+      _isOutgoing = true;
+      _revStartValue = widget.animation.value;
+      _revStartOpacity = _currentOpacity;
+      _revStartScale = _currentScale;
+      _revStartDx = _currentDx;
+      _exitSign = -widget.slideSign;
+      _recomputeMetrics();
+      if (mounted) {
+        context.findRenderObject()?.clearSemantics();
+        setState(() {});
+      }
+    }
+  }
+
+  void _handleTick() {
+    _recomputeMetrics();
+  }
+
+  void _recomputeMetrics() {
+    final v = widget.animation.value;
+    if (!_isOutgoing) {
+      final p = _incomingProgress(v);
+      _currentOpacity = p;
+      _currentScale = widget.scaleBegin + (1.0 - widget.scaleBegin) * p;
+      _currentDx = (1.0 - p) * widget.slideSign * widget.slideOffset;
+      return;
+    }
+
+    if (_revStartOpacity <= 0.0 || _revStartValue <= 0.0) {
+      _currentOpacity = 0.0;
+      _currentScale = _revStartScale;
+      _currentDx = _revStartDx;
+      return;
+    }
+
+    const split = _SequentialSwitchEntry._split;
+    final floor = math.max(0.0, _revStartValue - split);
+    final span = _revStartValue - floor;
+    final double outFactor;
+    if (v <= floor || span <= 0.0) {
+      outFactor = 0.0;
+    } else if (v >= _revStartValue) {
+      outFactor = 1.0;
+    } else {
+      final t = ((v - floor) / span).clamp(0.0, 1.0);
+      outFactor = widget.outCurve.transform(t);
+    }
+
+    _currentOpacity = _revStartOpacity * outFactor;
+    _currentScale = _revStartScale;
+    _currentDx =
+        _revStartDx + (1.0 - outFactor) * _exitSign * widget.slideOffset;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _recomputeMetrics();
+    Widget result = FadeTransition(
+      key: _childKey,
+      opacity: _opacityAnimation,
+      alwaysIncludeSemantics: !_isOutgoing,
+      child: widget.child,
+    );
+
+    if (!widget.reduced && widget.scaleBegin != 1.0) {
+      result = ScaleTransition(
+        alignment: widget.scaleAlignment,
+        scale: _scaleAnimation,
+        child: result,
+      );
+    }
+
+    if (!widget.reduced && widget.slideOffset != 0.0) {
+      result = AnimatedBuilder(
+        animation: widget.animation,
+        child: result,
+        builder: (context, child) {
+          _recomputeMetrics();
+          return Transform.translate(
+            offset: Offset(_currentDx, 0),
+            child: child,
+          );
+        },
+      );
+    }
+
+    return ExcludeSemantics(
+      excluding: _isOutgoing,
+      child: IgnorePointer(
+        ignoring: _isOutgoing,
+        child: result,
+      ),
+    );
+  }
+}
+
+class _SequentialValueAnimation extends Animation<double>
+    with AnimationWithParentMixin<double> {
+  _SequentialValueAnimation({
+    required this.parent,
+    required this.valueGetter,
+  });
+
+  @override
+  final Animation<double> parent;
+  final double Function() valueGetter;
+
+  @override
+  double get value => valueGetter();
+}
+
+Widget _resolveKeyedSwitchChild(Widget child, Object? step) {
+  if (step == null) return child;
+  final existingKey = child.key;
+  if (existingKey is ValueKey && existingKey.value == step) {
+    return child;
+  }
+  return KeyedSubtree(
+    key: ValueKey<Object?>(step),
+    child: child,
+  );
+}
+
+/// Material 3 sequential Fade-Through switcher for swapping unrelated or peer
+/// content (async skeleton/empty/error/content states, widget preview tabs,
+/// departure tickets, hold-to-reveal metrics, and splash taglines).
+///
+/// - **Sequential phases (zero mid-flight text overlap):** The outgoing child
+///   fades completely from `1.0 -> 0.0` during the first `35%` of [duration]
+///   (`0.0 .. 0.35`), and only after it reaches `0.0` does the incoming child
+///   fade from `0.0 -> 1.0` (with an optional subtle scale from [scaleBegin]
+///   to `1.0`) over the remaining `65%` (`0.35 .. 1.0`,
+///   [UiCurves.easeOutStrong]). Outgoing and incoming children are never both
+///   above `0.0` opacity at the same instant, even when interrupted mid-flight.
+/// - **Incoming-sized layout & shrink clipping:** Sizes itself to the incoming
+///   child from `t = 0ms` (with optional [AnimatedSize] when [animateSize] is
+///   `true`) and clips taller outgoing children to the switcher's outer bounds
+///   so shrinking transitions never paint over sibling widgets below.
+/// - **Reduce Motion:** Collapses scale to `1.0` and either swaps in `0ms`
+///   when [instantOnReduceMotion] is `true` or plays a `150ms`
+///   ([UiMotion.reducedFade]) sequential opacity fade.
+class UiFadeThroughSwitcher extends StatelessWidget {
+  const UiFadeThroughSwitcher({
+    required this.child,
+    this.step,
+    this.duration = UiMotion.normal,
+    this.scaleBegin = 0.96,
+    this.animateSize = false,
+    this.clipBehavior = Clip.none,
+    this.alignment = Alignment.topCenter,
+    this.instantOnReduceMotion = false,
+    super.key,
+  });
+
+  final Widget child;
+
+  /// Optional identifier used to key [child] when [child.key] does not already
+  /// match `ValueKey(step)`.
+  final Object? step;
+
+  final Duration duration;
+
+  /// Initial scale of the incoming child (`0.96` default; pass `1.0` for
+  /// pure sequential fade without scale).
+  final double scaleBegin;
+
+  /// Whether to wrap the switcher in an [AnimatedSize] container.
+  final bool animateSize;
+
+  /// Clip behavior for [AnimatedSize] and [_IncomingSizedStack].
+  final Clip clipBehavior;
+
+  final AlignmentGeometry alignment;
+
+  /// When `true`, resolves duration to [Duration.zero] under Reduce Motion
+  /// instead of [UiMotion.reducedFade] (`150ms`).
+  final bool instantOnReduceMotion;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduced = UiMotion.reduced(context);
+    final effectiveDuration = reduced
+        ? (instantOnReduceMotion ? Duration.zero : UiMotion.reducedFade)
+        : duration;
+    final keyedChild = _resolveKeyedSwitchChild(child, step);
+    final textDirection =
+        Directionality.maybeOf(context) ?? TextDirection.ltr;
+    final resolvedAlignment = alignment.resolve(textDirection);
+
+    Widget switcher = AnimatedSwitcher(
+      duration: effectiveDuration,
+      reverseDuration: effectiveDuration,
+      switchInCurve: Curves.linear,
+      switchOutCurve: Curves.linear,
+      layoutBuilder: (currentChild, previousChildren) => _IncomingSizedStack(
+        alignment: alignment,
+        textDirection: textDirection,
+        clipBehavior: clipBehavior,
+        children: <Widget>[
+          ...previousChildren,
+          ?currentChild,
+        ],
+      ),
+      transitionBuilder: (widgetChild, animation) => _SequentialSwitchEntry(
+        animation: animation,
+        inCurve: reduced ? Curves.linear : UiCurves.easeOutStrong,
+        outCurve: reduced ? Curves.linear : Curves.easeIn,
+        reduced: reduced,
+        scaleBegin: scaleBegin,
+        scaleAlignment: resolvedAlignment,
+        slideOffset: 0.0,
+        slideSign: 1.0,
+        child: widgetChild,
+      ),
+      child: keyedChild,
+    );
+
+    if (animateSize) {
+      switcher = AnimatedSize(
+        duration: reduced ? const Duration(microseconds: 1) : duration,
+        curve: UiCurves.easeOutStrong,
+        alignment: alignment,
+        clipBehavior: clipBehavior,
+        child: switcher,
+      );
+    }
+    return switcher;
+  }
+}
+
+/// Direction-aware Shared-Axis step switcher for multi-step flows (Auth
+/// methods/steps, Onboarding Quiz, Create-Journey 5-Step Flow, DNA sub-pages,
+/// Journey Wrapped slides, and Camera viewfinder journey swipe).
+///
+/// - **Sequential staggered handoff (zero text overlap):** The outgoing child
+///   slides toward the leading edge and fades completely to `0.0` over the
+///   first `35%` of [duration] (`0.0 .. 0.35`), and the incoming child fades
+///   in (`0.0 -> 1.0`) while decelerating from the trailing edge
+///   (`+slideOffset -> 0` in LTR, `-slideOffset -> 0` in RTL) over the
+///   remaining `65%` (`0.35 .. 1.0`, [UiCurves.easeOutStrong]). When
+///   [direction] < 0 (Back / reverse), the slide directions invert.
+/// - **Incoming-sized layout & shrink clipping:** Sizes itself strictly to the
+///   incoming child from `t = 0ms` so an outer [AnimatedSize] (when
+///   [animateSize] is `true`) interpolates height smoothly, and clips taller
+///   outgoing children to the switcher's outer bounds when shrinking.
+/// - **Reduce Motion:** Collapses spatial sliding to `0dp` and plays a
+///   sequential opacity-only fade over [UiMotion.reducedFade] (`150ms`) (or
+///   [Duration.zero] when [instantOnReduceMotion] is `true`).
 class UiDirectionalSwitcher extends StatelessWidget {
   const UiDirectionalSwitcher({
     required this.child,
@@ -525,13 +1190,16 @@ class UiDirectionalSwitcher extends StatelessWidget {
     this.duration = UiMotion.medium,
     this.slideOffset = 18.0,
     this.animateSize = false,
+    this.clipBehavior = Clip.none,
     this.alignment = Alignment.topCenter,
+    this.instantOnReduceMotion = false,
     super.key,
   });
 
   final Widget child;
 
-  /// Optional step identifier used to key [child] when [child.key] is null.
+  /// Optional step identifier used to key [child] when [child.key] does not
+  /// already match `ValueKey(step)`.
   final Object? step;
 
   /// `>= 0` for forward (Next), `< 0` for backward (Back).
@@ -545,59 +1213,63 @@ class UiDirectionalSwitcher extends StatelessWidget {
   /// Whether to wrap the switcher in an [AnimatedSize] container.
   final bool animateSize;
 
+  /// Clip behavior for [AnimatedSize] and [_IncomingSizedStack].
+  final Clip clipBehavior;
+
   final AlignmentGeometry alignment;
+
+  /// When `true`, resolves duration to [Duration.zero] under Reduce Motion
+  /// instead of [UiMotion.reducedFade] (`150ms`).
+  final bool instantOnReduceMotion;
 
   @override
   Widget build(BuildContext context) {
     final reduced = UiMotion.reduced(context);
-    final effectiveDuration = reduced ? UiMotion.reducedFade : duration;
-    final keyedChild = (step != null && child.key == null)
-        ? KeyedSubtree(key: ValueKey<Object?>(step), child: child)
-        : child;
-    final activeKey = keyedChild.key;
-    final isRtl = Directionality.maybeOf(context) == TextDirection.rtl;
+    final effectiveDuration = reduced
+        ? (instantOnReduceMotion ? Duration.zero : UiMotion.reducedFade)
+        : duration;
+    final keyedChild = _resolveKeyedSwitchChild(child, step);
+    final textDirection =
+        Directionality.maybeOf(context) ?? TextDirection.ltr;
+    final resolvedAlignment = alignment.resolve(textDirection);
+    final isRtl = textDirection == TextDirection.rtl;
     final dirSign = direction >= 0 ? 1.0 : -1.0;
     final sign = isRtl ? -dirSign : dirSign;
 
     Widget switcher = AnimatedSwitcher(
       duration: effectiveDuration,
       reverseDuration: effectiveDuration,
-      switchInCurve: reduced ? Curves.linear : UiCurves.easeOutStrong,
-      switchOutCurve: reduced ? Curves.linear : UiCurves.easeOutStrong,
-      layoutBuilder: (currentChild, previousChildren) => Stack(
+      switchInCurve: Curves.linear,
+      switchOutCurve: Curves.linear,
+      layoutBuilder: (currentChild, previousChildren) => _IncomingSizedStack(
         alignment: alignment,
+        textDirection: textDirection,
+        clipBehavior: clipBehavior,
         children: <Widget>[
           ...previousChildren,
           ?currentChild,
         ],
       ),
-      transitionBuilder: (widgetChild, animation) {
-        if (reduced) {
-          return FadeTransition(opacity: animation, child: widgetChild);
-        }
-        final isIncoming = widgetChild.key == activeKey;
-        final itemSign = isIncoming ? sign : -sign;
-        final faded = FadeTransition(opacity: animation, child: widgetChild);
-        return AnimatedBuilder(
-          animation: animation,
-          child: faded,
-          builder: (context, child) {
-            final dx = (1.0 - animation.value) * itemSign * slideOffset;
-            return Transform.translate(
-              offset: Offset(dx, 0),
-              child: child,
-            );
-          },
-        );
-      },
+      transitionBuilder: (widgetChild, animation) => _SequentialSwitchEntry(
+        animation: animation,
+        inCurve: reduced ? Curves.linear : UiCurves.easeOutStrong,
+        outCurve: reduced ? Curves.linear : Curves.easeIn,
+        reduced: reduced,
+        scaleBegin: 1.0,
+        scaleAlignment: resolvedAlignment,
+        slideOffset: slideOffset,
+        slideSign: sign,
+        child: widgetChild,
+      ),
       child: keyedChild,
     );
 
     if (animateSize) {
       switcher = AnimatedSize(
-        duration: UiMotion.of(context, duration),
+        duration: reduced ? const Duration(microseconds: 1) : duration,
         curve: UiCurves.easeOutStrong,
         alignment: alignment,
+        clipBehavior: clipBehavior,
         child: switcher,
       );
     }

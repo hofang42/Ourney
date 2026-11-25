@@ -591,6 +591,182 @@ void main() {
         tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
       },
     );
+
+    testWidgets(
+      'AuthScreen method & step switches (email <-> phone <-> password <-> reset <-> codeStep) never overlap outgoing and incoming titles (>0.05 opacity) at midpoint or when keyboard is open, including Reduce Motion',
+      (tester) async {
+        double effectiveOpacity(Finder target) {
+          if (target.evaluate().isEmpty) return 0.0;
+          var alpha = 1.0;
+          for (final fade in tester.widgetList<FadeTransition>(
+            find.ancestor(of: target, matching: find.byType(FadeTransition)),
+          )) {
+            alpha *= fade.opacity.value;
+          }
+          for (final op in tester.widgetList<Opacity>(
+            find.ancestor(of: target, matching: find.byType(Opacity)),
+          )) {
+            alpha *= op.opacity;
+          }
+          return alpha;
+        }
+
+        Future<void> assertNoMidFlightOverlap(
+          String outgoingStepKey,
+          String incomingStepKey,
+        ) async {
+          // Sample at 20% (44ms), 35% (77ms), 50% midpoint (110ms), and 75% (165ms) of 220ms UiMotion.medium.
+          final samples = <int>[44, 33, 33, 55];
+          for (var i = 0; i < samples.length; i++) {
+            await tester.pump(Duration(milliseconds: samples[i]));
+            final outAlpha = effectiveOpacity(_key(outgoingStepKey));
+            final inAlpha = effectiveOpacity(_key(incomingStepKey));
+            expect(
+              outAlpha > 0.05 && inAlpha > 0.05,
+              isFalse,
+              reason:
+                  'Auth overlap between $outgoingStepKey (alpha=$outAlpha) and $incomingStepKey (alpha=$inAlpha)',
+            );
+            if (i == 0) {
+              // At 20% (44ms): outgoing child is actively visible (> 0.1) and incoming is 0.0.
+              expect(outAlpha, greaterThan(0.1));
+              expect(inAlpha, 0.0);
+            } else if (i == 2) {
+              // At 50% (110ms): outgoing child has reached 0.0 and incoming is actively visible (> 0.2).
+              expect(outAlpha, 0.0);
+              expect(inAlpha, greaterThan(0.2));
+            }
+          }
+          await tester.pumpAndSettle();
+          expect(_key(outgoingStepKey), findsNothing);
+          expect(effectiveOpacity(_key(incomingStepKey)), closeTo(1.0, 0.001));
+          expect(tester.takeException(), isNull);
+        }
+
+        final auth = RecordingAuthRepository();
+        await pumpBackendApp(tester, auth: auth, phoneAvailable: true);
+
+        // 1. Email tab -> Phone tab (header wordmark stays static; height shrinks smoothly from t=0ms)
+        final emailHeight = tester
+            .getSize(find.byType(UiDirectionalSwitcher))
+            .height;
+        await tester.tap(_key('auth-tab-phone'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 44)); // 20%
+        expect(effectiveOpacity(_key('auth-step-email')), greaterThan(0.1));
+        expect(effectiveOpacity(_key('auth-step-phoneCode')), 0.0);
+        await tester.pump(const Duration(milliseconds: 66)); // 50% midpoint (110ms)
+        expect(effectiveOpacity(_key('auth-step-email')), 0.0);
+        expect(effectiveOpacity(_key('auth-step-phoneCode')), greaterThan(0.2));
+        expect(
+          effectiveOpacity(_key('auth-step-email')) > 0.05 &&
+              effectiveOpacity(_key('auth-step-phoneCode')) > 0.05,
+          isFalse,
+        );
+        final midShrinkHeight = tester
+            .getSize(find.byType(UiDirectionalSwitcher))
+            .height;
+        expect(midShrinkHeight, lessThan(emailHeight));
+        await tester.pumpAndSettle();
+        final phoneHeight = tester
+            .getSize(find.byType(UiDirectionalSwitcher))
+            .height;
+        expect(phoneHeight, lessThan(emailHeight));
+
+        // 2. Phone tab -> Email tab (reverse direction -1)
+        await tester.tap(_key('auth-tab-email'));
+        await tester.pump();
+        await assertNoMidFlightOverlap(
+          'auth-step-phoneCode',
+          'auth-step-email',
+        );
+
+        // 2b. Rapid mid-transition toggle (Email -> Phone -> Email at t = 110ms midpoint):
+        // Phone never snaps to 0.0 on the reversal frame and never overlaps Email.
+        await tester.tap(_key('auth-tab-phone'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 110)); // 50% midpoint
+        final phoneBeforeReverse = effectiveOpacity(_key('auth-step-phoneCode'));
+        expect(phoneBeforeReverse, greaterThan(0.4));
+        // Outgoing step's tab copy is wrapped in IgnorePointer, leaving exactly one hitTestable tab.
+        expect(_key('auth-tab-email').hitTestable(), findsOneWidget);
+
+        await tester.tap(_key('auth-tab-email').hitTestable());
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1));
+        final phoneAt1ms = effectiveOpacity(_key('auth-step-phoneCode'));
+        final emailAt1ms = effectiveOpacity(_key('auth-step-email').last);
+        expect(phoneAt1ms, greaterThan(0.4));
+        expect(emailAt1ms, 0.0);
+
+        await tester.pump(const Duration(milliseconds: 43)); // +44ms (20% of reversal)
+        expect(effectiveOpacity(_key('auth-step-phoneCode')), greaterThan(0.05));
+        expect(effectiveOpacity(_key('auth-step-email').last), 0.0);
+        await tester.pumpAndSettle();
+        expect(_key('auth-step-phoneCode'), findsNothing);
+        expect(effectiveOpacity(_key('auth-step-email')), closeTo(1.0, 0.001));
+
+        // 3. Email code -> Password sub-form -> Forgot password reset sub-form -> back
+        await tester.ensureVisible(_key('auth-use-password'));
+        await tester.pumpAndSettle();
+        await tester.tap(_key('auth-use-password'));
+        await tester.pump();
+        await assertNoMidFlightOverlap('auth-step-email', 'auth-step-password');
+
+        await tester.ensureVisible(_key('auth-forgot'));
+        await tester.pumpAndSettle();
+        await tester.tap(_key('auth-forgot'));
+        await tester.pump();
+        await assertNoMidFlightOverlap('auth-step-password', 'auth-step-reset');
+
+        await tester.tap(_key('auth-flow-back'));
+        await tester.pump();
+        await assertNoMidFlightOverlap('auth-step-reset', 'auth-step-password');
+
+        await tester.tap(_key('auth-flow-back'));
+        await tester.pump();
+        await assertNoMidFlightOverlap('auth-step-password', 'auth-step-email');
+
+        // 4. Keyboard-open case (viewInsets.bottom = 300): Email form -> Code step -> Back
+        tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+        addTearDown(tester.view.resetViewInsets);
+        await tester.pump();
+
+        await tester.enterText(_key('auth-email'), 'user@ourney.app');
+        await tester.ensureVisible(_key('auth-send'));
+        await tester.pumpAndSettle();
+        await tester.tap(_key('auth-send'));
+        await tester.pump();
+        await assertNoMidFlightOverlap('auth-step-email', 'auth-step-code');
+
+        await tester.tap(_key('auth-back'));
+        await tester.pump();
+        await assertNoMidFlightOverlap('auth-step-code', 'auth-step-email');
+        tester.view.resetViewInsets();
+        await tester.pumpAndSettle();
+
+        // 5. Reduce Motion parity (iOS reduceMotion & Android disableAnimations):
+        // never overlaps outgoing and incoming titles at t = 75ms midpoint of 150ms reducedFade.
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(reduceMotion: true);
+        addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+        );
+        await tester.pump();
+
+        await tester.ensureVisible(_key('auth-use-password'));
+        await tester.pumpAndSettle();
+        await tester.tap(_key('auth-use-password'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 75));
+        final rmOut = effectiveOpacity(_key('auth-step-email'));
+        final rmIn = effectiveOpacity(_key('auth-step-password'));
+        expect(rmOut > 0.05 && rmIn > 0.05, isFalse);
+        await tester.pumpAndSettle();
+        expect(_key('auth-step-password'), findsOneWidget);
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
+      },
+    );
   });
 
   group('Rank #7.1 — CreateTypeDeck snapping physics, continuous scroll interpolation & live skin morph', () {

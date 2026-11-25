@@ -67,6 +67,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   final _codeFocus = FocusNode();
   AnimationController? _otpShakeCtrl;
   _Flow _flow = _Flow.emailCode;
+  int _flowDirection = 1;
   bool _codeStep = false;
   bool _busy = false;
   bool _submitted = false;
@@ -133,7 +134,20 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
 
   void _goFlow(_Flow flow) {
     _timer?.cancel();
+    final int nextDirection;
+    if (_codeStep) {
+      nextDirection = -1;
+    } else if (_flow == _Flow.reset && flow == _Flow.password) {
+      nextDirection = -1;
+    } else if (_flow == _Flow.password && flow == _Flow.emailCode) {
+      nextDirection = -1;
+    } else if (_flow == _Flow.phoneCode && flow == _Flow.emailCode) {
+      nextDirection = -1;
+    } else {
+      nextDirection = 1;
+    }
     setState(() {
+      _flowDirection = nextDirection;
       _flow = flow;
       _codeStep = false;
       _submitted = false;
@@ -207,6 +221,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
         if (unavailable && _flow == _Flow.phoneCode) {
           // SMS is off on the server: hide Phone and go back to email.
           _phoneDisabled = true;
+          _flowDirection = -1;
           _flow = _Flow.emailCode;
           _submitted = false;
         }
@@ -216,6 +231,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     if (!mounted) return;
     setState(() {
       _busy = false;
+      _flowDirection = 1;
       _codeStep = true;
       _submitted = false;
       if (resend) _code.clear();
@@ -389,6 +405,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   void _backToForm() {
     _timer?.cancel();
     setState(() {
+      _flowDirection = -1;
       _codeStep = false;
       _code.clear();
       _error = null;
@@ -434,6 +451,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     final ui = context.ui;
     final codeStep = _codeStep;
     final showLegal = !codeStep && _flow != _Flow.reset;
+    final stepKey = codeStep
+        ? 'auth-step-code'
+        : (_flow == _Flow.emailCode
+              ? 'auth-step-email'
+              : 'auth-step-${_flow.name}');
 
     return UiScaffold(
       key: const ValueKey('auth-screen'),
@@ -476,103 +498,79 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
               ),
             ),
           SizedBox(height: codeStep || _subForm ? 12 : 10),
-          _maybeAnimatedSize(
-            context,
-            AnimatedSwitcher(
-              duration: UiMotion.fadeOf(context, UiMotion.medium),
-              switchInCurve: UiCurves.easeOutStrong,
-              switchOutCurve: UiCurves.easeOutStrong,
-              layoutBuilder: (currentChild, previousChildren) => Stack(
-                alignment: Alignment.topCenter,
-                children: <Widget>[
-                  ...previousChildren,
-                  ?currentChild,
-                ],
-              ),
-              child: Column(
-                key: ValueKey(
-                  codeStep
-                      ? 'auth-step-code'
-                      : (_flow == _Flow.emailCode
-                            ? 'auth-step-email'
-                            : 'auth-step-${_flow.name}'),
+          UiDirectionalSwitcher(
+            step: stepKey,
+            direction: _flowDirection,
+            duration: UiMotion.medium,
+            animateSize: true,
+            alignment: Alignment.topCenter,
+            child: Column(
+              key: ValueKey(stepKey),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Semantics(
+                  header: true,
+                  child: Text(_title(l10n), style: _h1Style(ui.ink)),
                 ),
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Semantics(
-                    header: true,
-                    child: Text(_title(l10n), style: _h1Style(ui.ink)),
+                if (codeStep) ...[
+                  const SizedBox(height: 10),
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(text: '${l10n.auth_codeSentPrefix} '),
+                        TextSpan(
+                          text: _destination,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                    style: UiText.body(
+                      size: 16,
+                      height: 1.4,
+                      color: ui.inkMuted,
+                    ),
                   ),
-                  if (codeStep) ...[
-                    const SizedBox(height: 10),
-                    Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(text: '${l10n.auth_codeSentPrefix} '),
-                          TextSpan(
-                            text: _destination,
-                            style: const TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                        ],
-                      ),
-                      style: UiText.body(
-                        size: 16,
-                        height: 1.4,
-                        color: ui.inkMuted,
-                      ),
-                    ),
-                    UiTextAction(
-                      key: const ValueKey('auth-change-email'),
-                      label: _isPhone
-                          ? l10n.auth_changePhone
-                          : l10n.auth_changeEmail,
-                      size: 14,
-                      underline: true,
-                      color: ui.ink,
-                      alignment: Alignment.centerLeft,
-                      onPressed: _busy ? null : _backToForm,
-                    ),
-                  ] else if (_flow != _Flow.password) ...[
-                    const SizedBox(height: 10),
-                    Text(
-                      _subtitle(l10n),
-                      key: const ValueKey('auth-subtitle'),
-                      style: UiText.muted(color: ui.inkMuted),
-                    ),
-                  ],
-                  if (_offline) ...[
-                    const SizedBox(height: 12),
-                    UiBanner(
-                      key: const ValueKey('auth-offline'),
-                      message: l10n.auth_offlineBanner,
-                      retryLabel: l10n.auth_retry,
-                      onRetry: () {
-                        ref.invalidate(phoneAuthAvailableProvider);
-                        setState(() => _offline = false);
-                      },
-                    ),
-                  ],
-                  SizedBox(height: codeStep ? 14 : 18),
-                  if (codeStep)
-                    ..._codeChildren(l10n, ui)
-                  else
-                    ..._formChildren(l10n, ui, showLegal: showLegal),
+                  UiTextAction(
+                    key: const ValueKey('auth-change-email'),
+                    label: _isPhone
+                        ? l10n.auth_changePhone
+                        : l10n.auth_changeEmail,
+                    size: 14,
+                    underline: true,
+                    color: ui.ink,
+                    alignment: Alignment.centerLeft,
+                    onPressed: _busy ? null : _backToForm,
+                  ),
+                ] else if (_flow != _Flow.password) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    _subtitle(l10n),
+                    key: const ValueKey('auth-subtitle'),
+                    style: UiText.muted(color: ui.inkMuted),
+                  ),
                 ],
-              ),
+                if (_offline) ...[
+                  const SizedBox(height: 12),
+                  UiBanner(
+                    key: const ValueKey('auth-offline'),
+                    message: l10n.auth_offlineBanner,
+                    retryLabel: l10n.auth_retry,
+                    onRetry: () {
+                      ref.invalidate(phoneAuthAvailableProvider);
+                      setState(() => _offline = false);
+                    },
+                  ),
+                ],
+                SizedBox(height: codeStep ? 14 : 18),
+                if (codeStep)
+                  ..._codeChildren(l10n, ui)
+                else
+                  ..._formChildren(l10n, ui, showLegal: showLegal),
+              ],
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _maybeAnimatedSize(BuildContext context, Widget child) {
-    if (UiMotion.reduced(context)) return child;
-    return AnimatedSize(
-      duration: UiMotion.medium,
-      curve: UiCurves.easeOutStrong,
-      alignment: Alignment.topCenter,
-      child: child,
     );
   }
 

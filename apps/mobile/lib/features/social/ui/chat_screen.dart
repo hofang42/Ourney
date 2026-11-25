@@ -308,11 +308,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       );
     }
 
-    final Widget body = AnimatedSwitcher(
-      duration: UiMotion.fadeOf(context, UiMotion.normal),
-      reverseDuration: UiMotion.fadeOf(context, UiMotion.normal),
-      switchInCurve: UiCurves.easeOutStrong,
-      switchOutCurve: Curves.easeOut,
+    final Widget body = UiFadeThroughSwitcher(
+      duration: UiMotion.normal,
+      scaleBegin: 1.0,
+      alignment: Alignment.topCenter,
       child: bodyState,
     );
 
@@ -504,10 +503,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ),
         ),
-        AnimatedSwitcher(
-          duration: UiMotion.of(context, UiMotion.fast),
-          switchInCurve: UiCurves.easeOutStrong,
-          switchOutCurve: Curves.easeOut,
+        UiFadeThroughSwitcher(
+          duration: UiMotion.fast,
+          scaleBegin: 0.92,
+          instantOnReduceMotion: true,
+          alignment: Alignment.center,
           child: _sending
               ? SizedBox(
                   key: const ValueKey('chat-sending-spinner'),
