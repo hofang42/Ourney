@@ -124,6 +124,7 @@ void main() {
         () => h.container.read(hideWeightOnShareProvider.notifier).set(true),
       );
       await tester.enterText(_key('edit-name'), 'Updated log');
+      await tester.pumpAndSettle();
       await tester.ensureVisible(_key('edit-save-bottom'));
       await tester.tap(_key('edit-save-bottom'));
       await tester.pumpAndSettle();

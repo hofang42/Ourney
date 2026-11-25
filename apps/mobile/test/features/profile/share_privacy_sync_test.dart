@@ -95,11 +95,13 @@ void main() {
       metricName: 'Time',
       metricUnit: 'min',
     ).copyWith(layout: PersonaSkinId.quietTransformer);
+    final stranded = testJourney(id: 'stranded-local-flag', metricUnit: 'lb');
     final repo = FakeJourneyRepository(
-      journeys: [old, study],
+      journeys: [old, study, stranded],
       memberships: {
         old.id: testMembership(old),
         study.id: testMembership(study),
+        stranded.id: testMembership(stranded, hideMetric: true),
       },
     );
     final (_, _, container) = await pump(
@@ -110,7 +112,10 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(pendingSharePrivacy(container), isEmpty);
-    expect(repo.prefUpdates, [(id: old.id, hideMetric: true, blurMedia: null)]);
+    expect(repo.prefUpdates, [
+      (id: old.id, hideMetric: true, blurMedia: null),
+      (id: stranded.id, hideMetric: true, blurMedia: null),
+    ]);
 
     repo.prefUpdates.clear();
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
@@ -137,7 +142,8 @@ void main() {
         serverPulls: pulls.stream,
       );
       await tester.pumpAndSettle();
-      expect(repo.prefUpdates, isEmpty);
+    expect(repo.prefUpdates, [(id: hidden.id, hideMetric: true, blurMedia: null)]);
+    repo.prefUpdates.clear();
       final imported = await repo.create(
         JourneyDraft(
           kind: JourneyKind.solo,
