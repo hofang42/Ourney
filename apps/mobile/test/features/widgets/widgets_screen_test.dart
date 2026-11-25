@@ -24,53 +24,53 @@ void _expectNoRenderOverflowsOrTruncations(WidgetTester tester) {
 }
 
 void main() {
-  testWidgets('iOS shows a localized notice when widget data is unavailable', (
-    tester,
-  ) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    final bridge = FakeWidgetBridgeGateway(
-      capabilities: WidgetCapabilities.fromMap({
-        'widgets': true,
-        'liveActivity': true,
-        'appGroupAvailable': false,
-        'appGroup': true,
-      }),
-    );
-    final c = await pumpOurneyApp(
-      tester,
-      overrides: [widgetBridgeGatewayProvider.overrideWithValue(bridge)],
-    );
+  testWidgets(
+    'iOS shows a localized notice when widget data is unavailable',
+    (tester) async {
+      final bridge = FakeWidgetBridgeGateway(
+        capabilities: WidgetCapabilities.fromMap({
+          'widgets': true,
+          'liveActivity': true,
+          'appGroupAvailable': false,
+          'appGroup': true,
+        }),
+      );
+      final c = await pumpOurneyApp(
+        tester,
+        overrides: [widgetBridgeGatewayProvider.overrideWithValue(bridge)],
+      );
 
-    await c.read(localeOverrideProvider.notifier).set(const Locale('vi'));
-    await goTo(tester, c, AppRoutes.widgets);
-    expect(
-      find.text(
-        'Bản cài này chưa cho widget đọc dữ liệu. Widget sẽ hoạt động ở bản '
-        'TestFlight/App Store hoặc khi cài qua AltStore/SideStore.',
-      ),
-      findsOneWidget,
-    );
+      await c.read(localeOverrideProvider.notifier).set(const Locale('vi'));
+      await goTo(tester, c, AppRoutes.widgets);
+      expect(
+        find.text(
+          'Bản cài này chưa cho widget đọc dữ liệu. Widget sẽ hoạt động ở bản '
+          'TestFlight/App Store hoặc khi cài qua AltStore/SideStore.',
+        ),
+        findsOneWidget,
+      );
 
-    await c.read(localeOverrideProvider.notifier).set(const Locale('en'));
-    await tester.pumpAndSettle();
-    final englishNotice = find.text(
-      'This install can’t share data with widgets. Widgets will work with the '
-      'TestFlight or App Store version, or when installed through AltStore or SideStore.',
-    );
-    expect(englishNotice, findsOneWidget);
-    expect(byKey('widgets-live-activity-toggle'), findsOneWidget);
+      await c.read(localeOverrideProvider.notifier).set(const Locale('en'));
+      await tester.pumpAndSettle();
+      final englishNotice = find.text(
+        'This install can’t share data with widgets. Widgets will work with the '
+        'TestFlight or App Store version, or when installed through AltStore or SideStore.',
+      );
+      expect(englishNotice, findsOneWidget);
+      expect(byKey('widgets-live-activity-toggle'), findsOneWidget);
 
-    bridge.capabilities = const WidgetCapabilities(
-      widgets: true,
-      liveActivity: true,
-      promotedLiveUpdates: false,
-      appGroup: true,
-    );
-    c.invalidate(widgetCapabilitiesProvider);
-    await tester.pumpAndSettle();
-    expect(englishNotice, findsNothing);
-  });
+      bridge.capabilities = const WidgetCapabilities(
+        widgets: true,
+        liveActivity: true,
+        promotedLiveUpdates: false,
+        appGroup: true,
+      );
+      c.invalidate(widgetCapabilitiesProvider);
+      await tester.pumpAndSettle();
+      expect(englishNotice, findsNothing);
+    },
+    variant: const TargetPlatformVariant({TargetPlatform.iOS}),
+  );
 
   for (final dark in [false, true]) {
     for (final width in [320.0, 390.0, 430.0]) {
