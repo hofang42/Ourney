@@ -21,15 +21,19 @@
       nav_lang_aria: 'Chuyển ngôn ngữ sang tiếng Anh',
       nav_theme_aria: 'Đổi giao diện sáng hoặc tối',
       open_in_app: 'Mở trong app',
+      inapp_hint: 'Đang mở từ ứng dụng chat? Chạm “Mở trong app”, hoặc chọn Mở bằng trình duyệt (Safari / Chrome) ở góc màn hình nếu nút không phản hồi.',
       back_home: 'Về trang chủ Ourney',
       copy_code: 'Sao chép mã',
       copy_done: 'Đã sao chép mã',
       fallback_title: 'Chưa có ứng dụng Ourney trên máy?',
       fallback_title_p: 'Bắt đầu Ngày 1 của riêng bạn trên Ourney',
       fallback_android: 'Tải APK',
-      fallback_ios: 'Tham gia beta TestFlight / waitlist',
-      fallback_note: 'Sau khi cài đặt ứng dụng, chạm lại vào liên kết này hoặc quét mã QR để mở thẳng lời mời.',
+      fallback_ios: 'iOS · đăng ký danh sách chờ beta',
+      fallback_note: 'Sau khi cài đặt ứng dụng, chạm lại vào liên kết này để mở thẳng lời mời.',
+      fallback_note_desktop: 'Sau khi cài đặt ứng dụng trên điện thoại, quét mã QR bên cạnh hoặc mở lại liên kết này để vào thẳng lời mời.',
+      fallback_note_ios: 'Bản iOS đang mở đăng ký danh sách chờ beta. Để lại email để nhận lời mời ngay khi Ourney ra mắt trên iPhone.',
       fallback_note_j: 'Sau khi cài ứng dụng, mở tab Nhóm → Nhập mã mời để tham gia cùng hội bạn.',
+      fallback_note_p: 'Chụp một tấm mỗi ngày, giữ một chuỗi, đi một mình hoặc cùng hội bạn thân.',
       qr_aria: 'Mã QR của liên kết hiện tại để mở trên điện thoại',
       qr_heading: 'Mở trên điện thoại',
       qr_desc: 'Quét mã QR bằng camera điện thoại để mở trực tiếp trang này trên iOS hoặc Android.',
@@ -67,6 +71,8 @@
       j_code_label: 'MÃ MỜI VÀO SQUAD',
       j_expired_h1: 'Mã mời không còn hiệu lực',
       j_expired_desc: 'Squad này có thể đã đổi mã mời mới hoặc đã kết thúc hành trình. Hãy nhờ thành viên trong nhóm gửi lại liên kết mời mới nhé.',
+      j_full_h1: 'Squad này đã đủ thành viên',
+      j_full_desc: 'Nhóm đã đạt số lượng thành viên tối đa. Bạn có thể tự mở một hành trình mới hoặc nhờ bạn bè tạo squad khác trên Ourney.',
       j_invalid_h1: 'Mã mời squad không hợp lệ',
       j_invalid_desc: 'Mã mời vào nhóm trong liên kết này bị thiếu hoặc không đúng định dạng. Hãy kiểm tra lại mã mời từ trưởng nhóm.',
 
@@ -87,12 +93,13 @@
       p_status_live: 'ĐANG DIỄN RA',
       p_lessons_label: 'Bài học rút ra',
       p_grid_h: 'Nhật ký ảnh từng ngày',
-      p_ttl_note: 'Liên kết ảnh có hiệu lực 10 phút',
       p_empty_photos: 'Hành trình này chưa có ảnh công khai nào.',
       p_day_n: (n) => `Ngày ${n}`,
       p_blurred_label: 'Ảnh được làm mờ theo cài đặt riêng tư',
-      p_photo_alt: (title, dayLabel, dateStr, cap) =>
-        `${title} — ${dayLabel} (${dateStr})${cap ? ': ' + cap : ''}`,
+      p_photo_alt: (title, dayLabel, dateStr, cap) => {
+        const when = [dayLabel, dateStr ? (dayLabel ? `(${dateStr})` : dateStr) : ''].filter(Boolean).join(' ');
+        return `${title}${when ? ' — ' + when : ''}${cap ? ': ' + cap : ''}`;
+      },
       p_expired_h1: 'Liên kết không tồn tại hoặc đã thu hồi',
       p_expired_desc: 'Hành trình này đã chuyển về riêng tư, chủ nhân đã đặt lại liên kết chia sẻ, hoặc địa chỉ không đúng.',
       p_error_h1: 'Chưa tải được hành trình',
@@ -105,15 +112,19 @@
       nav_lang_aria: 'Switch language to Vietnamese',
       nav_theme_aria: 'Toggle light or dark theme',
       open_in_app: 'Open in app',
+      inapp_hint: 'Opening from a chat app? Tap “Open in app”, or choose Open in browser (Safari / Chrome) from the corner menu if nothing happens.',
       back_home: 'Back to Ourney home',
       copy_code: 'Copy code',
       copy_done: 'Code copied',
       fallback_title: 'Don’t have Ourney on your phone yet?',
       fallback_title_p: 'Start your own Day 1 on Ourney',
       fallback_android: 'Download APK',
-      fallback_ios: 'Join TestFlight beta / waitlist',
-      fallback_note: 'Once installed, tap this link again or scan the QR code to open the invite in the app.',
+      fallback_ios: 'iOS · join the beta waitlist',
+      fallback_note: 'Once installed, tap this link again to open the invite in the app.',
+      fallback_note_desktop: 'Once installed on your phone, scan the QR code or reopen this link to open the invite.',
+      fallback_note_ios: 'Ourney for iOS is on the beta waitlist. Leave your email to get invited as soon as it launches on iPhone.',
       fallback_note_j: 'Once installed, open the Squad tab → Enter invite code to join your friends.',
+      fallback_note_p: 'Snap one photo a day, keep one streak, go solo or with your closest friends.',
       qr_aria: 'QR code of the current URL to open on your phone',
       qr_heading: 'Open on your phone',
       qr_desc: 'Scan this QR code with your phone camera to open this link directly on iOS or Android.',
@@ -151,6 +162,8 @@
       j_code_label: 'SQUAD INVITE CODE',
       j_expired_h1: 'This squad invite code is no longer active',
       j_expired_desc: 'This squad may have rotated its invite code or completed its journey. Ask a squad member to send you the latest invite link.',
+      j_full_h1: 'This squad is already full',
+      j_full_desc: 'This squad has reached its maximum member limit. You can start your own journey or ask your friends to create another squad on Ourney.',
       j_invalid_h1: 'Invalid squad invite code',
       j_invalid_desc: 'The squad invite code in this link is missing or malformed. Please double-check the code with your squad owner.',
 
@@ -171,12 +184,13 @@
       p_status_live: 'ACTIVE',
       p_lessons_label: 'Lessons learned',
       p_grid_h: 'Daily photo timeline',
-      p_ttl_note: 'Signed photo links valid for 10 min',
       p_empty_photos: 'No public photos in this journey yet.',
       p_day_n: (n) => `Day ${n}`,
       p_blurred_label: 'Photo blurred by author’s privacy settings',
-      p_photo_alt: (title, dayLabel, dateStr, cap) =>
-        `${title} — ${dayLabel} (${dateStr})${cap ? ': ' + cap : ''}`,
+      p_photo_alt: (title, dayLabel, dateStr, cap) => {
+        const when = [dayLabel, dateStr ? (dayLabel ? `(${dateStr})` : dateStr) : ''].filter(Boolean).join(' ');
+        return `${title}${when ? ' — ' + when : ''}${cap ? ': ' + cap : ''}`;
+      },
       p_expired_h1: 'Link expired, invalid, or revoked',
       p_expired_desc: 'This journey is now private, its owner rotated the share link, or the address is invalid.',
       p_error_h1: 'Couldn’t load this journey',
@@ -224,15 +238,36 @@
     else if (saved === 'en' || saved === 'vi') curLang = saved;
   } catch (e) {}
 
-  /* --- 5. Detect Platform (Android / iOS / Desktop) --- */
+  /* --- 5. Detect Platform (Android / iOS / Desktop) & In-App WebView --- */
   const detectPlatform = () => {
     const ua = navigator.userAgent || '';
-    if (/Android/i.test(ua)) return 'android';
-    if (/iPhone|iPad|iPod/i.test(ua)) return 'ios';
+    const uaPlat = (navigator.userAgentData && typeof navigator.userAgentData.platform === 'string')
+      ? navigator.userAgentData.platform
+      : '';
+    const touchPoints = Number(navigator.maxTouchPoints || 0);
+    if (/^android$/i.test(uaPlat)) return 'android';
+    if (/^(ios|ipad|ipados|iphone|ipod)$/i.test(uaPlat)) return 'ios';
+    if (/iPhone|iPad|iPod|FBIOS/i.test(ua) || (/Macintosh/i.test(ua) && touchPoints > 1)) {
+      return 'ios';
+    }
+    if (
+      /Android/i.test(ua) ||
+      (/X11;\s*Linux/i.test(ua) && touchPoints > 1 && matchMedia('(pointer: coarse)').matches)
+    ) {
+      return 'android';
+    }
     return 'desktop';
   };
+  const detectInAppBrowser = () => {
+    const ua = navigator.userAgent || '';
+    return /\b(FBAN|FBAV|FB_IAB|FBIOS|Instagram|Zalo|ZaloTheme|Line|MicroMessenger|BytedanceWebview|TikTok|Musical\.ly|Threads|Snapchat)\b/i.test(ua);
+  };
   const platform = detectPlatform();
+  const isInAppBrowser = detectInAppBrowser();
   root.dataset.platform = platform;
+  if (isInAppBrowser) {
+    root.dataset.inapp = '1';
+  }
 
   /* --- 6. Parse & Validate Route Parameters (/f/:token, /j/:code, /join/:code, /p/:token) --- */
   const FRIEND_TOKEN_RE = /^[a-z0-9]{12}$/;
@@ -307,6 +342,12 @@
   /* --- 7. Auto-Attempt to Open App on Mobile Once (Non-Breaking Pattern) --- */
   function attemptOpenAppOnce(deepLink) {
     if (!deepLink) return;
+    /* Do not auto-navigate to ourney:// on desktop, inside in-app WebViews
+       (Messenger, Zalo, Instagram, TikTok, Line, WeChat), or on iOS while
+       Ourney is waitlist-only; users still have the explicit #open-app-btn. */
+    if (platform === 'desktop' || platform === 'ios' || isInAppBrowser || navigator.webdriver) {
+      return;
+    }
     const params = new URLSearchParams(location.search);
     if (params.get('noapp') === '1') return;
 
@@ -317,11 +358,6 @@
     } catch (e) {}
 
     root.dataset.autoOpenAttempted = '1';
-
-    /* Only trigger custom scheme auto-launch on real mobile User-Agents so desktop
-       browsers never show an unhandled protocol prompt. */
-    const ua = navigator.userAgent || '';
-    if (!/Android|iPhone|iPad|iPod/i.test(ua) || navigator.webdriver) return;
 
     setTimeout(() => {
       if (document.hidden) return;
@@ -625,7 +661,7 @@
   }
 
   const qrBox = $('qr-box');
-  if (qrBox) {
+  if (qrBox && platform === 'desktop') {
     renderQrSvg(qrBox, location.href);
   }
 
@@ -633,6 +669,7 @@
   const CLIENT_RPC_TIMEOUT_MS = 4000;
   let friendPageState = 'loading'; // 'loading' | 'loaded' | 'fallback' | 'expired' | 'invalid'
   let loadedFriendData = null;
+  let qrHighlightTimer = null;
 
   function firstGrapheme(raw) {
     const str = typeof raw === 'string' ? raw.trim() : '';
@@ -650,9 +687,78 @@
 
   function syncFallbackCard(isDeadLink) {
     const qrPanel = $('qr-panel');
+    const fbAndroid = $('fallback-android');
+    const fbIos = $('fallback-ios');
     const fbNote = $('fallback-note') || document.querySelector('.link-fallback-note');
-    if (qrPanel) qrPanel.hidden = Boolean(isDeadLink);
-    if (fbNote) fbNote.hidden = Boolean(isDeadLink);
+    const dict = COPY[curLang];
+
+    if (qrPanel) {
+      qrPanel.hidden = Boolean(isDeadLink || platform !== 'desktop');
+    }
+    if (fbAndroid) {
+      fbAndroid.hidden = platform === 'ios';
+    }
+    if (fbIos) {
+      fbIos.hidden = platform === 'android';
+    }
+    if (fbNote) {
+      fbNote.hidden = Boolean(isDeadLink);
+      if (route.kind === 'journey') {
+        fbNote.dataset.i18n = 'fallback_note_p';
+        fbNote.textContent = dict.fallback_note_p;
+      } else if (platform === 'ios') {
+        fbNote.dataset.i18n = 'fallback_note_ios';
+        fbNote.textContent = dict.fallback_note_ios;
+      } else if (route.kind === 'squad') {
+        fbNote.dataset.i18n = 'fallback_note_j';
+        fbNote.textContent = dict.fallback_note_j;
+      } else if (platform === 'desktop') {
+        fbNote.dataset.i18n = 'fallback_note_desktop';
+        fbNote.textContent = dict.fallback_note_desktop;
+      } else {
+        fbNote.dataset.i18n = 'fallback_note';
+        fbNote.textContent = dict.fallback_note;
+      }
+    }
+  }
+
+  function wireOpenAppButton(openBtn) {
+    const inappHint = $('inapp-hint');
+    if (inappHint) {
+      inappHint.hidden = !isInAppBrowser;
+    }
+    if (!openBtn) return;
+    if (route.deepLink) {
+      openBtn.dataset.deepLink = route.deepLink;
+    }
+    if (platform === 'desktop') {
+      openBtn.setAttribute('href', '#qr-panel');
+    } else if (route.deepLink) {
+      openBtn.setAttribute('href', route.deepLink);
+    } else {
+      openBtn.setAttribute('href', '#fallback-heading');
+    }
+    if (openBtn.dataset.wired === '1') return;
+    openBtn.dataset.wired = '1';
+    openBtn.addEventListener('click', (e) => {
+      if (platform === 'desktop') {
+        e.preventDefault();
+        const qrPanel = $('qr-panel');
+        const target = (qrPanel && !qrPanel.hidden)
+          ? qrPanel
+          : document.querySelector('.link-fallback-card');
+        if (target && typeof target.scrollIntoView === 'function') {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        if (qrPanel && !qrPanel.hidden) {
+          qrPanel.classList.add('is-highlighted');
+          clearTimeout(qrHighlightTimer);
+          qrHighlightTimer = setTimeout(() => {
+            qrPanel.classList.remove('is-highlighted');
+          }, 1800);
+        }
+      }
+    });
   }
 
   function readEmbeddedPreview(keyName, expectedValue) {
@@ -857,7 +963,7 @@
       return;
     }
 
-    if (openBtn) openBtn.setAttribute('href', route.deepLink);
+    wireOpenAppButton(openBtn);
     attemptOpenAppOnce(route.deepLink);
     fetchFriendPreview();
   }
@@ -865,12 +971,25 @@
   /* --- 10. Render Squad Page (/j/:code, /join/:code) --- */
   let codeCopied = false;
   let copyResetTimer = null;
-  let squadPageState = 'idle'; // 'loading' | 'loaded' | 'fallback' | 'expired' | 'invalid'
+  let squadPageState = 'idle'; // 'loading' | 'loaded' | 'fallback' | 'expired' | 'full' | 'invalid'
   let loadedSquadData = null;
+
+  function isSquadFull(data) {
+    if (!data || typeof data !== 'object') return false;
+    const count = typeof data.member_count === 'number' && Number.isFinite(data.member_count)
+      ? data.member_count
+      : 0;
+    const max = typeof data.max_members === 'number' && Number.isFinite(data.max_members)
+      ? data.max_members
+      : 0;
+    return max > 0 && count >= max;
+  }
 
   function renderSquadState() {
     const validCard = $('j-valid-card');
     const expiredCard = $('j-expired-card');
+    const expiredTitleEl = $('j-expired-title');
+    const expiredDescEl = $('j-expired-desc') || (expiredCard ? expiredCard.querySelector('.link-lede') : null);
     const invalidCard = $('j-invalid-card');
     const loadingSkel = $('j-loading-skel');
     const loadingMsg = $('j-loading-msg');
@@ -892,10 +1011,21 @@
       return;
     }
 
-    if (squadPageState === 'expired') {
+    if (squadPageState === 'expired' || squadPageState === 'full') {
       if (validCard) validCard.hidden = true;
       if (expiredCard) expiredCard.hidden = false;
       if (invalidCard) invalidCard.hidden = true;
+      const isFull = squadPageState === 'full';
+      if (expiredTitleEl) {
+        const b = document.createElement('b');
+        b.dataset.i18n = isFull ? 'j_full_h1' : 'j_expired_h1';
+        b.textContent = isFull ? dict.j_full_h1 : dict.j_expired_h1;
+        expiredTitleEl.replaceChildren(b);
+      }
+      if (expiredDescEl) {
+        expiredDescEl.dataset.i18n = isFull ? 'j_full_desc' : 'j_expired_desc';
+        expiredDescEl.textContent = isFull ? dict.j_full_desc : dict.j_expired_desc;
+      }
       syncFallbackCard(true);
       document.title = dict.j_meta_title;
       return;
@@ -973,7 +1103,7 @@
       const embTitle = embedded.data && (embedded.data.title || embedded.data.group_name);
       if (embedded.status === 'ok' && typeof embTitle === 'string' && embTitle.trim()) {
         loadedSquadData = embedded.data;
-        squadPageState = 'loaded';
+        squadPageState = isSquadFull(embedded.data) ? 'full' : 'loaded';
       } else {
         loadedSquadData = null;
         squadPageState = 'expired';
@@ -1009,7 +1139,7 @@
         return;
       }
       loadedSquadData = data;
-      squadPageState = 'loaded';
+      squadPageState = isSquadFull(data) ? 'full' : 'loaded';
       renderSquadState();
     } catch (e) {
       squadPageState = 'fallback';
@@ -1035,7 +1165,7 @@
       return;
     }
     if (codeVal) codeVal.textContent = route.value;
-    if (openBtn) openBtn.setAttribute('href', route.deepLink);
+    wireOpenAppButton(openBtn);
 
     if (codeSlots) {
       const frag = document.createDocumentFragment();
@@ -1088,7 +1218,23 @@
   }
 
   /* --- 11. Render Public Journey Page (/p/:token) --- */
+  const MAX_IMG_ERROR_RETRIES = 1;
+  const MAX_AUTO_REFRESHES = 3;
+  const ERROR_BATCH_DELAY_MS = 120;
+  const VISIBILITY_DEBOUNCE_MS = 250;
+
   let loadedJourneyData = null;
+  let journeyPageState = 'loading'; // 'loading' | 'loaded' | 'expired' | 'error'
+  let journeyFetchedAt = 0;
+  let journeyTtlMs = 600 * 1000;
+  let journeyFetchBatch = 0;
+  let journeyAutoRefreshCount = 0;
+  let journeyRefreshFailCount = 0;
+  let journeyLastRefreshAttemptAt = 0;
+  let journeyRefreshPromise = null;
+  let journeyTtlTimer = null;
+  let journeyErrorBatchTimer = null;
+  let journeyVisDebounceTimer = null;
 
   const TEMPLATE_ICONS = {
     english_daily: '#i-book',
@@ -1114,7 +1260,7 @@
     }
   }
 
-  function computeDayNumber(startDateStr, localDateStr, fallbackIdx) {
+  function computeDayNumber(startDateStr, localDateStr) {
     if (typeof startDateStr === 'string' && typeof localDateStr === 'string') {
       const s = Date.parse(`${startDateStr}T00:00:00Z`);
       const c = Date.parse(`${localDateStr}T00:00:00Z`);
@@ -1123,7 +1269,7 @@
         if (diff >= 1 && diff <= 3660) return diff;
       }
     }
-    return fallbackIdx + 1;
+    return null;
   }
 
   function formatMetricNumber(val, unit) {
@@ -1134,6 +1280,7 @@
   }
 
   function showJourneyState(stateName) {
+    journeyPageState = stateName;
     const loadingCard = $('p-loading-card');
     const journeyCard = $('p-journey-card');
     const expiredCard = $('p-expired-card');
@@ -1146,6 +1293,177 @@
     if (journeyCard) journeyCard.hidden = stateName !== 'loaded';
     if (expiredCard) expiredCard.hidden = stateName !== 'expired';
     if (errorCard) errorCard.hidden = stateName !== 'error';
+    syncFallbackCard(stateName === 'expired');
+  }
+
+  function getPublicJourneyRequest() {
+    const supabaseUrl = getMetaContent('ourney-supabase-url', DEFAULT_SUPABASE_URL).replace(/\/+$/, '');
+    const anonKey = getMetaContent('ourney-supabase-anon-key', DEFAULT_SUPABASE_ANON_KEY);
+    const configuredEndpoint = getMetaContent(
+      'ourney-public-journey-endpoint',
+      `${supabaseUrl}/functions/v1/public-journey`
+    );
+    const isLocalhost = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
+    const endpoint = isLocalhost
+      ? `${location.origin}/functions/v1/public-journey`
+      : configuredEndpoint;
+    const url = `${endpoint}?token=${encodeURIComponent(route.value)}`;
+    const headers = (!isLocalhost && anonKey) ? { apikey: anonKey } : {};
+    return { url, headers };
+  }
+
+  function getMinExpiryAgeMs() {
+    return Math.min(30000, Math.max(500, Math.floor(journeyTtlMs * 0.5)));
+  }
+
+  function getRefreshCooldownMs() {
+    const baseMs = Math.min(30000, Math.max(500, Math.floor(journeyTtlMs * 0.5)));
+    return baseMs * Math.pow(2, Math.min(journeyRefreshFailCount, 4));
+  }
+
+  function hasUnloadedOrRetryableImages() {
+    const gridEl = $('p-photo-grid');
+    if (!gridEl) return false;
+    const imgs = gridEl.querySelectorAll('img.link-polaroid-img');
+    if (imgs.length === 0) return false;
+    return Array.from(imgs).some((img) => {
+      if (img.dataset.exhausted === '1') return false;
+      const retries = Number(img.dataset.retryCount || '0');
+      const isBroken = img.dataset.loadFailed === '1' || (img.complete && img.naturalWidth === 0);
+      if (isBroken) return retries < MAX_IMG_ERROR_RETRIES;
+      const isHealthyLoaded = img.complete && img.naturalWidth > 0;
+      return !isHealthyLoaded;
+    });
+  }
+
+  function scheduleProactiveUrlRefresh() {
+    clearTimeout(journeyTtlTimer);
+    if (!loadedJourneyData || !route.valid || journeyAutoRefreshCount >= MAX_AUTO_REFRESHES) return;
+    const checkIns = Array.isArray(loadedJourneyData.check_ins) ? loadedJourneyData.check_ins : [];
+    if (checkIns.length === 0 || !hasUnloadedOrRetryableImages()) return;
+    const delayMs = Math.max(15000, Math.floor(journeyTtlMs * 0.85));
+    journeyTtlTimer = setTimeout(() => {
+      if (document.visibilityState === 'visible' && hasUnloadedOrRetryableImages()) {
+        refreshPublicJourneyUrls();
+      }
+    }, delayMs);
+  }
+
+  function updateRenderedPhotoUrls(data) {
+    const checkIns = data && Array.isArray(data.check_ins) ? data.check_ins : [];
+    const gridEl = $('p-photo-grid');
+    if (!gridEl || checkIns.length === 0) return;
+
+    const urlByKey = new Map();
+    checkIns.forEach((item, idx) => {
+      if (!item || typeof item !== 'object') return;
+      const rawUrl = item.photo_url || item.thumb_url || '';
+      if (!isSafeMediaUrl(rawUrl)) return;
+      const key = item.checkin_id ? String(item.checkin_id) : `idx:${idx}`;
+      urlByKey.set(key, rawUrl);
+      urlByKey.set(`idx:${idx}`, rawUrl);
+    });
+
+    gridEl.querySelectorAll('img.link-polaroid-img').forEach((img, idx) => {
+      const key = img.dataset.checkinKey || `idx:${idx}`;
+      const freshUrl = urlByKey.get(key) || urlByKey.get(`idx:${idx}`);
+      /* Never overwrite src on already-decoded healthy images */
+      const isHealthyLoaded = img.complete && img.naturalWidth > 0 && img.dataset.loadFailed !== '1';
+      if (isHealthyLoaded) return;
+
+      const isBroken = img.dataset.loadFailed === '1' || (img.complete && img.naturalWidth === 0);
+      if (isBroken) {
+        const retries = Number(img.dataset.retryCount || '0');
+        if (retries >= MAX_IMG_ERROR_RETRIES || img.dataset.exhausted === '1' || !freshUrl) {
+          img.dataset.retryCount = String(Math.max(retries, MAX_IMG_ERROR_RETRIES));
+          img.dataset.exhausted = '1';
+          return;
+        }
+        img.dataset.retryCount = String(retries + 1);
+      }
+      if (!freshUrl) return;
+
+      img.dataset.loadFailed = '0';
+      img.dataset.retriedBatch = String(journeyFetchBatch);
+      img.src = freshUrl;
+    });
+  }
+
+  async function refreshPublicJourneyUrls() {
+    if (!route.valid || route.kind !== 'journey') return null;
+    if (journeyRefreshPromise) return journeyRefreshPromise;
+    if (journeyAutoRefreshCount >= MAX_AUTO_REFRESHES) return null;
+
+    const now = Date.now();
+    if (journeyLastRefreshAttemptAt > 0 && (now - journeyLastRefreshAttemptAt) < getRefreshCooldownMs()) {
+      return null;
+    }
+
+    /* Stamp attempt & increment counter BEFORE fetch so 500/429/network errors back off cleanly */
+    journeyLastRefreshAttemptAt = now;
+    journeyAutoRefreshCount += 1;
+
+    const { url, headers } = getPublicJourneyRequest();
+    journeyRefreshPromise = (async () => {
+      try {
+        const res = await fetch(url, { method: 'GET', headers, cache: 'no-store' });
+        if (!res.ok) {
+          journeyRefreshFailCount += 1;
+          return null;
+        }
+        const data = await res.json();
+        if (!data || typeof data !== 'object' || !data.journey) {
+          journeyRefreshFailCount += 1;
+          return null;
+        }
+        journeyRefreshFailCount = 0;
+        journeyFetchBatch += 1;
+        journeyFetchedAt = Date.now();
+        if (typeof data.signed_url_ttl_seconds === 'number' && data.signed_url_ttl_seconds > 0) {
+          journeyTtlMs = data.signed_url_ttl_seconds * 1000;
+        }
+        loadedJourneyData = data;
+        updateRenderedPhotoUrls(data);
+        scheduleProactiveUrlRefresh();
+        return data;
+      } catch (_) {
+        journeyRefreshFailCount += 1;
+        return null;
+      } finally {
+        journeyRefreshPromise = null;
+      }
+    })();
+
+    return journeyRefreshPromise;
+  }
+
+  function scheduleBatchedErrorRefresh() {
+    if (journeyErrorBatchTimer || journeyRefreshPromise) return;
+    if (journeyAutoRefreshCount >= MAX_AUTO_REFRESHES) return;
+    const elapsedSinceLastRefresh = journeyLastRefreshAttemptAt > 0
+      ? Date.now() - journeyLastRefreshAttemptAt
+      : Infinity;
+    const cooldownRemaining = journeyLastRefreshAttemptAt > 0
+      ? Math.max(0, getRefreshCooldownMs() - elapsedSinceLastRefresh)
+      : 0;
+    const delayMs = Math.max(ERROR_BATCH_DELAY_MS, cooldownRemaining);
+    journeyErrorBatchTimer = setTimeout(() => {
+      journeyErrorBatchTimer = null;
+      if (hasUnloadedOrRetryableImages()) {
+        refreshPublicJourneyUrls();
+      }
+    }, delayMs);
+  }
+
+  function handleJourneyImageError(img) {
+    if (!img) return;
+    img.dataset.loadFailed = '1';
+    const retries = Number(img.dataset.retryCount || '0');
+    if (retries >= MAX_IMG_ERROR_RETRIES || img.dataset.exhausted === '1') {
+      img.dataset.exhausted = '1';
+      return;
+    }
+    scheduleBatchedErrorRefresh();
   }
 
   function renderPublicJourneyData(data) {
@@ -1208,7 +1526,8 @@
       introEl.textContent = introTxt;
     }
 
-    /* Streak & Day Count pills */
+    /* Streak & Day Count pills (never show "0 khoảnh khắc" / "0 moments") */
+    const statsRow = $('p-stats-row');
     const streakPill = $('p-streak-pill');
     const streakText = $('p-streak-text');
     const streakVal = streak && typeof streak.current === 'number' && streak.current > 0
@@ -1231,11 +1550,18 @@
       ? streak.completed
       : uniqueDays;
 
+    const daysPill = $('p-days-pill');
     const daysText = $('p-days-text');
-    if (daysText) {
-      daysText.textContent = completedDays > 0
-        ? dict.p_days_moments(completedDays, checkIns.length)
-        : dict.p_moments_only(checkIns.length);
+    if (daysPill && daysText) {
+      if (checkIns.length > 0) {
+        daysPill.hidden = false;
+        daysText.textContent = completedDays > 0
+          ? dict.p_days_moments(completedDays, checkIns.length)
+          : dict.p_moments_only(checkIns.length);
+      } else {
+        daysPill.hidden = true;
+        daysText.textContent = '';
+      }
     }
 
     const durationPill = $('p-duration-pill');
@@ -1249,10 +1575,13 @@
       }
     }
 
-    const openBtn = $('open-app-btn');
-    if (openBtn && route.deepLink) {
-      openBtn.setAttribute('href', route.deepLink);
+    if (statsRow) {
+      const anyStatVisible = [streakPill, daysPill, durationPill].some((el) => el && !el.hidden);
+      statsRow.hidden = !anyStatVisible;
     }
+
+    const openBtn = $('open-app-btn');
+    wireOpenAppButton(openBtn);
 
     /* Story Lessons */
     const lessonsBox = $('p-lessons-box');
@@ -1263,7 +1592,7 @@
       lessonsText.textContent = lTxt;
     }
 
-    /* Photo Grid (10-min signed URLs, lazy loaded, descriptive alt text, zero private data) */
+    /* Photo Grid (lazy loaded, descriptive alt text, auto signed-URL refresh, zero private data) */
     const gridEl = $('p-photo-grid');
     const emptyEl = $('p-empty-photos');
     if (gridEl && emptyEl) {
@@ -1283,8 +1612,8 @@
           card.className = 'link-polaroid';
 
           const dateStr = typeof item.local_date === 'string' ? item.local_date : '';
-          const dayNum = computeDayNumber(j.start_date, dateStr, idx);
-          const dayLabel = dict.p_day_n(dayNum);
+          const dayNum = computeDayNumber(j.start_date, dateStr);
+          const dayLabel = dayNum !== null ? dict.p_day_n(dayNum) : '';
           const caption = typeof item.caption === 'string' ? item.caption.trim() : '';
           const rawUrl = item.photo_url || item.thumb_url || '';
           const isBlurred = Boolean(item.blurred || data.media_blurred || !isSafeMediaUrl(rawUrl));
@@ -1301,8 +1630,15 @@
             img.decoding = 'async';
             img.width = 360;
             img.height = 450;
+            img.dataset.checkinKey = item.checkin_id ? String(item.checkin_id) : `idx:${idx}`;
+            img.dataset.retriedBatch = String(journeyFetchBatch);
+            img.dataset.retryCount = '0';
+            img.dataset.loadFailed = '0';
             img.src = rawUrl;
             img.alt = dict.p_photo_alt(title, dayLabel, dateStr, caption);
+            img.addEventListener('error', () => {
+              handleJourneyImageError(img);
+            });
             frame.appendChild(img);
           } else {
             const blurBox = document.createElement('div');
@@ -1328,11 +1664,13 @@
             frame.appendChild(blurBox);
           }
 
-          /* Day Badge inside frame */
-          const badge = document.createElement('span');
-          badge.className = 'link-day-badge';
-          badge.textContent = dayLabel;
-          frame.appendChild(badge);
+          /* Day Badge inside frame (omitted if start_date/local_date is unparseable) */
+          if (dayLabel) {
+            const badge = document.createElement('span');
+            badge.className = 'link-day-badge';
+            badge.textContent = dayLabel;
+            frame.appendChild(badge);
+          }
 
           card.appendChild(frame);
 
@@ -1344,7 +1682,9 @@
           dateSpan.className = 'link-polaroid-date';
           if (dateStr) dateSpan.setAttribute('datetime', dateStr);
           dateSpan.textContent = dateStr || dayLabel;
-          metaRow.appendChild(dateSpan);
+          if (dateSpan.textContent) {
+            metaRow.appendChild(dateSpan);
+          }
 
           if (typeof item.metric_value === 'number' && Number.isFinite(item.metric_value)) {
             const metricPill = document.createElement('span');
@@ -1353,7 +1693,9 @@
             metaRow.appendChild(metricPill);
           }
 
-          card.appendChild(metaRow);
+          if (metaRow.childNodes.length > 0) {
+            card.appendChild(metaRow);
+          }
 
           if (caption) {
             const capEl = document.createElement('p');
@@ -1379,24 +1721,9 @@
     }
 
     showJourneyState('loading');
-
-    const supabaseUrl = getMetaContent('ourney-supabase-url', DEFAULT_SUPABASE_URL).replace(/\/+$/, '');
-    const anonKey = getMetaContent('ourney-supabase-anon-key', DEFAULT_SUPABASE_ANON_KEY);
-    const configuredEndpoint = getMetaContent(
-      'ourney-public-journey-endpoint',
-      `${supabaseUrl}/functions/v1/public-journey`
-    );
-
-    /* When running on localhost / 127.0.0.1 for local verification, allow same-origin mock endpoint */
-    const isLocalhost = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
-    const endpoint = isLocalhost
-      ? `${location.origin}/functions/v1/public-journey`
-      : configuredEndpoint;
-
-    const url = `${endpoint}?token=${encodeURIComponent(route.value)}`;
+    const { url, headers } = getPublicJourneyRequest();
 
     try {
-      const headers = (!isLocalhost && anonKey) ? { apikey: anonKey } : {};
       const res = await fetch(url, { method: 'GET', headers });
       if (res.status === 404 || res.status === 400 || res.status === 410) {
         showJourneyState('expired');
@@ -1407,11 +1734,59 @@
         return;
       }
       const data = await res.json();
+      clearTimeout(journeyErrorBatchTimer);
+      clearTimeout(journeyVisDebounceTimer);
+      journeyErrorBatchTimer = null;
+      journeyVisDebounceTimer = null;
+      journeyFetchBatch += 1;
+      journeyFetchedAt = Date.now();
+      journeyLastRefreshAttemptAt = 0;
+      journeyAutoRefreshCount = 0;
+      journeyRefreshFailCount = 0;
+      if (data && typeof data.signed_url_ttl_seconds === 'number' && data.signed_url_ttl_seconds > 0) {
+        journeyTtlMs = data.signed_url_ttl_seconds * 1000;
+      }
       loadedJourneyData = data;
       renderPublicJourneyData(data);
+      scheduleProactiveUrlRefresh();
     } catch (e) {
       showJourneyState('error');
     }
+  }
+
+  function checkJourneyImagesOnVisible() {
+    if (document.visibilityState !== 'visible' || route.kind !== 'journey' || !loadedJourneyData) {
+      return;
+    }
+    if (journeyAutoRefreshCount >= MAX_AUTO_REFRESHES) return;
+    const now = Date.now();
+    if (journeyLastRefreshAttemptAt > 0 && (now - journeyLastRefreshAttemptAt) < getRefreshCooldownMs()) {
+      return;
+    }
+    const elapsed = now - journeyFetchedAt;
+
+    const gridEl = $('p-photo-grid');
+    const hasRetryableBrokenImg = Boolean(
+      gridEl &&
+      Array.from(gridEl.querySelectorAll('img.link-polaroid-img')).some((img) => {
+        if (img.dataset.exhausted === '1') return false;
+        const retries = Number(img.dataset.retryCount || '0');
+        const isBroken = img.dataset.loadFailed === '1' || (img.complete && img.naturalWidth === 0);
+        return isBroken && retries < MAX_IMG_ERROR_RETRIES;
+      })
+    );
+    const nearExpiryWithPending = elapsed >= Math.floor(journeyTtlMs * 0.8) && hasUnloadedOrRetryableImages();
+    if (hasRetryableBrokenImg || nearExpiryWithPending) {
+      refreshPublicJourneyUrls();
+    }
+  }
+
+  function scheduleJourneyVisibilityCheck() {
+    clearTimeout(journeyVisDebounceTimer);
+    journeyVisDebounceTimer = setTimeout(() => {
+      journeyVisDebounceTimer = null;
+      checkJourneyImagesOnVisible();
+    }, VISIBILITY_DEBOUNCE_MS);
   }
 
   function initJourneyPage() {
@@ -1421,6 +1796,8 @@
         fetchPublicJourney();
       });
     }
+    document.addEventListener('visibilitychange', scheduleJourneyVisibilityCheck);
+    window.addEventListener('focus', scheduleJourneyVisibilityCheck);
     if (route.valid) {
       attemptOpenAppOnce(route.deepLink);
     }
@@ -1444,11 +1821,17 @@
     });
 
     const homeHref = curLang === 'en' ? '/?lang=en' : '/';
-    const waitlistHref = curLang === 'en' ? '/?lang=en#beta-waitlist-box' : '/#beta-waitlist-box';
     document.querySelectorAll('[data-home-link]').forEach((el) => {
       el.setAttribute('href', homeHref);
     });
     document.querySelectorAll('[data-waitlist-link]').forEach((el) => {
+      const forcedPlat = el.getAttribute('data-waitlist-plat') || (el.id === 'fallback-ios' ? 'ios' : '');
+      const targetPlat = forcedPlat || (platform === 'ios' ? 'ios' : (platform === 'android' ? 'android' : ''));
+      const waitlistQuery = [
+        curLang === 'en' ? 'lang=en' : '',
+        targetPlat ? `plat=${targetPlat}` : ''
+      ].filter(Boolean).join('&');
+      const waitlistHref = waitlistQuery ? `/?${waitlistQuery}#beta-waitlist-box` : '/#beta-waitlist-box';
       el.setAttribute('href', waitlistHref);
     });
 
@@ -1463,6 +1846,7 @@
         renderPublicJourneyData(loadedJourneyData);
       } else {
         document.title = dict.p_meta_title;
+        syncFallbackCard(journeyPageState === 'expired');
       }
       const fbHeading = $('fallback-heading');
       if (fbHeading) fbHeading.textContent = dict.fallback_title_p;

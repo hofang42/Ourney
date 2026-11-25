@@ -20,7 +20,7 @@
     <string name="widget_day_only">Ngày %1$d</string>
     <string name="widget_cycle_next">Đổi hành trình (%1$d/%2$d)</string>
     <string name="widget_empty_title">Bắt đầu hành trình đầu tiên</string>
-    <string name="widget_empty_subtitle">Chạm để tạo hành trình 30 ngày trên Ourney</string>
+    <string name="widget_empty_subtitle">Chạm để bắt đầu hành trình ảnh mỗi ngày trên Ourney</string>
     <string name="widget_empty_cta">Mở Ourney</string>
     <string name="widget_signed_out_title">Đăng nhập Ourney</string>
     <string name="widget_signed_out_subtitle">Mở ứng dụng để đồng bộ tiện ích của bạn</string>

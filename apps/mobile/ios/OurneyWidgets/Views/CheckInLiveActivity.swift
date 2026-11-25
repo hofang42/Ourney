@@ -57,7 +57,12 @@ public struct CheckInLiveActivity: Widget {
               .foregroundColor(headerLabelColor)
               .lineLimit(1)
 
-              Text(state.journeyTitle)
+              let rawTitle = state.journeyTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+              let displayTitle = rawTitle.isEmpty
+                ? WidgetL10n.lockScreenRedactedTitle(locale: state.locale)
+                : rawTitle
+
+              Text(displayTitle)
                 .font(OurneyWidgetFont.title(13))
                 .foregroundColor(OurneyWidgetTheme.cameraDark.ink)
                 .lineLimit(1)
@@ -249,16 +254,20 @@ private struct CheckInLockScreenBannerView: View {
           .foregroundColor(headerLabelColor)
           .lineLimit(1)
 
+          let rawTitle = state.journeyTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+          let displayTitle = (state.redactTitleOnLockScreen || rawTitle.isEmpty)
+            ? WidgetL10n.lockScreenRedactedTitle(locale: state.locale)
+            : rawTitle
+
           Text(
             state.isCompletedCelebration
               ? WidgetL10n.liveActivityCelebrationTitle(streak: state.currentStreak, locale: state.locale)
-              : state.journeyTitle
+              : displayTitle
           )
           .font(OurneyWidgetFont.title(14.5))
           .foregroundColor(dark.ink)
           .lineLimit(1)
           .lineSpacing(2)
-          .privacySensitive(state.redactTitleOnLockScreen)
         }
 
         Spacer(minLength: 4)

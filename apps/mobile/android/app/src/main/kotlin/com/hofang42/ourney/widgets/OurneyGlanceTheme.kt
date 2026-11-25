@@ -99,9 +99,11 @@ object OurneyGlanceTheme {
      * every widget and Live Update immediately.
      */
     fun localizedContext(context: Context, localeCode: String?): Context {
-        val normalized = when (localeCode?.trim()?.lowercase(Locale.ROOT)) {
-            "en" -> "en"
-            else -> "vi"
+        val raw = localeCode?.trim()?.lowercase(Locale.ROOT)
+        val normalized = when {
+            !raw.isNullOrEmpty() -> if (raw.startsWith("vi")) "vi" else "en"
+            Locale.getDefault().language.lowercase(Locale.ROOT).startsWith("vi") -> "vi"
+            else -> "en"
         }
         return try {
             val locale = Locale.forLanguageTag(normalized)

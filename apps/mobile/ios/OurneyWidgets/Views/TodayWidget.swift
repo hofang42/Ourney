@@ -109,7 +109,7 @@ public struct TodayWidgetEntryView: View {
 
   public var body: some View {
     let snapshot = entry.snapshot
-    let locale = snapshot?.locale ?? "vi"
+    let locale = snapshot?.locale ?? ""
     let themeMode = snapshot?.themeMode ?? "system"
     let featured = snapshot?.selectedTodayJourney(state: entry.state)
     let theme = OurneyWidgetTheme.resolve(

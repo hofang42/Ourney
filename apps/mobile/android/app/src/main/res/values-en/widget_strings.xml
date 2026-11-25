@@ -20,7 +20,7 @@
     <string name="widget_day_only">Day %1$d</string>
     <string name="widget_cycle_next">Next journey (%1$d/%2$d)</string>
     <string name="widget_empty_title">Start your first journey</string>
-    <string name="widget_empty_subtitle">Tap to create a 30-day journey in Ourney</string>
+    <string name="widget_empty_subtitle">Tap to start a daily photo journey in Ourney</string>
     <string name="widget_empty_cta">Open Ourney</string>
     <string name="widget_signed_out_title">Sign in to Ourney</string>
     <string name="widget_signed_out_subtitle">Open the app to sync your widgets</string>

@@ -8,10 +8,10 @@ import SwiftUI
 public enum WidgetL10n {
   public static func isEnglish(_ locale: String?) -> Bool {
     if let raw = locale?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty {
-      return raw.lowercased().hasPrefix("en")
+      return !raw.lowercased().hasPrefix("vi")
     }
-    let preferred = Locale.preferredLanguages.first ?? "vi"
-    return preferred.lowercased().hasPrefix("en")
+    let preferred = Locale.preferredLanguages.first ?? "en"
+    return !preferred.lowercased().hasPrefix("vi")
   }
 
   public static func tr(_ key: String) -> LocalizedStringKey {
@@ -138,7 +138,7 @@ public enum WidgetL10n {
   // MARK: - Lock Screen & Live Activity Copy
 
   public static func lockScreenRedactedTitle(locale: String) -> String {
-    isEnglish(locale) ? "Ourney Journey" : "Hành trình Ourney"
+    "Ourney"
   }
 
   public static func lockScreenRemaining(pending: Int, locale: String) -> String {
