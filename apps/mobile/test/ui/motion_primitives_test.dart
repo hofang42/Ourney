@@ -8,7 +8,53 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney/app/theme/motion.dart';
 import 'package:ourney/app/theme/tokens.dart';
+import 'package:ourney/features/journeys/ui/widgets/departure_ticket.dart';
 import 'package:ourney/ui/ui.dart';
+
+class _LifecycleProbe extends StatefulWidget {
+  const _LifecycleProbe({
+    required this.label,
+    required this.onInit,
+    required this.onDispose,
+    super.key,
+  });
+
+  final String label;
+  final VoidCallback onInit;
+  final VoidCallback onDispose;
+
+  @override
+  State<_LifecycleProbe> createState() => _LifecycleProbeState();
+}
+
+class _LifecycleProbeState extends State<_LifecycleProbe> {
+  int localCounter = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.onInit();
+  }
+
+  @override
+  void dispose() {
+    widget.onDispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => localCounter++),
+      child: SizedBox(
+        width: 200,
+        height: 60,
+        child: Text('${widget.label}:$localCounter'),
+      ),
+    );
+  }
+}
 
 Widget _host(
   Widget child, {
@@ -1050,6 +1096,8 @@ void main() {
             )
             .where((w) => w.ignoring);
         expect(bIgnoreAncestors, isNotEmpty);
+        await tester.tap(find.byType(UiDirectionalSwitcher));
+        expect(tappedSteps, ['A']);
 
         // At +40ms (20% after reversal): B is still smoothly fading (> 0.05), A is still 0.0.
         await tester.pump(const Duration(milliseconds: 39));
@@ -1267,6 +1315,354 @@ void main() {
 
         await tester.pumpAndSettle();
         semanticsHandle.dispose();
+      },
+    );
+
+    testWidgets(
+      'R1 state preservation: outgoing transition and runtime Reduce Motion toggles never remount child State or restart DepartureTicket entrance animation',
+      (tester) async {
+        double effectiveOpacityOf(Finder target) {
+          if (target.evaluate().isEmpty) return 0.0;
+          var alpha = 1.0;
+          for (final fade in tester.widgetList<FadeTransition>(
+            find.ancestor(of: target, matching: find.byType(FadeTransition)),
+          )) {
+            alpha *= fade.opacity.value;
+          }
+          return alpha;
+        }
+
+        var step = 'A';
+        var disableAnimations = false;
+        var aInits = 0;
+        var aDisposes = 0;
+        var bInits = 0;
+        var bDisposes = 0;
+        late StateSetter setHost;
+
+        await tester.pumpWidget(
+          StatefulBuilder(
+            builder: (context, setState) {
+              setHost = setState;
+              return _host(
+                disableAnimations: disableAnimations,
+                UiFadeThroughSwitcher(
+                  step: step,
+                  duration: const Duration(milliseconds: 200),
+                  animateSize: true,
+                  child: step == 'A'
+                      ? _LifecycleProbe(
+                          key: const ValueKey('probe-A'),
+                          label: 'ProbeA',
+                          onInit: () => aInits++,
+                          onDispose: () => aDisposes++,
+                        )
+                      : _LifecycleProbe(
+                          key: const ValueKey('probe-B'),
+                          label: 'ProbeB',
+                          onInit: () => bInits++,
+                          onDispose: () => bDisposes++,
+                        ),
+                ),
+              );
+            },
+          ),
+        );
+
+        expect(aInits, 1);
+        expect(aDisposes, 0);
+
+        // Mutate internal state inside ProbeA.
+        await tester.tap(find.text('ProbeA:0'));
+        await tester.pump();
+        expect(find.text('ProbeA:1'), findsOneWidget);
+        expect(aInits, 1);
+
+        // 1. Toggle Reduce Motion (false -> true -> false) while mounted:
+        // ProbeA must NOT be disposed or remounted, and its localCounter stays 1.
+        setHost(() => disableAnimations = true);
+        await tester.pump();
+        expect(aInits, 1);
+        expect(aDisposes, 0);
+        expect(find.text('ProbeA:1'), findsOneWidget);
+
+        setHost(() => disableAnimations = false);
+        await tester.pump();
+        expect(aInits, 1);
+        expect(aDisposes, 0);
+        expect(find.text('ProbeA:1'), findsOneWidget);
+
+        // 2. Switch A -> B: on frame 0 and throughout exit (t = 40ms, 20%),
+        // outgoing ProbeA must NOT be remounted (aInits == 1, aDisposes == 0,
+        // and its internal state 'ProbeA:1' is preserved while fading out).
+        setHost(() => step = 'B');
+        await tester.pump();
+        expect(aInits, 1);
+        expect(aDisposes, 0);
+        expect(bInits, 1);
+        expect(find.text('ProbeA:1'), findsOneWidget);
+
+        await tester.pump(const Duration(milliseconds: 40));
+        expect(aInits, 1);
+        expect(aDisposes, 0);
+        expect(find.text('ProbeA:1'), findsOneWidget);
+        expect(effectiveOpacityOf(find.text('ProbeA:1')), greaterThan(0.1));
+
+        await tester.pumpAndSettle();
+        expect(aInits, 1);
+        expect(aDisposes, 1);
+        expect(bInits, 1);
+        expect(bDisposes, 0);
+
+        // 3. DepartureTicket inside UiFadeThroughSwitcher (as in CreateJourneyScreen
+        // and CreateReviewStep): switching skins must NEVER remount outgoing
+        // DepartureTicket or snap its internal entrance FadeTransition back to 0.0.
+        var ticketSkin = 'quiet';
+        late StateSetter setTicketHost;
+        await tester.pumpWidget(
+          _host(
+            StatefulBuilder(
+              builder: (context, setState) {
+                setTicketHost = setState;
+                return UiFadeThroughSwitcher(
+                  duration: UiMotion.sheetEnter,
+                  scaleBegin: 1.0,
+                  animateSize: true,
+                  child: DepartureTicket(
+                    key: ValueKey('ticket-$ticketSkin'),
+                    skinId: ticketSkin,
+                    title: 'Ticket $ticketSkin',
+                    goalLine: 'Goal $ticketSkin',
+                    durationLabel: '21 ngày',
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+
+        // Let initial 'quiet' ticket finish its 260ms stamp-in settle to opacity 1.0.
+        await tester.pumpAndSettle();
+        expect(effectiveOpacityOf(find.text('Ticket quiet')), 1.0);
+
+        // Switch to 'squad': at t = 1ms and t = 40ms (~15% of 260ms), outgoing
+        // 'Ticket quiet' must smoothly fade from 1.0 (never snapped to 0.0 by a remount).
+        setTicketHost(() => ticketSkin = 'squad');
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1));
+        expect(
+          effectiveOpacityOf(find.text('Ticket quiet')),
+          greaterThan(0.9),
+        );
+        expect(effectiveOpacityOf(find.text('Ticket squad')), 0.0);
+
+        await tester.pump(const Duration(milliseconds: 39)); // t = 40ms
+        expect(
+          effectiveOpacityOf(find.text('Ticket quiet')),
+          greaterThan(0.15),
+        );
+        expect(effectiveOpacityOf(find.text('Ticket squad')), 0.0);
+
+        await tester.pumpAndSettle();
+        expect(find.text('Ticket quiet'), findsNothing);
+        expect(effectiveOpacityOf(find.text('Ticket squad')), 1.0);
+
+        // 4. UiDirectionalSwitcher (slideOffset: 18dp) also preserves child State
+        // across runtime Reduce Motion toggles and when transitioning to outgoing.
+        var dirStep = 1;
+        var dirDisableAnimations = false;
+        var dir1Inits = 0;
+        var dir1Disposes = 0;
+        late StateSetter setDirStateHost;
+        await tester.pumpWidget(
+          StatefulBuilder(
+            builder: (context, setState) {
+              setDirStateHost = setState;
+              return _host(
+                disableAnimations: dirDisableAnimations,
+                UiDirectionalSwitcher(
+                  step: dirStep,
+                  direction: 1,
+                  duration: const Duration(milliseconds: 200),
+                  animateSize: true,
+                  child: _LifecycleProbe(
+                    key: ValueKey('dir-probe-$dirStep'),
+                    label: 'DirProbe$dirStep',
+                    onInit: () {
+                      if (dirStep == 1) dir1Inits++;
+                    },
+                    onDispose: () {
+                      if (dirStep == 1 || dir1Disposes == 0) dir1Disposes++;
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+
+        await tester.tap(find.text('DirProbe1:0'));
+        await tester.pump();
+        expect(find.text('DirProbe1:1'), findsOneWidget);
+        expect(dir1Inits, 1);
+
+        setDirStateHost(() => dirDisableAnimations = true);
+        await tester.pump();
+        setDirStateHost(() => dirDisableAnimations = false);
+        await tester.pump();
+        expect(dir1Inits, 1);
+        expect(dir1Disposes, 0);
+        expect(find.text('DirProbe1:1'), findsOneWidget);
+
+        setDirStateHost(() => dirStep = 2);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 40));
+        expect(dir1Inits, 1);
+        expect(dir1Disposes, 0);
+        expect(find.text('DirProbe1:1'), findsOneWidget);
+        expect(effectiveOpacityOf(find.text('DirProbe1:1')), greaterThan(0.1));
+
+        await tester.pumpAndSettle();
+        expect(dir1Inits, 1);
+        expect(dir1Disposes, 1);
+      },
+    );
+
+    testWidgets(
+      'R2 Neo-Brutalist shadows & press offsets: shadowed UiCard is unclipped at rest (including +4dp press translation) and incoming UiCard shadow is never clipped during a shrinking switch',
+      (tester) async {
+        final boundaryKey = GlobalKey();
+        var step = 'short';
+        var disableAnimations = false;
+        late StateSetter setHost;
+
+        Color pixelAt(Uint8List rgba, int width, int x, int y) {
+          final idx = (y * width + x) * 4;
+          return Color.fromARGB(
+            rgba[idx + 3],
+            rgba[idx],
+            rgba[idx + 1],
+            rgba[idx + 2],
+          );
+        }
+
+        await tester.pumpWidget(
+          StatefulBuilder(
+            builder: (context, setState) {
+              setHost = setState;
+              return _host(
+                disableAnimations: disableAnimations,
+                RepaintBoundary(
+                  key: boundaryKey,
+                  child: Container(
+                    width: 240,
+                    height: 180,
+                    color: OurneyUi.light.bg,
+                    padding: const EdgeInsets.all(20),
+                    alignment: Alignment.topLeft,
+                    child: UiFadeThroughSwitcher(
+                      step: step,
+                      duration: const Duration(milliseconds: 200),
+                      scaleBegin: 1.0,
+                      animateSize: true,
+                      child: step == 'tall'
+                          ? Container(
+                              key: const ValueKey('tall-card'),
+                              width: 200,
+                              height: 140,
+                              color: OurneyUi.light.surface,
+                              child: const Text('Tall Outgoing'),
+                            )
+                          : SizedBox(
+                              key: const ValueKey('short-card-box'),
+                              width: 200,
+                              height: 60,
+                              child: UiCard(
+                                key: const ValueKey('short-card'),
+                                padding: EdgeInsets.zero,
+                                radius: 4,
+                                color: OurneyUi.light.accent,
+                                shadowOffset: UiShadow.large,
+                                onPressed: () {},
+                                child: const SizedBox.expand(),
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // 1. Resting state: 200x60 UiCard sits at (20..220, 20..80) inside the
+        // 240x180 RepaintBoundary. Its +4dp Neo-Brutalist hard shadow extends to
+        // x in (220..224) and y in (80..84).
+        final restRgba = await _captureBoundaryRgba(tester, boundaryKey);
+        final bgColor = pixelAt(restRgba, 240, 4, 4);
+        final bottomShadowAtRest = pixelAt(restRgba, 240, 120, 82);
+        final rightShadowAtRest = pixelAt(restRgba, 240, 222, 50);
+        expect(bottomShadowAtRest, equals(OurneyUi.light.outline));
+        expect(rightShadowAtRest, equals(OurneyUi.light.outline));
+        expect(bottomShadowAtRest, isNot(equals(bgColor)));
+
+        // 2. Press state at rest: holding the interactive UiCard shifts it by
+        // (+4dp, +4dp) into (24..224, 24..84); pixel (120, 82) is now inside the
+        // shifted card's bottom border/surface and must NOT be clipped to bgColor.
+        final pressGesture = await tester.startGesture(
+          tester.getCenter(find.byKey(const ValueKey('short-card'))),
+        );
+        await tester.pump();
+        await tester.pump(UiMotion.press);
+        final pressedRgba = await _captureBoundaryRgba(tester, boundaryKey);
+        final shiftedBottomPixel = pixelAt(pressedRgba, 240, 120, 82);
+        final shiftedRightPixel = pixelAt(pressedRgba, 240, 222, 50);
+        expect(shiftedBottomPixel, isNot(equals(bgColor)));
+        expect(shiftedRightPixel, isNot(equals(bgColor)));
+        await pressGesture.up();
+        await tester.pumpAndSettle();
+
+        // 3. Shrinking switch (140dp tall -> 60dp short shadowed UiCard):
+        setHost(() => step = 'tall');
+        await tester.pumpAndSettle();
+
+        setHost(() => step = 'short');
+        await tester.pump();
+
+        // Advance to t = 180ms (90% of 200ms): AnimatedSize height has shrunk to
+        // ~60..61dp (< 64dp shadow extent), outgoing 140dp card is still mounted
+        // at 0.0 opacity, and incoming 60dp UiCard's +4dp bottom shadow at y = 82
+        // (62dp from switcher top) must remain completely unclipped!
+        await tester.pump(const Duration(milliseconds: 180));
+        final midShrinkRgba = await _captureBoundaryRgba(tester, boundaryKey);
+        final midBottomShadow = pixelAt(midShrinkRgba, 240, 120, 82);
+        final midRightShadow = pixelAt(midShrinkRgba, 240, 222, 50);
+        expect(midBottomShadow, isNot(equals(bgColor)));
+        expect(midRightShadow, isNot(equals(bgColor)));
+        await tester.pumpAndSettle();
+
+        // 4. Shrinking switch under Reduce Motion (outerBounds.height snaps to
+        // 60dp at t = 0ms while outgoing 140dp child stays mounted for 150ms):
+        // at t = 105ms (70% of 150ms), outgoing 140dp child is clipped at y = 80
+        // while incoming 60dp UiCard's +4dp bottom shadow at y = 82 is unclipped!
+        setHost(() {
+          disableAnimations = true;
+          step = 'tall';
+        });
+        await tester.pumpAndSettle();
+
+        setHost(() => step = 'short');
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 105));
+        final rmShrinkRgba = await _captureBoundaryRgba(tester, boundaryKey);
+        final rmBottomShadow = pixelAt(rmShrinkRgba, 240, 120, 82);
+        final rmBelowShadow = pixelAt(rmShrinkRgba, 240, 120, 110);
+        expect(rmBottomShadow, isNot(equals(bgColor)));
+        // And outgoing 140dp surface below y = 84 (at y = 110) is clipped to bg!
+        expect(rmBelowShadow, equals(bgColor));
+
+        await tester.pumpAndSettle();
       },
     );
   });

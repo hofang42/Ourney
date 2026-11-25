@@ -705,70 +705,98 @@ class _RenderIncomingSizedStack extends RenderBox
     return Offset.zero & size;
   }
 
+  void _paintOutgoingChildren(PaintingContext context, Offset offset) {
+    final incoming = lastChild;
+    var child = firstChild;
+    while (child != null && child != incoming) {
+      final pd = child.parentData! as _IncomingSizedStackParentData;
+      context.paintChild(child, pd.offset + offset);
+      child = pd.nextSibling;
+    }
+  }
+
   @override
   void paint(PaintingContext context, Offset offset) {
-    if (firstChild == lastChild && _clipBehavior == Clip.none) {
+    final incoming = lastChild;
+    if (firstChild == incoming && _clipBehavior == Clip.none) {
       _clipRectLayer.layer = null;
       defaultPaint(context, offset);
       return;
     }
 
     final outerBounds = _effectiveOuterBounds();
-    var overflowsVertically = false;
-    var overflowsHorizontally = false;
+    if (_clipBehavior != Clip.none) {
+      _clipRectLayer.layer = context.pushClipRect(
+        needsCompositing,
+        offset,
+        outerBounds,
+        defaultPaint,
+        clipBehavior: _clipBehavior,
+        oldLayer: _clipRectLayer.layer,
+      );
+      return;
+    }
+
+    var overflowsLeft = false;
+    var overflowsTop = false;
+    var overflowsRight = false;
+    var overflowsBottom = false;
     var child = firstChild;
-    while (child != null) {
+    while (child != null && child != incoming) {
       final pd = child.parentData! as _IncomingSizedStackParentData;
       final childRect = pd.offset & child.size;
-      if (childRect.bottom > outerBounds.bottom + 0.5 ||
-          childRect.top < outerBounds.top - 0.5) {
-        overflowsVertically = true;
+      if (childRect.left < outerBounds.left - 0.5) {
+        overflowsLeft = true;
       }
-      if (childRect.right > outerBounds.right + 0.5 ||
-          childRect.left < outerBounds.left - 0.5) {
-        overflowsHorizontally = true;
+      if (childRect.top < outerBounds.top - 0.5) {
+        overflowsTop = true;
+      }
+      if (childRect.right > outerBounds.right + 0.5) {
+        overflowsRight = true;
+      }
+      if (childRect.bottom > outerBounds.bottom + 0.5) {
+        overflowsBottom = true;
       }
       child = pd.nextSibling;
     }
 
-    if (!overflowsVertically &&
-        !overflowsHorizontally &&
-        _clipBehavior == Clip.none) {
+    if (!overflowsLeft &&
+        !overflowsTop &&
+        !overflowsRight &&
+        !overflowsBottom) {
       _clipRectLayer.layer = null;
       defaultPaint(context, offset);
       return;
     }
 
-    // Preserve horizontal slide slack (±32dp) and top/bottom sticker shadow
-    // slack when not shrinking along that axis, while clipping strictly to
-    // outerBounds on any axis where an outgoing child exceeds the switcher box.
+    // Clip ONLY the outgoing children when their layout bounds exceed the
+    // animated switcher box during a shrinking transition, while inflating
+    // every non-shrinking edge by the Neo-Brutalist hard-shadow / press-offset
+    // / horizontal-slide extent so shadows and press translations are never
+    // shaved off. The incoming child (`lastChild`) is always painted outside
+    // the clip layer so its +4dp hard shadow and press offset remain unclipped
+    // throughout 0..100% and at rest.
     const horizontalSlack = 32.0;
     const topSlack = 8.0;
     final clipRect = Rect.fromLTRB(
-      overflowsHorizontally || _clipBehavior != Clip.none
-          ? outerBounds.left
-          : outerBounds.left - horizontalSlack,
-      overflowsVertically || _clipBehavior != Clip.none
-          ? outerBounds.top
-          : outerBounds.top - topSlack,
-      overflowsHorizontally || _clipBehavior != Clip.none
-          ? outerBounds.right
-          : outerBounds.right + horizontalSlack,
-      overflowsVertically || _clipBehavior != Clip.none
+      overflowsLeft ? outerBounds.left : outerBounds.left - horizontalSlack,
+      overflowsTop ? outerBounds.top : outerBounds.top - topSlack,
+      overflowsRight ? outerBounds.right : outerBounds.right + horizontalSlack,
+      overflowsBottom
           ? outerBounds.bottom
           : outerBounds.bottom + UiShadow.large,
     );
-    final effectiveClip = _clipBehavior == Clip.none
-        ? Clip.hardEdge
-        : _clipBehavior;
     _clipRectLayer.layer = context.pushClipRect(
       needsCompositing,
       offset,
       clipRect,
-      defaultPaint,
-      clipBehavior: effectiveClip,
+      _paintOutgoingChildren,
       oldLayer: _clipRectLayer.layer,
     );
+    if (incoming != null) {
+      final incomingPd = incoming.parentData! as _IncomingSizedStackParentData;
+      context.paintChild(incoming, incomingPd.offset + offset);
+    }
   }
 }
 
@@ -819,16 +847,16 @@ class _SequentialSwitchEntry extends StatefulWidget {
 }
 
 class _SequentialSwitchEntryState extends State<_SequentialSwitchEntry> {
-  late final _SequentialValueAnimation _opacityAnimation =
-      _SequentialValueAnimation(
-        parentGenerator: () => widget.animation,
-        valueGetter: () => _currentOpacity,
-      );
-  late final _SequentialValueAnimation _scaleAnimation =
-      _SequentialValueAnimation(
-        parentGenerator: () => widget.animation,
-        valueGetter: () => _currentScale,
-      );
+  final GlobalKey _childKey = GlobalKey();
+
+  late _SequentialValueAnimation _opacityAnimation = _SequentialValueAnimation(
+    parent: widget.animation,
+    valueGetter: () => _currentOpacity,
+  );
+  late _SequentialValueAnimation _scaleAnimation = _SequentialValueAnimation(
+    parent: widget.animation,
+    valueGetter: () => _currentScale,
+  );
 
   bool _isOutgoing = false;
   double _revStartValue = 1.0;
@@ -867,6 +895,14 @@ class _SequentialSwitchEntryState extends State<_SequentialSwitchEntry> {
     if (oldWidget.animation != widget.animation) {
       oldWidget.animation.removeListener(_handleTick);
       oldWidget.animation.removeStatusListener(_handleStatusChange);
+      _opacityAnimation = _SequentialValueAnimation(
+        parent: widget.animation,
+        valueGetter: () => _currentOpacity,
+      );
+      _scaleAnimation = _SequentialValueAnimation(
+        parent: widget.animation,
+        valueGetter: () => _currentScale,
+      );
       widget.animation.addListener(_handleTick);
       widget.animation.addStatusListener(_handleStatusChange);
     }
@@ -906,6 +942,7 @@ class _SequentialSwitchEntryState extends State<_SequentialSwitchEntry> {
       _exitSign = -widget.slideSign;
       _recomputeMetrics();
       if (mounted) {
+        context.findRenderObject()?.clearSemantics();
         setState(() {});
       }
     }
@@ -955,16 +992,13 @@ class _SequentialSwitchEntryState extends State<_SequentialSwitchEntry> {
   Widget build(BuildContext context) {
     _recomputeMetrics();
     Widget result = FadeTransition(
+      key: _childKey,
       opacity: _opacityAnimation,
       alwaysIncludeSemantics: !_isOutgoing,
       child: widget.child,
     );
 
-    final shouldMountScale =
-        !widget.reduced &&
-        widget.scaleBegin != 1.0 &&
-        (!_isOutgoing || _revStartScale != 1.0);
-    if (shouldMountScale) {
+    if (!widget.reduced && widget.scaleBegin != 1.0) {
       result = ScaleTransition(
         alignment: widget.scaleAlignment,
         scale: _scaleAnimation,
@@ -986,29 +1020,26 @@ class _SequentialSwitchEntryState extends State<_SequentialSwitchEntry> {
       );
     }
 
-    if (_isOutgoing) {
-      result = ExcludeSemantics(
-        child: IgnorePointer(
-          child: result,
-        ),
-      );
-    }
-    return result;
+    return ExcludeSemantics(
+      excluding: _isOutgoing,
+      child: IgnorePointer(
+        ignoring: _isOutgoing,
+        child: result,
+      ),
+    );
   }
 }
 
 class _SequentialValueAnimation extends Animation<double>
     with AnimationWithParentMixin<double> {
   _SequentialValueAnimation({
-    required this.parentGenerator,
+    required this.parent,
     required this.valueGetter,
   });
 
-  final Animation<double> Function() parentGenerator;
-  final double Function() valueGetter;
-
   @override
-  Animation<double> get parent => parentGenerator();
+  final Animation<double> parent;
+  final double Function() valueGetter;
 
   @override
   double get value => valueGetter();
@@ -1120,9 +1151,9 @@ class UiFadeThroughSwitcher extends StatelessWidget {
       child: keyedChild,
     );
 
-    if (animateSize && !reduced) {
+    if (animateSize) {
       switcher = AnimatedSize(
-        duration: duration,
+        duration: reduced ? const Duration(microseconds: 1) : duration,
         curve: UiCurves.easeOutStrong,
         alignment: alignment,
         clipBehavior: clipBehavior,
@@ -1233,9 +1264,9 @@ class UiDirectionalSwitcher extends StatelessWidget {
       child: keyedChild,
     );
 
-    if (animateSize && !reduced) {
+    if (animateSize) {
       switcher = AnimatedSize(
-        duration: duration,
+        duration: reduced ? const Duration(microseconds: 1) : duration,
         curve: UiCurves.easeOutStrong,
         alignment: alignment,
         clipBehavior: clipBehavior,

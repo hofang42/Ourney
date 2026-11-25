@@ -169,6 +169,7 @@ class _GroupsListScreenState extends ConsumerState<GroupsListScreen> {
     final Widget today = UiFadeThroughSwitcher(
       duration: UiMotion.normal,
       scaleBegin: 1.0,
+      animateSize: true,
       alignment: Alignment.topCenter,
       child: todayState,
     );
