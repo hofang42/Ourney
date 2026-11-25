@@ -29,7 +29,7 @@ public struct SquadWidgetEntryView: View {
 
   public var body: some View {
     let snapshot = entry.snapshot
-    let locale = snapshot?.locale ?? "vi"
+    let locale = snapshot?.locale ?? ""
     let themeMode = snapshot?.themeMode ?? "system"
     let squad = snapshot?.selectedSquad()
     let theme = OurneyWidgetTheme.resolve(

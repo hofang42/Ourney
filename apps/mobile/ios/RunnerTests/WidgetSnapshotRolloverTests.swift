@@ -492,5 +492,12 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
         topDict: ["redactTitleOnLockScreen": true]
       )
     )
+
+    // (d) Verify Lock Screen redacted title matches UI promise ("Ourney") and non-VI locales default to English.
+    XCTAssertEqual(WidgetL10n.lockScreenRedactedTitle(locale: "vi"), "Ourney")
+    XCTAssertEqual(WidgetL10n.lockScreenRedactedTitle(locale: "en"), "Ourney")
+    XCTAssertFalse(WidgetL10n.isEnglish("vi"))
+    XCTAssertTrue(WidgetL10n.isEnglish("en"))
+    XCTAssertTrue(WidgetL10n.isEnglish("fr"))
   }
 }
