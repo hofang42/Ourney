@@ -96,8 +96,12 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
 
   /// The last logged value, shown as a hint (never as text: a stale value
   /// must not be posted by accident), with the locale's decimal separator.
-  String? _lastMetricHint(CheckinL10n l10n, bool vi) {
-    final last = widget.photo?.initialMetricValue;
+  String? _lastMetricHint(CheckinL10n l10n, bool vi, String journeyId) {
+    final last =
+        widget.photo?.initialMetricValue ??
+        ref
+            .read(sharedPreferencesProvider)
+            .getDouble('journeys.startingWeight.$journeyId');
     if (last == null) return null;
     var text = last == last.roundToDouble()
         ? last.toInt().toString()
@@ -450,6 +454,11 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
         : (UiPrivacy.squad, l10n.checkin_privacySquad);
     // Per-skin copy of the Figma Post screens (primary label, caption label).
     final skin = personaSkinOf(journey);
+    final sport = journey.dna?['sport'] as String?;
+    final measure = journey.dna?['measure'] as String?;
+    final isRun =
+        (sport == null || sport == 'run') &&
+        (measure == null || measure == 'km');
     final postLabel = switch (skin) {
       PersonaSkinId.memoryCollectors => l10n.checkin_postMemory,
       PersonaSkinId.minimalistHabit => l10n.checkin_postMinimal,
@@ -457,7 +466,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
     };
     final captionSemantics = switch (skin) {
       PersonaSkinId.memoryCollectors => l10n.checkin_captionLabelMemory,
-      PersonaSkinId.aestheticFlexer => l10n.checkin_captionLabelFlexer,
+      PersonaSkinId.aestheticFlexer =>
+        isRun ? l10n.checkin_captionLabelFlexer : l10n.checkin_captionLabel,
       _ => l10n.checkin_captionLabel,
     };
     final width = MediaQuery.sizeOf(context).width;
@@ -656,7 +666,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
               UiTextField(
                 fieldKey: const ValueKey('checkin-metric'),
                 label: metricLabel,
-                hint: _lastMetricHint(l10n, vi),
+                hint: _lastMetricHint(l10n, vi, journey.id),
                 controller: _metric,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
@@ -685,6 +695,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
               selfName: journey.coupleSelfName,
               partnerName: journey.couplePartnerName,
               onPickPartnerPhoto: _pickPartnerPhoto,
+              ritual: journey.dna?['ritual'] as String?,
+              isRunning: isRun,
             ),
             if (skin == PersonaSkinId.minimalistHabit) ...[
               const SizedBox(height: UiSpace.md),

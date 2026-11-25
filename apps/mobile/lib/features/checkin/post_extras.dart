@@ -140,6 +140,8 @@ class PostExtrasSection extends StatelessWidget {
     required this.selfName,
     required this.partnerName,
     required this.onPickPartnerPhoto,
+    this.ritual,
+    this.isRunning = true,
     super.key,
   });
 
@@ -150,6 +152,12 @@ class PostExtrasSection extends StatelessWidget {
   final String? selfName;
   final String? partnerName;
   final VoidCallback onPickPartnerPhoto;
+
+  /// Couple ritual code (`cook`, `save`, `ldr`, `custom`).
+  final String? ritual;
+
+  /// False when a workout journey is non-running (gym, pilates, yoga, etc.).
+  final bool isRunning;
 
   @override
   Widget build(BuildContext context) {
@@ -165,8 +173,10 @@ class PostExtrasSection extends StatelessWidget {
             selfName: selfName,
             partnerName: partnerName,
             onPickPartnerPhoto: onPickPartnerPhoto,
+            ritual: ritual,
           ),
-          PersonaSkinId.aestheticFlexer => _FlexerInputs(controller),
+          PersonaSkinId.aestheticFlexer =>
+            isRunning ? _FlexerInputs(controller) : _MinutesPicker(controller),
           PersonaSkinId.minimalistHabit => null,
         };
         if (child == null) return const SizedBox.shrink();
@@ -344,12 +354,16 @@ class _CoupleInputs extends StatelessWidget {
     required this.selfName,
     required this.partnerName,
     required this.onPickPartnerPhoto,
+    this.ritual,
   });
 
   final PostExtrasController controller;
   final String? selfName;
   final String? partnerName;
   final VoidCallback onPickPartnerPhoto;
+  final String? ritual;
+
+  bool get _isCooking => ritual == null || ritual == 'cook';
 
   @override
   Widget build(BuildContext context) {
@@ -359,42 +373,51 @@ class _CoupleInputs extends StatelessWidget {
     final self = selfName ?? l10n.checkin_extraYou;
     final partner = partnerName ?? l10n.checkin_extraPartner;
     final photo = c.partnerPhotoPath;
+    final cooking = _isCooking;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         UiTextField(
           fieldKey: const ValueKey('checkin-dish'),
-          label: l10n.checkin_extraDishLabel,
-          hint: l10n.checkin_extraDishHint,
+          label: cooking
+              ? l10n.checkin_extraDishLabel
+              : l10n.checkin_extraMomentLabel,
+          hint: cooking
+              ? l10n.checkin_extraDishHint
+              : l10n.checkin_extraMomentHint,
           controller: c.dish,
           textCapitalization: TextCapitalization.sentences,
           inputFormatters: [_RuneLimit(extrasDishMax)],
         ),
+        if (cooking) ...[
+          const SizedBox(height: UiSpace.md),
+          Text(
+            l10n.checkin_extraCookLabel,
+            style: UiText.fieldLabel(color: ui.inkMuted),
+          ),
+          const SizedBox(height: UiSpace.sm),
+          Wrap(
+            spacing: UiSpace.sm,
+            runSpacing: UiSpace.sm,
+            children: [
+              for (final name in {self, partner})
+                UiChip(
+                  key: ValueKey('checkin-cook-$name'),
+                  label: name,
+                  selected: c.cook == name,
+                  glyph: c.cook == name
+                      ? const OurneyIcon(name: 'check', size: 16)
+                      : null,
+                  onPressed: () => c.pickCook(name),
+                ),
+            ],
+          ),
+        ],
         const SizedBox(height: UiSpace.md),
         Text(
-          l10n.checkin_extraCookLabel,
-          style: UiText.fieldLabel(color: ui.inkMuted),
-        ),
-        const SizedBox(height: UiSpace.sm),
-        Wrap(
-          spacing: UiSpace.sm,
-          runSpacing: UiSpace.sm,
-          children: [
-            for (final name in {self, partner})
-              UiChip(
-                key: ValueKey('checkin-cook-$name'),
-                label: name,
-                selected: c.cook == name,
-                glyph: c.cook == name
-                    ? const OurneyIcon(name: 'check', size: 16)
-                    : null,
-                onPressed: () => c.pickCook(name),
-              ),
-          ],
-        ),
-        const SizedBox(height: UiSpace.md),
-        Text(
-          l10n.checkin_extraHeartsLabel,
+          cooking
+              ? l10n.checkin_extraHeartsLabel
+              : l10n.checkin_extraHeartsMomentLabel,
           style: UiText.fieldLabel(color: ui.inkMuted),
         ),
         Row(

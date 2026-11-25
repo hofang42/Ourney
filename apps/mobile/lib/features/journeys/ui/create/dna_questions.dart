@@ -109,12 +109,6 @@ List<DnaQuestion> dnaQuestionsFor(TemplateId template) => switch (template) {
       set: 'measure',
       choiceIds: ['km', 'min', 'session'],
     ),
-    DnaQuestion(
-      key: 'hud',
-      titleId: 'hud_title',
-      set: 'hud',
-      choiceIds: ['bold', 'stamp', 'strip'],
-    ),
   ],
   TemplateId.travel => const [
     DnaQuestion(key: 'place', titleId: 'place_title', kind: DnaKind.place),

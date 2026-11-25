@@ -215,10 +215,11 @@ void main() {
     final hold = find.byKey(const ValueKey('quiet-hold'));
     await tester.ensureVisible(hold);
     final g = await tester.startGesture(tester.getCenter(hold));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('Viewing'), findsOneWidget);
+    expect(find.text('••,•'), findsNothing);
     await g.up();
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('Hold to view'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

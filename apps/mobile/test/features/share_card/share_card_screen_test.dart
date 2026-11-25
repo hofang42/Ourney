@@ -103,6 +103,23 @@ void main() {
       expect(_text(tester, 'share-card-day'), 'DAY 7');
     });
 
+    testWidgets(
+      'respects custom journey.layout override and hides Streak/Day N toggle on memory & couple cards (UX-19)',
+      (tester) async {
+        final j = testJourney().copyWith(
+          layout: PersonaSkinId.memoryCollectors,
+        );
+        await pumpShare(
+          tester,
+          journey: j,
+          checkIns: streakCheckIns(j.id),
+          locale: const Locale('en'),
+        );
+        expect(_key('share-card-skin-memory'), findsOneWidget);
+        expect(_key('share-card-number-mode'), findsNothing);
+      },
+    );
+
     testWidgets('finished: Vietnamese caption keeps room for diacritics', (
       tester,
     ) async {

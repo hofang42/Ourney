@@ -154,6 +154,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
           id: _clientId,
           // The colour picked on the ticket (bug B-B12).
           color: _variant,
+          layout: widget.frame?.layout,
         ),
         onExtrasRejected: () => extrasRejected = true,
       );
@@ -217,16 +218,18 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
           widget.openMoreOptions || form.trackMetric || form.blurOnShare;
     }
 
-    final skin = form == null
-        ? personaSkinForTemplate(
-            widget.templateId,
-            emoji: widget.isCouplePreset ? '💞' : null,
-          )
-        : personaSkinForTemplate(
-            form.template.id,
-            kind: form.kind,
-            emoji: form.emoji,
-          );
+    final skin =
+        widget.frame?.layout ??
+        (form == null
+            ? personaSkinForTemplate(
+                widget.templateId,
+                emoji: widget.isCouplePreset ? '💞' : null,
+              )
+            : personaSkinForTemplate(
+                form.template.id,
+                kind: form.kind,
+                emoji: form.emoji,
+              ));
     final pal = JourneyPalette.of(context, journeyStyleFor(skin));
     final gutter = UiSpace.gutter(MediaQuery.sizeOf(context).width);
 

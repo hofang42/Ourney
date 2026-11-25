@@ -52,6 +52,7 @@ class JourneyHomeIntro extends StatelessWidget {
     this.total,
     this.offline = false,
     this.readOnly = false,
+    this.ritual,
     super.key,
   });
 
@@ -65,6 +66,9 @@ class JourneyHomeIntro extends StatelessWidget {
   final LocalDate today;
   final bool offline;
   final bool readOnly;
+
+  /// Couple ritual code (`cook`, `save`, `ldr`, `custom`).
+  final String? ritual;
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +89,12 @@ class JourneyHomeIntro extends StatelessWidget {
       'quiet' => l10n.journeys_home_introQuiet,
       'squad' => l10n.journeys_home_introSquad,
       'memory' => l10n.journeys_home_introMemory,
-      'couple' => l10n.journeys_home_introCouple,
+      'couple' => switch (ritual) {
+        'save' => l10n.journeys_home_introCoupleSave,
+        'ldr' => l10n.journeys_home_introCoupleLdr,
+        'custom' => l10n.journeys_home_introCoupleCustom,
+        _ => l10n.journeys_home_introCouple,
+      },
       _ => null,
     };
     final line = skin == 'minimal'

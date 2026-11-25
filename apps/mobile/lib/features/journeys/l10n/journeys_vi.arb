@@ -933,12 +933,12 @@
   "journeys_dna_weight_private": "Chỉ mình bạn thấy",
   "journeys_dna_weight_hide": "Ẩn số kg khi chia sẻ",
   "journeys_dna_weight_skip": "Bỏ qua",
-  "journeys_dna_ghost_body": "Ảnh riêng tư này sẽ làm khung căn dáng ở những ngày tiếp theo.",
-  "journeys_dna_ghost_now": "Chụp ngay",
-  "journeys_dna_ghost_later": "Để sau vậy.",
+  "journeys_dna_ghost_body": "Hiện khung bóng mờ trong máy ảnh để ngày nào chụp cũng khớp một góc.",
+  "journeys_dna_ghost_now": "Bật khung căn dáng",
+  "journeys_dna_ghost_later": "Tắt đi, để bật sau.",
   "journeys_dna_trophy_label": "Tên chiếc cúp",
   "journeys_dna_trophy_hint": "Cúp 7.5",
-  "journeys_dna_place_search": "Tìm một nơi...",
+  "journeys_dna_place_search": "Nhập điểm đến...",
   "journeys_dna_place_country": "Việt Nam",
   "journeys_dna_place_dalat": "Đà Lạt",
   "journeys_dna_place_hoian": "Hội An",
@@ -996,6 +996,9 @@
   "journeys_home_introSquad": "hôm nay học bao lâu.",
   "journeys_home_introMemory": "Hôm nay cả bọn lạc ở đâu?",
   "journeys_home_introCouple": "Hôm nay hai đứa nấu gì?",
+  "journeys_home_introCoupleSave": "Hôm nay hai đứa góp thêm được gì?",
+  "journeys_home_introCoupleLdr": "Hôm nay hai đứa gửi gì cho nhau?",
+  "journeys_home_introCoupleCustom": "Hôm nay hai đứa có khoảnh khắc gì cùng nhau?",
   "journeys_home_offlineQuiet": "Đang lưu trên máy · sẽ đồng bộ sau",
   "journeys_home_offlineSquad": "CHỜ ĐỒNG BỘ · ĐÃ LƯU TRÊN MÁY",
   "journeys_home_offlineMemory": "Đang lưu trên máy. Có mạng sẽ tự gửi.",
@@ -1091,7 +1094,7 @@
     }
   },
   "journeys_edit_previewTag": "XEM TRƯỚC",
-  "journeys_edit_hudPreview": "HUD máy ảnh",
+  "journeys_edit_hudPreview": "Check-in mỗi ngày",
   "journeys_edit_dayOf": "NGÀY {day}/{total}",
   "@journeys_edit_dayOf": {
     "placeholders": {
@@ -1167,7 +1170,7 @@
   "journeys_edit_visLink": "Có link xem (thu hồi được)",
   "journeys_edit_visQuietNote": "Trang xem luôn ẩn số kg và làm mờ ảnh theo mặc định.",
   "journeys_edit_membersOnly": "Chỉ thành viên",
-  "journeys_edit_membersOnlyHint": "hành trình nhóm không có link công khai",
+  "journeys_edit_membersOnlyHint": "có thể tạo link công khai khi hành trình kết thúc và được thành viên đồng ý",
   "journeys_edit_quietLock": "Riêng tư",
   "journeys_edit_endTitle": "Kết thúc hành trình?",
   "journeys_edit_endBody": "Bạn vẫn xem lại được, nhưng không chụp thêm.",
@@ -1364,6 +1367,14 @@
       }
     }
   },
+  "journeys_home_squadChipOpen": "{title} · KHÔNG GIỚI HẠN",
+  "@journeys_home_squadChipOpen": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "journeys_home_squadToday": "{done}/{total} HÔM NAY",
   "@journeys_home_squadToday": {
     "placeholders": {
@@ -1384,6 +1395,7 @@
       }
     }
   },
+  "journeys_home_trophyOpen": "KHÔNG GIỚI HẠN",
   "journeys_home_filmRoll": "CUỘN PHIM {frames}/{total}",
   "@journeys_home_filmRoll": {
     "placeholders": {
@@ -1449,6 +1461,17 @@
   },
   "journeys_home_flexRan": "{done}/{total} ĐÃ CHẠY",
   "@journeys_home_flexRan": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_flexTrained": "{done}/{total} ĐÃ TẬP",
+  "@journeys_home_flexTrained": {
     "placeholders": {
       "done": {
         "type": "int"

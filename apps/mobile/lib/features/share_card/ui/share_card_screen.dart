@@ -189,12 +189,13 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       '${content.emoji} ${content.title}',
     );
     final skinId = uiSkinIdFor(
-      personaSkinForTemplate(
-        journey.templateId,
-        kind: journey.kind,
-        maxMembers: journey.maxMembers,
-        emoji: journey.emoji,
-      ),
+      journey.layout ??
+          personaSkinForTemplate(
+            journey.templateId,
+            kind: journey.kind,
+            maxMembers: journey.maxMembers,
+            emoji: journey.emoji,
+          ),
     );
     final hideBrand = _hideBrand ?? shareCardHidesBrandByDefault(skinId);
     final gallery = <ImageProvider>[
@@ -228,6 +229,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
 
     return UiSkinScope(
       skinId: skinId,
+      variant: journey.color ?? 0,
       child: Builder(
         builder: (context) {
           final ui = context.ui;
@@ -505,28 +507,30 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                 ),
                 const SizedBox(height: UiSpace.xl),
                 _SectionLabel(l10n.share_card_moreOptions),
-                _SectionLabel(l10n.share_card_numberLabel),
-                KeyedSubtree(
-                  key: const ValueKey('share-card-number-mode'),
-                  child: UiSegmented<ShareCardNumber>(
-                    segments: [
-                      UiSegment(
-                        value: ShareCardNumber.streak,
-                        label: l10n.share_card_numberStreak,
-                      ),
-                      UiSegment(
-                        value: ShareCardNumber.day,
-                        label: l10n.share_card_numberDay,
-                      ),
-                    ],
-                    value: _number,
-                    onChanged: (n) {
-                      unawaited(UiHaptics.selection());
-                      setState(() => _number = n);
-                    },
+                if (skinId != 'memory' && skinId != 'couple') ...[
+                  _SectionLabel(l10n.share_card_numberLabel),
+                  KeyedSubtree(
+                    key: const ValueKey('share-card-number-mode'),
+                    child: UiSegmented<ShareCardNumber>(
+                      segments: [
+                        UiSegment(
+                          value: ShareCardNumber.streak,
+                          label: l10n.share_card_numberStreak,
+                        ),
+                        UiSegment(
+                          value: ShareCardNumber.day,
+                          label: l10n.share_card_numberDay,
+                        ),
+                      ],
+                      value: _number,
+                      onChanged: (n) {
+                        unawaited(UiHaptics.selection());
+                        setState(() => _number = n);
+                      },
+                    ),
                   ),
-                ),
-                const SizedBox(height: UiSpace.xl),
+                  const SizedBox(height: UiSpace.xl),
+                ],
                 _SectionLabel(l10n.share_card_photoLabel),
                 if (candidates.isEmpty)
                   Text(

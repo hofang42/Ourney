@@ -27,6 +27,8 @@ class CreateDnaStep extends StatelessWidget {
     required this.onAdvanceDna,
     required this.onApplyDates,
     required this.today,
+    this.onSkipWeight,
+    this.onGhostLater,
     super.key,
   });
 
@@ -45,6 +47,8 @@ class CreateDnaStep extends StatelessWidget {
   final ValueChanged<bool> onHideWeightChanged;
   final VoidCallback onAdvanceDna;
   final ValueChanged<DnaDates> onApplyDates;
+  final VoidCallback? onSkipWeight;
+  final VoidCallback? onGhostLater;
 
   /// Today in the journey's zone (the journeys clock), not `DateTime.now()`.
   final DateTime today;
@@ -61,13 +65,13 @@ class CreateDnaStep extends StatelessWidget {
         onChanged: (v) => onSetDna(question.key, v),
       ),
       DnaKind.weight => DnaWeightPicker(
-        weight: (dna['weight'] as int?) ?? dnaWeightDefault,
+        weight: (dna['weight'] as num?) ?? dnaWeightDefault,
         hide: hideWeight,
         onWeight: (v) => onSetDna('weight', v),
         onHide: onHideWeightChanged,
-        onSkip: onAdvanceDna,
+        onSkip: onSkipWeight ?? onAdvanceDna,
       ),
-      DnaKind.ghost => DnaGhostPage(onLater: onAdvanceDna),
+      DnaKind.ghost => DnaGhostPage(onLater: onGhostLater ?? onAdvanceDna),
       DnaKind.trophy => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

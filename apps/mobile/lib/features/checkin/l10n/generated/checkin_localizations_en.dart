@@ -237,6 +237,12 @@ class CheckinL10nEn extends CheckinL10n {
   String get checkin_extraDishHint => 'Leave empty if you like';
 
   @override
+  String get checkin_extraMomentLabel => 'Today\'s moment';
+
+  @override
+  String get checkin_extraMomentHint => 'Leave empty if you like';
+
+  @override
   String get checkin_extraCookLabel => 'Who cooked?';
 
   @override
@@ -247,6 +253,9 @@ class CheckinL10nEn extends CheckinL10n {
 
   @override
   String get checkin_extraHeartsLabel => 'How many hearts for this meal?';
+
+  @override
+  String get checkin_extraHeartsMomentLabel => 'How many hearts for today?';
 
   @override
   String checkin_extraHeartsValue(int count) {

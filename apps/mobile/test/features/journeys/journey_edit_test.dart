@@ -12,6 +12,7 @@ import 'package:ourney/features/reminders/data/notification_gateway.dart';
 import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
 import 'package:ourney/features/reminders/data/reminder_settings.dart';
 import 'package:ourney/features/reminders/domain/reminder_plan.dart';
+import 'package:ourney/ui/ui.dart' show UiSwitchRow;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../reminders/reminders_fakes.dart' show FakeNotificationGateway;
@@ -76,14 +77,16 @@ void main() {
   });
 
   group('Edit journey screen', () {
-    testWidgets('renames, picks cover and colour, saves through update', (
+    testWidgets('renames, picks colour, saves through update (UX-08)', (
       tester,
     ) async {
       final h = await _open(tester);
       expect(_key('journey-edit'), findsOneWidget);
       expect(find.text('update journey.'), findsOneWidget);
+      // Dead cover and HUD pickers are gone (UX-08).
+      expect(_key('edit-cover-0'), findsNothing);
+      expect(_key('edit-hud-bold'), findsNothing);
       await tester.enterText(_key('edit-name'), 'Renamed run');
-      await tester.tap(_key('edit-cover-2'));
       await tester.tap(_key('edit-color-1'));
       await tester.pumpAndSettle();
       await tester.ensureVisible(_key('edit-save-bottom'));
@@ -91,24 +94,35 @@ void main() {
       await tester.pumpAndSettle();
       final u = h.journeys.updates.single;
       expect(u.title, 'Renamed run');
-      expect(u.cover, 2);
       expect(u.color, 1);
-      expect(u.reminderTime, matches(RegExp(r'^\d\d:\d\d$')));
+      expect(u.reminderTime, isNull);
     });
 
-    testWidgets('switching layout previews, then stores the override', (
-      tester,
-    ) async {
-      final h = await _open(tester);
-      await tester.ensureVisible(_key('edit-layout-memory'));
-      await tester.tap(_key('edit-layout-memory'));
-      await tester.pumpAndSettle();
-      expect(_key('layout-full-preview'), findsOneWidget);
-      await tester.tap(_key('layout-use'));
-      await tester.pumpAndSettle();
-      expect(h.journeys.updates.single.layout, PersonaSkinId.memoryCollectors);
-      expect(h.journeys.journeys.single.layout, PersonaSkinId.memoryCollectors);
-    });
+    testWidgets(
+      'switching layout stages locally until Save, and discarding drops it (UX-18)',
+      (tester) async {
+        final h = await _open(tester);
+        await tester.ensureVisible(_key('edit-layout-memory'));
+        await tester.tap(_key('edit-layout-memory'));
+        await tester.pumpAndSettle();
+        expect(_key('layout-full-preview'), findsOneWidget);
+        await tester.tap(_key('layout-use'));
+        await tester.pumpAndSettle();
+        // Staged locally: not persisted before Save.
+        expect(h.journeys.updates, isEmpty);
+        await tester.ensureVisible(_key('edit-save-bottom'));
+        await tester.tap(_key('edit-save-bottom'));
+        await tester.pumpAndSettle();
+        expect(
+          h.journeys.updates.single.layout,
+          PersonaSkinId.memoryCollectors,
+        );
+        expect(
+          h.journeys.journeys.single.layout,
+          PersonaSkinId.memoryCollectors,
+        );
+      },
+    );
 
     testWidgets('cancel in the preview changes nothing', (tester) async {
       final h = await _open(tester);
@@ -351,5 +365,44 @@ void main() {
         expect(tester.takeException(), isNull);
       });
     }
+
+    testWidgets(
+      'reminder switch reflects RemindersScreen and turning it off clears reminderTime (UX-18)',
+      (tester) async {
+        final j = testJourney().copyWith(reminderTime: '07:30');
+        final h = await _open(tester, journey: j);
+        expect(
+          tester.widget<UiSwitchRow>(_key('edit-reminder-toggle')).value,
+          isTrue,
+        );
+        await tester.ensureVisible(_key('edit-reminder-toggle'));
+        await tester.tap(_key('edit-reminder-toggle'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(_key('edit-save-bottom'));
+        await tester.tap(_key('edit-save-bottom'));
+        await tester.pumpAndSettle();
+        final u = h.journeys.updates.single;
+        expect(u.reminderTime, isNull);
+        expect(u.clear, contains('reminder_time'));
+        expect(
+          h.container.read(reminderSettingsProvider)['j1']?.enabled,
+          isFalse,
+        );
+      },
+    );
+
+    testWidgets(
+      'squad journey visibility note explains member consent after journey ends (UX-36)',
+      (tester) async {
+        final j = testJourney(kind: JourneyKind.group);
+        await _open(tester, journey: j);
+        expect(
+          find.textContaining(
+            'a public link can be created with member consent once the journey ends',
+          ),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }

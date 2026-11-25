@@ -42,7 +42,10 @@ class JourneyTimeline extends StatelessWidget {
     required this.onTapDay,
     this.selfName,
     this.partnerName,
+    this.selfOnRight = false,
     this.showOfflineStamps = false,
+    this.startingWeight,
+    this.showMilestones = true,
     this.summary,
     this.window,
     this.onOpenEarlier,
@@ -54,9 +57,19 @@ class JourneyTimeline extends StatelessWidget {
   /// Offline stamps need a server to sync to; local-only never shows them.
   final bool showOfflineStamps;
 
+  /// Baseline weight from Create Flow (`UX-02`), prepended to the quiet curve.
+  final double? startingWeight;
+
+  /// Whether [QuietTimeline] renders its inline milestone stars (`false` on
+  /// [JourneyDetailScreen] where [JourneyHomeMilestones] already renders them).
+  final bool showMilestones;
+
   /// Couple names of the journey (couple skin only).
   final String? selfName;
   final String? partnerName;
+
+  /// True when the owner chose the right-hand diptych slot (`dna['side'] == 'right'`).
+  final bool selfOnRight;
 
   final String skinId;
   final List<TimelineDay> days;
@@ -92,6 +105,8 @@ class JourneyTimeline extends StatelessWidget {
         summary: summary,
         short: rangeShort,
         onShortChanged: onRangeChanged,
+        startingWeight: startingWeight,
+        showMilestones: showMilestones,
       ),
       'squad' => SquadTimeline(
         days: days,
@@ -110,6 +125,7 @@ class JourneyTimeline extends StatelessWidget {
         onTapDay: onTapDay,
         selfName: selfName,
         partnerName: partnerName,
+        selfOnRight: selfOnRight,
       ),
       'flexer' => FlexerTimeline(
         days: days,

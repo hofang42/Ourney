@@ -155,6 +155,16 @@ class _Squad extends ConsumerWidget {
     final trophy =
         (journey.dna?['trophy'] as String?)?.trim().toUpperCase() ??
         l10n.journeys_home_trophyDefault;
+    final duration = journey.durationDays;
+    final chipText = duration == null
+        ? l10n.journeys_home_squadChipOpen(journey.title.toUpperCase())
+        : l10n.journeys_home_squadChip(
+            journey.title.toUpperCase(),
+            duration,
+          );
+    final trophySubtitle = duration == null
+        ? l10n.journeys_home_trophyOpen
+        : l10n.journeys_home_trophyDay(duration);
     return Column(
       key: const ValueKey('journey-home-squad-header'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -170,10 +180,7 @@ class _Squad extends ConsumerWidget {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      l10n.journeys_home_squadChip(
-                        journey.title.toUpperCase(),
-                        journey.durationDays ?? day,
-                      ),
+                      chipText,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: UiText.eyebrow(color: ui.ink),
@@ -215,8 +222,7 @@ class _Squad extends ConsumerWidget {
           child: UiPressable(
             key: const ValueKey('journey-squad-trophy'),
             onPressed: onTrophy,
-            semanticLabel:
-                '$trophy, ${l10n.journeys_home_trophyDay(journey.durationDays ?? day)}',
+            semanticLabel: '$trophy, $trophySubtitle',
             excludeChildSemantics: true,
             borderRadius: BorderRadius.circular(UiRadius.menu),
             child: Container(
@@ -248,9 +254,7 @@ class _Squad extends ConsumerWidget {
                           ).copyWith(height: 1.3),
                         ),
                         Text(
-                          l10n.journeys_home_trophyDay(
-                            journey.durationDays ?? day,
-                          ),
+                          trophySubtitle,
                           style: UiText.eyebrow(color: ui.inkMuted),
                         ),
                       ],
@@ -328,8 +332,13 @@ class _Couple extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = JourneysL10n.of(context);
     final ui = context.ui;
-    final self = journey.coupleSelfName ?? '';
-    final partner = journey.couplePartnerName ?? '';
+    final self = (journey.coupleSelfName?.trim().isNotEmpty ?? false)
+        ? journey.coupleSelfName!.trim()
+        : l10n.journeys_coupleYou;
+    final partner = (journey.couplePartnerName?.trim().isNotEmpty ?? false)
+        ? journey.couplePartnerName!.trim()
+        : l10n.journeys_ticketPartner;
+    final selfOnRight = journey.dna?['side'] == 'right';
     final members =
         ref.watch(groupMembersTodaySafeProvider(journey.id)).value ??
         const <MemberToday>[];
@@ -379,12 +388,18 @@ class _Couple extends ConsumerWidget {
           key: const ValueKey('journey-couple-pair'),
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _Person(name: self, id: 'self-${journey.id}'),
+            _Person(
+              name: selfOnRight ? partner : self,
+              id: '${selfOnRight ? 'partner' : 'self'}-${journey.id}',
+            ),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: UiSpace.md),
               child: OurneyIcon(name: 'heart', size: 30, active: true),
             ),
-            _Person(name: partner, id: 'partner-${journey.id}'),
+            _Person(
+              name: selfOnRight ? self : partner,
+              id: '${selfOnRight ? 'self' : 'partner'}-${journey.id}',
+            ),
           ],
         ),
         if (status != null)
@@ -449,6 +464,11 @@ class _Flexer extends ConsumerWidget {
     final ran = members.where((m) => m.checkedIn).length;
     final km = stats.kmText;
     final pace = stats.pace;
+    final sport = journey.dna?['sport'] as String?;
+    final measure = journey.dna?['measure'] as String?;
+    final isRun =
+        (sport == null || sport == 'run') &&
+        (measure == null || measure == 'km');
     return Column(
       key: const ValueKey('journey-home-flexer-header'),
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -457,7 +477,9 @@ class _Flexer extends ConsumerWidget {
           _pill(
             context,
             Text(
-              l10n.journeys_home_flexRan(ran, members.length),
+              isRun
+                  ? l10n.journeys_home_flexRan(ran, members.length)
+                  : l10n.journeys_home_flexTrained(ran, members.length),
               style: UiText.eyebrow(color: ui.ink),
             ),
           ),

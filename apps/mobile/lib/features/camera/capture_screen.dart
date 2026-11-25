@@ -388,13 +388,29 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     }
   }
 
-  void _toggleGhost() {
+  bool _ghostFor(String? journeyId) {
+    if (journeyId == null) return _ghost;
+    return ref
+            .read(sharedPreferencesProvider)
+            .getBool(journeyGhostGuidePrefKey(journeyId)) ??
+        _ghost;
+  }
+
+  void _toggleGhost(String? journeyId) {
     final l10n = CameraL10n.of(context);
     unawaited(UiHaptics.selection());
-    setState(() => _ghost = !_ghost);
+    final next = !_ghostFor(journeyId);
+    setState(() => _ghost = next);
+    if (journeyId != null) {
+      unawaited(
+        ref
+            .read(sharedPreferencesProvider)
+            .setBool(journeyGhostGuidePrefKey(journeyId), next),
+      );
+    }
     _showStatus(
-      _ghost ? l10n.camera_ghostOn : l10n.camera_ghostOff,
-      glyph: _ghost ? 'eye' : 'eye-off',
+      next ? l10n.camera_ghostOn : l10n.camera_ghostOff,
+      glyph: next ? 'eye' : 'eye-off',
     );
   }
 
@@ -497,7 +513,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
 
   double? _latestMetric(String journeyId) {
     final checkIns = ref.read(myCheckInsProvider(journeyId)).value;
-    return checkIns
+    final fromCheckIn = checkIns
         ?.where((c) => c.metricValue != null)
         .fold<CheckIn?>(
           null,
@@ -506,6 +522,10 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
               : prev,
         )
         ?.metricValue;
+    if (fromCheckIn != null) return fromCheckIn;
+    return ref
+        .read(sharedPreferencesProvider)
+        .getDouble(journeyStartingWeightPrefKey(journeyId));
   }
 
   Future<void> _capture(Journey journey) async {
@@ -758,20 +778,21 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     final quiet =
         journey != null &&
         personaSkinOf(journey) == PersonaSkinId.quietTransformer;
+    final ghostOn = _ghostFor(journey?.id);
     return [
       if (quiet)
         Tooltip(
-          message: _ghost ? l10n.camera_ghostOn : l10n.camera_ghostOff,
+          message: ghostOn ? l10n.camera_ghostOn : l10n.camera_ghostOff,
           child: UiCameraTool(
             key: const ValueKey('capture-ghost'),
-            glyph: _ghost ? 'eye' : 'eye-off',
-            label: _ghost ? l10n.camera_ghostOn : l10n.camera_ghostOff,
-            emphasis: _ghost
+            glyph: ghostOn ? 'eye' : 'eye-off',
+            label: ghostOn ? l10n.camera_ghostOn : l10n.camera_ghostOff,
+            emphasis: ghostOn
                 ? UiCameraToolEmphasis.filled
                 : UiCameraToolEmphasis.none,
             accent: style?.accent,
             onAccent: style?.onAccent,
-            onPressed: _toggleGhost,
+            onPressed: () => _toggleGhost(journey.id),
           ),
         ),
       if (hasFlash)
@@ -974,7 +995,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
               child: CaptureSkinOverlay(
                 key: ValueKey('capture-overlay-${journey.id}'),
                 skin: personaSkinOf(journey),
-                showGhost: _ghost,
+                showGhost: _ghostFor(journey.id),
                 partnerPhotoFile: data.partnerPhoto,
               ),
             ),
