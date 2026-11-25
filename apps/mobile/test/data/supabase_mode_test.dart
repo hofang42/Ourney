@@ -8,6 +8,7 @@ import 'package:ourney/data/db/app_database.dart';
 import 'package:ourney/data/remote/error_mapping.dart';
 import 'package:ourney/data/remote/remote_api.dart';
 import 'package:ourney/data/remote/supabase_remote_api.dart';
+import 'package:ourney/data/sync/outbox.dart';
 import 'package:ourney/data/sync/sync_engine.dart';
 import 'package:ourney_core/ourney_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -17,6 +18,34 @@ import 'data_test_helpers.dart';
 const me = 'bbbbbbbb-0000-4000-8000-000000000001';
 const other = 'cccccccc-0000-4000-8000-000000000002';
 const offline = OurneyException(OurneyErrorCode.offline);
+
+class _HeldPullRemote extends FakeRemoteApi {
+  final started = Completer<void>();
+  final release = Completer<void>();
+
+  @override
+  Future<List<RemoteRow>> select(
+    String table, {
+    Map<String, Object> eq = const {},
+    Map<String, List<Object>> inList = const {},
+    String? updatedSince,
+    bool onlyLive = false,
+    int? limit,
+  }) async {
+    if (table == 'journeys' && !started.isCompleted) {
+      started.complete();
+      await release.future;
+    }
+    return super.select(
+      table,
+      eq: eq,
+      inList: inList,
+      updatedSince: updatedSince,
+      onlyLive: onlyLive,
+      limit: limit,
+    );
+  }
+}
 
 void main() {
   late AppDatabase db;
@@ -78,6 +107,42 @@ void main() {
     expect(layer.auth.isLocalOnly, isFalse);
     expect(layer.auth.currentUserId, me);
   });
+
+  test(
+    'a forced gate halts a running pull and holds queued writes until clear',
+    () async {
+      final heldRemote = _HeldPullRemote();
+      final heldLayer = supabaseLayer(
+        db: db,
+        media: media,
+        clock: clock,
+        remote: heldRemote,
+        timers: timers,
+      );
+      await db.writeCursor(ownerCursorKey, me);
+      final outbox = heldLayer.ctx.outbox!;
+      await outbox.enqueue(OutboxKind.updateMembership, 'membership:j1', {
+        'journey_id': 'j1',
+        'user_id': me,
+        'hide_metric': true,
+      });
+      final pull = heldLayer.syncNow();
+      await heldRemote.started.future;
+      heldLayer.setSyncPaused(true);
+      await heldLayer.syncNow();
+      await outbox.flush(force: true);
+      heldRemote.release.complete();
+      expect(await pull, isA<SyncFailed>());
+      expect(heldRemote.callsOf('select').map((c) => c.target), ['journeys']);
+      expect(heldRemote.callsOf('update'), isEmpty);
+      expect(await outbox.pendingKeys(), {'membership:j1'});
+
+      heldLayer.setSyncPaused(false);
+      expect(await heldLayer.syncNow(), isA<SyncOk>());
+      expect(heldRemote.callsOf('update').single.target, 'memberships');
+      expect(await outbox.pendingRows(), isEmpty);
+    },
+  );
 
   test(
     'create journey online calls create_journey and caches the row',

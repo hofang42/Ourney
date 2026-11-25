@@ -222,6 +222,9 @@ class DataSharingRepository implements SharingRepository {
       _db.journeys,
     )..where((t) => t.id.equals(draft.id))).getSingleOrNull();
     if (existing != null) return journeyFromRow(existing);
+    if (data.sync?.isPaused == true) {
+      throw const OurneyException(OurneyErrorCode.clientOutdated);
+    }
 
     final row = await social.remote.rpc(
       'create_imported_journey',

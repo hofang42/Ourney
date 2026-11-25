@@ -8,7 +8,7 @@ Orchestrator instead. The single exception is the body of
 
 ```
 lib/features/<feature>/
-├── routes.dart              # REQUIRED: exports List<RouteBase> <feature>Routes
+├── routes.dart              # for router destinations, exports List<RouteBase> <feature>Routes
 ├── l10n/
 │   ├── <feature>_vi.arb     # template (Vietnamese is the default language)
 │   ├── <feature>_en.arb
@@ -20,6 +20,9 @@ test/features/<feature>/     # your tests
 Features: `auth`, `onboarding`, `profile` (B2) · `camera`, `checkin` (B3) ·
 `journeys` (B4) · `groups` (C1) · `share_card` (C2) · `safety`,
 `reminders` (C3). Data/sync lives in `lib/data/` (B1).
+
+The `update` feature provides app-wide state for prompts hosted in the app
+shell and existing destinations. Its ARB pair accompanies the prompt UI.
 
 ## 1. Routes
 
@@ -77,7 +80,7 @@ own top-level redirects:
 
 `flutter gen-l10n` supports one template ARB per generated class and ignores
 CLI flags when an `l10n.yaml` exists. So there is **no l10n.yaml**: every
-feature has its **own ARB pair and its own generated class**, and no two
+user-facing feature has its **own ARB pair and generated class**, and no two
 agents ever edit the same ARB file.
 
 | ARB set | Class | Import |

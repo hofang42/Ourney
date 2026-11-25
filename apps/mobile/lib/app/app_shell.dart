@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/safety/data/safety_providers.dart';
 import '../features/safety/ui/legal_screens.dart';
+import '../features/update/ui/update_shell_coordinator.dart';
 import '../ui/ui.dart';
 import 'app_dock.dart';
 import 'providers.dart';
@@ -31,6 +32,7 @@ class AppShell extends ConsumerStatefulWidget {
 
 class _AppShellState extends ConsumerState<AppShell> {
   String? _promptedTermsKey;
+  bool _termsSheetOpen = false;
 
   void _go(int index) {
     final navigationShell = widget.navigationShell;
@@ -52,19 +54,38 @@ class _AppShellState extends ConsumerState<AppShell> {
       final key = '$userId:$requiredVersion';
       if (_promptedTermsKey != key) {
         _promptedTermsKey = key;
+        _termsSheetOpen = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          unawaited(showTermsUpdateSheet(context));
+          if (!mounted) {
+            _termsSheetOpen = false;
+            return;
+          }
+          unawaited(
+            showTermsUpdateSheet(context).whenComplete(() {
+              if (mounted) {
+                setState(() => _termsSheetOpen = false);
+              } else {
+                _termsSheetOpen = false;
+              }
+            }),
+          );
         });
       }
     }
 
     final navigationShell = widget.navigationShell;
     final onCamera = navigationShell.currentIndex == AppShell.captureIndex;
+    final termsBlocking =
+        _termsSheetOpen ||
+        (userId != null && needsTermsUpdate && _promptedTermsKey == null);
     return Scaffold(
       backgroundColor: context.ui.bg,
       extendBody: true,
-      body: navigationShell,
+      body: UpdateShellCoordinator(
+        currentIndex: navigationShell.currentIndex,
+        termsSheetBlocking: termsBlocking,
+        child: navigationShell,
+      ),
       bottomNavigationBar: onCamera
           ? null
           : AppDock(currentIndex: navigationShell.currentIndex, onSelect: _go),

@@ -27,6 +27,7 @@ import 'providers.dart';
 /// to the device. Theme, locale, haptics, the onboarding intro and
 /// the OS permission flags stay; everything here is dropped on sign-out and
 /// account deletion so the next account starts clean (C-B4).
+/// Update preferences are device-scoped and kept across account changes.
 const List<String> accountPrefsKeys = [
   OnboardingQuizNotifier.prefsKey,
   SafetyPrefs.eulaAccepted,

@@ -50,6 +50,14 @@ class SyncEngine {
 
   Future<SyncResult>? _pulling;
   bool _pullAgain = false;
+  bool _paused = false;
+
+  bool get isPaused => _paused;
+
+  void setPaused(bool paused) {
+    _paused = paused;
+    if (paused) invalidateSession();
+  }
 
   /// Session generation: bumped by [invalidateSession] when the cache is
   /// wiped. A pull started in an older generation (or for another user)
@@ -110,8 +118,8 @@ class SyncEngine {
   /// pulls still in flight for the old session write nothing more.
   void invalidateSession() => _epoch++;
 
-  void _checkSession(int epoch, String me) {
-    if (epoch != _epoch || remote.currentUserId != me) {
+  void _checkSession(int epoch, String? me) {
+    if (_paused || epoch != _epoch || remote.currentUserId != me) {
       throw const _SessionChanged();
     }
   }
@@ -143,6 +151,8 @@ class SyncEngine {
   Future<void> execute(OutboxKind kind, Map<String, dynamic> p) async {
     final epoch = _epoch;
     final user = remote.currentUserId;
+    void check() => _checkSession(epoch, user);
+    check();
     switch (kind) {
       case OutboxKind.createJourney:
         final row = await remote.rpc(
@@ -151,15 +161,17 @@ class SyncEngine {
         );
         await _applyJourneyIfSession(row, epoch, user);
       case OutboxKind.upsertCheckIn:
-        await _pushCheckIn(p['id'] as String);
+        await _pushCheckIn(p['id'] as String, check);
       case OutboxKind.deleteMedia:
         final paths = <String>{
           ...(p['paths'] as List? ?? const []).cast<String>(),
         };
         for (final prefix
             in (p['prefixes'] as List? ?? const []).cast<String>()) {
+          check();
           paths.addAll(await remote.listFiles(prefix));
         }
+        check();
         if (paths.isNotEmpty) await remote.removeFiles(paths.toList());
       case OutboxKind.react:
         final emoji = p['emoji'] as String?;
@@ -212,10 +224,11 @@ class SyncEngine {
           },
         );
     }
+    check();
     notifyChanged();
   }
 
-  Future<void> _pushCheckIn(String id) async {
+  Future<void> _pushCheckIn(String id, void Function() check) async {
     final row = await (db.select(
       db.checkIns,
     )..where((t) => t.id.equals(id))).getSingleOrNull();
@@ -226,8 +239,11 @@ class SyncEngine {
       throw OurneyException(OurneyErrorCode.invalid, 'missing media for $id');
     }
     // Media first so nobody sees a row without its photo.
+    check();
     await remote.uploadFile(row.photoPath, photo);
+    check();
     await remote.uploadFile(row.thumbPath, thumb);
+    check();
     final partnerPath = row.partnerPhotoPath;
     if (partnerPath != null) {
       final partner = store.files.fileFor(partnerPath);
@@ -239,19 +255,23 @@ class SyncEngine {
       }
       await remote.uploadFile(partnerPath, partner);
     }
+    check();
     await remote.upsert('check_ins', checkInToRemote(row), onConflict: 'id');
     // Metrics live in their own table (RLS honours hide_metric, 0005).
+    check();
     await remote.upsert(
       'check_in_metrics',
       checkInMetricToRemote(row),
       onConflict: 'checkin_id',
     );
     // Extras too (RLS honours hide_extras, 0011).
+    check();
     await remote.upsert(
       'check_in_extras',
       checkInExtrasToRemote(row),
       onConflict: 'checkin_id',
     );
+    check();
     await (db.update(db.checkIns)..where((t) => t.id.equals(id))).write(
       const CheckInsCompanion(uploaded: Value(true)),
     );
@@ -283,6 +303,7 @@ class SyncEngine {
 
   /// Pulls every table changed since its cursor. Concurrent calls coalesce.
   Future<SyncResult> syncNow() {
+    if (_paused) return Future.value(const SyncFailed('update required'));
     if (_pulling != null) {
       _pullAgain = true;
       return _pulling!;
@@ -301,7 +322,7 @@ class SyncEngine {
       result = await _pullOnce();
       // A pull cut short by a session change still serves a sync requested
       // meanwhile (the next account signing in).
-    } while (_pullAgain && (result is SyncOk || epoch != _epoch));
+    } while (!_paused && _pullAgain && (result is SyncOk || epoch != _epoch));
     return result;
   }
 
@@ -320,6 +341,7 @@ class SyncEngine {
       // Not inside `_write`: the media wipe must not run in a nested
       // transaction (its commit would only be a savepoint).
       await ensureOwner(me, checkRun: true);
+      _checkRun();
       await enqueueOrphanUploads(me);
       var pending = await outbox.pendingKeys();
       // A local edit still waiting in the outbox wins over the server copy
@@ -372,6 +394,7 @@ class SyncEngine {
         eq: {'blocker_id': me},
       );
       await _pullTable('profiles', store.applyProfile, eq: {'id': me});
+      _checkRun();
       notifyChanged();
       if (!_completedPulls.isClosed) _completedPulls.add(null);
       return const SyncOk();
@@ -466,6 +489,7 @@ class SyncEngine {
     final ids = missing.toList();
     final fetched = <RemoteRow>[];
     for (var i = 0; i < ids.length; i += 100) {
+      _checkRun();
       final end = i + 100 > ids.length ? ids.length : i + 100;
       fetched.addAll(
         await remote.select(
@@ -502,7 +526,9 @@ class SyncEngine {
               .subtract(pullOverlap)
               .toIso8601String();
     while (true) {
+      _checkRun();
       final rows = await fetch(since);
+      _checkRun();
       if (rows.isEmpty) return;
       final last = rows.last['updated_at'] as String?;
       await _write(() async {
@@ -551,7 +577,7 @@ class SyncEngine {
   /// tombstone (RLS: blocks, reports) are dropped locally.
   Future<void> pullJourney(String journeyId) async {
     final me = remote.currentUserId;
-    if (me == null) return;
+    if (_paused || me == null) return;
     final epoch = _epoch;
     try {
       await _pullJourney(journeyId, me, epoch);
@@ -595,7 +621,9 @@ class SyncEngine {
   }
 
   Future<void> _pullJourney(String journeyId, String me, int epoch) async {
+    void check() => _checkSession(epoch, me);
     final journeys = await remote.select('journeys', eq: {'id': journeyId});
+    check();
     if (journeys.isEmpty) {
       // Never purge a journey that exists only here: any queue row (live or
       // dead, e.g. its own create_journey) or an unsent check-in keeps it.
@@ -612,22 +640,26 @@ class SyncEngine {
       'memberships',
       eq: {'journey_id': journeyId},
     );
+    check();
     final checkIns = await remote.select(
       'check_ins',
       eq: {'journey_id': journeyId},
       onlyLive: true,
     );
+    check();
     final ids = [for (final c in checkIns) c['id'] as String];
     final metrics = await remote.select(
       'check_in_metrics',
       eq: {'journey_id': journeyId},
     );
+    check();
     final extras = await remote.select(
       'check_in_extras',
       eq: {'journey_id': journeyId},
     );
     final reactions = <RemoteRow>[];
     for (var i = 0; i < ids.length; i += 100) {
+      check();
       final chunk = ids.sublist(i, i + 100 > ids.length ? ids.length : i + 100);
       reactions.addAll(
         await remote.select(

@@ -398,6 +398,24 @@ class ProfileL10nEn extends ProfileL10n {
   String get profile_settings_version => 'Version';
 
   @override
+  String profile_settings_versionValue(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String profile_settings_versionUpdateBadge(String latest) {
+    return 'Version $latest available';
+  }
+
+  @override
+  String get profile_settings_versionUpToDate =>
+      'You\'re on the latest version';
+
+  @override
+  String get profile_settings_versionCheckFailed =>
+      'Couldn\'t check for updates right now. Please try again later.';
+
+  @override
   String get profile_settings_signOut => 'Sign out';
 
   @override

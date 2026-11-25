@@ -58,11 +58,12 @@ select is(
     where n.nspname = 'public'
       and has_function_privilege('anon', p.oid, 'execute')
       and p.oid not in (
+        'public.get_app_version_policy(text)'::regprocedure,
         'public.preview_friend_invite(text)'::regprocedure,
         'public.preview_group_invite(text)'::regprocedure
       )),
   0,
-  'anon cannot execute any public function except preview_friend_invite and preview_group_invite'
+  'anon can execute only the public version policy and invite preview functions'
 );
 
 select ok(

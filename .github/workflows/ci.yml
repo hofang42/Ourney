@@ -77,6 +77,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate mobile release metadata against pubspec and migrations
+        run: node scripts/release/metadata.mjs lint
       # A hand-resolved merge once left a bare `=======` in a pgTAP file.
       - name: No merge conflict markers
         run: |

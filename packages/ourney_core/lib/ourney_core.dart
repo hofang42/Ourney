@@ -6,6 +6,7 @@ export 'src/contracts/feature_requests.dart';
 export 'src/contracts/group_invite_admin.dart';
 export 'src/contracts/group_invites.dart';
 export 'src/account.dart';
+export 'src/app_version.dart';
 export 'src/contracts/repositories.dart';
 export 'src/contracts/social.dart';
 export 'src/extras.dart';

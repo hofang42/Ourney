@@ -1,0 +1,148 @@
+{
+  "@@locale": "vi",
+  "update_hubTitle": "Có bản Ourney {version} mới",
+  "@update_hubTitle": {
+    "description": "Title of the quiet inline update card on the Journeys hub.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "update_hubFallbackSub": "Cập nhật nhẹ để trải nghiệm các cải tiến mới nhất khi bạn tiện.",
+  "@update_hubFallbackSub": {
+    "description": "Fallback subtitle on the Journeys hub update card when release notes are empty."
+  },
+  "update_hubAction": "Xem",
+  "@update_hubAction": {
+    "description": "Compact trailing action button on the Journeys hub update card."
+  },
+  "update_hubDismissLabel": "Ẩn lời nhắc bản cập nhật này",
+  "@update_hubDismissLabel": {
+    "description": "Accessibility label for the 48x48dp close button on the Journeys hub update card."
+  },
+  "update_softEyebrow": "BẢN MỚI · {version}",
+  "@update_softEyebrow": {
+    "description": "Eyebrow label above the title in the soft update bottom sheet.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "update_softTitle": "Có bản Ourney {version} mới",
+  "@update_softTitle": {
+    "description": "Heading in the soft update bottom sheet.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "update_softSubtitle": "Một vài điểm mới đã sẵn sàng cho hành trình của bạn. Bạn có thể cập nhật ngay hoặc để lúc khác.",
+  "@update_softSubtitle": {
+    "description": "Gentle autonomy-supportive subtitle in the soft update bottom sheet."
+  },
+  "update_ctaUpdate": "Cập nhật ngay",
+  "@update_ctaUpdate": {
+    "description": "Primary CTA button to download/open the update."
+  },
+  "update_ctaLater": "Để sau",
+  "@update_ctaLater": {
+    "description": "Secondary button to snooze the soft update sheet."
+  },
+  "update_ctaSkipVersion": "Bỏ qua bản {version}",
+  "@update_ctaSkipVersion": {
+    "description": "Tertiary action to skip proactive prompts for this version.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "update_androidInstallHint": "Tải xong, mở file Ourney.apk trên thanh thông báo để cài đè. Hành trình và ảnh của bạn vẫn giữ nguyên.",
+  "@update_androidInstallHint": {
+    "description": "Calm inline helper note shown on Android after tapping Update now."
+  },
+  "update_gateEyebrow": "CẬP NHẬT CẦN THIẾT · {version}",
+  "@update_gateEyebrow": {
+    "description": "Calm factual eyebrow on the forced update gate screen.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "update_gateTitle": "Cập nhật Ourney để tiếp tục",
+  "@update_gateTitle": {
+    "description": "Main heading on the forced update gate screen."
+  },
+  "update_gateBody": "Bản {installed} trên máy cần nâng lên {latest} để đồng bộ an toàn với hệ thống mới. Mọi hành trình và ảnh đã chụp của bạn vẫn được giữ nguyên.",
+  "@update_gateBody": {
+    "description": "Body explanation on the forced update gate screen reassuring that local data stays intact.",
+    "placeholders": {
+      "installed": {
+        "type": "String"
+      },
+      "latest": {
+        "type": "String"
+      }
+    }
+  },
+  "update_gateIosManualHint": "Vui lòng cài bản Ourney {latest} mới nhất qua TestFlight hoặc công cụ cài đặt bạn đang dùng để tiếp tục.",
+  "@update_gateIosManualHint": {
+    "description": "Guidance shown on iOS when no external download URL is configured.",
+    "placeholders": {
+      "latest": {
+        "type": "String"
+      }
+    }
+  },
+  "update_gateWhatsNewToggle": "Xem có gì mới ở bản {version}",
+  "@update_gateWhatsNewToggle": {
+    "description": "Toggle button to expand release notes on the forced update gate screen.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "update_gateOfflineNotice": "Bạn đang ngoại tuyến. Kết nối mạng để tải bản cập nhật hoặc kiểm tra lại.",
+  "@update_gateOfflineNotice": {
+    "description": "Offline notice banner on the forced update gate screen."
+  },
+  "update_ctaRetryCheck": "Kiểm tra lại",
+  "@update_ctaRetryCheck": {
+    "description": "Secondary button to re-check the version policy on the forced update gate screen."
+  },
+  "update_ctaContactSupport": "Cần hỗ trợ cài đặt?",
+  "@update_ctaContactSupport": {
+    "description": "Quiet footer action to contact support from the forced update gate screen."
+  },
+  "update_launchFailed": "Không mở được trình duyệt. Bạn có thể tải trực tiếp tại ourney.tech.",
+  "@update_launchFailed": {
+    "description": "Fallback message shown if launching the external update URL fails."
+  },
+  "update_whatsNewEyebrow": "ĐÃ CẬP NHẬT · {version}",
+  "@update_whatsNewEyebrow": {
+    "description": "Eyebrow in the post-upgrade What's New sheet.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "update_whatsNewTitle": "Có gì mới ở Ourney {version}",
+  "@update_whatsNewTitle": {
+    "description": "Heading in the post-upgrade What's New sheet.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "update_whatsNewDone": "Tuyệt vời",
+  "@update_whatsNewDone": {
+    "description": "Primary dismiss button in the post-upgrade What's New sheet."
+  }
+}

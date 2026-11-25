@@ -45,6 +45,7 @@ class Env {
   Object failure = const OurneyException(OurneyErrorCode.offline);
   Object? createFailure;
   String? signedIn = 'u1';
+  bool policyPaused = false;
 
   /// Where the "OS temp dir" is: elsewhere, so picked files are copied.
   late final Directory osTemp = Directory('${tmp.path}/os_temp')..createSync();
@@ -75,6 +76,7 @@ class Env {
         files: with_ ?? files,
         currentUserId: () => signedIn,
         now: () => testNow,
+        policyPaused: () => policyPaused,
         compress: (src) async {
           final name = src.split(RegExp(r'[\\/]')).last;
           final photo = File('${compressed.path}/$name.c')
@@ -250,6 +252,32 @@ void main() {
     // Photos 1-2 were saved; the one in flight and the last went out again.
     expect(env.submitCalls, 3 + 2);
     expect((await store.get('j1'))!.complete, isTrue);
+  });
+
+  test('forced gate leaves an interrupted import ready to resume', () async {
+    final runner = env.runner(store);
+    await runner.enqueue(env.job('j1', photos: 2));
+    env
+      ..holdOnPhoto = 'j1-ph0'
+      ..holdSubmit = Completer<void>();
+    final run = runner.resumeAll();
+    await env.reached.future;
+    env.policyPaused = true;
+    env.failPhotos.add('j1-ph0');
+    env.holdSubmit!.complete();
+    await run;
+    expect(env.submitCalls, 1);
+    final job = (await store.get('j1'))!;
+    expect(job.paused, isFalse);
+    expect(job.pending, 2);
+
+    env.policyPaused = false;
+    env.holdOnPhoto = null;
+    env.failPhotos.clear();
+    await runner.resumeAll();
+    expect((await store.get('j1'))!.complete, isTrue);
+    expect(env.checkIns.keys, ['j1-ph0', 'j1-ph1']);
+    expect(env.createCalls, 1);
   });
 
   test('killed while creating: the same journey id is sent again', () async {

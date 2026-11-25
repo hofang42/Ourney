@@ -50,7 +50,7 @@ void main() {
     'feedback',
   ];
 
-  test('every feature folder is registered with route prefixes', () {
+  test('routed features are registered with their prefixes', () {
     expect(FeatureRoutes.byFeature.keys.toSet(), features.toSet());
     expect(featureRoutePrefixes.keys.toSet(), features.toSet());
     final dirs = Directory('lib/features')
@@ -58,7 +58,8 @@ void main() {
         .whereType<Directory>()
         .map((d) => d.uri.pathSegments.where((s) => s.isNotEmpty).last)
         .toSet();
-    expect(dirs, features.toSet());
+    // Update prompts are hosted by the app shell and existing destinations.
+    expect(dirs, {...features, 'update'});
     for (final f in features) {
       expect(
         File('lib/features/$f/routes.dart').existsSync(),
