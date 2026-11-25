@@ -41,11 +41,12 @@
       f_meta_title: 'ourney · lời mời kết bạn trên Ourney',
       f_meta_desc: 'Bạn được mời kết bạn trên Ourney — mở trong ứng dụng để kết nối, chia sẻ hành trình ảnh mỗi ngày và giữ chuỗi cùng nhau.',
       f_kicker: 'VÉ MỜI KẾT BẠN · OURNEY',
+      f_loading: 'Đang tải lời mời kết bạn…',
       f_headline: 'Bạn được mời kết bạn trên Ourney',
       f_invited_suffix: ' mời bạn kết bạn trên Ourney',
       f_desc: 'Mở lời mời trong ứng dụng Ourney để kết bạn ngay, cùng chia sẻ hành trình ảnh mỗi ngày và giữ liền chuỗi ngày không bỏ cuộc.',
       f_expired_h1: 'Lời mời không còn hiệu lực',
-      f_expired_desc: 'Người bạn của bạn có thể đã tạo liên kết mời mới. Hãy nhờ bạn ấy gửi lại liên kết kết bạn mới nhất nhé.',
+      f_expired_desc: 'Có thể bạn ấy đã đổi sang liên kết mời mới. Hãy nhờ bạn ấy gửi lại liên kết mới cho bạn nhé.',
       f_invalid_h1: 'Liên kết lời mời không hợp lệ',
       f_invalid_desc: 'Đường dẫn kết bạn này bị thiếu mã hoặc không đúng định dạng. Nhờ bạn bè gửi lại liên kết mới hoặc mở trực tiếp trong ứng dụng Ourney.',
 
@@ -53,14 +54,19 @@
       j_meta_title: 'ourney · lời mời vào squad trên Ourney',
       j_meta_desc: 'Bạn được mời vào squad trên Ourney — mở trong ứng dụng hoặc sao chép mã mời để tham gia tường Polaroid mỗi ngày cùng nhóm bạn.',
       j_kicker: 'VÉ MỜI SQUAD · TỐI ĐA 10 BẠN',
+      j_kicker_fmt: (max) =>
+        (typeof max === 'number' && max > 0 ? `VÉ MỜI SQUAD · TỐI ĐA ${max} BẠN` : 'VÉ MỜI SQUAD · TỐI ĐA 10 BẠN'),
+      j_loading: 'Đang tải thông tin squad…',
       j_headline: 'Bạn được mời vào squad',
       j_headline_named_prefix: 'Vào squad ',
       j_headline_named_suffix: ' trên Ourney',
       j_members_fmt: (count, max) =>
         (typeof max === 'number' && max > 0 ? `${count}/${max} thành viên` : `${count} thành viên`),
-      j_inviter_fmt: (name) => `${name} mời bạn`,
+      j_owner_fmt: (name) => `Squad của ${name}`,
       j_desc: 'Một mình dễ quên, có hội thì giữ được. Mở thẳng trong ứng dụng Ourney hoặc sao chép mã bên dưới để vào tường Polaroid của nhóm.',
       j_code_label: 'MÃ MỜI VÀO SQUAD',
+      j_expired_h1: 'Mã mời không còn hiệu lực',
+      j_expired_desc: 'Squad này có thể đã đổi mã mời mới hoặc đã kết thúc hành trình. Hãy nhờ thành viên trong nhóm gửi lại liên kết mời mới nhé.',
       j_invalid_h1: 'Mã mời squad không hợp lệ',
       j_invalid_desc: 'Mã mời vào nhóm trong liên kết này bị thiếu hoặc không đúng định dạng. Hãy kiểm tra lại mã mời từ trưởng nhóm.',
 
@@ -119,6 +125,7 @@
       f_meta_title: 'ourney · friend invite on Ourney',
       f_meta_desc: 'You’re invited to be friends on Ourney — open in the app to connect, share daily photo journeys, and keep streaks together.',
       f_kicker: 'FRIEND INVITE PASS · OURNEY',
+      f_loading: 'Loading friend invite…',
       f_headline: 'You’re invited to be friends on Ourney',
       f_invited_suffix: ' invited you to be friends on Ourney',
       f_desc: 'Open this invite in the Ourney app to connect right away, share daily photo journeys, and keep your streak alive together.',
@@ -131,14 +138,19 @@
       j_meta_title: 'ourney · squad invite on Ourney',
       j_meta_desc: 'You’re invited to join a squad on Ourney — open in the app or copy the invite code to join the daily Polaroid wall.',
       j_kicker: 'SQUAD INVITE · UP TO 10 FRIENDS',
+      j_kicker_fmt: (max) =>
+        (typeof max === 'number' && max > 0 ? `SQUAD INVITE · UP TO ${max} FRIENDS` : 'SQUAD INVITE · UP TO 10 FRIENDS'),
+      j_loading: 'Loading squad invite…',
       j_headline: 'You’re invited to join a squad',
       j_headline_named_prefix: 'Join squad ',
       j_headline_named_suffix: ' on Ourney',
       j_members_fmt: (count, max) =>
         (typeof max === 'number' && max > 0 ? `${count}/${max} members` : `${count} members`),
-      j_inviter_fmt: (name) => `Invited by ${name}`,
+      j_owner_fmt: (name) => `${name}'s squad`,
       j_desc: 'Solo fades fast, squads stick together. Open straight in the Ourney app or copy the code below to join your squad’s Polaroid wall.',
       j_code_label: 'SQUAD INVITE CODE',
+      j_expired_h1: 'This squad invite code is no longer active',
+      j_expired_desc: 'This squad may have rotated its invite code or completed its journey. Ask a squad member to send you the latest invite link.',
       j_invalid_h1: 'Invalid squad invite code',
       j_invalid_desc: 'The squad invite code in this link is missing or malformed. Please double-check the code with your squad owner.',
 
@@ -618,8 +630,49 @@
   }
 
   /* --- 9. Render Friend Page (/f/:token) --- */
+  const CLIENT_RPC_TIMEOUT_MS = 4000;
   let friendPageState = 'loading'; // 'loading' | 'loaded' | 'fallback' | 'expired' | 'invalid'
   let loadedFriendData = null;
+
+  function firstGrapheme(raw) {
+    const str = typeof raw === 'string' ? raw.trim() : '';
+    if (!str) return '';
+    if (typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function') {
+      const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+      const first = seg.segment(str)[Symbol.iterator]().next();
+      if (first && first.value && first.value.segment) {
+        return first.value.segment.toUpperCase();
+      }
+    }
+    const cp = Array.from(str)[0];
+    return cp ? cp.toUpperCase() : '';
+  }
+
+  function syncFallbackCard(isDeadLink) {
+    const qrPanel = $('qr-panel');
+    const fbNote = $('fallback-note') || document.querySelector('.link-fallback-note');
+    if (qrPanel) qrPanel.hidden = Boolean(isDeadLink);
+    if (fbNote) fbNote.hidden = Boolean(isDeadLink);
+  }
+
+  function readEmbeddedPreview(keyName, expectedValue) {
+    const raw = root.getAttribute('data-invite-preview');
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return null;
+      if (parsed[keyName] !== expectedValue) return null;
+      if (parsed.status === 'ok' && parsed.data && typeof parsed.data === 'object') {
+        return { status: 'ok', data: parsed.data };
+      }
+      if (parsed.status === 'empty') {
+        return { status: 'empty', data: null };
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
 
   function getRpcEndpoint(rpcName) {
     const supabaseUrl = getMetaContent('ourney-supabase-url', DEFAULT_SUPABASE_URL).replace(/\/+$/, '');
@@ -640,6 +693,7 @@
     const expiredCard = $('f-expired-card');
     const invalidCard = $('f-invalid-card');
     const loadingSkel = $('f-loading-skel');
+    const loadingMsg = $('f-loading-msg');
     const inviterBox = $('f-inviter-box');
     const stickerCluster = $('f-sticker-cluster');
     const avatarInitialEl = $('f-avatar-initial');
@@ -652,6 +706,7 @@
       if (validCard) validCard.hidden = true;
       if (expiredCard) expiredCard.hidden = true;
       if (invalidCard) invalidCard.hidden = false;
+      syncFallbackCard(true);
       document.title = dict.f_meta_title;
       return;
     }
@@ -660,10 +715,12 @@
       if (validCard) validCard.hidden = true;
       if (expiredCard) expiredCard.hidden = false;
       if (invalidCard) invalidCard.hidden = true;
+      syncFallbackCard(true);
       document.title = dict.f_meta_title;
       return;
     }
 
+    syncFallbackCard(false);
     if (validCard) {
       validCard.hidden = false;
       validCard.setAttribute('aria-busy', friendPageState === 'loading' ? 'true' : 'false');
@@ -673,6 +730,7 @@
 
     if (friendPageState === 'loading') {
       if (loadingSkel) loadingSkel.hidden = false;
+      if (loadingMsg) loadingMsg.hidden = false;
       if (inviterBox) inviterBox.hidden = true;
       if (stickerCluster) stickerCluster.hidden = true;
       if (titleEl) titleEl.hidden = true;
@@ -682,6 +740,7 @@
     }
 
     if (loadingSkel) loadingSkel.hidden = true;
+    if (loadingMsg) loadingMsg.hidden = true;
     if (titleEl) titleEl.hidden = false;
     if (descEl) {
       descEl.hidden = false;
@@ -698,7 +757,7 @@
       const rawInitial = typeof loadedFriendData.avatar_initial === 'string'
         ? loadedFriendData.avatar_initial.trim()
         : '';
-      const initial = (rawInitial || displayName || handle || 'O').slice(0, 1).toUpperCase();
+      const initial = firstGrapheme(rawInitial || displayName || handle || 'O') || 'O';
 
       if (inviterBox) inviterBox.hidden = false;
       if (stickerCluster) stickerCluster.hidden = true;
@@ -740,15 +799,31 @@
   }
 
   async function fetchFriendPreview() {
+    const embedded = readEmbeddedPreview('token', route.value);
+    if (embedded) {
+      if (embedded.status === 'ok' && embedded.data && typeof embedded.data.display_name === 'string' && embedded.data.display_name.trim()) {
+        loadedFriendData = embedded.data;
+        friendPageState = 'loaded';
+      } else {
+        loadedFriendData = null;
+        friendPageState = 'expired';
+      }
+      renderFriendState();
+      return;
+    }
+
     friendPageState = 'loading';
     renderFriendState();
 
     const { url, headers } = getRpcEndpoint('preview_friend_invite');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), CLIENT_RPC_TIMEOUT_MS);
     try {
       const res = await fetch(url, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ p_token: route.value })
+        body: JSON.stringify({ p_token: route.value }),
+        signal: controller.signal
       });
       if (!res.ok) {
         friendPageState = 'fallback';
@@ -768,6 +843,8 @@
     } catch (e) {
       friendPageState = 'fallback';
       renderFriendState();
+    } finally {
+      clearTimeout(timer);
     }
   }
 
@@ -788,26 +865,59 @@
   /* --- 10. Render Squad Page (/j/:code, /join/:code) --- */
   let codeCopied = false;
   let copyResetTimer = null;
-  let squadPageState = 'idle'; // 'loading' | 'loaded' | 'fallback'
+  let squadPageState = 'idle'; // 'loading' | 'loaded' | 'fallback' | 'expired' | 'invalid'
   let loadedSquadData = null;
 
   function renderSquadState() {
+    const validCard = $('j-valid-card');
+    const expiredCard = $('j-expired-card');
+    const invalidCard = $('j-invalid-card');
     const loadingSkel = $('j-loading-skel');
+    const loadingMsg = $('j-loading-msg');
     const squadMeta = $('j-squad-meta');
     const squadNameEl = $('j-squad-name');
     const squadMembersEl = $('j-squad-members');
     const inviterPill = $('j-squad-inviter-pill');
     const inviterEl = $('j-squad-inviter');
     const titleEl = $('j-title');
+    const kickerEl = document.querySelector('[data-i18n="j_kicker"]');
     const dict = COPY[curLang];
+
+    if (squadPageState === 'invalid') {
+      if (validCard) validCard.hidden = true;
+      if (expiredCard) expiredCard.hidden = true;
+      if (invalidCard) invalidCard.hidden = false;
+      syncFallbackCard(true);
+      document.title = dict.j_meta_title;
+      return;
+    }
+
+    if (squadPageState === 'expired') {
+      if (validCard) validCard.hidden = true;
+      if (expiredCard) expiredCard.hidden = false;
+      if (invalidCard) invalidCard.hidden = true;
+      syncFallbackCard(true);
+      document.title = dict.j_meta_title;
+      return;
+    }
+
+    syncFallbackCard(false);
+    if (validCard) {
+      validCard.hidden = false;
+      validCard.setAttribute('aria-busy', squadPageState === 'loading' ? 'true' : 'false');
+    }
+    if (expiredCard) expiredCard.hidden = true;
+    if (invalidCard) invalidCard.hidden = true;
 
     if (squadPageState === 'loading') {
       if (loadingSkel) loadingSkel.hidden = false;
+      if (loadingMsg) loadingMsg.hidden = false;
       if (squadMeta) squadMeta.hidden = true;
       return;
     }
 
     if (loadingSkel) loadingSkel.hidden = true;
+    if (loadingMsg) loadingMsg.hidden = true;
 
     if (squadPageState === 'loaded' && loadedSquadData) {
       const rawTitle = loadedSquadData.title || loadedSquadData.group_name || '';
@@ -818,17 +928,18 @@
       const maxMembers = typeof loadedSquadData.max_members === 'number' && Number.isFinite(loadedSquadData.max_members)
         ? loadedSquadData.max_members
         : 10;
-      const rawInviter = loadedSquadData.inviter_display_name || loadedSquadData.owner_display_name || '';
-      const inviterName = typeof rawInviter === 'string' ? rawInviter.trim() : '';
+      const rawOwner = loadedSquadData.owner_display_name || '';
+      const ownerName = typeof rawOwner === 'string' ? rawOwner.trim() : '';
 
       if (title) {
+        if (kickerEl) kickerEl.textContent = dict.j_kicker_fmt(maxMembers);
         if (squadMeta) squadMeta.hidden = false;
         if (squadNameEl) squadNameEl.textContent = title;
         if (squadMembersEl) squadMembersEl.textContent = dict.j_members_fmt(memberCount, maxMembers);
         if (inviterPill && inviterEl) {
-          if (inviterName) {
+          if (ownerName) {
             inviterPill.hidden = false;
-            inviterEl.textContent = dict.j_inviter_fmt(inviterName);
+            inviterEl.textContent = dict.j_owner_fmt(ownerName);
           } else {
             inviterPill.hidden = true;
             inviterEl.textContent = '';
@@ -846,6 +957,7 @@
       }
     }
 
+    if (kickerEl) kickerEl.textContent = dict.j_kicker;
     if (squadMeta) squadMeta.hidden = true;
     if (titleEl) {
       const b = document.createElement('b');
@@ -856,15 +968,32 @@
   }
 
   async function fetchSquadPreview() {
+    const embedded = readEmbeddedPreview('code', route.value);
+    if (embedded) {
+      const embTitle = embedded.data && (embedded.data.title || embedded.data.group_name);
+      if (embedded.status === 'ok' && typeof embTitle === 'string' && embTitle.trim()) {
+        loadedSquadData = embedded.data;
+        squadPageState = 'loaded';
+      } else {
+        loadedSquadData = null;
+        squadPageState = 'expired';
+      }
+      renderSquadState();
+      return;
+    }
+
     squadPageState = 'loading';
     renderSquadState();
 
     const { url, headers } = getRpcEndpoint('preview_group_invite');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), CLIENT_RPC_TIMEOUT_MS);
     try {
       const res = await fetch(url, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ p_code: route.value })
+        body: JSON.stringify({ p_code: route.value }),
+        signal: controller.signal
       });
       if (!res.ok) {
         squadPageState = 'fallback';
@@ -875,7 +1004,7 @@
       const title = data && typeof data === 'object' ? (data.title || data.group_name) : '';
       if (!data || typeof title !== 'string' || !title.trim()) {
         loadedSquadData = null;
-        squadPageState = 'fallback';
+        squadPageState = 'expired';
         renderSquadState();
         return;
       }
@@ -885,12 +1014,12 @@
     } catch (e) {
       squadPageState = 'fallback';
       renderSquadState();
+    } finally {
+      clearTimeout(timer);
     }
   }
 
   function initSquadPage() {
-    const validCard = $('j-valid-card');
-    const invalidCard = $('j-invalid-card');
     const codeVal = $('squad-code-val');
     const codeSlots = $('squad-code-slots');
     const openBtn = $('open-app-btn');
@@ -901,13 +1030,10 @@
     const copyLiveMsg = $('copy-live-msg');
 
     if (!route.valid) {
-      if (validCard) validCard.hidden = true;
-      if (invalidCard) invalidCard.hidden = false;
+      squadPageState = 'invalid';
+      renderSquadState();
       return;
     }
-
-    if (validCard) validCard.hidden = false;
-    if (invalidCard) invalidCard.hidden = true;
     if (codeVal) codeVal.textContent = route.value;
     if (openBtn) openBtn.setAttribute('href', route.deepLink);
 

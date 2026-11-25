@@ -165,7 +165,7 @@
     <div class="wrap link-wrap">
       <div class="link-layout">
         <!-- Main Invite Card -->
-        <section class="card link-card" id="f-valid-card" aria-labelledby="f-title" aria-busy="true">
+        <section class="card link-card" id="f-valid-card" aria-labelledby="f-title">
           <div class="link-ticket-head">
             <span class="link-kicker kicker-mint">
               <svg class="o-sticker" width="20" height="20" aria-hidden="true"><use href="#i-squad"/></svg>
@@ -174,8 +174,10 @@
             <span class="link-pass-tag" translate="no">DAY 01 · PASS</span>
           </div>
 
+          <p class="sr" id="f-loading-msg" role="status" aria-live="polite" data-i18n="f_loading" hidden>Đang tải lời mời kết bạn…</p>
+
           <!-- Loading Skeleton (shown while preview_friend_invite is in flight) -->
-          <div class="link-inviter-skel" id="f-loading-skel" aria-hidden="true">
+          <div class="link-inviter-skel" id="f-loading-skel" aria-hidden="true" hidden>
             <div class="link-skel-avatar"></div>
             <div class="link-skel-bar skel-xs"></div>
             <div class="link-skel-bar skel-lg"></div>
@@ -197,8 +199,8 @@
             <span class="link-tile tile-mint"><svg class="o-sticker" width="34" height="34"><use href="#i-camera"/></svg></span>
           </div>
 
-          <h1 class="link-h1" id="f-title" hidden><b data-i18n="f_headline">Bạn được mời kết bạn trên Ourney</b></h1>
-          <p class="link-lede" id="f-desc" data-i18n="f_desc" hidden>Mở lời mời trong ứng dụng Ourney để kết bạn ngay, cùng chia sẻ hành trình ảnh mỗi ngày và giữ liền chuỗi ngày không bỏ cuộc.</p>
+          <h1 class="link-h1" id="f-title"><b data-i18n="f_headline">Bạn được mời kết bạn trên Ourney</b></h1>
+          <p class="link-lede" id="f-desc" data-i18n="f_desc">Mở lời mời trong ứng dụng Ourney để kết bạn ngay, cùng chia sẻ hành trình ảnh mỗi ngày và giữ liền chuỗi ngày không bỏ cuộc.</p>
 
           <div class="link-actions">
             <a class="btn btn-primary link-btn-block" id="open-app-btn" href="ourney://capture">
@@ -214,7 +216,7 @@
             <span class="link-tile tile-flame"><svg class="o-sticker" width="36" height="36"><use href="#i-link"/></svg></span>
           </div>
           <h1 class="link-h1" id="f-expired-title"><b data-i18n="f_expired_h1">Lời mời không còn hiệu lực</b></h1>
-          <p class="link-lede" data-i18n="f_expired_desc">Người bạn của bạn có thể đã tạo liên kết mời mới. Hãy nhờ bạn ấy gửi lại liên kết kết bạn mới nhất nhé.</p>
+          <p class="link-lede" data-i18n="f_expired_desc">Có thể bạn ấy đã đổi sang liên kết mời mới. Hãy nhờ bạn ấy gửi lại liên kết mới cho bạn nhé.</p>
           <div class="link-actions">
             <a class="btn btn-primary link-btn-block" href="/" data-home-link>
               <span data-i18n="back_home">Về trang chủ Ourney</span>
@@ -252,7 +254,7 @@
                 <span class="link-plat-badge" translate="no">iOS</span>
               </a>
             </div>
-            <p class="link-fallback-note" data-i18n="fallback_note">Sau khi cài đặt ứng dụng, chạm lại vào liên kết này hoặc quét mã QR để mở thẳng lời mời.</p>
+            <p class="link-fallback-note" id="fallback-note" data-i18n="fallback_note">Sau khi cài đặt ứng dụng, chạm lại vào liên kết này hoặc quét mã QR để mở thẳng lời mời.</p>
           </div>
 
           <div class="link-qr-panel" id="qr-panel">

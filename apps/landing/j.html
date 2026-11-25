@@ -195,13 +195,15 @@
           <h1 class="link-h1" id="j-title"><b data-i18n="j_headline">Bạn được mời vào squad</b></h1>
           <p class="link-lede" id="j-desc" data-i18n="j_desc">Một mình dễ quên, có hội thì giữ được. Mở thẳng trong ứng dụng Ourney hoặc sao chép mã bên dưới để vào tường Polaroid của nhóm.</p>
 
+          <p class="sr" id="j-loading-msg" role="status" aria-live="polite" data-i18n="j_loading" hidden>Đang tải thông tin squad…</p>
+
           <!-- Squad Preview Skeleton (while preview_group_invite is loading) -->
           <div class="link-squad-skel" id="j-loading-skel" aria-hidden="true" hidden>
             <div class="link-skel-bar skel-md"></div>
             <div class="link-skel-bar skel-xs"></div>
           </div>
 
-          <!-- Squad Preview Info (squad name + member count + inviter above the code) -->
+          <!-- Squad Preview Info (squad name + member count + owner above the code) -->
           <div class="link-squad-meta" id="j-squad-meta" hidden>
             <div class="link-squad-name-row">
               <svg class="o-sticker" width="22" height="22" aria-hidden="true"><use href="#i-squad"/></svg>
@@ -243,6 +245,20 @@
           <p class="sr" id="copy-live-msg" role="status" aria-live="polite"></p>
         </section>
 
+        <!-- Expired / Rotated / Ended Squad Code Card (shown when preview_group_invite returns null) -->
+        <section class="card link-card link-state-card" id="j-expired-card" hidden aria-labelledby="j-expired-title">
+          <div class="link-sticker-cluster" aria-hidden="true">
+            <span class="link-tile tile-flame"><svg class="o-sticker" width="36" height="36"><use href="#i-link"/></svg></span>
+          </div>
+          <h1 class="link-h1" id="j-expired-title"><b data-i18n="j_expired_h1">Mã mời không còn hiệu lực</b></h1>
+          <p class="link-lede" data-i18n="j_expired_desc">Squad này có thể đã đổi mã mời mới hoặc đã kết thúc hành trình. Hãy nhờ thành viên trong nhóm gửi lại liên kết mời mới nhé.</p>
+          <div class="link-actions">
+            <a class="btn btn-primary link-btn-block" href="/" data-home-link>
+              <span data-i18n="back_home">Về trang chủ Ourney</span>
+            </a>
+          </div>
+        </section>
+
         <!-- Invalid Code Card -->
         <section class="card link-card link-state-card" id="j-invalid-card" hidden aria-labelledby="j-invalid-title">
           <div class="link-sticker-cluster" aria-hidden="true">
@@ -273,7 +289,7 @@
                 <span class="link-plat-badge" translate="no">iOS</span>
               </a>
             </div>
-            <p class="link-fallback-note" data-i18n="fallback_note_j">Sau khi cài ứng dụng, mở tab Nhóm → Nhập mã mời để tham gia cùng hội bạn.</p>
+            <p class="link-fallback-note" id="fallback-note" data-i18n="fallback_note_j">Sau khi cài ứng dụng, mở tab Nhóm → Nhập mã mời để tham gia cùng hội bạn.</p>
           </div>
 
           <div class="link-qr-panel" id="qr-panel">

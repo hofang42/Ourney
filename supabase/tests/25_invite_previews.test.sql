@@ -1,10 +1,13 @@
 -- 0025_invite_previews: pgTAP tests for public.preview_friend_invite and public.preview_group_invite.
--- Covers: anon & authenticated grants, SECURITY DEFINER + search_path='', valid preview,
--- invalid format, unknown token/code, soft-deleted owner, banned owner, privacy flags,
--- and strict key whitelist (no user_id, email, avatar_path, or journey_id leaked).
+-- Covers: anon & authenticated grants, SECURITY DEFINER + search_path='' + VOLATILE,
+-- private.invite_preview_attempts RLS/grants, valid preview, emoji-prefixed display_name initial,
+-- invalid format, unknown token/code, soft-deleted owner, banned owner, privacy flags
+-- (pending/withdrawn share consent), strict key whitelist (owner_display_name, no user_id/email/avatar_path/journey_id),
+-- authenticated join_attempts + rate_events budget sharing with join_by_code/preview_group_by_code,
+-- and anonymous salted SHA-256 IP hash failed-lookup rate limiting.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(26);
+select plan(38);
 
 create schema tests;
 grant usage on schema tests to anon, authenticated, service_role;
@@ -15,9 +18,10 @@ begin
   perform set_config('role', 'authenticated', true);
 end $$;
 
-create function tests.as_anon() returns void language plpgsql as $$
+create function tests.as_anon(p_ip text default '203.0.113.10') returns void language plpgsql as $$
 begin
   perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  perform set_config('request.headers', json_build_object('cf-connecting-ip', p_ip)::text, true);
   perform set_config('role', 'anon', true);
 end $$;
 
@@ -25,6 +29,7 @@ create function tests.as_postgres() returns void language plpgsql as $$
 begin
   perform set_config('role', 'postgres', true);
   perform set_config('request.jwt.claims', '', true);
+  perform set_config('request.headers', '', true);
 end $$;
 
 create function tests.u(n int) returns uuid language sql immutable as $$
@@ -46,16 +51,18 @@ grant execute on all functions in schema tests to anon, authenticated, service_r
 --   2: squad co-member
 --   3: soft-deleted inviter / squad owner
 --   4: banned inviter / squad owner
+--   5: rate-limit test user (authenticated)
 insert into auth.users (id, email)
 select tests.u(n), format('ip%s@example.test', n)
-  from generate_series(1, 4) n;
+  from generate_series(1, 5) n;
 
 insert into public.profiles (id, username, display_name, avatar_path)
 values
   (tests.u(1), 'minh_anh', 'Minh Anh', format('avatars/%s/aaaaaaaa-0000-4000-8000-000000000001.jpg', tests.u(1))),
   (tests.u(2), 'thanh_ha', 'Thanh Hà', null),
   (tests.u(3), 'deleted_user', 'Người Đã Xóa', null),
-  (tests.u(4), 'banned_user', 'Người Bị Khóa', null);
+  (tests.u(4), 'banned_user', 'Người Bị Khóa', null),
+  (tests.u(5), 'throttled_user', '🐻 Gấu', null);
 
 -- Create friend invites and group journeys before soft-deleting u(3) and banning u(4)
 do $$
@@ -84,6 +91,9 @@ begin
     null, null, false, current_date, 30, 'UTC', 10, 'group'
   );
 
+  perform tests.as_user(tests.u(5));
+  perform public.create_friend_invite();
+
   perform tests.as_postgres();
   -- Soft-delete u(3)
   update public.profiles set deleted_at = now() where id = tests.u(3);
@@ -92,7 +102,7 @@ begin
   values (tests.u(4), now(), 'Spam invite links');
 end $$;
 
--- ===== 1. Grants & security definer metadata ==================================
+-- ===== 1. Grants, volatility & security definer metadata ======================
 select ok(
   has_function_privilege('anon', 'public.preview_friend_invite(text)', 'execute')
   and has_function_privilege('authenticated', 'public.preview_friend_invite(text)', 'execute'),
@@ -106,17 +116,26 @@ select ok(
 );
 
 select ok(
-  (select bool_and(p.prosecdef and 'search_path=""' = any(p.proconfig))
+  (select bool_and(p.prosecdef and p.provolatile = 'v' and 'search_path=""' = any(p.proconfig))
      from pg_proc p
     where p.oid in (
       'public.preview_friend_invite(text)'::regprocedure,
       'public.preview_group_invite(text)'::regprocedure
     )),
-  'both preview RPCs are SECURITY DEFINER with search_path = '''''
+  'both preview RPCs are VOLATILE, SECURITY DEFINER with search_path = '''''
+);
+
+select ok(
+  (select relrowsecurity from pg_class where oid = 'private.invite_preview_attempts'::regclass)
+  and not has_table_privilege('anon', 'private.invite_preview_attempts', 'select')
+  and not has_table_privilege('authenticated', 'private.invite_preview_attempts', 'select')
+  and not has_function_privilege('anon', 'private.caller_ip_hash(text)', 'execute')
+  and not has_function_privilege('authenticated', 'private.caller_ip_hash(text)', 'execute'),
+  'private.invite_preview_attempts has RLS enabled and neither table nor caller_ip_hash is exposed to anon/authenticated'
 );
 
 -- ===== 2. preview_friend_invite as anon =======================================
-do $$ begin perform tests.as_anon(); end $$;
+do $$ begin perform tests.as_anon('203.0.113.10'); end $$;
 
 select is(
   public.preview_friend_invite(tests.friend_token(1)) ->> 'display_name',
@@ -134,6 +153,12 @@ select is(
   public.preview_friend_invite(tests.friend_token(1)) ->> 'avatar_initial',
   'M',
   'anon preview_friend_invite returns uppercase avatar_initial'
+);
+
+select is(
+  public.preview_friend_invite(tests.friend_token(5)) ->> 'avatar_initial',
+  'G',
+  'preview_friend_invite extracts clean alphanumeric initial when display_name starts with an emoji'
 );
 
 select is(
@@ -176,7 +201,7 @@ begin
   on conflict (user_id) do update set token = excluded.token;
   perform tests.as_user(tests.u(2));
   perform public.create_friend_invite();
-  perform tests.as_anon();
+  perform tests.as_anon('203.0.113.10');
 end $$;
 
 select ok(
@@ -191,7 +216,7 @@ select is(
 );
 
 -- ===== 3. preview_group_invite as anon ========================================
-do $$ begin perform tests.as_anon(); end $$;
+do $$ begin perform tests.as_anon('203.0.113.10'); end $$;
 
 select is(
   public.preview_group_invite(tests.group_code(1)) ->> 'title',
@@ -212,15 +237,15 @@ select is(
 );
 
 select is(
-  public.preview_group_invite(tests.group_code(1)) ->> 'inviter_display_name',
+  public.preview_group_invite(tests.group_code(1)) ->> 'owner_display_name',
   'Minh Anh',
-  'anon preview_group_invite returns inviter_display_name'
+  'anon preview_group_invite returns owner_display_name'
 );
 
 select is(
   (select array_agg(k order by k)
      from jsonb_object_keys(public.preview_group_invite(tests.group_code(1))::jsonb) as k),
-  array['inviter_display_name', 'max_members', 'member_count', 'title'],
+  array['max_members', 'member_count', 'owner_display_name', 'title'],
   'preview_group_invite leaks no extra keys (no id, owner_id, invite_code, avatar_path, or members)'
 );
 
@@ -248,19 +273,49 @@ select ok(
   'preview_group_invite returns null when group owner is banned'
 );
 
--- Respects journey share consent withdrawal (owner display_name hidden if consent declined/withdrawn)
+-- Respects journey share consent pending/declined/withdrawn (owner_display_name hidden unless accepted)
 do $$
 begin
   perform tests.as_postgres();
-  insert into public.journey_share_consents (journey_id, user_id, status, requested_by, decided_at)
-  values (tests.jid(1), tests.u(1), 'withdrawn', tests.u(1), now());
-  perform tests.as_anon();
+  insert into public.journey_share_consents (journey_id, user_id, status, requested_by)
+  values (tests.jid(1), tests.u(1), 'pending', tests.u(2));
+  perform tests.as_anon('203.0.113.10');
 end $$;
 
 select is(
-  public.preview_group_invite(tests.group_code(1)) ->> 'inviter_display_name',
+  public.preview_group_invite(tests.group_code(1)) ->> 'owner_display_name',
   null,
-  'preview_group_invite omits inviter_display_name when owner withdrew share consent'
+  'preview_group_invite omits owner_display_name when owner share consent is pending'
+);
+
+do $$
+begin
+  perform tests.as_postgres();
+  update public.journey_share_consents
+     set status = 'withdrawn', decided_at = now()
+   where journey_id = tests.jid(1) and user_id = tests.u(1);
+  perform tests.as_anon('203.0.113.10');
+end $$;
+
+select is(
+  public.preview_group_invite(tests.group_code(1)) ->> 'owner_display_name',
+  null,
+  'preview_group_invite omits owner_display_name when owner withdrew share consent'
+);
+
+do $$
+begin
+  perform tests.as_postgres();
+  update public.journey_share_consents
+     set status = 'accepted', decided_at = now()
+   where journey_id = tests.jid(1) and user_id = tests.u(1);
+  perform tests.as_anon('203.0.113.10');
+end $$;
+
+select is(
+  public.preview_group_invite(tests.group_code(1)) ->> 'owner_display_name',
+  'Minh Anh',
+  'preview_group_invite includes owner_display_name when owner accepted share consent'
 );
 
 -- Ended journey no longer previews as an active invite
@@ -268,7 +323,7 @@ do $$
 begin
   perform tests.as_postgres();
   update public.journeys set status = 'ended' where id = tests.jid(1);
-  perform tests.as_anon();
+  perform tests.as_anon('203.0.113.10');
 end $$;
 
 select ok(
@@ -294,6 +349,66 @@ select ok(
 select ok(
   public.preview_group_invite(tests.group_code(1)) is null,
   'authenticated user blocked by group member gets null from preview_group_invite'
+);
+
+-- ===== 4. Authenticated rate limiting shared with preview_group_by_code / join_by_code =====
+do $$ begin perform tests.as_user(tests.u(5)); end $$;
+
+select is(
+  public.preview_group_invite(tests.group_code(1)) ->> 'title',
+  'Hội IELTS 7.5',
+  'authenticated caller can preview a valid group code and records a code_preview rate event'
+);
+
+select is(
+  (select count(*)::int from generate_series(1, 10) g
+    where public.preview_group_invite('ZZZZZZ' || lpad(g::text, 2, '0')) is null),
+  10,
+  '10 failed authenticated preview_group_invite calls return null and record join_attempts'
+);
+
+select ok(
+  public.preview_group_invite(tests.group_code(1)) is null,
+  '11th authenticated preview_group_invite call returns null even for a valid code once join_attempts limit (10/h) is reached'
+);
+
+select throws_ok(
+  $$ select public.join_by_code(tests.group_code(1)) $$,
+  'P0001',
+  'rate_limited',
+  'authenticated join_by_code shares the same private.join_attempts budget and raises rate_limited after 10 preview_group_invite misses'
+);
+
+-- ===== 5. Anonymous salted SHA-256 IP hash rate limiting (failed lookups only) =====
+do $$ begin perform tests.as_anon('198.51.100.77'); end $$;
+
+select is(
+  (select count(*)::int from generate_series(1, 30) g
+    where public.preview_group_invite('YYYYYY' || lpad(g::text, 2, '0')) is null),
+  30,
+  '30 failed anon preview_group_invite calls from the same IP return null and record hashed IP attempts'
+);
+
+select ok(
+  public.preview_group_invite(tests.group_code(1)) is null,
+  '31st anon preview_group_invite call from the throttled IP returns null even for a valid code'
+);
+
+do $$ begin perform tests.as_anon('198.51.100.88'); end $$;
+
+select is(
+  public.preview_group_invite(tests.group_code(1)) ->> 'title',
+  'Hội IELTS 7.5',
+  'another anon IP is not affected by the throttled IP hash'
+);
+
+do $$ begin perform tests.as_postgres(); end $$;
+
+select ok(
+  (select count(*) = 30 and bool_and(length(ip_hash) = 64 and ip_hash !~ '198\.51\.100')
+     from private.invite_preview_attempts
+    where kind = 'group_preview'),
+  'private.invite_preview_attempts stores only 64-char SHA-256 hashes and never raw IP addresses'
 );
 
 select * from finish();

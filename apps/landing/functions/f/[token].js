@@ -1,7 +1,8 @@
 // Cloudflare Pages Function: /f/:token
 // Calls public.preview_friend_invite server-side and rewrites Open Graph / Twitter / meta tags
 // with HTMLRewriter so crawlers that do not execute JS (Messenger, Zalo, iMessage, Telegram)
-// display "{Tên} mời bạn kết bạn trên Ourney". Fails open to static /f on timeout (~1.5s) or error.
+// display "{Tên} mời bạn kết bạn trên Ourney", and embeds the preview payload on <html data-invite-preview>
+// so browsers do not fire a second redundant RPC. Fails open to static /f on timeout (~1.5s) or error.
 
 const DEFAULT_SUPABASE_URL = 'https://dmgpwpaouiphhrtukcie.supabase.co';
 const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_YP_EL-U5_VqOKJpMuXexmA_eCQpc5Kt';
@@ -16,10 +17,9 @@ function sanitizeText(raw) {
 async function fetchStaticFriendPage(context) {
   const { request, env } = context;
   if (env && env.ASSETS && typeof env.ASSETS.fetch === 'function') {
-    const init = { method: 'GET', headers: request.headers };
-    let res = await env.ASSETS.fetch(new Request(new URL('/f', request.url), init));
+    let res = await env.ASSETS.fetch(new Request(new URL('/f', request.url), { method: 'GET' }));
     if (res.status === 404) {
-      res = await env.ASSETS.fetch(new Request(new URL('/f.html', request.url), init));
+      res = await env.ASSETS.fetch(new Request(new URL('/f.html', request.url), { method: 'GET' }));
     }
     return res;
   }
@@ -46,21 +46,31 @@ async function lookupFriendInvite(token, env) {
       body: JSON.stringify({ p_token: token }),
       signal: controller.signal
     });
-    if (!res.ok) return null;
+    if (!res.ok) return { status: 'error', preview: null };
     const data = await res.json();
-    if (!data || typeof data !== 'object') return null;
+    if (!data || typeof data !== 'object') return { status: 'empty', preview: null };
     const displayName = sanitizeText(data.display_name);
-    if (!displayName) return null;
+    if (!displayName) return { status: 'empty', preview: null };
     return {
-      displayName,
-      handle: sanitizeText(data.handle).replace(/^@+/, ''),
-      avatarInitial: sanitizeText(data.avatar_initial)
+      status: 'ok',
+      preview: {
+        displayName,
+        handle: sanitizeText(data.handle).replace(/^@+/, ''),
+        avatarInitial: sanitizeText(data.avatar_initial)
+      }
     };
   } catch (_) {
-    return null;
+    return { status: 'error', preview: null };
   } finally {
     clearTimeout(timer);
   }
+}
+
+function getEdgeCache() {
+  if (typeof caches !== 'undefined' && caches && caches.default) {
+    return caches.default;
+  }
+  return null;
 }
 
 export async function onRequestGet(context) {
@@ -73,30 +83,85 @@ export async function onRequestGet(context) {
   }
 
   const validFormat = FRIEND_TOKEN_RE.test(token);
-  const [assetResponse, preview] = await Promise.all([
+  const edgeCache = validFormat ? getEdgeCache() : null;
+  const cacheKey = edgeCache && context.request
+    ? new Request(new URL(`/f/${encodeURIComponent(token)}`, context.request.url).toString(), { method: 'GET' })
+    : null;
+
+  if (edgeCache && cacheKey) {
+    try {
+      const cached = await edgeCache.match(cacheKey);
+      if (cached) return cached;
+    } catch (_) {}
+  }
+
+  const [assetResponse, lookup] = await Promise.all([
     fetchStaticFriendPage(context),
-    validFormat ? lookupFriendInvite(token, context.env) : Promise.resolve(null)
+    validFormat
+      ? lookupFriendInvite(token, context.env)
+      : Promise.resolve({ status: 'invalid', preview: null })
   ]);
 
   const headers = new Headers(assetResponse.headers);
-  headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
+  headers.delete('ETag');
+  headers.delete('Last-Modified');
+  if (lookup.status === 'error') {
+    headers.set('Cache-Control', 'no-store');
+  } else {
+    headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
+  }
+
   const baseResponse = new Response(assetResponse.body, {
     status: assetResponse.status,
     statusText: assetResponse.statusText,
     headers
   });
 
-  if (!preview || typeof HTMLRewriter === 'undefined') {
+  if (typeof HTMLRewriter === 'undefined' || lookup.status === 'error' || lookup.status === 'invalid') {
     return baseResponse;
   }
 
+  if (lookup.status === 'empty' || !lookup.preview) {
+    const emptyPayload = JSON.stringify({ status: 'empty', token, data: null });
+    const emptyRewritten = await new HTMLRewriter()
+      .on('html', {
+        element(el) {
+          el.setAttribute('data-invite-preview', emptyPayload);
+        }
+      })
+      .transform(baseResponse);
+
+    if (edgeCache && cacheKey) {
+      try {
+        const putPromise = edgeCache.put(cacheKey, emptyRewritten.clone());
+        if (typeof context.waitUntil === 'function') context.waitUntil(putPromise);
+      } catch (_) {}
+    }
+    return emptyRewritten;
+  }
+
+  const { preview } = lookup;
   const headline = `${preview.displayName} mời bạn kết bạn trên Ourney`;
   const description = preview.handle
     ? `${headline} (@${preview.handle}) — mở trong ứng dụng để kết nối, chia sẻ hành trình ảnh mỗi ngày và giữ chuỗi cùng nhau.`
     : `${headline} — mở trong ứng dụng để kết nối, chia sẻ hành trình ảnh mỗi ngày và giữ chuỗi cùng nhau.`;
   const canonicalUrl = `https://ourney.tech/f/${encodeURIComponent(token)}`;
+  const embeddedPayload = JSON.stringify({
+    status: 'ok',
+    token,
+    data: {
+      display_name: preview.displayName,
+      handle: preview.handle,
+      avatar_initial: preview.avatarInitial
+    }
+  });
 
-  return new HTMLRewriter()
+  const rewritten = await new HTMLRewriter()
+    .on('html', {
+      element(el) {
+        el.setAttribute('data-invite-preview', embeddedPayload);
+      }
+    })
     .on('title', {
       element(el) {
         el.setInnerContent(`ourney · ${headline}`, { html: false });
@@ -138,4 +203,22 @@ export async function onRequestGet(context) {
       }
     })
     .transform(baseResponse);
+
+  if (edgeCache && cacheKey) {
+    try {
+      const putPromise = edgeCache.put(cacheKey, rewritten.clone());
+      if (typeof context.waitUntil === 'function') context.waitUntil(putPromise);
+    } catch (_) {}
+  }
+
+  return rewritten;
+}
+
+export async function onRequestHead(context) {
+  const res = await onRequestGet(context);
+  return new Response(null, {
+    status: res.status,
+    statusText: res.statusText,
+    headers: res.headers
+  });
 }
