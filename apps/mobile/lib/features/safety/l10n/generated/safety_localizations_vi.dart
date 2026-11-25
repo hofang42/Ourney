@@ -164,11 +164,6 @@ class SafetyL10nVi extends SafetyL10n {
   String get safety_unknownUser => 'Người dùng';
 
   @override
-  String safety_unknownUserId(String id) {
-    return 'Mã $id';
-  }
-
-  @override
   String get safety_blockedAccount => 'Tài khoản đã chặn';
 
   @override

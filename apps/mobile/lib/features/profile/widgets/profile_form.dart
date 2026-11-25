@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -12,15 +11,15 @@ import '../../../ui/ui.dart';
 import '../avatar_picker.dart';
 import '../l10n/generated/profile_localizations.dart';
 import '../profile_providers.dart';
+import '../username_availability.dart';
 
 /// Username + display name + optional avatar (FR-A2) for "edit profile".
 /// (First-sign-in setup has its own screen, `ProfileSetupScreen`.)
 ///
 /// Saving calls `ProfileRepository.upsertMe` and then, if a new photo was
 /// picked, `ProfileRepository.setAvatar` (JPEG bytes). The username format is
-/// checked locally with ourney_core's `validateUsername`; uniqueness is the
-/// server's job (`profiles.username` UNIQUE): `upsertMe` failing with
-/// [OurneyErrorCode.invalid] after local validation passed means "taken".
+/// checked locally with ourney_core's `validateUsername`. A username may be
+/// claimed between the availability check and the server write.
 class ProfileForm extends ConsumerStatefulWidget {
   const ProfileForm({
     required this.submitLabel,
@@ -37,7 +36,7 @@ class ProfileForm extends ConsumerStatefulWidget {
   ConsumerState<ProfileForm> createState() => _ProfileFormState();
 }
 
-enum _FormError { save, offline, avatar }
+enum _FormError { save, contentPolicy, offline, avatar }
 
 class _ProfileFormState extends ConsumerState<ProfileForm> {
   late final TextEditingController _username;
@@ -46,20 +45,13 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
   bool _saving = false;
   bool _submitted = false;
   bool _edited = false;
-  bool _usernameTaken = false;
-  String? _takenUsername;
-  final Map<String, bool> _availability = {};
-  int _checkSeq = 0;
+  final _usernameAvailability = UsernameAvailabilityCheck();
   _FormError? _error;
 
   @override
   void initState() {
     super.initState();
-    final initialUsername = widget.initial?.username ?? '';
-    _username = TextEditingController(text: initialUsername);
-    if (initialUsername.isNotEmpty) {
-      _availability[initialUsername] = true;
-    }
+    _username = TextEditingController(text: widget.initial?.username ?? '');
     _displayName = TextEditingController(
       text: widget.initial?.displayName ?? '',
     );
@@ -73,81 +65,32 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
     if (oldWidget.initial == null && next != null && !_edited) {
       _username.text = next.username;
       _displayName.text = next.displayName;
-      _availability[next.username] = true;
     }
   }
 
   @override
   void dispose() {
+    _usernameAvailability.cancel();
     _username.dispose();
     _displayName.dispose();
     super.dispose();
   }
 
-  String? _usernameError(ProfileL10n l10n) {
-    final value = _username.text;
-    if ((_usernameTaken && value == _takenUsername) ||
-        _availability[value] == false) {
-      return l10n.profile_usernameTaken;
-    }
-    if (!_submitted && value.isEmpty) return null;
-    return switch (validateUsername(value)) {
-      UsernameError.tooShort => l10n.profile_usernameTooShort(usernameMin),
-      UsernameError.tooLong => l10n.profile_usernameTooLong(usernameMax),
-      UsernameError.invalidChars => l10n.profile_usernameInvalidChars,
-      null => null,
-    };
-  }
+  String? _usernameError(ProfileL10n l10n) => _usernameAvailability.errorFor(
+    l10n,
+    _username.text,
+    submitted: _submitted,
+  );
 
   void _onUsernameChanged(String value) {
-    final seq = ++_checkSeq;
-    setState(() {
-      _edited = true;
-      if (value != _takenUsername) {
-        _usernameTaken = false;
-        _takenUsername = null;
-      }
-    });
-    if (validateUsername(value) != null) return;
-    final initial = widget.initial;
-    if (initial != null && initial.username == value) {
-      setState(() {
-        _availability[value] = true;
-        _usernameTaken = false;
-        _takenUsername = null;
-      });
-      return;
-    }
-    final cached = _availability[value];
-    if (cached != null) {
-      setState(() {
-        _usernameTaken = !cached;
-        _takenUsername = cached ? null : value;
-      });
-      return;
-    }
-    final ProfileRepository repo;
-    try {
-      repo = ref.read(profileRepositoryProvider);
-    } on Object {
-      return;
-    }
-    unawaited(() async {
-      try {
-        final ok = await repo.isUsernameAvailable(value);
-        if (!mounted || seq != _checkSeq || _username.text != value) return;
-        setState(() {
-          _availability[value] = ok;
-          _usernameTaken = !ok;
-          _takenUsername = ok ? null : value;
-        });
-      } on Object {
-        if (!mounted || seq != _checkSeq || _username.text != value) return;
-        setState(() {
-          _availability.remove(value);
-        });
-      }
-    }());
+    _usernameAvailability.onChanged(
+      value,
+      currentUsername: widget.initial?.username,
+      lookup: (candidate) =>
+          ref.read(profileRepositoryProvider).isUsernameAvailable(candidate),
+      onResult: () => setState(() {}),
+    );
+    setState(() => _edited = true);
   }
 
   String? _displayNameError(ProfileL10n l10n) {
@@ -204,6 +147,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     final l10n = ProfileL10n.of(context);
     setState(() {
       _submitted = true;
@@ -221,6 +165,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
         initial.username != username ||
         initial.displayName != displayName;
 
+    _usernameAvailability.cancel();
     setState(() => _saving = true);
     try {
       if (profileChanged) {
@@ -230,12 +175,17 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        switch (e.error) {
-          case OurneyErrorCode.invalid:
-            _availability[username] = false;
-            _usernameTaken = true;
-            _takenUsername = username;
-          case OurneyErrorCode.offline:
+        switch (e) {
+          case ProfileUsernameTakenException():
+            _usernameAvailability.status = UsernameAvailability.taken;
+          case OurneyException(error: OurneyErrorCode.contentPolicy):
+            if (initial?.displayName == displayName) {
+              _usernameAvailability.status = UsernameAvailability.unavailable;
+            } else {
+              _usernameAvailability.status = UsernameAvailability.unconfirmed;
+              _error = _FormError.contentPolicy;
+            }
+          case OurneyException(error: OurneyErrorCode.offline):
             _error = _FormError.offline;
           default:
             _error = _FormError.save;
@@ -292,10 +242,18 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
         : null;
     final errorText = switch (_error) {
       _FormError.save => l10n.profile_saveError,
+      _FormError.contentPolicy => l10n.profile_saveContentPolicy,
       _FormError.offline => l10n.profile_offlineError,
       _FormError.avatar => l10n.profile_avatarError,
       null => null,
     };
+    final usernameError = _usernameError(l10n);
+    final usernameAvailable =
+        usernameError == null &&
+        _usernameAvailability.isAvailable(
+          _username.text,
+          currentUsername: widget.initial?.username,
+        );
 
     return AutofillGroup(
       child: Column(
@@ -349,10 +307,16 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
               LengthLimitingTextInputFormatter(usernameMax),
             ],
             helper: l10n.profile_usernameHelper,
-            error: _usernameError(l10n),
+            error: usernameError,
             onChanged: _onUsernameChanged,
             onSubmitted: (_) => _saving ? null : _save(),
           ),
+          if (usernameAvailable)
+            UiFlowError(
+              key: const ValueKey('profile-username-status'),
+              message: l10n.profile_usernameAvailable,
+              success: true,
+            ),
           if (errorText != null) ...[
             const SizedBox(height: UiSpace.lg),
             UiInlineError(
@@ -365,7 +329,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
             key: const ValueKey('profile-save'),
             label: _saving ? l10n.profile_saving : widget.submitLabel,
             loading: _saving,
-            onPressed: _saving ? null : _save,
+            onPressed: _saving || _usernameAvailability.rejected ? null : _save,
           ),
         ],
       ),

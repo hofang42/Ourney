@@ -268,9 +268,9 @@ final blockedUserIdsProvider = StreamProvider.autoDispose<Set<String>>(
   retry: (_, _) => null,
 );
 
-/// Blocked people with their real names from `my_blocked_people` (U16),
-/// keyed by user id. Empty when offline / not wired: callers fall back to the
-/// names cached on this device and then to a short id.
+/// Blocked people with their permitted block-time names from
+/// `my_blocked_people`, keyed by user ID. Names may be redacted by the
+/// server. An unavailable lookup leaves the list without identity details.
 final blockedPeopleProvider =
     FutureProvider.autoDispose<Map<String, PersonSummary>>((ref) async {
       // A new block / unblock changes the list.

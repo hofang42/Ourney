@@ -126,10 +126,12 @@ class ShareCardContent {
           : ShareCardHeadline.checkedIn;
     }
 
-    final hideMetric =
-        forceHideMetric ||
-        (hideMetricOnShare && isWeightMetric(journey)) ||
-        metricHiddenFor(journey, membership);
+    final hideMetric = shareMetricHidden(
+      journey,
+      membership,
+      forceHideMetric: forceHideMetric,
+      hideWeight: hideMetricOnShare,
+    );
     final hasMetric = journey.metricName != null || journey.metricUnit != null;
     double? metric;
     if (!hideMetric && hasMetric) {
@@ -220,14 +222,13 @@ class ShareCardContent {
 /// Bars on the flexer card (`FlexerShare` draws 21).
 const int shareCardActivityDays = 21;
 
-/// True for journeys that track body weight or sensitive metrics (kg,
-/// weight-loss template, Quiet Transformer skin): the Settings switch "hide
-/// kg when sharing" applies to these only, never to minutes or km (C-B1, UX-25).
+/// The Settings switch covers weight units and names, the Weight Loss
+/// template, and unitless metrics using the Quiet Transformer layout.
 bool isWeightMetric(Journey journey) {
   final unit = (journey.metricUnit ?? '').trim().toLowerCase();
   final name = (journey.metricName ?? '').toLowerCase();
   return journey.templateId == TemplateId.weightLoss ||
-      journey.layout == PersonaSkinId.quietTransformer ||
+      (journey.layout == PersonaSkinId.quietTransformer && unit.isEmpty) ||
       unit == 'kg' ||
       unit == 'lb' ||
       unit == 'lbs' ||
@@ -241,6 +242,17 @@ bool metricHiddenFor(Journey journey, Membership? membership) =>
     journey.templateId == TemplateId.weightLoss ||
     journey.hideMetricDefault ||
     (membership?.hideMetric ?? false);
+
+/// Effective redaction for both share cards and Wrapped captions.
+bool shareMetricHidden(
+  Journey journey,
+  Membership? membership, {
+  required bool forceHideMetric,
+  required bool hideWeight,
+}) =>
+    forceHideMetric ||
+    (hideWeight && isWeightMetric(journey)) ||
+    metricHiddenFor(journey, membership);
 
 /// S9: a public link can only be turned on for a finished (ended or
 /// archived) or retold (imported) journey.

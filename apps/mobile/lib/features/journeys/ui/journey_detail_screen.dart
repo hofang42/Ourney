@@ -15,8 +15,10 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../groups/groups_paths.dart';
 import '../../groups/ui/invite_sheet.dart';
+import '../../profile/settings_providers.dart' show hideWeightOnShareProvider;
 import '../../profile/share_privacy_sync.dart';
 import '../../reminders/data/reminder_scheduler.dart';
+import '../../share_card/domain/share_card_content.dart' show isWeightMetric;
 import '../data/journeys_providers.dart';
 import '../data/long_timeline_state.dart';
 import '../domain/journey_progress.dart';
@@ -1072,6 +1074,8 @@ class _PrivacySection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = JourneysL10n.of(context);
     final repo = ref.read(journeyRepositoryProvider);
+    final hideWeight =
+        ref.watch(hideWeightOnShareProvider) && isWeightMetric(journey);
 
     Future<void> update({
       bool? hideMetric,
@@ -1109,8 +1113,8 @@ class _PrivacySection extends ConsumerWidget {
           UiSwitchRow(
             key: const ValueKey('journey-pref-hide-metric'),
             label: l10n.journeys_hideMetric,
-            value: membership.hideMetric,
-            onChanged: (v) => update(hideMetric: v),
+            value: hideWeight || membership.hideMetric,
+            onChanged: hideWeight ? null : (v) => update(hideMetric: v),
           ),
         if (journey.kind != JourneyKind.solo)
           UiSwitchRow(

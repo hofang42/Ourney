@@ -61,9 +61,13 @@ class SyncEngine {
   int _runEpoch = 0;
   String? _runUser;
   final _changes = StreamController<void>.broadcast();
+  final _completedPulls = StreamController<void>.broadcast();
 
   /// Fires after server data was applied locally (pull, outbox success).
   Stream<void> get changes => _changes.stream;
+
+  /// Fires when the full pull has applied the server's journeys and memberships.
+  Stream<void> get completedPulls => _completedPulls.stream;
 
   void notifyChanged() {
     if (!_changes.isClosed) _changes.add(null);
@@ -364,6 +368,7 @@ class SyncEngine {
       );
       await _pullTable('profiles', store.applyProfile, eq: {'id': me});
       notifyChanged();
+      if (!_completedPulls.isClosed) _completedPulls.add(null);
       return const SyncOk();
     } on _SessionChanged {
       return const SyncFailed('session changed');
@@ -696,6 +701,7 @@ class SyncEngine {
 
   void dispose() {
     unawaited(_changes.close());
+    unawaited(_completedPulls.close());
   }
 }
 

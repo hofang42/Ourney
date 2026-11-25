@@ -368,12 +368,6 @@ abstract class SafetyL10n {
   /// **'Người dùng'**
   String get safety_unknownUser;
 
-  /// Short account id shown under an unnamed blocked user so several unknown accounts can be told apart.
-  ///
-  /// In vi, this message translates to:
-  /// **'Mã {id}'**
-  String safety_unknownUserId(String id);
-
   /// Neutral fallback label shown for a blocked user when their profile is unavailable.
   ///
   /// In vi, this message translates to:

@@ -57,6 +57,9 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_usernameTaken => 'Tên này đã có người dùng';
 
   @override
+  String get profile_usernameUnavailable => 'Tên này không dùng được';
+
+  @override
   String get profile_displayNameLabel => 'Tên hiển thị';
 
   @override
@@ -102,6 +105,10 @@ class ProfileL10nVi extends ProfileL10n {
 
   @override
   String get profile_saveError => 'Không lưu được hồ sơ. Thử lại nhé.';
+
+  @override
+  String get profile_saveContentPolicy =>
+      'Hãy thử tên người dùng hoặc tên hiển thị khác.';
 
   @override
   String get profile_offlineError => 'Không có mạng. Kết nối lại rồi thử nhé.';

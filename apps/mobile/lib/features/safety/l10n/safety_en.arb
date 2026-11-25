@@ -45,7 +45,6 @@
   "safety_unblockConfirm": "Unblock",
   "safety_unblocked": "{name} is unblocked.",
   "safety_unknownUser": "User",
-  "safety_unknownUserId": "ID {id}",
   "safety_blockedAccount": "Blocked account",
   "safety_blockedEmptyTitle": "You haven't blocked anyone",
   "safety_blockedEmptyMessage": "People you block show up here so you can unblock them later.",

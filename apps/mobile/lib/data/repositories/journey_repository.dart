@@ -773,40 +773,41 @@ class DataJourneyRepository implements JourneyRepository {
       return;
     }
     final me = await ctx.claimUserId();
-    final updated =
-        await (_db.update(_db.memberships)..where(
-              (t) => t.journeyId.equals(journeyId) & t.userId.equals(me),
-            ))
-            .write(
-              MembershipsCompanion(
-                hideMetric: hideMetric == null
-                    ? const Value.absent()
-                    : Value(hideMetric),
-                blurMedia: blurMedia == null
-                    ? const Value.absent()
-                    : Value(blurMedia),
-                hideExtras: hideExtras == null
-                    ? const Value.absent()
-                    : Value(hideExtras),
-                pinned: pinned == null ? const Value.absent() : Value(pinned),
-              ),
-            );
-    if (updated == 0) throw const OurneyException(OurneyErrorCode.notFound);
     final outbox = ctx.outbox;
-    if (outbox == null) return;
-    await outbox.enqueue(
-      OutboxKind.updateMembership,
-      membershipKey(journeyId),
-      {
-        'journey_id': journeyId,
-        'user_id': me,
-        'hide_metric': ?hideMetric,
-        'blur_media': ?blurMedia,
-        'hide_extras': ?hideExtras,
-        'pinned': ?pinned,
-      },
-    );
-    unawaited(outbox.flush());
+    await _db.transaction(() async {
+      final updated =
+          await (_db.update(_db.memberships)..where(
+                (t) => t.journeyId.equals(journeyId) & t.userId.equals(me),
+              ))
+              .write(
+                MembershipsCompanion(
+                  hideMetric: hideMetric == null
+                      ? const Value.absent()
+                      : Value(hideMetric),
+                  blurMedia: blurMedia == null
+                      ? const Value.absent()
+                      : Value(blurMedia),
+                  hideExtras: hideExtras == null
+                      ? const Value.absent()
+                      : Value(hideExtras),
+                  pinned: pinned == null ? const Value.absent() : Value(pinned),
+                ),
+              );
+      if (updated == 0) throw const OurneyException(OurneyErrorCode.notFound);
+      await outbox?.enqueue(
+        OutboxKind.updateMembership,
+        membershipKey(journeyId),
+        {
+          'journey_id': journeyId,
+          'user_id': me,
+          'hide_metric': ?hideMetric,
+          'blur_media': ?blurMedia,
+          'hide_extras': ?hideExtras,
+          'pinned': ?pinned,
+        },
+      );
+    });
+    if (outbox != null) unawaited(outbox.flush());
   }
 }
 

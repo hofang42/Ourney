@@ -8,6 +8,7 @@ import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney/features/journeys/domain/journey_layouts.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
 import 'package:ourney/features/journeys/ui/edit/time_wheel.dart';
+import 'package:ourney/features/profile/settings_providers.dart';
 import 'package:ourney/features/reminders/data/notification_gateway.dart';
 import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
 import 'package:ourney/features/reminders/data/reminder_settings.dart';
@@ -109,6 +110,27 @@ void main() {
       expect(u.title, 'Renamed run');
       expect(u.color, 1);
       expect(u.reminderTime, isNull);
+    });
+
+    testWidgets('saving an edit reconciles a unitless Quiet Transformer log', (
+      tester,
+    ) async {
+      final journey = testJourney(
+        templateId: TemplateId.custom,
+        metricName: 'Reading',
+      ).copyWith(layout: PersonaSkinId.quietTransformer);
+      final h = await _open(tester, journey: journey);
+      await tester.runAsync(
+        () => h.container.read(hideWeightOnShareProvider.notifier).set(true),
+      );
+      await tester.enterText(_key('edit-name'), 'Updated log');
+      await tester.ensureVisible(_key('edit-save-bottom'));
+      await tester.tap(_key('edit-save-bottom'));
+      await tester.pumpAndSettle();
+      expect(h.journeys.updates, hasLength(1));
+      expect(h.journeys.prefUpdates, [
+        (id: journey.id, hideMetric: true, blurMedia: null),
+      ]);
     });
 
     testWidgets(

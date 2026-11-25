@@ -82,14 +82,21 @@ class DataProfileRepository implements ProfileRepository {
     if (validateUsername(norm) != null) return false;
     final remote = ctx.remote;
     if (remote == null) return true;
+    ctx.requireUserId();
     final res = await remote.rpc('check_username_available', {
       'p_username': norm,
     });
-    return res is bool ? res : true;
+    if (res is! bool) {
+      throw const OurneyException(
+        OurneyErrorCode.unknown,
+        'invalid username availability response',
+      );
+    }
+    return res;
   }
 
-  /// Throws `invalid` for a bad username/display name (and, server-side, for
-  /// a username that is already taken: unique violation 23505).
+  /// Throws `invalid` for a bad username/display name and
+  /// [ProfileUsernameTakenException] for a server-side username collision.
   @override
   Future<void> upsertMe({
     required String username,
@@ -105,13 +112,24 @@ class DataProfileRepository implements ProfileRepository {
     if (remote != null) {
       // Update first: an upsert would also SET id, which is not granted.
       final values = {'username': username, 'display_name': name};
-      final updated = await remote.update(
-        'profiles',
-        values,
-        match: {'id': me},
-      );
-      if (updated.isEmpty) {
-        await remote.insert('profiles', {'id': me, ...values});
+      try {
+        final updated = await remote.update(
+          'profiles',
+          values,
+          match: {'id': me},
+        );
+        if (updated.isEmpty) {
+          await remote.insert('profiles', {'id': me, ...values});
+        }
+      } on OurneyException catch (e) {
+        final detail = e.detail;
+        if (e.error == OurneyErrorCode.invalid &&
+            detail != null &&
+            detail.startsWith('23505: ') &&
+            detail.contains('"profiles_username_key"')) {
+          throw ProfileUsernameTakenException(detail);
+        }
+        rethrow;
       }
     }
     final existing = await _local(me);

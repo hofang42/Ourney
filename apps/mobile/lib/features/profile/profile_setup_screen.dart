@@ -17,6 +17,7 @@ import '../safety/data/safety_providers.dart' show eulaAcceptedProvider;
 import 'avatar_picker.dart';
 import 'l10n/generated/profile_localizations.dart';
 import 'profile_providers.dart';
+import 'username_availability.dart';
 import 'widgets/profile_face_avatar.dart';
 import 'widgets/sign_out_flow.dart';
 
@@ -30,9 +31,8 @@ import 'widgets/sign_out_flow.dart';
 ///
 /// Saving calls `ProfileRepository.upsertMe` and, if a photo was picked,
 /// `ProfileRepository.setAvatar` (JPEG bytes). The username format is checked
-/// locally with ourney_core's `validateUsername`; uniqueness is the server's
-/// job: `upsertMe` failing with [OurneyErrorCode.invalid] after local
-/// validation passed means "taken".
+/// locally with ourney_core's `validateUsername`. A username may be claimed
+/// between the availability check and the server write.
 class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({this.from, super.key});
 
@@ -42,7 +42,7 @@ class ProfileSetupScreen extends ConsumerStatefulWidget {
   ConsumerState<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
 }
 
-enum _FormError { save, offline, avatar }
+enum _FormError { save, contentPolicy, offline, avatar }
 
 class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   final _username = TextEditingController();
@@ -51,10 +51,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   bool _saving = false;
   bool _submitted = false;
   bool _edited = false;
-  bool _usernameTaken = false;
-  String? _takenUsername;
-  final Map<String, bool> _availability = {};
-  int _checkSeq = 0;
+  final _usernameAvailability = UsernameAvailabilityCheck();
   _FormError? _error;
 
   @override
@@ -66,82 +63,33 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       if (profile != null && !_edited) {
         _username.text = profile.username;
         _displayName.text = profile.displayName;
-        _availability[profile.username] = true;
       }
     }, fireImmediately: true);
   }
 
   @override
   void dispose() {
+    _usernameAvailability.cancel();
     _username.dispose();
     _displayName.dispose();
     super.dispose();
   }
 
-  String? _usernameError(ProfileL10n l10n) {
-    final value = _username.text;
-    if ((_usernameTaken && value == _takenUsername) ||
-        _availability[value] == false) {
-      return l10n.profile_usernameTaken;
-    }
-    if (!_submitted && value.isEmpty) return null;
-    return switch (validateUsername(value)) {
-      UsernameError.tooShort => l10n.profile_usernameTooShort(usernameMin),
-      UsernameError.tooLong => l10n.profile_usernameTooLong(usernameMax),
-      UsernameError.invalidChars => l10n.profile_usernameInvalidChars,
-      null => null,
-    };
-  }
+  String? _usernameError(ProfileL10n l10n) => _usernameAvailability.errorFor(
+    l10n,
+    _username.text,
+    submitted: _submitted,
+  );
 
   void _onUsernameChanged(String value) {
-    final seq = ++_checkSeq;
-    setState(() {
-      _edited = true;
-      if (value != _takenUsername) {
-        _usernameTaken = false;
-        _takenUsername = null;
-      }
-    });
-    if (validateUsername(value) != null) return;
-    final initial = ref.read(myProfileProvider).asData?.value;
-    if (initial != null && initial.username == value) {
-      setState(() {
-        _availability[value] = true;
-        _usernameTaken = false;
-        _takenUsername = null;
-      });
-      return;
-    }
-    final cached = _availability[value];
-    if (cached != null) {
-      setState(() {
-        _usernameTaken = !cached;
-        _takenUsername = cached ? null : value;
-      });
-      return;
-    }
-    final ProfileRepository repo;
-    try {
-      repo = ref.read(profileRepositoryProvider);
-    } on Object {
-      return;
-    }
-    unawaited(() async {
-      try {
-        final ok = await repo.isUsernameAvailable(value);
-        if (!mounted || seq != _checkSeq || _username.text != value) return;
-        setState(() {
-          _availability[value] = ok;
-          _usernameTaken = !ok;
-          _takenUsername = ok ? null : value;
-        });
-      } on Object {
-        if (!mounted || seq != _checkSeq || _username.text != value) return;
-        setState(() {
-          _availability.remove(value);
-        });
-      }
-    }());
+    _usernameAvailability.onChanged(
+      value,
+      currentUsername: ref.read(myProfileProvider).asData?.value?.username,
+      lookup: (candidate) =>
+          ref.read(profileRepositoryProvider).isUsernameAvailable(candidate),
+      onResult: () => setState(() {}),
+    );
+    setState(() => _edited = true);
   }
 
   String? _displayNameError(ProfileL10n l10n) {
@@ -196,6 +144,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     final l10n = ProfileL10n.of(context);
     setState(() {
       _submitted = true;
@@ -213,6 +162,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         initial.username != username ||
         initial.displayName != displayName;
 
+    _usernameAvailability.cancel();
     setState(() => _saving = true);
     try {
       if (profileChanged) {
@@ -225,12 +175,17 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        switch (e.error) {
-          case OurneyErrorCode.invalid:
-            _availability[username] = false;
-            _usernameTaken = true;
-            _takenUsername = username;
-          case OurneyErrorCode.offline:
+        switch (e) {
+          case ProfileUsernameTakenException():
+            _usernameAvailability.status = UsernameAvailability.taken;
+          case OurneyException(error: OurneyErrorCode.contentPolicy):
+            if (initial?.displayName == displayName) {
+              _usernameAvailability.status = UsernameAvailability.unavailable;
+            } else {
+              _usernameAvailability.status = UsernameAvailability.unconfirmed;
+              _error = _FormError.contentPolicy;
+            }
+          case OurneyException(error: OurneyErrorCode.offline):
             _error = _FormError.offline;
           default:
             _error = _FormError.save;
@@ -331,16 +286,16 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     };
     final hasAvatar = _picked != null;
     final usernameError = _usernameError(l10n);
-    final usernameFormatOk =
-        _username.text.isNotEmpty &&
-        validateUsername(_username.text) == null &&
-        usernameError == null;
+    final usernameOk = _username.text.isNotEmpty && usernameError == null;
     final usernameAvailable =
-        usernameFormatOk && _availability[_username.text] == true;
-    final usernameOk =
-        usernameFormatOk && _availability[_username.text] != false;
+        usernameOk &&
+        _usernameAvailability.isAvailable(
+          _username.text,
+          currentUsername: profileState.asData?.value?.username,
+        );
     final errorText = switch (_error) {
       _FormError.save => l10n.profile_saveError,
+      _FormError.contentPolicy => l10n.profile_saveContentPolicy,
       _FormError.offline => l10n.profile_offlineError,
       _FormError.avatar => l10n.profile_avatarError,
       null => null,

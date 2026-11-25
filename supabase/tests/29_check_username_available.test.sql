@@ -6,7 +6,7 @@
 -- unauthenticated JWT claim -> 28000 unauthenticated, banned caller -> 42501 forbidden.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(13);
 
 create schema tests;
 grant usage on schema tests to anon, authenticated, service_role;
@@ -48,6 +48,15 @@ values
 
 insert into private.user_moderation (user_id, banned_at, ban_reason)
 values (tests.u(4), now(), 'Banned test user');
+
+-- The current handle was valid when set, before a moderation policy update.
+insert into private.objectionable_words (term, lang, match_mode)
+values ('minhactive', 'any', 'substring');
+
+select ok(
+  private.contains_objectionable_text('minh_active'),
+  'the current handle now matches an objectionable term'
+);
 
 -- 1. Grants: anon denied, authenticated and service_role granted
 select ok(
@@ -134,7 +143,7 @@ do $$ begin perform tests.as_user(tests.u(1)); end $$;
 select is(
   public.check_username_available('minh_active'),
   true,
-  'caller own current username returns true'
+  'caller own current username returns true even when policy has changed'
 );
 
 -- 11. Existing user checking another user taken username sees false

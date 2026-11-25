@@ -118,6 +118,15 @@ final deadUploadsProvider = Provider<DeadUploads?>((ref) {
   }
 });
 
+/// Full pull notifications, available in Supabase mode when data is wired.
+final serverPullsProvider = Provider<Stream<void>?>((ref) {
+  try {
+    return ref.watch(dataLayerProvider).ctx.sync?.completedPulls;
+  } on Object {
+    return null;
+  }
+});
+
 /// The social repository of [layer] chosen by [pick], or the same
 /// "not wired" [UnimplementedError] as the placeholder providers when the
 /// layer runs local-only (the UI then shows NeedsServerView).

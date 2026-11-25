@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/config.dart';
+import 'package:ourney/features/profile/profile_providers.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney/features/safety/safety_paths.dart';
 import 'package:ourney/features/safety/ui/block_dialogs.dart';
 import 'package:ourney/features/safety/ui/report_form.dart';
+import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import 'safety_fakes.dart';
@@ -261,14 +263,21 @@ void main() {
     testWidgets(
       'blocked list shows names, neutral fallback when profile is unavailable, and unblocks (UX-38)',
       (tester) async {
-        final repo = FakeSafetyRepository(blocked: {'u2', '3f8a91c2-0000'});
+        const redactedId = '3f8a91c2-0000';
+        final repo = FakeSafetyRepository(blocked: {'u2', redactedId})
+          ..blockedPeople = const [
+            PersonSummary(userId: 'u2', username: 'lan', displayName: 'Lan'),
+            PersonSummary(userId: redactedId, username: '', displayName: ''),
+          ];
         final c = await pumpSignedInApp(tester, repo: repo);
-        await c.read(blockedNamesProvider.notifier).remember('u2', 'Lan');
+        await c
+            .read(blockedNamesProvider.notifier)
+            .remember(redactedId, 'Previously visible name');
         await goTo(tester, c, SafetyPaths.blocked);
         expect(find.text('Lan'), findsOneWidget);
-        expect(find.text('Người dùng'), findsOneWidget); // name unknown
+        expect(find.text('Người dùng'), findsNothing);
         expect(find.text('Tài khoản đã chặn'), findsOneWidget);
-        // UX-38: never show a raw UUID prefix.
+        expect(find.text('Previously visible name'), findsNothing);
         expect(find.textContaining('3f8a91c2'), findsNothing);
         expect(find.textContaining('Mã '), findsNothing);
 
@@ -277,33 +286,72 @@ void main() {
         expect(find.text('Bỏ chặn Lan?'), findsOneWidget);
         await tester.tap(byKey('safety-unblock-confirm'));
         await tester.pumpAndSettle();
-        expect(repo.blocked, {'3f8a91c2-0000'});
+        expect(repo.blocked, {redactedId});
         expect(byKey('safety-blocked-u2'), findsNothing);
+
+        await tester.tap(byKey('safety-unblock-$redactedId'));
+        await tester.pumpAndSettle();
+        expect(find.text('Bỏ chặn Tài khoản đã chặn?'), findsOneWidget);
+        expect(find.textContaining('Previously visible name'), findsNothing);
+        await tester.tap(byKey('safety-unblock-confirm'));
+        await tester.pumpAndSettle();
+        expect(repo.blocked, isEmpty);
         expect(c.read(blockedNamesProvider), isEmpty);
       },
     );
 
     testWidgets(
-      'blocked list uses server display name and @handle on a fresh device (U16, UX-38)',
+      'blocked list uses authorized names and initials without requesting cached or uncached avatars',
       (tester) async {
+        const warmPath = 'avatars/u2/a.jpg';
+        const coldPath = 'avatars/u7/a.jpg';
+        var avatarLookups = 0;
         final repo = FakeSafetyRepository(blocked: {'u2', 'u7'})
           ..blockedPeople = const [
             PersonSummary(
               userId: 'u2',
               username: 'lan',
               displayName: 'Lan',
-              avatarPath: 'avatars/u2/a.jpg',
+              avatarPath: warmPath,
             ),
-            PersonSummary(userId: 'u7', username: 'minh', displayName: ''),
+            PersonSummary(
+              userId: 'u7',
+              username: 'minh',
+              displayName: '',
+              avatarPath: coldPath,
+            ),
           ];
-        final c = await pumpSignedInApp(tester, repo: repo);
+        final c = await pumpSignedInApp(
+          tester,
+          repo: repo,
+          overrides: [
+            avatarFileProvider(warmPath).overrideWith((_) async {
+              avatarLookups++;
+              return '/cached-avatar.jpg';
+            }),
+            avatarFileProvider(coldPath).overrideWith((_) async {
+              avatarLookups++;
+              throw StateError('avatar is not cached');
+            }),
+          ],
+        );
         await goTo(tester, c, SafetyPaths.blocked);
         expect(find.text('Lan'), findsOneWidget);
         expect(find.text('@lan'), findsOneWidget);
         expect(find.text('@minh'), findsOneWidget);
         expect(byKey('safety-blocked-handle-u2'), findsOneWidget);
-        expect(byKey('safety-blocked-fallback-u2'), findsNothing);
-        expect(byKey('safety-blocked-fallback-u7'), findsNothing);
+        expect(avatarLookups, 0);
+        for (final (id, initial) in [('u2', 'L'), ('u7', 'M')]) {
+          final avatar = find.descendant(
+            of: byKey('safety-blocked-$id'),
+            matching: find.byType(UiAvatar),
+          );
+          expect(tester.widget<UiAvatar>(avatar).image, isNull);
+          expect(
+            find.descendant(of: avatar, matching: find.text(initial)),
+            findsOneWidget,
+          );
+        }
       },
     );
 
@@ -313,9 +361,13 @@ void main() {
         final repo = FakeSafetyRepository(blocked: {'3f8a91c2-1111'})
           ..blockedPeopleError = StateError('offline');
         final c = await pumpSignedInApp(tester, repo: repo);
+        await c
+            .read(blockedNamesProvider.notifier)
+            .remember('3f8a91c2-1111', 'Previously visible name');
         await goTo(tester, c, SafetyPaths.blocked);
-        expect(find.text('Người dùng'), findsOneWidget);
+        expect(find.text('Người dùng'), findsNothing);
         expect(find.text('Tài khoản đã chặn'), findsOneWidget);
+        expect(find.text('Previously visible name'), findsNothing);
         expect(find.textContaining('3f8a91c2'), findsNothing);
       },
     );

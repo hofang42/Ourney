@@ -221,14 +221,42 @@ Map<String, ({bool hide, bool blur})> pendingSharePrivacy(
   container.read(currentUserIdProvider),
 );
 
-bool _healing = false;
+Future<void> _queuePrivacyWork(Future<void> Function() run) {
+  final previous = _pendingPush;
+  final next = previous == null
+      ? run()
+      : previous.then((_) => run(), onError: (Object _) => run());
+  _pendingPush = next;
+  return next.whenComplete(() {
+    if (identical(_pendingPush, next)) _pendingPush = null;
+  });
+}
 
-/// Re-applies ONLY the failed flag(s) of the journeys recorded by a failed
-/// push using the current Settings switch values (`true` or `false`, DE-12 /
-/// M1). A membership that no longer exists is forgotten. Never touches any
-/// other journey, so per-journey choices stay. Called at app start and resume.
+/// On app start and resume, retry failed pushes and enforce the enabled
+/// weight preference on existing memberships, including after an upgrade.
 Future<void> healSharePrivacy(ProviderContainer container) async {
-  if (_healing) return;
+  await _queuePrivacyWork(() => _healFailedSharePrivacy(container));
+  await reconcileHiddenWeight(container);
+}
+
+/// Backfill active memberships, even on ended or archived journeys. Also
+/// catches newly classified journeys after a creation, edit or server pull.
+Future<void> reconcileHiddenWeight(ProviderContainer container) {
+  try {
+    if (!container.read(hideWeightOnShareProvider)) return Future.value();
+  } on Object {
+    return Future.value();
+  }
+  return _pushSharePrivacyToMemberships(
+    container,
+    hideWeight: true,
+    reconcile: true,
+  );
+}
+
+/// Re-applies just the flags recorded by failed pushes. A membership that no
+/// longer exists is forgotten.
+Future<void> _healFailedSharePrivacy(ProviderContainer container) async {
   final SharedPreferencesWithCache prefs;
   final JourneyRepository repo;
   final String? userId;
@@ -241,7 +269,14 @@ Future<void> healSharePrivacy(ProviderContainer container) async {
   }
   final pending = _loadPending(prefs, userId);
   if (userId == null || pending.isEmpty) return;
-  String? current() => container.read(currentUserIdProvider);
+  String? current() {
+    try {
+      return container.read(currentUserIdProvider);
+    } on Object {
+      return null;
+    }
+  }
+
   // Drops the snapshot flags, but only if the entry was not touched since
   // (a push that failed meanwhile keeps its flags for the next heal).
   void done(String key, _Flags snapshot) {
@@ -250,89 +285,89 @@ Future<void> healSharePrivacy(ProviderContainer container) async {
     _clearFlags(prefs, userId, key, hide: snapshot.hide, blur: snapshot.blur);
   }
 
-  _healing = true;
-  try {
-    for (final entry in pending.entries) {
-      if (entry.key.startsWith(_exclPrefix)) {
-        continue;
-      }
-      if (current() != userId) break;
-      final snapshot = entry.value;
-      if (!snapshot.hide && !snapshot.blur) {
-        done(entry.key, snapshot);
-        continue;
-      }
-      try {
-        if (entry.key == _allKey) {
-          for (final j in await repo.allMine()) {
-            if (current() != userId) return;
-            // Re-read now: the user may have decided meanwhile.
-            final fresh = _loadPending(prefs, userId);
-            if (!fresh.containsKey(_allKey)) break;
-            final ex = fresh['$_exclPrefix${j.id}'];
-            final hide =
-                snapshot.hide && isWeightMetric(j) && !(ex?.hide ?? false);
-            final blurV = snapshot.blur && !(ex?.blur ?? false);
-            if (!hide && !blurV) continue;
-            final currentHide = container.read(hideWeightOnShareProvider);
-            final currentBlur = container.read(blurPhotosOnShareProvider);
-            try {
-              await repo.updateMyMembership(
-                j.id,
-                hideMetric: hide ? currentHide : null,
-                blurMedia: blurV ? currentBlur : null,
-              );
-            } on OurneyException catch (e) {
-              // One journey left meanwhile: the others still get theirs.
-              if (e.error != OurneyErrorCode.notFound) rethrow;
-            }
-          }
-        } else {
-          var hide = snapshot.hide;
-          if (hide) {
-            // The weight status may have been unknown when it failed.
-            final journey = await repo.watch(entry.key).first;
-            if (journey == null) {
-              done(entry.key, snapshot);
-              continue;
-            }
-            hide = isWeightMetric(journey);
-          }
-          if (current() != userId) break;
-          // Re-read after the awaits: a hand-set choice (or a newer heal)
-          // may have removed the entry or some of its flags.
-          final fresh = _loadPending(prefs, userId)[entry.key];
-          if (fresh == null) continue;
-          hide = hide && fresh.hide;
-          final blurNow = snapshot.blur && fresh.blur;
-          if (hide || blurNow) {
-            final currentHide = container.read(hideWeightOnShareProvider);
-            final currentBlur = container.read(blurPhotosOnShareProvider);
+  for (final entry in pending.entries) {
+    if (entry.key.startsWith(_exclPrefix)) {
+      continue;
+    }
+    if (current() != userId) break;
+    final snapshot = entry.value;
+    if (!snapshot.hide && !snapshot.blur) {
+      done(entry.key, snapshot);
+      continue;
+    }
+    try {
+      if (entry.key == _allKey) {
+        for (final j in await repo.allMine()) {
+          if (current() != userId) return;
+          // Re-read now: the user may have decided meanwhile.
+          final fresh = _loadPending(prefs, userId);
+          if (!fresh.containsKey(_allKey)) break;
+          final ex = fresh['$_exclPrefix${j.id}'];
+          final hide =
+              snapshot.hide && isWeightMetric(j) && !(ex?.hide ?? false);
+          final blurV = snapshot.blur && !(ex?.blur ?? false);
+          if (!hide && !blurV) continue;
+          final currentHide = container.read(hideWeightOnShareProvider);
+          final currentBlur = container.read(blurPhotosOnShareProvider);
+          try {
             await repo.updateMyMembership(
-              entry.key,
+              j.id,
               hideMetric: hide ? currentHide : null,
-              blurMedia: blurNow ? currentBlur : null,
+              blurMedia: blurV ? currentBlur : null,
             );
+          } on OurneyException catch (e) {
+            // One journey left meanwhile: the others still get theirs.
+            if (e.error != OurneyErrorCode.notFound) rethrow;
           }
         }
-        done(entry.key, snapshot);
-      } on OurneyException catch (e) {
-        debugPrint('share privacy: heal ${entry.key} failed: $e');
-        if (e.error == OurneyErrorCode.notFound) done(entry.key, snapshot);
-      } on Object catch (e) {
-        debugPrint('share privacy: heal ${entry.key} failed: $e');
+      } else {
+        var hide = snapshot.hide;
+        if (hide) {
+          // The weight status may have been unknown when it failed.
+          final journey = await repo.watch(entry.key).first;
+          if (journey == null) {
+            done(entry.key, snapshot);
+            continue;
+          }
+          hide = isWeightMetric(journey);
+        }
+        if (current() != userId) break;
+        // Re-read after the awaits: a hand-set choice (or a newer heal)
+        // may have removed the entry or some of its flags.
+        final fresh = _loadPending(prefs, userId)[entry.key];
+        if (fresh == null) continue;
+        hide = hide && fresh.hide;
+        final blurNow = snapshot.blur && fresh.blur;
+        if (hide || blurNow) {
+          final currentHide = container.read(hideWeightOnShareProvider);
+          final currentBlur = container.read(blurPhotosOnShareProvider);
+          await repo.updateMyMembership(
+            entry.key,
+            hideMetric: hide ? currentHide : null,
+            blurMedia: blurNow ? currentBlur : null,
+          );
+        }
       }
+      done(entry.key, snapshot);
+    } on OurneyException catch (e) {
+      debugPrint('share privacy: heal ${entry.key} failed: $e');
+      if (e.error == OurneyErrorCode.notFound) done(entry.key, snapshot);
+    } on Object catch (e) {
+      debugPrint('share privacy: heal ${entry.key} failed: $e');
     }
-  } finally {
-    _healing = false;
   }
 }
 
-/// Heals failed share-privacy pushes at app start and when it resumes.
+/// Reconciles share privacy at app start, on resume and after server pulls.
 class SharePrivacyHealHook extends ConsumerStatefulWidget {
-  const SharePrivacyHealHook({required this.child, super.key});
+  const SharePrivacyHealHook({
+    required this.child,
+    this.serverPulls,
+    super.key,
+  });
 
   final Widget child;
+  final Stream<void>? serverPulls;
 
   @override
   ConsumerState<SharePrivacyHealHook> createState() =>
@@ -341,25 +376,51 @@ class SharePrivacyHealHook extends ConsumerStatefulWidget {
 
 class _SharePrivacyHealHookState extends ConsumerState<SharePrivacyHealHook>
     with WidgetsBindingObserver {
+  StreamSubscription<void>? _pulls;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _listenToPulls();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      unawaited(healSharePrivacy(ProviderScope.containerOf(context)));
+      unawaited(
+        healSharePrivacy(ProviderScope.containerOf(context, listen: false)),
+      );
+    });
+  }
+
+  @override
+  void didUpdateWidget(SharePrivacyHealHook oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.serverPulls != widget.serverPulls) _listenToPulls();
+  }
+
+  void _listenToPulls() {
+    unawaited(_pulls?.cancel());
+    _pulls = widget.serverPulls?.listen((_) {
+      if (!mounted) return;
+      unawaited(
+        reconcileHiddenWeight(
+          ProviderScope.containerOf(context, listen: false),
+        ),
+      );
     });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(healSharePrivacy(ProviderScope.containerOf(context)));
+      unawaited(
+        healSharePrivacy(ProviderScope.containerOf(context, listen: false)),
+      );
     }
   }
 
   @override
   void dispose() {
+    unawaited(_pulls?.cancel());
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -380,6 +441,17 @@ Future<void> pushSharePrivacyToMemberships(
   ProviderContainer container, {
   bool? hideWeight,
   bool? blur,
+}) => _pushSharePrivacyToMemberships(
+  container,
+  hideWeight: hideWeight,
+  blur: blur,
+);
+
+Future<void> _pushSharePrivacyToMemberships(
+  ProviderContainer container, {
+  bool? hideWeight,
+  bool? blur,
+  bool reconcile = false,
 }) {
   if (hideWeight == null && blur == null) {
     return _pendingPush ?? Future<void>.value();
@@ -391,6 +463,10 @@ Future<void> pushSharePrivacyToMemberships(
     repo = container.read(journeyRepositoryProvider);
     prefs = container.read(sharedPreferencesProvider);
     userId = container.read(currentUserIdProvider);
+    // Local-only guest memberships have no signed-in account ID.
+    if (userId == null && !container.read(appConfigProvider).localOnly) {
+      return Future<void>.value();
+    }
   } on Object {
     return Future<void>.value();
   }
@@ -406,7 +482,22 @@ Future<void> pushSharePrivacyToMemberships(
     }
   }
 
+  bool sameAccount() {
+    try {
+      return container.read(currentUserIdProvider) == userId;
+    } on Object {
+      return false;
+    }
+  }
+
   Future<void> run() async {
+    if (!sameAccount()) return;
+    bool hideActive() =>
+        hideWeight != null &&
+        container.read(hideWeightOnShareProvider) == hideWeight;
+    bool blurActive() =>
+        blur != null && container.read(blurPhotosOnShareProvider) == blur;
+    if (!hideActive() && !blurActive()) return;
     List<Journey> journeys;
     try {
       journeys = await repo.allMine();
@@ -422,18 +513,20 @@ Future<void> pushSharePrivacyToMemberships(
       );
       return;
     }
-    final hideActive =
-        hideWeight != null &&
-        container.read(hideWeightOnShareProvider) == hideWeight;
-    final blurActive =
-        blur != null && container.read(blurPhotosOnShareProvider) == blur;
     var allOk = true;
     for (final j in journeys) {
-      final hide = hideActive && isWeightMetric(j) ? hideWeight : null;
-      final blurV = blurActive ? blur : null;
+      if (!sameAccount()) return;
+      final hide = hideActive() && isWeightMetric(j) ? hideWeight : null;
+      final blurV = blurActive() ? blur : null;
       if (hide == null && blurV == null) continue;
       try {
+        if (reconcile) {
+          final membership = await repo.watchMyMembership(j.id).first;
+          if (!sameAccount() || !hideActive()) return;
+          if (membership?.hideMetric == true) continue;
+        }
         await repo.updateMyMembership(j.id, hideMetric: hide, blurMedia: blurV);
+        if (!sameAccount()) return;
         _clearFlags(
           prefs,
           userId,
@@ -456,24 +549,20 @@ Future<void> pushSharePrivacyToMemberships(
       }
     }
     // A full push that reached every membership settles the all-marker.
-    if (allOk) {
+    if (allOk && sameAccount()) {
       _clearFlags(
         prefs,
         userId,
         _allKey,
-        hide: hideWeight != null,
-        blur: blur != null,
+        hide: hideActive(),
+        blur: blurActive(),
       );
     }
   }
 
-  final previous = _pendingPush;
-  final next = previous == null ? run() : previous.then((_) => run());
-  _pendingPush = next;
-  return next.whenComplete(() {
+  return _queuePrivacyWork(run).whenComplete(() {
     _flights--;
     if (_flights == 0) _heldByHand.clear();
-    if (identical(_pendingPush, next)) _pendingPush = null;
   });
 }
 
