@@ -258,51 +258,67 @@ void main() {
       expect(byKey('safety-block-screen'), findsNothing);
     });
 
-    testWidgets('blocked list shows names and unblocks', (tester) async {
-      final repo = FakeSafetyRepository(blocked: {'u2', 'u7'});
-      final c = await pumpSignedInApp(tester, repo: repo);
-      await c.read(blockedNamesProvider.notifier).remember('u2', 'Lan');
-      await goTo(tester, c, SafetyPaths.blocked);
-      expect(find.text('Lan'), findsOneWidget);
-      expect(find.text('Người dùng'), findsOneWidget); // name unknown
-      expect(find.text('Mã u7'), findsOneWidget); // U16: told apart by id
-      expect(byKey('safety-blocked-id-u2'), findsNothing);
+    testWidgets(
+      'blocked list shows names, neutral fallback when profile is unavailable, and unblocks (UX-38)',
+      (tester) async {
+        final repo = FakeSafetyRepository(blocked: {'u2', '3f8a91c2-0000'});
+        final c = await pumpSignedInApp(tester, repo: repo);
+        await c.read(blockedNamesProvider.notifier).remember('u2', 'Lan');
+        await goTo(tester, c, SafetyPaths.blocked);
+        expect(find.text('Lan'), findsOneWidget);
+        expect(find.text('Người dùng'), findsOneWidget); // name unknown
+        expect(find.text('Tài khoản đã chặn'), findsOneWidget);
+        // UX-38: never show a raw UUID prefix.
+        expect(find.textContaining('3f8a91c2'), findsNothing);
+        expect(find.textContaining('Mã '), findsNothing);
 
-      await tester.tap(byKey('safety-unblock-u2'));
-      await tester.pumpAndSettle();
-      expect(find.text('Bỏ chặn Lan?'), findsOneWidget);
-      await tester.tap(byKey('safety-unblock-confirm'));
-      await tester.pumpAndSettle();
-      expect(repo.blocked, {'u7'});
-      expect(byKey('safety-blocked-u2'), findsNothing);
-      expect(c.read(blockedNamesProvider), isEmpty);
-    });
+        await tester.tap(byKey('safety-unblock-u2'));
+        await tester.pumpAndSettle();
+        expect(find.text('Bỏ chặn Lan?'), findsOneWidget);
+        await tester.tap(byKey('safety-unblock-confirm'));
+        await tester.pumpAndSettle();
+        expect(repo.blocked, {'3f8a91c2-0000'});
+        expect(byKey('safety-blocked-u2'), findsNothing);
+        expect(c.read(blockedNamesProvider), isEmpty);
+      },
+    );
 
-    testWidgets('blocked list uses server names on a fresh device (U16)', (
-      tester,
-    ) async {
-      final repo = FakeSafetyRepository(blocked: {'u2', 'u7'})
-        ..blockedPeople = const [
-          PersonSummary(userId: 'u2', username: 'lan', displayName: 'Lan'),
-          PersonSummary(userId: 'u7', username: 'minh', displayName: 'Minh'),
-        ];
-      final c = await pumpSignedInApp(tester, repo: repo);
-      await goTo(tester, c, SafetyPaths.blocked);
-      expect(find.text('Lan'), findsOneWidget);
-      expect(find.text('Minh'), findsOneWidget);
-      expect(byKey('safety-blocked-id-u2'), findsNothing);
-      expect(byKey('safety-blocked-id-u7'), findsNothing);
-    });
+    testWidgets(
+      'blocked list uses server display name and @handle on a fresh device (U16, UX-38)',
+      (tester) async {
+        final repo = FakeSafetyRepository(blocked: {'u2', 'u7'})
+          ..blockedPeople = const [
+            PersonSummary(
+              userId: 'u2',
+              username: 'lan',
+              displayName: 'Lan',
+              avatarPath: 'avatars/u2/a.jpg',
+            ),
+            PersonSummary(userId: 'u7', username: 'minh', displayName: ''),
+          ];
+        final c = await pumpSignedInApp(tester, repo: repo);
+        await goTo(tester, c, SafetyPaths.blocked);
+        expect(find.text('Lan'), findsOneWidget);
+        expect(find.text('@lan'), findsOneWidget);
+        expect(find.text('@minh'), findsOneWidget);
+        expect(byKey('safety-blocked-handle-u2'), findsOneWidget);
+        expect(byKey('safety-blocked-fallback-u2'), findsNothing);
+        expect(byKey('safety-blocked-fallback-u7'), findsNothing);
+      },
+    );
 
-    testWidgets('blocked list keeps the short id when the lookup fails (U16)', (
-      tester,
-    ) async {
-      final repo = FakeSafetyRepository(blocked: {'u7'})
-        ..blockedPeopleError = StateError('offline');
-      final c = await pumpSignedInApp(tester, repo: repo);
-      await goTo(tester, c, SafetyPaths.blocked);
-      expect(find.text('Mã u7'), findsOneWidget);
-    });
+    testWidgets(
+      'blocked list shows neutral fallback label when lookup fails (UX-38)',
+      (tester) async {
+        final repo = FakeSafetyRepository(blocked: {'3f8a91c2-1111'})
+          ..blockedPeopleError = StateError('offline');
+        final c = await pumpSignedInApp(tester, repo: repo);
+        await goTo(tester, c, SafetyPaths.blocked);
+        expect(find.text('Người dùng'), findsOneWidget);
+        expect(find.text('Tài khoản đã chặn'), findsOneWidget);
+        expect(find.textContaining('3f8a91c2'), findsNothing);
+      },
+    );
 
     testWidgets('empty blocked list', (tester) async {
       final c = await pumpSignedInApp(tester);

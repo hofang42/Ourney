@@ -692,6 +692,12 @@ void main() {
   });
 
   test('profile: update first, insert when missing', () async {
+    remote.rpcHandlers['check_username_available'] =
+        (p) => p['p_username'] != 'taken_user';
+    expect(await layer.profiles.isUsernameAvailable('  LINH  '), isTrue);
+    expect(await layer.profiles.isUsernameAvailable('TAKEN_USER'), isFalse);
+    expect(await layer.profiles.isUsernameAvailable('ab'), isFalse);
+
     remote.updateResult = [];
     await layer.profiles.upsertMe(username: 'linh', displayName: 'Linh');
     expect(remote.callsOf('insert').single.args, {

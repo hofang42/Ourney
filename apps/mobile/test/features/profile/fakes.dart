@@ -148,6 +148,15 @@ class FakeProfileRepository implements ProfileRepository {
   }
 
   @override
+  Future<bool> isUsernameAvailable(String username) async {
+    final norm = username.trim().toLowerCase();
+    if (validateUsername(norm) != null) return false;
+    if (upsertError case final e?) throw e;
+    if (profile != null && profile!.username == norm) return true;
+    return !takenUsernames.contains(norm);
+  }
+
+  @override
   Future<void> upsertMe({
     required String username,
     required String displayName,

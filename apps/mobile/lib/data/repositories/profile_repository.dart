@@ -76,6 +76,18 @@ class DataProfileRepository implements ProfileRepository {
     _db.profiles,
   )..where((t) => t.id.equals(me))).getSingleOrNull();
 
+  @override
+  Future<bool> isUsernameAvailable(String username) async {
+    final norm = username.trim().toLowerCase();
+    if (validateUsername(norm) != null) return false;
+    final remote = ctx.remote;
+    if (remote == null) return true;
+    final res = await remote.rpc('check_username_available', {
+      'p_username': norm,
+    });
+    return res is bool ? res : true;
+  }
+
   /// Throws `invalid` for a bad username/display name (and, server-side, for
   /// a username that is already taken: unique violation 23505).
   @override

@@ -170,6 +170,9 @@ class SafetyL10nEn extends SafetyL10n {
   }
 
   @override
+  String get safety_blockedAccount => 'Blocked account';
+
+  @override
   String get safety_blockedEmptyTitle => 'You haven\'t blocked anyone';
 
   @override

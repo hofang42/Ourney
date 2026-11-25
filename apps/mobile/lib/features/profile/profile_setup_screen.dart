@@ -53,6 +53,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   bool _edited = false;
   bool _usernameTaken = false;
   String? _takenUsername;
+  final Map<String, bool> _availability = {};
+  int _checkSeq = 0;
   _FormError? _error;
 
   @override
@@ -64,6 +66,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       if (profile != null && !_edited) {
         _username.text = profile.username;
         _displayName.text = profile.displayName;
+        _availability[profile.username] = true;
       }
     }, fireImmediately: true);
   }
@@ -77,7 +80,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   String? _usernameError(ProfileL10n l10n) {
     final value = _username.text;
-    if (_usernameTaken && value == _takenUsername) {
+    if ((_usernameTaken && value == _takenUsername) ||
+        _availability[value] == false) {
       return l10n.profile_usernameTaken;
     }
     if (!_submitted && value.isEmpty) return null;
@@ -87,6 +91,57 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       UsernameError.invalidChars => l10n.profile_usernameInvalidChars,
       null => null,
     };
+  }
+
+  void _onUsernameChanged(String value) {
+    final seq = ++_checkSeq;
+    setState(() {
+      _edited = true;
+      if (value != _takenUsername) {
+        _usernameTaken = false;
+        _takenUsername = null;
+      }
+    });
+    if (validateUsername(value) != null) return;
+    final initial = ref.read(myProfileProvider).asData?.value;
+    if (initial != null && initial.username == value) {
+      setState(() {
+        _availability[value] = true;
+        _usernameTaken = false;
+        _takenUsername = null;
+      });
+      return;
+    }
+    final cached = _availability[value];
+    if (cached != null) {
+      setState(() {
+        _usernameTaken = !cached;
+        _takenUsername = cached ? null : value;
+      });
+      return;
+    }
+    final ProfileRepository repo;
+    try {
+      repo = ref.read(profileRepositoryProvider);
+    } on Object {
+      return;
+    }
+    unawaited(() async {
+      try {
+        final ok = await repo.isUsernameAvailable(value);
+        if (!mounted || seq != _checkSeq || _username.text != value) return;
+        setState(() {
+          _availability[value] = ok;
+          _usernameTaken = !ok;
+          _takenUsername = ok ? null : value;
+        });
+      } on Object {
+        if (!mounted || seq != _checkSeq || _username.text != value) return;
+        setState(() {
+          _availability.remove(value);
+        });
+      }
+    }());
   }
 
   String? _displayNameError(ProfileL10n l10n) {
@@ -172,6 +227,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         _saving = false;
         switch (e.error) {
           case OurneyErrorCode.invalid:
+            _availability[username] = false;
             _usernameTaken = true;
             _takenUsername = username;
           case OurneyErrorCode.offline:
@@ -275,10 +331,14 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     };
     final hasAvatar = _picked != null;
     final usernameError = _usernameError(l10n);
-    final usernameOk =
+    final usernameFormatOk =
         _username.text.isNotEmpty &&
         validateUsername(_username.text) == null &&
-        !(_usernameTaken && _username.text == _takenUsername);
+        usernameError == null;
+    final usernameAvailable =
+        usernameFormatOk && _availability[_username.text] == true;
+    final usernameOk =
+        usernameFormatOk && _availability[_username.text] != false;
     final errorText = switch (_error) {
       _FormError.save => l10n.profile_saveError,
       _FormError.offline => l10n.profile_offlineError,
@@ -407,20 +467,20 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               autofillHints: const [AutofillHints.newUsername],
               inputFormatters: [
                 _LowerCaseFormatter(),
-                LengthLimitingTextInputFormatter(usernameMax + 5),
+                LengthLimitingTextInputFormatter(usernameMax),
               ],
               helper: l10n.profile_usernameHelper,
               invalid: usernameError != null,
-              onChanged: (_) => setState(() => _edited = true),
+              onChanged: _onUsernameChanged,
               onSubmitted: (_) => _saving ? null : _save(),
             ),
-            // `.username-status`: error or "Dùng được".
+            // `.username-status`: error or "Dùng được" (only once verified).
             if (usernameError != null)
               UiFlowError(
                 key: const ValueKey('profile-username-status'),
                 message: usernameError,
               )
-            else if (usernameOk)
+            else if (usernameAvailable)
               UiFlowError(
                 key: const ValueKey('profile-username-status'),
                 message: l10n.profile_usernameAvailable,

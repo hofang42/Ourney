@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -47,12 +48,18 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
   bool _edited = false;
   bool _usernameTaken = false;
   String? _takenUsername;
+  final Map<String, bool> _availability = {};
+  int _checkSeq = 0;
   _FormError? _error;
 
   @override
   void initState() {
     super.initState();
-    _username = TextEditingController(text: widget.initial?.username ?? '');
+    final initialUsername = widget.initial?.username ?? '';
+    _username = TextEditingController(text: initialUsername);
+    if (initialUsername.isNotEmpty) {
+      _availability[initialUsername] = true;
+    }
     _displayName = TextEditingController(
       text: widget.initial?.displayName ?? '',
     );
@@ -66,6 +73,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
     if (oldWidget.initial == null && next != null && !_edited) {
       _username.text = next.username;
       _displayName.text = next.displayName;
+      _availability[next.username] = true;
     }
   }
 
@@ -78,7 +86,8 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
 
   String? _usernameError(ProfileL10n l10n) {
     final value = _username.text;
-    if (_usernameTaken && value == _takenUsername) {
+    if ((_usernameTaken && value == _takenUsername) ||
+        _availability[value] == false) {
       return l10n.profile_usernameTaken;
     }
     if (!_submitted && value.isEmpty) return null;
@@ -88,6 +97,57 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
       UsernameError.invalidChars => l10n.profile_usernameInvalidChars,
       null => null,
     };
+  }
+
+  void _onUsernameChanged(String value) {
+    final seq = ++_checkSeq;
+    setState(() {
+      _edited = true;
+      if (value != _takenUsername) {
+        _usernameTaken = false;
+        _takenUsername = null;
+      }
+    });
+    if (validateUsername(value) != null) return;
+    final initial = widget.initial;
+    if (initial != null && initial.username == value) {
+      setState(() {
+        _availability[value] = true;
+        _usernameTaken = false;
+        _takenUsername = null;
+      });
+      return;
+    }
+    final cached = _availability[value];
+    if (cached != null) {
+      setState(() {
+        _usernameTaken = !cached;
+        _takenUsername = cached ? null : value;
+      });
+      return;
+    }
+    final ProfileRepository repo;
+    try {
+      repo = ref.read(profileRepositoryProvider);
+    } on Object {
+      return;
+    }
+    unawaited(() async {
+      try {
+        final ok = await repo.isUsernameAvailable(value);
+        if (!mounted || seq != _checkSeq || _username.text != value) return;
+        setState(() {
+          _availability[value] = ok;
+          _usernameTaken = !ok;
+          _takenUsername = ok ? null : value;
+        });
+      } on Object {
+        if (!mounted || seq != _checkSeq || _username.text != value) return;
+        setState(() {
+          _availability.remove(value);
+        });
+      }
+    }());
   }
 
   String? _displayNameError(ProfileL10n l10n) {
@@ -172,6 +232,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
         _saving = false;
         switch (e.error) {
           case OurneyErrorCode.invalid:
+            _availability[username] = false;
             _usernameTaken = true;
             _takenUsername = username;
           case OurneyErrorCode.offline:
@@ -285,11 +346,11 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
             autofillHints: const [AutofillHints.newUsername],
             inputFormatters: [
               _LowerCaseFormatter(),
-              LengthLimitingTextInputFormatter(usernameMax + 5),
+              LengthLimitingTextInputFormatter(usernameMax),
             ],
             helper: l10n.profile_usernameHelper,
             error: _usernameError(l10n),
-            onChanged: (_) => setState(() => _edited = true),
+            onChanged: _onUsernameChanged,
             onSubmitted: (_) => _saving ? null : _save(),
           ),
           if (errorText != null) ...[

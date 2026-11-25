@@ -383,7 +383,7 @@ abstract class ProfileL10n {
   /// Stat label.
   ///
   /// In vi, this message translates to:
-  /// **'tổng ngày check-in'**
+  /// **'tổng lần check-in'**
   String get profile_statSnaps;
 
   /// Stat label.

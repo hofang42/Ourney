@@ -374,6 +374,12 @@ abstract class SafetyL10n {
   /// **'Mã {id}'**
   String safety_unknownUserId(String id);
 
+  /// Neutral fallback label shown for a blocked user when their profile is unavailable.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tài khoản đã chặn'**
+  String get safety_blockedAccount;
+
   /// Empty state title of the blocked users list.
   ///
   /// In vi, this message translates to:

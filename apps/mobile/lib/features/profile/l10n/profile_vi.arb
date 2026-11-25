@@ -213,7 +213,7 @@
   "@profile_back": {
     "description": "Back button tooltip."
   },
-  "profile_statSnaps": "tổng ngày check-in",
+  "profile_statSnaps": "tổng lần check-in",
   "@profile_statSnaps": {
     "description": "Stat label."
   },

@@ -214,6 +214,10 @@
       }
     }
   },
+  "safety_blockedAccount": "Tài khoản đã chặn",
+  "@safety_blockedAccount": {
+    "description": "Neutral fallback label shown for a blocked user when their profile is unavailable."
+  },
   "safety_blockedEmptyTitle": "Bạn chưa chặn ai",
   "@safety_blockedEmptyTitle": {
     "description": "Empty state title of the blocked users list."

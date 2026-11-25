@@ -169,6 +169,9 @@ class SafetyL10nVi extends SafetyL10n {
   }
 
   @override
+  String get safety_blockedAccount => 'Tài khoản đã chặn';
+
+  @override
   String get safety_blockedEmptyTitle => 'Bạn chưa chặn ai';
 
   @override

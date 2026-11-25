@@ -169,7 +169,7 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_back => 'Quay lại';
 
   @override
-  String get profile_statSnaps => 'tổng ngày check-in';
+  String get profile_statSnaps => 'tổng lần check-in';
 
   @override
   String get profile_statLongest => 'chuỗi dài nhất';

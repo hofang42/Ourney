@@ -220,13 +220,17 @@ class ShareCardContent {
 /// Bars on the flexer card (`FlexerShare` draws 21).
 const int shareCardActivityDays = 21;
 
-/// True for journeys that track body weight (kg): the Settings switch "hide
-/// kg when sharing" applies to these only, never to minutes or km (C-B1).
+/// True for journeys that track body weight or sensitive metrics (kg,
+/// weight-loss template, Quiet Transformer skin): the Settings switch "hide
+/// kg when sharing" applies to these only, never to minutes or km (C-B1, UX-25).
 bool isWeightMetric(Journey journey) {
   final unit = (journey.metricUnit ?? '').trim().toLowerCase();
   final name = (journey.metricName ?? '').toLowerCase();
   return journey.templateId == TemplateId.weightLoss ||
+      journey.layout == PersonaSkinId.quietTransformer ||
       unit == 'kg' ||
+      unit == 'lb' ||
+      unit == 'lbs' ||
       name.contains('weight') ||
       name.contains('cân nặng');
 }

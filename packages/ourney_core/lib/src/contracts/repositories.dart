@@ -121,6 +121,12 @@ abstract interface class AuthRepository {
 
 abstract interface class ProfileRepository {
   Stream<Profile?> watchMe();
+
+  /// Whether [username] is valid and not taken by another account on the
+  /// server (`rpc check_username_available`, UX-09). Returns `true` for the
+  /// caller's own current username or in local-only mode when format is valid.
+  Future<bool> isUsernameAvailable(String username);
+
   Future<void> upsertMe(
       {required String username, required String displayName});
   Future<void> setAvatar(List<int> jpegBytes);
