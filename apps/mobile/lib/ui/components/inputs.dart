@@ -8,6 +8,27 @@ import 'pressable.dart';
 
 const double _otpW = 48;
 
+/// Limits input to Unicode code points, matching storage length checks.
+class CodePointLimitFormatter extends TextInputFormatter {
+  const CodePointLimitFormatter(this.max);
+
+  final int max;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final runes = newValue.text.runes;
+    if (runes.length <= max) return newValue;
+    final text = String.fromCharCodes(runes.take(max));
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+}
+
 /// Outline of every kit text field: 16dp radius, 1.5dp at rest, 2dp on focus
 /// (pass [UiBorder.standard]). No shadow.
 OutlineInputBorder uiFieldBorder(
@@ -50,6 +71,7 @@ class UiTextField extends StatefulWidget {
     this.readOnly = false,
     this.obscureText = false,
     this.pill = false,
+    this.expanded,
     super.key,
   });
 
@@ -58,6 +80,9 @@ class UiTextField extends StatefulWidget {
   /// Single-line search fields: capsule shape instead of the 16dp radius.
   final bool pill;
   final TextEditingController controller;
+
+  /// Whether this field's suggestions are visible, if it offers suggestions.
+  final bool? expanded;
 
   /// Password field: hides the text (also disables suggestions/autocorrect).
   final bool obscureText;
@@ -102,78 +127,92 @@ class _UiTextFieldState extends State<UiTextField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          widget.label,
-          style: UiText.body(
-            size: 14,
-            weight: FontWeight.w700,
-            height: 1.4,
-            color: ui.ink,
+        ExcludeSemantics(
+          child: Text(
+            widget.label,
+            style: UiText.body(
+              size: 14,
+              weight: FontWeight.w700,
+              height: 1.4,
+              color: ui.ink,
+            ),
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
-          key: widget.fieldKey,
-          controller: widget.controller,
-          focusNode: widget.focusNode,
-          enabled: widget.enabled,
-          readOnly: widget.readOnly,
-          keyboardType: widget.keyboardType,
-          textInputAction: widget.textInputAction,
-          autofillHints: widget.autofillHints,
-          inputFormatters: widget.inputFormatters,
-          textCapitalization: widget.textCapitalization,
-          obscureText: widget.obscureText,
-          autocorrect: widget.autocorrect && !widget.obscureText,
-          enableSuggestions: widget.autocorrect && !widget.obscureText,
-          onChanged: widget.onChanged,
-          onSubmitted: widget.onSubmitted,
-          cursorColor: ui.ink,
-          style: UiText.body(
-            size: 16,
-            weight: FontWeight.w500,
-            height: 1.4,
-            color: ui.ink,
-          ),
-          decoration: InputDecoration(
-            isDense: true,
-            filled: true,
-            fillColor: ui.fill,
-            hintText: widget.hint,
-            hintStyle: UiText.body(size: 16, color: ui.inkMuted),
-            prefixText: widget.leading == null ? widget.prefixText : null,
-            prefixIcon: widget.leading == null
-                ? null
-                : Padding(
-                    padding: const EdgeInsets.only(left: 14, right: 10),
-                    child: widget.leading,
-                  ),
-            prefixIconConstraints: const BoxConstraints(minWidth: 0),
-            prefixStyle: UiText.body(
+        Semantics(
+          container: true,
+          label: widget.label,
+          expanded: widget.expanded,
+          child: TextField(
+            key: widget.fieldKey,
+            controller: widget.controller,
+            focusNode: widget.focusNode,
+            enabled: widget.enabled,
+            readOnly: widget.readOnly,
+            keyboardType: widget.keyboardType,
+            textInputAction: widget.textInputAction,
+            autofillHints: widget.autofillHints,
+            inputFormatters: widget.inputFormatters,
+            textCapitalization: widget.textCapitalization,
+            obscureText: widget.obscureText,
+            autocorrect: widget.autocorrect && !widget.obscureText,
+            enableSuggestions: widget.autocorrect && !widget.obscureText,
+            onChanged: widget.onChanged,
+            onSubmitted: widget.onSubmitted,
+            cursorColor: ui.ink,
+            style: UiText.body(
               size: 16,
               weight: FontWeight.w500,
-              color: ui.inkMuted,
+              height: 1.4,
+              color: ui.ink,
             ),
-            suffixIcon: widget.trailing == null
-                ? null
-                : Padding(
-                    padding: const EdgeInsets.only(right: 14),
-                    child: widget.trailing,
-                  ),
-            suffixIconConstraints: const BoxConstraints(minWidth: 0),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
+            decoration: InputDecoration(
+              isDense: true,
+              filled: true,
+              fillColor: ui.fill,
+              hintText: widget.hint == widget.label ? null : widget.hint,
+              hint: widget.hint == widget.label
+                  ? ExcludeSemantics(child: Text(widget.label))
+                  : null,
+              hintStyle: UiText.body(size: 16, color: ui.inkMuted),
+              prefixText: widget.leading == null ? widget.prefixText : null,
+              prefixIcon: widget.leading == null
+                  ? null
+                  : Padding(
+                      padding: const EdgeInsets.only(left: 14, right: 10),
+                      child: widget.leading,
+                    ),
+              prefixIconConstraints: const BoxConstraints(minWidth: 0),
+              prefixStyle: UiText.body(
+                size: 16,
+                weight: FontWeight.w500,
+                color: ui.inkMuted,
+              ),
+              suffixIcon: widget.trailing == null
+                  ? null
+                  : Padding(
+                      padding: const EdgeInsets.only(right: 14),
+                      child: widget.trailing,
+                    ),
+              suffixIconConstraints: const BoxConstraints(minWidth: 0),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+              constraints: const BoxConstraints(minHeight: UiSize.input),
+              border: uiFieldBorder(edge, UiBorder.thin, radius),
+              enabledBorder: uiFieldBorder(edge, UiBorder.thin, radius),
+              disabledBorder: uiFieldBorder(
+                ui.border.withValues(alpha: 0.5),
+                UiBorder.thin,
+                radius,
+              ),
+              focusedBorder: uiFieldBorder(
+                focusEdge,
+                UiBorder.standard,
+                radius,
+              ),
             ),
-            constraints: const BoxConstraints(minHeight: UiSize.input),
-            border: uiFieldBorder(edge, UiBorder.thin, radius),
-            enabledBorder: uiFieldBorder(edge, UiBorder.thin, radius),
-            disabledBorder: uiFieldBorder(
-              ui.border.withValues(alpha: 0.5),
-              UiBorder.thin,
-              radius,
-            ),
-            focusedBorder: uiFieldBorder(focusEdge, UiBorder.standard, radius),
           ),
         ),
         if (widget.error != null)

@@ -16,7 +16,7 @@ import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
 import '../camera/capture_services.dart' show galleryPickerProvider;
 import '../journeys/data/journeys_providers.dart'
-    show journeyStartingWeightPrefKey;
+    show journeyStartingWeightPrefKey, recentTripPlacesProvider;
 import '../reminders/data/reminder_scheduler.dart';
 import '../reminders/ui/reminder_permission_prompt.dart';
 import '../widgets/data/widget_sync_controller.dart' show syncWidgetsNow;
@@ -530,6 +530,9 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
     };
     // Per-skin copy of the Figma Post screens (primary label, caption label).
     final skin = personaSkinOf(journey);
+    final recentPlaces = skin == PersonaSkinId.memoryCollectors
+        ? ref.watch(recentTripPlacesProvider).asData?.value ?? const <String>[]
+        : const <String>[];
     final sport = journey.dna?['sport'] as String?;
     final measure = journey.dna?['measure'] as String?;
     final unit = (journey.metricUnit ?? '').trim().toLowerCase();
@@ -797,6 +800,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
                 onPickPartnerPhoto: _pickPartnerPhoto,
                 ritual: journey.dna?['ritual'] as String?,
                 isRunning: isRun,
+                destination: journey.dna?['place'] as String?,
+                recentPlaces: recentPlaces,
               ),
             ),
             if (skin == PersonaSkinId.minimalistHabit) ...[

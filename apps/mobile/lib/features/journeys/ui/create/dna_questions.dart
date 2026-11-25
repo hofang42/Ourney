@@ -149,7 +149,9 @@ bool dnaAnswered(DnaQuestion q, Map<String, Object> answers) {
   return switch (q.kind) {
     DnaKind.weight || DnaKind.ghost => true,
     DnaKind.trophy => filled('trophy'),
-    DnaKind.place => filled('place'),
+    DnaKind.place =>
+      filled('place') &&
+          (answers['place']! as String).runes.length <= dnaPlaceMax,
     DnaKind.dates => answers['dates'] is DnaDates,
     DnaKind.names => filled('nameLeft') && filled('nameRight'),
     DnaKind.habit => filled('habit') && filled('reason'),

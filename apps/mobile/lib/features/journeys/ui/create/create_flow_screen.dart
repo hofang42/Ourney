@@ -524,6 +524,9 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     final gutter = UiSpace.gutter(MediaQuery.sizeOf(context).width);
     // Keeps the timezone provider alive and rebuilds when it resolves.
     ref.watch(deviceTimezoneProvider);
+    final recentPlaces = _inDna && _questions[_dnaPage].kind == DnaKind.place
+        ? ref.watch(recentTripPlacesProvider).asData?.value ?? const <String>[]
+        : const <String>[];
 
     // At large text scales the pinned CTA is clamped to 1.35x and compact so
     // it never swallows the scrolling content above it.
@@ -640,6 +643,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                                       hideWeight: _form!.hideMetric,
                                       trophyController: _trophy,
                                       placeController: _place,
+                                      recentPlaces: recentPlaces,
                                       nameLeftController: _nameLeft,
                                       nameRightController: _nameRight,
                                       habitController: _habit,
@@ -836,6 +840,14 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       _variant = ((d['variant'] as int?) ?? 0).clamp(0, 2);
       _dnaPage = ((d['dnaPage'] as int?) ?? 0).clamp(0, _questions.length);
       _step = ((d['step'] as int?) ?? 1).clamp(1, _steps - 1);
+      // Older drafts could advance with a destination longer than storage allows.
+      if (_place.text.runes.length > dnaPlaceMax) {
+        final placePage = _questions.indexWhere((q) => q.kind == DnaKind.place);
+        if (placePage >= 0) {
+          _dnaPage = placePage;
+          _step = 1;
+        }
+      }
       return true;
     } on Object {
       // Older or broken draft: start over (and forget it).

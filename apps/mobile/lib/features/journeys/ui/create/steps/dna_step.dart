@@ -27,6 +27,7 @@ class CreateDnaStep extends StatelessWidget {
     required this.onAdvanceDna,
     required this.onApplyDates,
     required this.today,
+    this.recentPlaces = const [],
     this.onSkipWeight,
     this.onGhostLater,
     super.key,
@@ -39,6 +40,7 @@ class CreateDnaStep extends StatelessWidget {
   final bool hideWeight;
   final TextEditingController trophyController;
   final TextEditingController placeController;
+  final List<String> recentPlaces;
   final TextEditingController nameLeftController;
   final TextEditingController nameRightController;
   final TextEditingController habitController;
@@ -90,7 +92,7 @@ class CreateDnaStep extends StatelessWidget {
       ),
       DnaKind.place => DnaPlacePicker(
         controller: placeController,
-        place: (dna['place'] as String?) ?? '',
+        recent: recentPlaces,
         onChanged: (v) => onSetDna('place', v),
       ),
       DnaKind.dates => DnaDateRange(

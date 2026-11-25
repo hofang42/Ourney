@@ -461,9 +461,12 @@ Map<String, String>? _sanitizeDnaDates(Object? raw) {
   return {'start': start.toString(), 'end': end.toString()};
 }
 
+/// Maximum number of Unicode code points in a trip destination.
+const int dnaPlaceMax = 60;
+
 const Map<String, int> _dnaTextMax = {
   'trophy': 24,
-  'place': 60,
+  'place': dnaPlaceMax,
   'habit': 40,
   'reason': 80,
 };
