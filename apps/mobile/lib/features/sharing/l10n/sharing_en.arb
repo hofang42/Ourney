@@ -36,7 +36,7 @@
   "sharing_letAnyoneReactHint": "People with an Ourney account can like it",
   "sharing_allowRequests": "Allow friend requests from viewers",
   "sharing_allowRequestsHint": "Viewers can send you a friend request",
-  "sharing_statsLine": "{views} views · {likes} ❤️ · {started} started",
+  "sharing_statsLine": "{views, select, 1{1 view} other{{views} views}} · {likes} ❤️ · {started} started",
   "sharing_stopSharing": "Stop sharing",
   "sharing_stopConfirm": "Everyone loses access. People who started this journey keep theirs.",
   "sharing_stopMineConfirm": "Friends you shared with lose access. Other members' shares stay.",

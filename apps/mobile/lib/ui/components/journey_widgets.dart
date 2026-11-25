@@ -103,6 +103,7 @@ class UiStreakHero extends StatelessWidget {
     this.subtitle,
     this.onTap,
     this.state = UiStreakHeroState.normal,
+    this.loading = false,
     super.key,
   });
 
@@ -114,6 +115,7 @@ class UiStreakHero extends StatelessWidget {
   final String? subtitle;
   final VoidCallback? onTap;
   final UiStreakHeroState state;
+  final bool loading;
 
   Color get _fill => switch (state) {
     UiStreakHeroState.normal => UiTypePastel.english,
@@ -186,7 +188,7 @@ class UiStreakHero extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             Text(
-              '$streak',
+              loading ? '—' : '$streak',
               maxLines: 1,
               style: UiText.heading(
                 font: 'Space Grotesk',

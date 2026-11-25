@@ -17,6 +17,7 @@ import '../../ui/ui.dart';
 import '../camera/capture_services.dart' show galleryPickerProvider;
 import '../reminders/data/reminder_scheduler.dart';
 import '../reminders/ui/reminder_permission_prompt.dart';
+import '../sharing/data/sharing_providers.dart' show shareStateProvider;
 import '../widgets/data/widget_sync_controller.dart' show syncWidgetsNow;
 import 'captured_photo.dart';
 import 'checkin_controller.dart';
@@ -499,11 +500,20 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
         : journey.metricUnit == null
         ? metricName
         : '$metricName (${journey.metricUnit})';
+    final shareState = ref.watch(appConfigProvider).localOnly
+        ? null
+        : ref.watch(shareStateProvider(journey.id)).value;
+    final isSharedSolo =
+        journey.visibility == JourneyVisibility.link ||
+        (journey.publicToken != null &&
+            journey.publicToken!.trim().isNotEmpty) ||
+        (shareState?.linkOn ?? false) ||
+        (shareState?.viewers.isNotEmpty ?? false);
     final privacy = journey.kind == JourneyKind.solo
-        ? (UiPrivacy.private, l10n.checkin_privacyPrivate)
-        : journey.maxMembers == 2 ||
-              journey.coupleSelfName != null ||
-              personaSkinOf(journey) == PersonaSkinId.coupleRituals
+        ? isSharedSolo
+              ? (UiPrivacy.link, l10n.checkin_privacyShared)
+              : (UiPrivacy.private, l10n.checkin_privacyPrivate)
+        : isCoupleJourney(journey)
         ? (UiPrivacy.couple, l10n.checkin_privacyCouple)
         : (UiPrivacy.squad, l10n.checkin_privacySquad);
     // Per-skin copy of the Figma Post screens (primary label, caption label).

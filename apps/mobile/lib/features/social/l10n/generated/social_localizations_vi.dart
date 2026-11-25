@@ -260,11 +260,17 @@ class SocialL10nVi extends SocialL10n {
   String get social_declineAll => 'Từ chối tất cả';
 
   @override
-  String get social_declineAllTitle => 'Từ chối tất cả lời xin vào?';
+  String get social_declineAllTitle => 'Từ chối tất cả lời mời kết bạn?';
 
   @override
   String social_declineAllBody(int count) {
-    return 'Từ chối $count lời xin vào nhóm này?';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Từ chối cả $count lời mời kết bạn từ hành trình này?',
+      one: 'Từ chối 1 lời mời kết bạn từ hành trình này?',
+    );
+    return '$_temp0';
   }
 
   @override

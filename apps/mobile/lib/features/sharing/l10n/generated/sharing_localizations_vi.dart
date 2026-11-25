@@ -494,7 +494,7 @@ class SharingL10nVi extends SharingL10n {
       count,
       locale: localeName,
       other: '+$count tuần này',
-      zero: '0 tuần này',
+      zero: 'Chưa có thêm tuần này',
     );
     return '$_temp0';
   }

@@ -1,10 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
+import 'package:ourney/features/camera/capture_services.dart';
 import 'package:ourney/features/profile/settings_providers.dart';
+import 'package:ourney/features/share_card/data/share_card_providers.dart';
 import 'package:ourney/features/share_card/domain/share_card_content.dart';
 import 'package:ourney/features/share_card/ui/share_card.dart';
 import 'package:ourney/features/share_card/ui/share_skin_chrome.dart';
@@ -13,6 +16,7 @@ import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
+import '../checkin/fakes.dart' show FakeSettingsOpener;
 import '../sharing/sharing_fakes.dart' as sharing;
 import 'share_card_fakes.dart';
 
@@ -441,6 +445,87 @@ void main() {
       );
       expect(label, findsOneWidget);
     });
+
+    testWidgets(
+      'quiet skin exposes Save image button and permission denial offers Settings (UX-06)',
+      (tester) async {
+        final j = weightLossJourney();
+        final settings = FakeSettingsOpener();
+        final h = await pumpShare(
+          tester,
+          journey: j,
+          checkIns: streakCheckIns(j.id),
+          overrides: [appSettingsOpenerProvider.overrideWithValue(settings)],
+        );
+        expect(_key('share-card-save'), findsOneWidget);
+        await _tap(tester, _key('share-card-save'));
+        expect(h.saver.saved, hasLength(1));
+        expect(find.text('Đã lưu thẻ.'), findsOneWidget);
+
+        // Permission denied guides the user to Settings.
+        h.saver.error = const ShareCardSaveException(
+          code: 'PERMISSION_DENIED',
+          message: 'denied',
+        );
+        await _tap(tester, _key('share-card-save'));
+        expect(
+          find.text('Cần quyền thư viện ảnh để lưu thẻ.'),
+          findsOneWidget,
+        );
+        await tester.tap(_key('ui-toast-action'));
+        await tester.pumpAndSettle();
+        expect(settings.opened, 1);
+      },
+    );
+
+    testWidgets(
+      'PlatformShareCardSaver invokes ourney/media_saver channel and propagates permission errors',
+      (tester) async {
+        final calls = <MethodCall>[];
+        var deny = false;
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          PlatformShareCardSaver.channel,
+          (call) async {
+            calls.add(call);
+            if (deny) {
+              throw PlatformException(
+                code: 'PERMISSION_DENIED',
+                message: 'denied',
+              );
+            }
+            return 'content://media/external/images/media/42';
+          },
+        );
+        addTearDown(
+          () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            PlatformShareCardSaver.channel,
+            null,
+          ),
+        );
+
+        const saver = PlatformShareCardSaver();
+        final uri = await saver.saveImage(
+          path: '/tmp/card.png',
+          mimeType: 'image/png',
+        );
+        expect(uri, 'content://media/external/images/media/42');
+        expect(calls.single.method, 'saveImage');
+        expect((calls.single.arguments as Map)['path'], '/tmp/card.png');
+        expect((calls.single.arguments as Map)['mimeType'], 'image/png');
+
+        deny = true;
+        await expectLater(
+          () => saver.saveImage(path: '/tmp/card.png', mimeType: 'image/png'),
+          throwsA(
+            isA<ShareCardSaveException>().having(
+              (e) => e.isPermissionDenied,
+              'isPermissionDenied',
+              isTrue,
+            ),
+          ),
+        );
+      },
+    );
   });
 
   group('public link (FR-E3)', () {

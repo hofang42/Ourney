@@ -101,6 +101,11 @@ class RemindersL10nEn extends RemindersL10n {
   }
 
   @override
+  String reminders_alertBodyAt(String journey, int count, String time) {
+    return '$journey: your $count-day streak ends at $time (journey midnight). One photo keeps it going.';
+  }
+
+  @override
   String get reminders_channelName => 'Check-in reminders';
 
   @override

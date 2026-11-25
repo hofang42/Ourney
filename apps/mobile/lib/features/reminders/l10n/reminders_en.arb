@@ -25,6 +25,20 @@
   "reminders_notifBody": "{journey}: snap today's photo.",
   "reminders_alertTitle": "Your streak is about to break",
   "reminders_alertBody": "{journey}: your {count}-day streak ends at midnight. One photo keeps it going.",
+  "reminders_alertBodyAt": "{journey}: your {count}-day streak ends at {time} (journey midnight). One photo keeps it going.",
+  "@reminders_alertBodyAt": {
+    "placeholders": {
+      "journey": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "reminders_channelName": "Check-in reminders",
   "reminders_channelDescription": "Daily check-in reminders and streak alerts."
 }

@@ -144,7 +144,11 @@ class SharingL10nEn extends SharingL10n {
 
   @override
   String sharing_statsLine(String views, String likes, String started) {
-    return '$views views · $likes ❤️ · $started started';
+    String _temp0 = intl.Intl.selectLogic(views, {
+      '1': '1 view',
+      'other': '$views views',
+    });
+    return '$_temp0 · $likes ❤️ · $started started';
   }
 
   @override

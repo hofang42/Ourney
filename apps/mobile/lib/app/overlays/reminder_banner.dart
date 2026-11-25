@@ -19,7 +19,7 @@ class ReminderBannerData {
     required this.kind,
     this.streak = 0,
     this.day = 1,
-    this.deadline = '23:59',
+    this.deadline = '00:00',
   });
 
   final String journeyId;

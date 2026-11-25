@@ -61,6 +61,10 @@ void main() {
       await h.go(tester, '/groups/g1/invite');
       expect(find.text('ABCD1234'), findsOneWidget);
       expect(find.byKey(const ValueKey('group-invite-rotate')), findsNothing);
+      // UX-15: InviteScreen embeds @username invite without a self-looping code link.
+      expect(find.byKey(const ValueKey('invite-handle')), findsOneWidget);
+      expect(find.byKey(const ValueKey('invite-send')), findsOneWidget);
+      expect(find.byKey(const ValueKey('invite-share-code')), findsNothing);
     });
   });
 }

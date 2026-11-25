@@ -256,6 +256,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(all);
     await tester.pumpAndSettle();
+    expect(find.text('Decline all friend requests?'), findsOneWidget);
+    expect(
+      find.text('Decline all 2 friend requests from this journey?'),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(const ValueKey('social-confirm')));
     await tester.pumpAndSettle();
     expect(fakes.friends.calls, ['decline:tuan', 'decline:mia']);

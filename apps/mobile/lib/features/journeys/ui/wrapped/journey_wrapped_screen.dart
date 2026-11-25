@@ -11,10 +11,12 @@ import '../../../../app/app_routes.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../personas/persona_contract.dart';
 import '../../../../ui/ui.dart';
+import '../../../camera/capture_services.dart' show appSettingsOpenerProvider;
 import '../../../share_card/data/share_card_exporter.dart'
     show shareCardBaseName;
 import '../../../share_card/data/share_card_providers.dart'
     show
+        ShareCardSaveException,
         shareCardExporterProvider,
         shareCardSaverProvider,
         shareCardSharerProvider;
@@ -680,12 +682,33 @@ class _SummaryState extends ConsumerState<_Summary> {
         if (context.mounted) {
           showJourneySnack(context, l10n.journeys_wrapped_cardSaved);
         }
+      } on ShareCardSaveException catch (e) {
+        if (context.mounted) {
+          if (e.isPermissionDenied) {
+            final app = AppLocalizations.of(context);
+            final opener = ref.read(appSettingsOpenerProvider);
+            showJourneySnack(
+              context,
+              app.common_photoSavePermissionDenied,
+              actionLabel: opener.supported ? app.common_openSettings : null,
+              onAction: opener.supported
+                  ? () => unawaited(opener.open())
+                  : null,
+            );
+          } else {
+            showJourneySnack(context, journeyErrorMessage(context, e));
+          }
+        }
       } on Object catch (e) {
         if (context.mounted) {
           showJourneySnack(context, journeyErrorMessage(context, e));
         }
       }
     }
+
+    final format = ratio == _Ratio.story
+        ? ShareCardFormat.story
+        : ShareCardFormat.feed;
 
     return SingleChildScrollView(
       key: const ValueKey('wrapped-summary'),
@@ -725,62 +748,78 @@ class _SummaryState extends ConsumerState<_Summary> {
                     child: AspectRatio(
                       key: ValueKey('wrapped-card-${ratio.name}'),
                       aspectRatio: aspect,
-                      child: RepaintBoundary(
-                        key: _boundaryKey,
-                        child: child,
+                      child: Container(
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(
+                          color: ui.surface,
+                          borderRadius: BorderRadius.circular(UiRadius.card),
+                          border: Border.all(color: ui.outline, width: 2),
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.contain,
+                          child: child,
+                        ),
                       ),
                     ),
                   );
                 },
-                child: Container(
-                  padding: const EdgeInsets.all(UiSpace.md),
-                  decoration: BoxDecoration(
-                    color: ui.surface,
-                    borderRadius: BorderRadius.circular(UiRadius.card),
-                    border: Border.all(color: ui.outline, width: 2),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Flexible(
-                        flex: 3,
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: SizedBox(
-                            width: 240,
-                            child: WrappedVisual(
-                              skin: skin,
-                              stats: stats,
-                              page: 3,
-                              blurPhotos: quiet,
-                            ),
+                child: MediaQuery.withNoTextScaling(
+                  child: RepaintBoundary(
+                    key: _boundaryKey,
+                    child: SizedBox.fromSize(
+                      size: format.logicalSize,
+                      child: ColoredBox(
+                        color: ui.surface,
+                        child: Padding(
+                          padding: const EdgeInsets.all(UiSpace.xl),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Flexible(
+                                flex: 3,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: SizedBox(
+                                    width: 280,
+                                    child: WrappedVisual(
+                                      skin: skin,
+                                      stats: stats,
+                                      page: 3,
+                                      blurPhotos: quiet,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                wrappedSummaryTitle(l10n, journey, skin, stats),
+                                key: const ValueKey('wrapped-summary-title'),
+                                textAlign: TextAlign.center,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: UiText.h2(
+                                  color: ui.ink,
+                                  size: 20,
+                                ).copyWith(height: 1.35),
+                              ),
+                              if (quiet && !hideKg && hasWeights)
+                                Text(
+                                  _Summary._weights(stats)!,
+                                  key: const ValueKey('wrapped-weights'),
+                                  style: UiText.muted(
+                                    color: ui.ink,
+                                    size: 16,
+                                  ).copyWith(height: 1.4),
+                                ),
+                              if (!hideBrand)
+                                const UiWordmark(
+                                  key: ValueKey('wrapped-brand'),
+                                  size: 34,
+                                ),
+                            ],
                           ),
                         ),
                       ),
-                      Text(
-                        wrappedSummaryTitle(l10n, journey, skin, stats),
-                        key: const ValueKey('wrapped-summary-title'),
-                        textAlign: TextAlign.center,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: UiText.h2(
-                          color: ui.ink,
-                          size: 16,
-                        ).copyWith(height: 1.35),
-                      ),
-                      if (quiet && !hideKg && hasWeights)
-                        Text(
-                          _Summary._weights(stats)!,
-                          key: const ValueKey('wrapped-weights'),
-                          style: UiText.muted(color: ui.ink)
-                              .copyWith(height: 1.4),
-                        ),
-                      if (!hideBrand)
-                        const UiWordmark(
-                          key: ValueKey('wrapped-brand'),
-                          size: 30,
-                        ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -817,6 +856,16 @@ class _SummaryState extends ConsumerState<_Summary> {
                   onPressed: null,
                 ),
               ],
+            ),
+            const SizedBox(height: UiSpace.xs),
+            Text(
+              l10n.journeys_wrapped_blurLocked,
+              key: const ValueKey('wrapped-blur-note'),
+              textAlign: TextAlign.center,
+              style: UiText.muted(
+                color: ui.inkMuted,
+                size: 12,
+              ).copyWith(height: 1.4),
             ),
           ],
           const SizedBox(height: UiSpace.lg),

@@ -518,16 +518,16 @@ abstract class SocialL10n {
   /// **'Từ chối tất cả'**
   String get social_declineAll;
 
-  /// Confirm title when declining all join requests for a group.
+  /// Confirm title when declining all friend requests from a public journey.
   ///
   /// In vi, this message translates to:
-  /// **'Từ chối tất cả lời xin vào?'**
+  /// **'Từ chối tất cả lời mời kết bạn?'**
   String get social_declineAllTitle;
 
-  /// Confirm body when declining all join requests for a group.
+  /// Confirm body when declining all friend requests from a public journey.
   ///
   /// In vi, this message translates to:
-  /// **'Từ chối {count} lời xin vào nhóm này?'**
+  /// **'{count, plural, =1{Từ chối 1 lời mời kết bạn từ hành trình này?} other{Từ chối cả {count} lời mời kết bạn từ hành trình này?}}'**
   String social_declineAllBody(int count);
 
   /// Confirm title when deleting a chat message for the current user.

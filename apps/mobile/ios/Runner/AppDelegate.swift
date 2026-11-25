@@ -1,4 +1,5 @@
 import Flutter
+import Photos
 import UIKit
 import flutter_local_notifications
 
@@ -50,7 +51,87 @@ import flutter_local_notifications
       self?.handleAppIconCall(call, result: result)
     }
 
+    let mediaSaverChannel = FlutterMethodChannel(
+      name: "ourney/media_saver",
+      binaryMessenger: engineBridge.applicationRegistrar.messenger()
+    )
+    mediaSaverChannel.setMethodCallHandler { [weak self] call, result in
+      self?.handleMediaSaverCall(call, result: result)
+    }
+
     widgetBridge.register(with: engineBridge.applicationRegistrar.messenger())
+  }
+
+  private func handleMediaSaverCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard call.method == "saveImage" else {
+      result(FlutterMethodNotImplemented)
+      return
+    }
+    guard
+      let args = call.arguments as? [String: Any],
+      let path = args["path"] as? String,
+      !path.isEmpty,
+      FileManager.default.fileExists(atPath: path)
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_FILE",
+          message: "Source image file does not exist",
+          details: nil
+        )
+      )
+      return
+    }
+
+    let requestAuth: (@escaping (PHAuthorizationStatus) -> Void) -> Void = { completion in
+      if #available(iOS 14, *) {
+        PHPhotoLibrary.requestAuthorization(for: .addOnly, handler: completion)
+      } else {
+        PHPhotoLibrary.requestAuthorization(completion)
+      }
+    }
+
+    requestAuth { status in
+      let authorized: Bool
+      if #available(iOS 14, *) {
+        authorized = (status == .authorized || status == .limited)
+      } else {
+        authorized = (status == .authorized)
+      }
+      guard authorized else {
+        DispatchQueue.main.async {
+          result(
+            FlutterError(
+              code: "PERMISSION_DENIED",
+              message: "Photo library add permission denied",
+              details: nil
+            )
+          )
+        }
+        return
+      }
+
+      let fileUrl = URL(fileURLWithPath: path)
+      var createdAssetId: String?
+      PHPhotoLibrary.shared().performChanges({
+        let request = PHAssetChangeRequest.creationRequestForAssetFromImage(atFileURL: fileUrl)
+        createdAssetId = request?.placeholderForCreatedAsset?.localIdentifier
+      }) { success, error in
+        DispatchQueue.main.async {
+          if success {
+            result(createdAssetId ?? fileUrl.path)
+          } else {
+            result(
+              FlutterError(
+                code: "SAVE_FAILED",
+                message: error?.localizedDescription ?? "Could not save image to Photos",
+                details: nil
+              )
+            )
+          }
+        }
+      }
+    }
   }
 
   private static let alternateIconsById: [String: String?] = [

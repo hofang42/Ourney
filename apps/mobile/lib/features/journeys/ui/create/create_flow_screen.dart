@@ -111,6 +111,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   /// One id per flow: a retry after a lost response returns the same journey.
   /// Saved in the draft so a resumed submit reuses it too (U8).
   String _clientId = const Uuid().v4();
+  late String? _inviteHandle = widget.inviteHandle;
 
   @override
   void dispose() {
@@ -424,7 +425,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       );
       // The journey exists: the saved draft must not resurrect it (U8).
       unawaited(progress.clear());
-      final invite = widget.inviteHandle?.trim();
+      final invite = _inviteHandle?.trim();
       if (invite != null &&
           invite.isNotEmpty &&
           journey.kind == JourneyKind.group) {
@@ -638,7 +639,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                               showErrors: _attempted.contains(2),
                               nameLeftController: _nameLeft,
                               nameRightController: _nameRight,
-                              inviteHandle: widget.inviteHandle,
+                              inviteHandle: _inviteHandle,
                               onPick: (who) => setState(() {
                                 _who = who;
                                 _applyWho(_form!);
@@ -667,7 +668,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                               start: _start,
                               nameLeftController: _nameLeft,
                               nameRightController: _nameRight,
-                              inviteHandle: widget.inviteHandle,
+                              inviteHandle: _inviteHandle,
                               onChangeVariant: () {
                                 unawaited(UiHaptics.selection());
                                 setState(() => _variant = (_variant + 1) % 3);
@@ -735,6 +736,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       'reason': _reason.text,
       'start': _start?.toString(),
       'variant': _variant,
+      'inviteHandle': _inviteHandle,
     };
   }
 
@@ -748,6 +750,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
         _clientId = id;
       }
       _reminder = d['reminder'] as String?;
+      _inviteHandle = (d['inviteHandle'] as String?) ?? widget.inviteHandle;
       form
         ..title = d['title']! as String
         ..emoji = d['emoji']! as String

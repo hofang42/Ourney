@@ -8,6 +8,7 @@ import 'package:ourney/app/config.dart';
 import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/theme/app_theme.dart';
+import 'package:ourney/features/groups/data/groups_providers.dart';
 import 'package:ourney/features/journeys/data/create_progress.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney/features/journeys/ui/create/create_flow_screen.dart';
@@ -23,6 +24,7 @@ import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../app/test_helpers.dart';
+import '../groups/groups_fakes.dart' show FakeGroupInviteRepository;
 import '../reminders/reminders_fakes.dart' show FakeNotificationGateway;
 import 'journeys_fakes.dart';
 
@@ -837,6 +839,38 @@ void _dnaGroup() {
         await _pick(tester, 'template-workout_30');
         await finish(tester);
         expect(h.journeys.created.single.kind, JourneyKind.group);
+      },
+    );
+
+    testWidgets(
+      'UX-14: /journeys/new?who=group&invite=nam shows friend note on Step 3 & Step 5 and auto-sends invite on submit',
+      (tester) async {
+        final invites = FakeGroupInviteRepository();
+        final h = await pumpJourneys(
+          tester,
+          location: '${AppRoutes.journeyNew}?who=group&invite=nam',
+          locale: const Locale('en'),
+          config: testBackendConfig,
+          userId: 'u1',
+          extraOverrides: [
+            groupInviteRepositoryProvider.overrideWithValue(invites),
+          ],
+        );
+        await _pick(tester, 'template-workout_30');
+        // Step 2 (name) -> Next -> Step 3 (who).
+        await _tap(tester, 'create-next');
+        expect(_key('create-inviting-friend'), findsOneWidget);
+        expect(find.text('Will invite @nam'), findsOneWidget);
+
+        // Step 3 -> Next -> Step 4 (rhythm) -> Next -> Step 5 (review).
+        await _tap(tester, 'create-next');
+        await _tap(tester, 'create-next');
+        expect(_key('create-review-inviting-friend'), findsOneWidget);
+        expect(find.text('Will invite @nam'), findsOneWidget);
+
+        await _tap(tester, 'journey-create');
+        expect(h.journeys.created.single.kind, JourneyKind.group);
+        expect(invites.calls, ['send:${h.journeys.journeys.last.id}']);
       },
     );
   });

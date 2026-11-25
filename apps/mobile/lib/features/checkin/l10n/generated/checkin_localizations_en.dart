@@ -147,7 +147,13 @@ class CheckinL10nEn extends CheckinL10n {
 
   @override
   String checkin_done_flexerDay(int day, int streak) {
-    return 'DAY $day. $streak DAYS STRAIGHT.';
+    String _temp0 = intl.Intl.pluralLogic(
+      streak,
+      locale: localeName,
+      other: 'DAY $day. $streak DAYS STRAIGHT.',
+      one: 'DAY $day. 1 DAY STRAIGHT.',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -187,6 +193,9 @@ class CheckinL10nEn extends CheckinL10n {
 
   @override
   String get checkin_privacyPrivate => 'Only you';
+
+  @override
+  String get checkin_privacyShared => 'Shared';
 
   @override
   String get checkin_privacyCouple => 'Couple';

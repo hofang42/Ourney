@@ -1,12 +1,15 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
+import 'package:ourney/features/share_card/data/share_card_exporter.dart';
 import 'package:ourney/features/share_card/data/share_card_providers.dart';
+import 'package:ourney/features/share_card/domain/share_card_content.dart';
 import 'package:ourney/features/social/data/social_providers.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -125,6 +128,8 @@ void main() {
       }
       expect(_key('wrapped-hide-kg'), findsOneWidget);
       expect(_key('wrapped-blur'), findsOneWidget);
+      expect(_key('wrapped-blur-note'), findsOneWidget);
+      expect(find.text('Always on for this card style'), findsOneWidget);
       expect(_key('wrapped-brand'), findsNothing);
       await tester.tap(_key('wrapped-hide-kg'));
       await tester.pumpAndSettle();
@@ -151,7 +156,8 @@ void main() {
       expect(uri.queryParameters['hideMetric'], 'true');
       expect(uri.queryParameters['format'], 'story');
       expect(uri.queryParameters.containsKey('blur'), isFalse);
-      expect(find.text('Save image'), findsNothing);
+      expect(_key('wrapped-edit-card'), findsNothing);
+      expect(_key('share-card-save'), findsOneWidget);
     });
 
     testWidgets('U4: turning hide-kg off is handed over as false', (
@@ -298,6 +304,7 @@ void main() {
         await tester.tap(_key('wrapped-share-now'));
         await tester.pumpAndSettle();
         expect(exporter.exports, hasLength(1));
+        expect(exporter.exports.single.boundarySize, const Size(360, 640));
         expect(sharer.shared, hasLength(1));
         expect(sharer.shared.single.path, contains('ourney-${j.id}-story.png'));
         expect(sharer.shared.single.text, contains(j.title));
@@ -337,6 +344,64 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         expect(find.text('Something went wrong. Please try again.'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'UX-07: Wrapped summary RepaintBoundary exports exact 1080x1920 and 1080x1350 images with real ShareCardExporter',
+      (tester) async {
+        final dir = await tester.runAsync(
+          () => Directory.systemTemp.createTemp('wrapped_export_test'),
+        );
+        addTearDown(() => dir!.deleteSync(recursive: true));
+        final realExporter = ShareCardExporter(tempDirectory: () async => dir!);
+        await _open(tester);
+        await tester.tap(_key('wrapped-segment-2'));
+        await tester.pumpAndSettle();
+
+        RenderRepaintBoundary findCardBoundary(String cardKey) {
+          final boundaryFinder = find.descendant(
+            of: _key(cardKey),
+            matching: find.byWidgetPredicate(
+              (w) => w is RepaintBoundary && w.key is GlobalKey,
+            ),
+          );
+          return tester.renderObject<RenderRepaintBoundary>(boundaryFinder);
+        }
+
+        // Story (9:16 -> logical 360x640 -> pixel 1080x1920).
+        final storyBoundary = findCardBoundary('wrapped-card-story');
+        expect(storyBoundary.size, const Size(360, 640));
+        final storyFile = await tester.runAsync(
+          () => realExporter.export(
+            storyBoundary,
+            ShareCardFormat.story,
+            baseName: 'ourney-j1-story',
+          ),
+        );
+        expect(storyFile, isNotNull);
+        expect(storyFile!.image.width, 1080);
+        expect(storyFile.image.height, 1920);
+        expect(storyFile.path, endsWith('ourney-j1-story.png'));
+
+        // Switch to Feed (4:5 -> logical 360x450 -> pixel 1080x1350) and verify
+        // export succeeds even mid-morph while TweenAnimationBuilder is in flight.
+        await tester.tap(find.text('4:5'));
+        await tester.pump(const Duration(milliseconds: 80));
+        final feedBoundary = findCardBoundary('wrapped-card-feed');
+        expect(feedBoundary.size, const Size(360, 450));
+        final feedFile = await tester.runAsync(
+          () => realExporter.export(
+            feedBoundary,
+            ShareCardFormat.feed,
+            baseName: 'ourney-j1-feed',
+          ),
+        );
+        expect(feedFile, isNotNull);
+        expect(feedFile!.image.width, 1080);
+        expect(feedFile.image.height, 1350);
+        expect(feedFile.path, endsWith('ourney-j1-feed.png'));
+        await tester.pumpAndSettle();
       },
     );
 

@@ -50,7 +50,7 @@ void main() {
         ),
       );
       await t.pumpAndSettle();
-      expect(find.text('CHUỖI 21. CÒN ĐẾN 23:59.'), findsOneWidget);
+      expect(find.text('CHUỖI 21. CÒN ĐẾN 00:00.'), findsOneWidget);
       expect(find.text('Chạy sáng'), findsOneWidget);
       expect(t.takeException(), isNull);
     }

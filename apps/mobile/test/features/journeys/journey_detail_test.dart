@@ -356,12 +356,14 @@ void main() {
       expect(h.location, '/groups/j1');
     });
 
-    testWidgets('share with a server offers the card or the journey screen (DE-24)', (
+    testWidgets('share with a server offers the card or the journey screen (DE-24, UX-35)', (
       tester,
     ) async {
       final h = await _pumpDetail(tester, backend: true, userId: 'u1');
       await _tap(tester, _key('journey-share'));
       expect(_key('journey-share-sheet'), findsOneWidget);
+      expect(find.text('Create a share card'), findsOneWidget);
+      expect(find.textContaining('video'), findsNothing);
       await _tap(tester, _key('journey-share-card'));
       expect(h.location, AppRoutes.share('j1'));
 

@@ -410,6 +410,12 @@ abstract class CheckinL10n {
   /// **'Chỉ mình bạn'**
   String get checkin_privacyPrivate;
 
+  /// Privacy tag under the journey name on the compose screen: solo journey shared via public link or with friends.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã chia sẻ'**
+  String get checkin_privacyShared;
+
   /// Privacy tag on the compose screen: journey shared with one partner.
   ///
   /// In vi, this message translates to:

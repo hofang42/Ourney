@@ -1,11 +1,8 @@
-import 'dart:io';
-
 import 'package:clock/clock.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderException;
 import 'package:ourney_core/ourney_core.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../app/providers.dart';
@@ -89,8 +86,25 @@ final shareCardSharerProvider = Provider<ShareCardSharer>(
   (ref) => const SharePlusShareCardSharer(),
 );
 
-/// Saves an exported share-card image file to the device so the user can
-/// keep it locally. Injectable so tests can assert what is saved.
+/// Error thrown when saving an exported share card to the device photo gallery
+/// fails (e.g. `PERMISSION_DENIED`, `INVALID_FILE`, `SAVE_FAILED`).
+class ShareCardSaveException implements Exception {
+  const ShareCardSaveException({
+    required this.code,
+    this.message,
+  });
+
+  final String code;
+  final String? message;
+
+  bool get isPermissionDenied => code == 'PERMISSION_DENIED';
+
+  @override
+  String toString() => 'ShareCardSaveException($code, $message)';
+}
+
+/// Saves an exported share-card image file to the device photo gallery so the
+/// user can keep it locally. Injectable so tests can assert what is saved.
 abstract interface class ShareCardSaver {
   Future<String> saveImage({
     required String path,
@@ -101,7 +115,7 @@ abstract interface class ShareCardSaver {
 class PlatformShareCardSaver implements ShareCardSaver {
   const PlatformShareCardSaver();
 
-  static const _channel = MethodChannel('ourney/media_saver');
+  static const channel = MethodChannel('ourney/media_saver');
 
   @override
   Future<String> saveImage({
@@ -112,19 +126,24 @@ class PlatformShareCardSaver implements ShareCardSaver {
     final fileName =
         'ourney-card-${DateTime.now().millisecondsSinceEpoch}.$ext';
     try {
-      final saved = await _channel.invokeMethod<String>('saveImage', {
+      final saved = await channel.invokeMethod<String>('saveImage', {
         'path': path,
         'mimeType': mimeType,
         'fileName': fileName,
       });
       if (saved != null && saved.isNotEmpty) return saved;
-    } on Object {
-      // Fall back to copying into application documents directory.
+      throw const ShareCardSaveException(
+        code: 'SAVE_FAILED',
+        message: 'Empty result from native media saver',
+      );
+    } on PlatformException catch (e) {
+      throw ShareCardSaveException(code: e.code, message: e.message);
+    } on MissingPluginException catch (e) {
+      throw ShareCardSaveException(
+        code: 'UNAVAILABLE',
+        message: e.message,
+      );
     }
-    final dir = await getApplicationDocumentsDirectory();
-    final target = File('${dir.path}${Platform.pathSeparator}$fileName');
-    await File(path).copy(target.path);
-    return target.path;
   }
 }
 

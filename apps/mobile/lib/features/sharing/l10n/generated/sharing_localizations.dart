@@ -899,7 +899,7 @@ abstract class SharingL10n {
   /// Likes / started delta.
   ///
   /// In vi, this message translates to:
-  /// **'{count, plural, =0{0 tuần này} other{+{count} tuần này}}'**
+  /// **'{count, plural, =0{Chưa có thêm tuần này} other{+{count} tuần này}}'**
   String sharing_thisWeek(int count);
 
   /// Toast sau khi gỡ quyền xem hành trình của một người bạn.

@@ -1,17 +1,27 @@
 package com.hofang42.ourney
 
+import android.Manifest
 import android.content.ComponentName
+import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.provider.Settings
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.hofang42.ourney.widgets.OurneyWidgetBridge
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 
 class MainActivity : FlutterActivity() {
+    private var pendingStoragePermissionCallback: ((Boolean) -> Unit)? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         // Camera permission denied with "Don't ask again": only the app's
@@ -39,8 +49,150 @@ class MainActivity : FlutterActivity() {
                 handleAppIconCall(call, result)
             }
 
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "ourney/media_saver")
+            .setMethodCallHandler { call, result ->
+                handleMediaSaverCall(call, result)
+            }
+
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, OurneyWidgetBridge.CHANNEL_NAME)
             .setMethodCallHandler(OurneyWidgetBridge(applicationContext))
+    }
+
+    private fun handleMediaSaverCall(call: MethodCall, result: MethodChannel.Result) {
+        if (call.method != "saveImage") {
+            result.notImplemented()
+            return
+        }
+        val path = call.argument<String>("path")
+        val mimeType = call.argument<String>("mimeType") ?: "image/png"
+        val ext = if (mimeType == "image/jpeg") "jpg" else "png"
+        val fileName =
+            call.argument<String>("fileName")
+                ?: "ourney-card-${System.currentTimeMillis()}.$ext"
+        if (path.isNullOrBlank()) {
+            result.error("INVALID_FILE", "Image path is required", null)
+            return
+        }
+        val sourceFile = File(path)
+        if (!sourceFile.isFile) {
+            result.error("INVALID_FILE", "Source image file does not exist", null)
+            return
+        }
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            val granted = ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!granted) {
+                pendingStoragePermissionCallback = { allowed ->
+                    if (allowed) {
+                        saveFileToMediaStore(sourceFile, fileName, mimeType, result)
+                    } else {
+                        result.error(
+                            "PERMISSION_DENIED",
+                            "WRITE_EXTERNAL_STORAGE permission denied",
+                            null,
+                        )
+                    }
+                }
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                    REQUEST_WRITE_EXTERNAL_STORAGE,
+                )
+                return
+            }
+        }
+        saveFileToMediaStore(sourceFile, fileName, mimeType, result)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun saveFileToMediaStore(
+        sourceFile: File,
+        fileName: String,
+        mimeType: String,
+        result: MethodChannel.Result,
+    ) {
+        val resolver = applicationContext.contentResolver
+        var insertedUri: Uri? = null
+        try {
+            val nowSeconds = System.currentTimeMillis() / 1000
+            val values = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+                put(MediaStore.Images.Media.MIME_TYPE, mimeType)
+                put(MediaStore.Images.Media.DATE_ADDED, nowSeconds)
+                put(MediaStore.Images.Media.DATE_MODIFIED, nowSeconds)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    put(
+                        MediaStore.Images.Media.RELATIVE_PATH,
+                        "${Environment.DIRECTORY_PICTURES}/Ourney",
+                    )
+                    put(MediaStore.Images.Media.IS_PENDING, 1)
+                } else {
+                    val picturesDir = File(
+                        Environment.getExternalStoragePublicDirectory(
+                            Environment.DIRECTORY_PICTURES,
+                        ),
+                        "Ourney",
+                    )
+                    if (!picturesDir.exists() && !picturesDir.mkdirs()) {
+                        result.error(
+                            "SAVE_FAILED",
+                            "Could not create Pictures/Ourney directory",
+                            null,
+                        )
+                        return
+                    }
+                    val targetFile = File(picturesDir, fileName)
+                    put(MediaStore.Images.Media.DATA, targetFile.absolutePath)
+                }
+            }
+            val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            if (uri == null) {
+                result.error("SAVE_FAILED", "MediaStore insert returned null", null)
+                return
+            }
+            insertedUri = uri
+            resolver.openOutputStream(uri)?.use { out ->
+                sourceFile.inputStream().use { input ->
+                    input.copyTo(out)
+                }
+            } ?: run {
+                resolver.delete(uri, null, null)
+                result.error("SAVE_FAILED", "Could not open MediaStore output stream", null)
+                return
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val publishValues = ContentValues().apply {
+                    put(MediaStore.Images.Media.IS_PENDING, 0)
+                }
+                resolver.update(uri, publishValues, null, null)
+            }
+            result.success(uri.toString())
+        } catch (se: SecurityException) {
+            insertedUri?.let { runCatching { resolver.delete(it, null, null) } }
+            result.error("PERMISSION_DENIED", se.message, null)
+        } catch (e: Exception) {
+            insertedUri?.let { runCatching { resolver.delete(it, null, null) } }
+            result.error("SAVE_FAILED", e.message, null)
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_WRITE_EXTERNAL_STORAGE) {
+            val callback = pendingStoragePermissionCallback
+            pendingStoragePermissionCallback = null
+            val granted =
+                grantResults.isNotEmpty() &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED
+            callback?.invoke(granted)
+        }
     }
 
     private fun handleAppIconCall(call: MethodCall, result: MethodChannel.Result) {
@@ -130,6 +282,7 @@ class MainActivity : FlutterActivity() {
     }
 
     companion object {
+        private const val REQUEST_WRITE_EXTERNAL_STORAGE = 4201
         private const val DEFAULT_ALIAS = ".IconDefault"
         private val ICON_ALIASES_BY_ID = linkedMapOf(
             "default" to DEFAULT_ALIAS,

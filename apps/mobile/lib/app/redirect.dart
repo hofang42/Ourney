@@ -106,6 +106,36 @@ String? normalizeDeepLink(Uri uri) {
   return null;
 }
 
+/// Token used when an external invite link (`/j/`, `/join/`, `/f/`, `/friend/`)
+/// is truncated or has extra path segments, so the target invite screen shows
+/// its invalid-link error state instead of silently dropping onto `/capture`.
+const String kMalformedInviteSegment = '__invalid__';
+
+/// Maps truncated or multi-segment external invite deep links (where
+/// [normalizeDeepLink] returns null) to the corresponding invite screen's
+/// invalid-code/token route (`UX-30`).
+String? malformedInviteFallback(Uri uri) {
+  if (uri.scheme == kDeepLinkScheme) {
+    final host = uri.host.toLowerCase();
+    return switch (host) {
+      'join' || 'j' => '/join/$kMalformedInviteSegment',
+      'friend' || 'f' => '/f/$kMalformedInviteSegment',
+      _ => null,
+    };
+  }
+  if (uri.scheme == 'https' || uri.scheme == 'http') {
+    if (uri.host.toLowerCase() != kDeepLinkWebHost) return null;
+    final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+    if (segments.isEmpty) return null;
+    return switch (segments.first.toLowerCase()) {
+      'j' || 'join' => '/join/$kMalformedInviteSegment',
+      'f' => '/f/$kMalformedInviteSegment',
+      _ => null,
+    };
+  }
+  return null;
+}
+
 /// Paths reachable before onboarding is finished.
 const List<String> _preOnboardingPrefixes = [
   AppRoutes.onboarding,
@@ -130,13 +160,15 @@ String? resolveRedirect({
   ProfileGateStatus profileGate = ProfileGateStatus.ready,
 }) {
   if (uri.scheme == kDeepLinkScheme) {
-    return normalizeDeepLink(uri) ?? AppRoutes.capture;
+    return normalizeDeepLink(uri) ??
+        malformedInviteFallback(uri) ??
+        AppRoutes.capture;
   }
 
   Uri inAppUri = uri;
   final bool isExternalUri = uri.hasScheme || uri.hasAuthority;
   if (isExternalUri) {
-    final normalized = normalizeDeepLink(uri);
+    final normalized = normalizeDeepLink(uri) ?? malformedInviteFallback(uri);
     if (normalized == null) return AppRoutes.capture;
     inAppUri = Uri.parse(normalized);
   }
@@ -231,7 +263,9 @@ String? safeFrom(Uri uri) {
 /// keeping them in `?from=` would make [safeFrom] reject the target later.
 String _inAppTarget(Uri uri) {
   if (uri.hasScheme || uri.hasAuthority) {
-    return normalizeDeepLink(uri) ?? AppRoutes.capture;
+    return normalizeDeepLink(uri) ??
+        malformedInviteFallback(uri) ??
+        AppRoutes.capture;
   }
   final path = uri.path.isEmpty ? '/' : uri.path;
   return uri.hasQuery ? '$path?${uri.query}' : path;

@@ -131,8 +131,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('chat-camera')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('chat-photo-send')));
-    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('chat-photo-preview-sheet')),
+      findsNothing,
+    );
     expect(fakes.picker.picks, [false, true]);
     expect(fakes.chat.photos, hasLength(2));
     expect(fakes.chat.photos.first, [1, 2, 3, 4]);

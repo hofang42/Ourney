@@ -230,6 +230,18 @@ abstract class AppLocalizations {
   /// **'Lưu'**
   String get common_save;
 
+  /// No description provided for @common_openSettings.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cài đặt'**
+  String get common_openSettings;
+
+  /// No description provided for @common_photoSavePermissionDenied.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cần quyền thư viện ảnh để lưu thẻ.'**
+  String get common_photoSavePermissionDenied;
+
   /// No description provided for @common_loading.
   ///
   /// In vi, this message translates to:

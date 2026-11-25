@@ -130,57 +130,59 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       return;
     }
     if (bytes == null || !mounted) return;
-    final confirmed = await showUiSheet<bool>(
-      context: context,
-      builder: (sheet) {
-        final ui = sheet.ui;
-        return Column(
-          key: const ValueKey('chat-photo-preview-sheet'),
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.social_sendPhotoTitle,
-              style: UiText.h2(size: 20, color: ui.ink),
-            ),
-            const SizedBox(height: UiSpace.md),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(UiRadius.card),
-              child: Container(
-                height: 200,
-                color: ui.fill,
-                alignment: Alignment.center,
-                child: Image.memory(
-                  Uint8List.fromList(bytes!),
-                  fit: BoxFit.cover,
-                  width: double.infinity,
+    if (!camera) {
+      final confirmed = await showUiSheet<bool>(
+        context: context,
+        builder: (sheet) {
+          final ui = sheet.ui;
+          return Column(
+            key: const ValueKey('chat-photo-preview-sheet'),
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.social_sendPhotoTitle,
+                style: UiText.h2(size: 20, color: ui.ink),
+              ),
+              const SizedBox(height: UiSpace.md),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(UiRadius.card),
+                child: Container(
                   height: 200,
-                  errorBuilder: (_, _, _) => OurneyIcon(
-                    name: 'image',
-                    size: 40,
-                    flat: true,
-                    color: ui.inkMuted,
+                  color: ui.fill,
+                  alignment: Alignment.center,
+                  child: Image.memory(
+                    Uint8List.fromList(bytes!),
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: 200,
+                    errorBuilder: (_, _, _) => OurneyIcon(
+                      name: 'image',
+                      size: 40,
+                      flat: true,
+                      color: ui.inkMuted,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: UiSpace.lg),
-            UiButton(
-              key: const ValueKey('chat-photo-send'),
-              label: l10n.social_sendPhotoConfirm,
-              onPressed: () => Navigator.of(sheet).pop(true),
-            ),
-            const SizedBox(height: UiSpace.sm),
-            UiButton.secondary(
-              key: const ValueKey('social-cancel'),
-              label: AppLocalizations.of(sheet).common_cancel,
-              onPressed: () => Navigator.of(sheet).pop(false),
-            ),
-          ],
-        );
-      },
-    );
-    if (confirmed != true || !mounted) return;
+              const SizedBox(height: UiSpace.lg),
+              UiButton(
+                key: const ValueKey('chat-photo-send'),
+                label: l10n.social_sendPhotoConfirm,
+                onPressed: () => Navigator.of(sheet).pop(true),
+              ),
+              const SizedBox(height: UiSpace.sm),
+              UiButton.secondary(
+                key: const ValueKey('social-cancel'),
+                label: AppLocalizations.of(sheet).common_cancel,
+                onPressed: () => Navigator.of(sheet).pop(false),
+              ),
+            ],
+          );
+        },
+      );
+      if (confirmed != true || !mounted) return;
+    }
     setState(() => _sending = true);
     final replyTo = _replyTo;
     final ok = await runSocialAction(

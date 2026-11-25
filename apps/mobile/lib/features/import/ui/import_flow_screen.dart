@@ -300,6 +300,7 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     final removed = gone.toList();
     if (removed.isEmpty) return;
     final ids = {for (final p in removed) p.id};
+    final previousStage = _stage;
     final l10n = ImportL10n.of(context);
     setState(() {
       _photos.removeWhere((p) => ids.contains(p.id));
@@ -315,12 +316,15 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
       l10n.import_photoRemoved(removed.length),
       actionLabel: l10n.import_undo,
       onAction: () {
-        if (!mounted) return;
+        if (!mounted || _saving || _stage == _Stage.job) return;
         setState(() {
           _removedPhotos.removeWhere((p) => ids.contains(p.id));
           _photos
             ..addAll(removed)
             ..sort((a, b) => a.order.compareTo(b.order));
+          if (_stage == _Stage.photos && previousStage == _Stage.timeline) {
+            _stage = _Stage.timeline;
+          }
         });
       },
     );

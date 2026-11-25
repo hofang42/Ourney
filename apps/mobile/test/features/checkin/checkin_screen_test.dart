@@ -504,7 +504,12 @@ void main() {
       expect(find.text('Chỉ mình bạn thấy số này'), findsNothing);
     });
 
-    testWidgets('invalid value blocks posting', (tester) async {
+    testWidgets('invalid value blocks posting and scrolls field into view (UX-17)', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 460);
+      addTearDown(tester.view.reset);
       journeys = FakeJourneyRepository(
         journeys: [testJourney(metricName: 'Phút')],
       );
@@ -513,8 +518,18 @@ void main() {
         find.byKey(const ValueKey('checkin-metric')),
         '1.2.3',
       );
-      await tapPost(tester);
+      // Scroll back to the very top so the metric field at the bottom is off-screen.
+      final scrollable = tester.state<ScrollableState>(
+        find.byType(Scrollable).first,
+      );
+      scrollable.position.jumpTo(0);
+      await tester.pump();
+      expect(scrollable.position.pixels, 0);
+
+      await tester.tap(find.byKey(const ValueKey('checkin-post')));
+      await tester.pumpAndSettle();
       expect(find.text('Nhập một số hợp lệ'), findsOneWidget);
+      expect(scrollable.position.pixels, greaterThan(0));
       expect(checkIns.submitted, isEmpty);
     });
 

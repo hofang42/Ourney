@@ -137,25 +137,38 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
 
   Future<void> _unshareFriend(PersonSummary friend) async {
     final l10n = SharingL10n.of(context);
+    final repo = ref.read(sharingRepositoryProvider);
+    final journeyId = _journey.id;
+    final friendId = friend.userId;
     final name = friend.displayName.trim().isNotEmpty
         ? friend.displayName.trim()
         : '@${friend.username}';
-    setState(() => _removing.add(friend.userId));
+    final removedToast = l10n.sharing_removedFriendToast(name);
+    final undoLabel = l10n.sharing_undo;
+    setState(() => _removing.add(friendId));
     try {
-      await ref
-          .read(sharingRepositoryProvider)
-          .unshare(_journey.id, friendId: friend.userId);
+      await repo.unshare(journeyId, friendId: friendId);
       if (!mounted) return;
       showUiToast(
         context,
-        l10n.sharing_removedFriendToast(name),
-        actionLabel: l10n.sharing_undo,
-        onAction: () => unawaited(_share([friend.userId])),
+        removedToast,
+        actionLabel: undoLabel,
+        onAction: () {
+          if (mounted) {
+            unawaited(_share([friendId]));
+          } else {
+            unawaited(
+              repo
+                  .shareWithFriends(journeyId, [friendId])
+                  .catchError((Object _) {}),
+            );
+          }
+        },
       );
     } on Object catch (e) {
       if (mounted) _snack(sharingFailure(context, e));
     } finally {
-      if (mounted) setState(() => _removing.remove(friend.userId));
+      if (mounted) setState(() => _removing.remove(friendId));
     }
   }
 

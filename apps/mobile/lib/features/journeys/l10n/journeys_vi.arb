@@ -1338,6 +1338,7 @@
   },
   "journeys_wrapped_hideKg": "Ẩn số kg",
   "journeys_wrapped_blur": "Làm mờ ảnh",
+  "journeys_wrapped_blurLocked": "Luôn bật với kiểu thẻ này",
   "journeys_wrapped_on": "Bật",
   "journeys_wrapped_off": "Tắt",
   "journeys_wrapped_ctaPoster": "Chia sẻ poster chuyến đi",

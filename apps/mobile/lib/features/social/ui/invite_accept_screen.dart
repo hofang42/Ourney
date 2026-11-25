@@ -4,7 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
-import '../../../app/redirect.dart' show ProfileGateStatus;
+import '../../../app/redirect.dart'
+    show ProfileGateStatus, kMalformedInviteSegment;
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../profile/profile_providers.dart' show profileGateStatusProvider;
@@ -42,6 +43,13 @@ class _InviteAcceptState extends ConsumerState<InviteAcceptScreen> {
   }
 
   void _start() {
+    if (widget.token.trim().isEmpty ||
+        widget.token == kMalformedInviteSegment) {
+      _future = Future<PersonSummary>.error(
+        const OurneyException(OurneyErrorCode.notFound),
+      );
+      return;
+    }
     _future = ref.read(friendRepositoryProvider).acceptInvite(widget.token);
   }
 

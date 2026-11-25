@@ -734,20 +734,21 @@ class _HubBody extends ConsumerWidget {
           enabled: staggeredIds.contains('hero'),
           child: Builder(
             builder: (context) {
+              final heroLoading = buckets.active.isNotEmpty && !known;
               final heroSubtitle = allDone
                   ? l10n.journeys_allDonePrompt
                   : buckets.active.isEmpty
                   ? l10n.journeys_activeEmpty
-                  : (!known && pending.isEmpty)
+                  : heroLoading
                   ? l10n.journeys_hubLoading
                   : l10n.journeys_remainingToday(pending.length);
               return UiStreakHero(
                 key: const ValueKey('journeys-hub-hero'),
                 streak: bestStreak,
-                semanticLabel: l10n.journeys_heroSemantics(
-                  bestStreak,
-                  heroSubtitle,
-                ),
+                loading: heroLoading,
+                semanticLabel: heroLoading
+                    ? heroSubtitle
+                    : l10n.journeys_heroSemantics(bestStreak, heroSubtitle),
                 title: heroSubtitle,
                 state: heroState,
               );

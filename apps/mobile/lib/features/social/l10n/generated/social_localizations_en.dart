@@ -263,15 +263,15 @@ class SocialL10nEn extends SocialL10n {
   String get social_declineAll => 'Decline all';
 
   @override
-  String get social_declineAllTitle => 'Decline all requests?';
+  String get social_declineAllTitle => 'Decline all friend requests?';
 
   @override
   String social_declineAllBody(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Decline all $count join requests for this group?',
-      one: 'Decline 1 join request for this group?',
+      other: 'Decline all $count friend requests from this journey?',
+      one: 'Decline 1 friend request from this journey?',
     );
     return '$_temp0';
   }
@@ -426,7 +426,13 @@ class SocialL10nEn extends SocialL10n {
 
   @override
   String social_groupInviteMembers(int count, int max) {
-    return '$count of $max members';
+    String _temp0 = intl.Intl.pluralLogic(
+      max,
+      locale: localeName,
+      other: '$count of $max members',
+      one: '$count of 1 member',
+    );
+    return '$_temp0';
   }
 
   @override

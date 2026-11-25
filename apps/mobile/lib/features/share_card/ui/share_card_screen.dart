@@ -11,6 +11,7 @@ import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
+import '../../camera/capture_services.dart' show appSettingsOpenerProvider;
 import '../../journeys/domain/journey_progress.dart';
 import '../../profile/settings_providers.dart';
 import '../../sharing/data/sharing_providers.dart';
@@ -504,6 +505,21 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                         : openSheet,
                   ),
                 ),
+                if (quiet) ...[
+                  const SizedBox(height: UiSpace.sm),
+                  UiButton.secondary(
+                    key: const ValueKey('share-card-save'),
+                    label: l10n.share_card_sheetSave,
+                    glyph: const OurneyIcon(
+                      name: 'download',
+                      size: 18,
+                      flat: true,
+                    ),
+                    onPressed: _busy || !(stateReady || stateFailed)
+                        ? null
+                        : () => _save(journey: journey, photo: photo),
+                  ),
+                ],
                 const SizedBox(height: UiSpace.xl),
                 _SectionLabel(l10n.share_card_moreOptions),
                 _SectionLabel(l10n.share_card_numberLabel),
@@ -707,6 +723,21 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       );
       await saver.saveImage(path: file.path, mimeType: file.mimeType);
       if (mounted) _snack(l10n.share_card_exportSaved);
+    } on ShareCardSaveException catch (e) {
+      if (mounted) {
+        if (e.isPermissionDenied) {
+          final app = AppLocalizations.of(context);
+          final opener = ref.read(appSettingsOpenerProvider);
+          showUiToast(
+            context,
+            app.common_photoSavePermissionDenied,
+            actionLabel: opener.supported ? app.common_openSettings : null,
+            onAction: opener.supported ? () => unawaited(opener.open()) : null,
+          );
+        } else {
+          _snack(l10n.share_card_shareError);
+        }
+      }
     } on Object {
       if (mounted) _snack(l10n.share_card_shareError);
     } finally {

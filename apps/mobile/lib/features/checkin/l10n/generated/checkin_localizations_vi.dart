@@ -188,6 +188,9 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_privacyPrivate => 'Chỉ mình bạn';
 
   @override
+  String get checkin_privacyShared => 'Đã chia sẻ';
+
+  @override
   String get checkin_privacyCouple => 'Cặp đôi';
 
   @override

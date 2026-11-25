@@ -1540,6 +1540,9 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_wrapped_blur => 'Làm mờ ảnh';
 
   @override
+  String get journeys_wrapped_blurLocked => 'Luôn bật với kiểu thẻ này';
+
+  @override
   String get journeys_wrapped_on => 'Bật';
 
   @override

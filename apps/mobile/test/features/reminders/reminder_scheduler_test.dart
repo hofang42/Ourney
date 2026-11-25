@@ -319,6 +319,33 @@ void main() {
       await h.container.read(reminderSchedulerProvider).reschedule();
       expect(gateway.scheduled[kReminderIdBase]!.title, 'Time to check in');
     });
+
+    test(
+      'UX-27: streak alert notification and banner deadline use journey-timezone midnight in device timezone',
+      () async {
+        final gateway = FakeNotificationGateway(granted: true);
+        // Journey is in Asia/Ho_Chi_Minh (UTC+7), device is in Asia/Tokyo (UTC+9):
+        // journey midnight (00:00 UTC+7) is 02:00 device time.
+        final h = await reminderHarness(
+          gateway: gateway,
+          prefs: reminderOn('j1'),
+          locale: const Locale('en'),
+          deviceTimezone: 'Asia/Tokyo',
+        );
+        addTearDown(h.container.dispose);
+        h.checkIns.byJourney['j1'] = [reminderCheckIn('j1', today.addDays(-1))];
+
+        await h.container.read(reminderSchedulerProvider).reschedule();
+        final alerts = gateway.scheduled.values
+            .where((n) => n.title == 'Your streak is about to break')
+            .toList();
+        expect(alerts, hasLength(1));
+        expect(
+          alerts.single.body,
+          contains('ends at 02:00 (journey midnight)'),
+        );
+      },
+    );
   });
 
   group('ReminderLifecycleHook', () {

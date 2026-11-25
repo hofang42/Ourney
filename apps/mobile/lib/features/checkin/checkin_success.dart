@@ -6,15 +6,30 @@ import 'dart:ui' show lerpDouble;
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../l10n/generated/app_localizations.dart';
-import '../../personas/persona_contract.dart' show personaSkinOf;
+import '../../personas/persona_contract.dart' show defaultSkinOf, personaSkinOf;
 import '../../ui/ui.dart';
+import '../groups/data/groups_providers.dart' show groupTodayProvider;
 import '../groups/ui/group_photo.dart';
+import '../sharing/data/sharing_providers.dart' show shareStateProvider;
 import 'checkin_progress.dart';
 import 'l10n/generated/checkin_localizations.dart';
+
+/// True when [journey] is a 2-person couple group journey rather than a
+/// multi-member squad (even if a multi-member squad picks the Couple layout
+/// override in `JourneyEditScreen`).
+bool isCoupleJourney(Journey journey) {
+  if (journey.kind != JourneyKind.group) return false;
+  if (journey.maxMembers > 2) return false;
+  return journey.maxMembers == 2 ||
+      journey.coupleSelfName != null ||
+      journey.couplePartnerName != null ||
+      defaultSkinOf(journey) == PersonaSkinId.coupleRituals;
+}
 
 /// Success state after posting (FR-C8, App.tsx `Posted`): per-skin V2
 /// celebration hero (Rank #1 Phase 2a), rolling streak counter + flame
@@ -22,7 +37,7 @@ import 'l10n/generated/checkin_localizations.dart';
 /// confetti climax (Rank #2), then Done (and Share at a milestone). Without a
 /// milestone the screen closes by itself so a check-in stays within 3 taps
 /// (FR-C4).
-class CheckinSuccessView extends StatefulWidget {
+class CheckinSuccessView extends ConsumerStatefulWidget {
   const CheckinSuccessView({
     required this.outcome,
     required this.haptics,
@@ -30,6 +45,8 @@ class CheckinSuccessView extends StatefulWidget {
     required this.onShare,
     this.holdAutoClose,
     this.journey,
+    this.activeMemberCount,
+    this.hasSharedViewers,
     super.key,
   });
 
@@ -38,6 +55,12 @@ class CheckinSuccessView extends StatefulWidget {
   final bool haptics;
   final VoidCallback onDone;
   final VoidCallback onShare;
+
+  /// Optional override for active member count in a group/couple journey.
+  final int? activeMemberCount;
+
+  /// Optional override for whether a solo journey is shared with friends.
+  final bool? hasSharedViewers;
 
   /// The plain success state closes [autoCloseDelay] after this completes
   /// (B-B2): the notification offer opened on top of this screen must not
@@ -48,10 +71,10 @@ class CheckinSuccessView extends StatefulWidget {
   static const autoCloseDelay = Duration(milliseconds: 1800);
 
   @override
-  State<CheckinSuccessView> createState() => _CheckinSuccessViewState();
+  ConsumerState<CheckinSuccessView> createState() => _CheckinSuccessViewState();
 }
 
-class _CheckinSuccessViewState extends State<CheckinSuccessView>
+class _CheckinSuccessViewState extends ConsumerState<CheckinSuccessView>
     with SingleTickerProviderStateMixin {
   Timer? _autoClose;
   bool _started = false;
@@ -334,19 +357,38 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
     // Figma Done screens: a per-skin hero, the streak, one calm line.
     final headline = _headline(l10n, skin, day ?? 1, outcome.streakAfter);
     final j = journey;
-    final isCoupleAudience = j != null
-        ? (j.kind == JourneyKind.group &&
-              (j.maxMembers == 2 || j.coupleSelfName != null || skin == 'couple'))
-        : skin == 'couple';
+    final shareState = j == null
+        ? null
+        : ref.watch(shareStateProvider(j.id)).value;
+    final groupMembers = (j != null && j.kind == JourneyKind.group)
+        ? ref.watch(groupTodayProvider(j.id)).value
+        : null;
+    final memberCount = widget.activeMemberCount ?? groupMembers?.length;
+    final hasFriendViewers =
+        widget.hasSharedViewers ?? (shareState?.viewers.isNotEmpty ?? false);
     final isSharedLink =
         j != null &&
         (j.visibility == JourneyVisibility.link ||
-            (j.publicToken != null && j.publicToken!.trim().isNotEmpty));
+            (j.publicToken != null && j.publicToken!.trim().isNotEmpty) ||
+            (shareState?.linkOn ?? false));
+    final isAloneInGroup =
+        j != null &&
+        j.kind == JourneyKind.group &&
+        memberCount != null &&
+        memberCount <= 1;
+    final isCoupleAudience = j != null
+        ? (!isAloneInGroup && isCoupleJourney(j))
+        : skin == 'couple';
+    final isSquadAudience =
+        j != null &&
+        j.kind == JourneyKind.group &&
+        !isAloneInGroup &&
+        !isCoupleAudience;
     final audienceMessage = isCoupleAudience
         ? l10n.checkin_done_coupleSent
-        : (j != null && j.kind == JourneyKind.group)
+        : isSquadAudience
         ? l10n.checkin_done_sharedSquad
-        : isSharedLink
+        : (isSharedLink || hasFriendViewers)
         ? l10n.checkin_done_sharedLink
         : l10n.checkin_done_savedPrivate;
     final message = outcome.extraPhoto

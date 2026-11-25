@@ -137,6 +137,10 @@
   "@checkin_privacyPrivate": {
     "description": "Privacy tag under the journey name on the compose screen: solo journey."
   },
+  "checkin_privacyShared": "Đã chia sẻ",
+  "@checkin_privacyShared": {
+    "description": "Privacy tag under the journey name on the compose screen: solo journey shared via public link or with friends."
+  },
   "checkin_privacyCouple": "Cặp đôi",
   "@checkin_privacyCouple": {
     "description": "Privacy tag on the compose screen: journey shared with one partner."

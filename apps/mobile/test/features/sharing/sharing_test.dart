@@ -68,7 +68,49 @@ void main() {
 
       await _tap(tester, _key('share-remove-f1'));
       expect(sharing.calls, contains('unshare:f1:false'));
+      expect(find.text('Removed Nam Tran.'), findsOneWidget);
+      await tester.tap(_key('ui-toast-action'));
+      await tester.pumpAndSettle();
+      expect(sharing.calls.last, 'share:f1');
     });
+
+    testWidgets(
+      'UX-22: Undo after removing a friend from showShareJourneySheet works even after the sheet is closed',
+      (tester) async {
+        final sharing = FakeSharingRepository(viewers: [_friends.first]);
+        final journey = testJourney();
+        await pumpSharing(
+          tester,
+          location: '/sharing/j1',
+          sharing: sharing,
+          journeys: FakeJourneyRepository(journeys: [journey]),
+          friends: _friends,
+        );
+        final ctx = tester.element(_key('share-journey-screen'));
+        unawaited(showShareJourneySheet(ctx, journey));
+        await tester.pumpAndSettle();
+        expect(_key('share-journey-sheet'), findsOneWidget);
+
+        await tester.tap(
+          find.descendant(
+            of: _key('share-journey-sheet'),
+            matching: _key('share-remove-f1'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(sharing.calls, contains('unshare:f1:false'));
+
+        // Close the modal bottom sheet before tapping Undo on the root toast.
+        Navigator.of(ctx, rootNavigator: true).pop();
+        await tester.pumpAndSettle();
+        expect(_key('share-journey-sheet'), findsNothing);
+
+        await tester.tap(_key('ui-toast-action'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(sharing.calls.last, 'share:f1');
+      },
+    );
 
     testWidgets('S7: weight loss ticks nobody; button disabled until a pick', (
       tester,
@@ -840,7 +882,7 @@ void main() {
           ),
         );
         expect(find.text('Chưa có người xem mới tuần này'), findsOneWidget);
-        expect(find.text('0 tuần này'), findsNWidgets(2));
+        expect(find.text('Chưa có thêm tuần này'), findsNWidgets(2));
         expect(find.textContaining('Quiet Transformer'), findsNothing);
       },
     );

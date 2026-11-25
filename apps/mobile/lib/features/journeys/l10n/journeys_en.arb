@@ -858,6 +858,7 @@
   },
   "journeys_wrapped_hideKg": "Hide kg",
   "journeys_wrapped_blur": "Blur photos",
+  "journeys_wrapped_blurLocked": "Always on for this card style",
   "journeys_wrapped_on": "On",
   "journeys_wrapped_off": "Off",
   "journeys_wrapped_ctaPoster": "Share the trip poster",
@@ -1113,6 +1114,6 @@
   "journeys_clearYear": "Clear {year} filter",
   "@journeys_clearYear": {"placeholders": {"year": {"type": "int"}}},
   "journeys_range30Pace": "Few values in 30 days, showing check-ins",
-  "journeys_startsIn": "Starts in {days, plural, one{1 day} other{{days} days}} · {total} days",
+  "journeys_startsIn": "Starts in {days, plural, one{1 day} other{{days} days}} · {total, plural, one{1 day} other{{total} days}}",
   "@journeys_startsIn": {"placeholders": {"days": {"type": "int"}, "total": {"type": "int"}}}
 }

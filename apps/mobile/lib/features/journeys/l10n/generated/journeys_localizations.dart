@@ -2792,6 +2792,12 @@ abstract class JourneysL10n {
   /// **'Làm mờ ảnh'**
   String get journeys_wrapped_blur;
 
+  /// No description provided for @journeys_wrapped_blurLocked.
+  ///
+  /// In vi, this message translates to:
+  /// **'Luôn bật với kiểu thẻ này'**
+  String get journeys_wrapped_blurLocked;
+
   /// No description provided for @journeys_wrapped_on.
   ///
   /// In vi, this message translates to:

@@ -1611,6 +1611,9 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_wrapped_blur => 'Blur photos';
 
   @override
+  String get journeys_wrapped_blurLocked => 'Always on for this card style';
+
+  @override
   String get journeys_wrapped_on => 'On';
 
   @override
@@ -1993,6 +1996,12 @@ class JourneysL10nEn extends JourneysL10n {
       other: '$days days',
       one: '1 day',
     );
-    return 'Starts in $_temp0 · $total days';
+    String _temp1 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total days',
+      one: '1 day',
+    );
+    return 'Starts in $_temp0 · $_temp1';
   }
 }

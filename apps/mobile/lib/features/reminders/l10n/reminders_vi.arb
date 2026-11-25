@@ -134,6 +134,24 @@
       }
     }
   },
+  "reminders_alertBodyAt": "{journey}: chuỗi {count} ngày sẽ mất lúc {time} (00:00 theo múi giờ hành trình). Một tấm ảnh là giữ được.",
+  "@reminders_alertBodyAt": {
+    "description": "Body of the 21:00 streak alert notification when the device timezone differs from the journey timezone.",
+    "placeholders": {
+      "journey": {
+        "type": "String",
+        "example": "30 ngày nói tiếng Anh"
+      },
+      "count": {
+        "type": "int",
+        "example": "5"
+      },
+      "time": {
+        "type": "String",
+        "example": "02:00"
+      }
+    }
+  },
   "reminders_channelName": "Nhắc check-in",
   "@reminders_channelName": {
     "description": "Android notification channel name (shown in system settings)."

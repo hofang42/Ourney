@@ -76,6 +76,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get common_save => 'Lưu';
 
   @override
+  String get common_openSettings => 'Cài đặt';
+
+  @override
+  String get common_photoSavePermissionDenied =>
+      'Cần quyền thư viện ảnh để lưu thẻ.';
+
+  @override
   String get common_loading => 'Đang tải…';
 
   @override
