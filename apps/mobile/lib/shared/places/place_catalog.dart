@@ -112,8 +112,9 @@ Iterable<Place> searchPlaces(String query) {
         : keys.any((key) => key.contains(folded))
         ? 2
         : null;
-    if (rank != null)
+    if (rank != null) {
       ranked[rank + (place.countryCode == 'VN' ? 0 : 3)].add(place);
+    }
   }
   return ranked.expand((group) => group);
 }
@@ -148,7 +149,7 @@ List<PlaceSuggestion> placeSuggestions({
 
   final browse = query.trim().isEmpty;
   if (browse) {
-    for (final saved in [if (destination != null) destination, ...recent]) {
+    for (final saved in [?destination, ...recent]) {
       final name = saved.trim();
       final place = _placesByName[foldPlaceName(name)];
       add(place?.name(language) ?? name, place: place);
