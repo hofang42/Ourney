@@ -193,9 +193,9 @@ object CheckInLiveUpdateManager {
         val timeoutAfterMs = (deadlineMs - nowEpochMs).coerceAtLeast(1_000L)
         val remainingMinutes = ((deadlineMs - nowEpochMs).coerceAtLeast(60_000L) / 60_000L).coerceAtLeast(1L)
         val rawChipText = if (remainingMinutes >= 60L) {
-            l10n.getString(R.string.widget_live_chip_hours, (remainingMinutes / 60L).toInt())
+            l10n.getString(R.string.widget_live_chip_hours)
         } else {
-            l10n.getString(R.string.widget_live_chip_mins, remainingMinutes.toInt())
+            l10n.getString(R.string.widget_live_chip_mins)
         }
         val shortChipText = rawChipText.take(7)
 

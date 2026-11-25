@@ -29,7 +29,7 @@ public struct CycleTodayJourneyIntent: AppIntent {
 @available(iOS 17.0, iOSApplicationExtension 17.0, *)
 public struct EndCheckInWindowIntent: LiveActivityIntent {
   public static var title: LocalizedStringResource = "Dismiss Check-In Window"
-  public static var description = IntentDescription("Dismiss today's check-in window countdown.")
+  public static var description = IntentDescription("Dismiss today's check-in window.")
   public static var openAppWhenRun: Bool = false
 
   public init() {}

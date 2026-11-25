@@ -198,13 +198,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ambient streak and remaining check-ins on your Lock Screen."
+            "value" : "Ambient streak and waiting check-ins on your Lock Screen."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Theo dõi chuỗi ngày và số hành trình còn lại ngay trên Màn hình khóa."
+            "value" : "Theo dõi chuỗi ngày và khung ảnh chờ chụp ngay trên Màn hình khóa."
           }
         }
       }
