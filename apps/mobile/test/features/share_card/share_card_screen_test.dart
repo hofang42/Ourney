@@ -695,7 +695,7 @@ void main() {
       expect(h.clipboard.single, 'https://ourney.tech/p/$testNeutralSlug');
     });
 
-    testWidgets('a cached titled link stays hidden until share state loads', (
+    testWidgets('a cached titled link stays hidden while share state loads', (
       tester,
     ) async {
       final j = testJourney(
@@ -703,9 +703,9 @@ void main() {
         visibility: JourneyVisibility.link,
         publicToken: testSlug,
       );
-      final state = StreamController<JourneyShareState>();
+      final state = StreamController<JourneyShareState>.broadcast();
       addTearDown(state.close);
-      await pumpShare(
+      final h = await pumpShare(
         tester,
         journey: j,
         backend: true,
@@ -728,6 +728,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(_key('share-card-link-url'), findsNothing);
       expect(_key('share-card-link-create'), findsOneWidget);
+
+      h.journeys.serverLink = const PublicLinkResult(issued: false);
+      await _tap(tester, _key('share-card-link-create'));
+      await _tap(tester, _key('share-link-neutral'));
+      expect(h.clipboard, [publicJourneyLink(testNeutralSlug)]);
+      expect(find.text(publicJourneyLink(testNeutralSlug)), findsOneWidget);
     });
 
     for (final action in ['cancel', 'copy', 'reset']) {

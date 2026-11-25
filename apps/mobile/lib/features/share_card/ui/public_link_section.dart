@@ -80,9 +80,10 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
       ref.watch(hideWeightOnShareProvider),
     );
     final provider = shareStateProvider(journey.id);
-    final state = ref.watch(provider).asData?.value;
+    final stateAsync = ref.watch(provider);
+    final state = stateAsync.isLoading ? null : stateAsync.asData?.value;
     ref.listen(provider, (_, next) {
-      if (next.asData != null && _linkResult != null) {
+      if (!next.isLoading && next.asData != null && _linkResult != null) {
         setState(() => _linkResult = null);
       }
     });
