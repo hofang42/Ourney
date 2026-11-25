@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ourney_core/ourney_core.dart';
 
+import '../../shared/places/place_picker.dart';
 import '../../ui/ui.dart';
 import 'l10n/generated/checkin_localizations.dart';
 
@@ -148,6 +149,8 @@ class PostExtrasSection extends StatelessWidget {
     required this.onPickPartnerPhoto,
     this.ritual,
     this.isRunning = true,
+    this.destination,
+    this.recentPlaces = const [],
     super.key,
   });
 
@@ -164,6 +167,8 @@ class PostExtrasSection extends StatelessWidget {
 
   /// False when a workout journey is non-running (gym, pilates, yoga, etc.).
   final bool isRunning;
+  final String? destination;
+  final List<String> recentPlaces;
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +178,11 @@ class PostExtrasSection extends StatelessWidget {
         final child = switch (skin) {
           PersonaSkinId.quietTransformer => _MoodPicker(controller),
           PersonaSkinId.accountabilitySquad => _MinutesPicker(controller),
-          PersonaSkinId.memoryCollectors => _PlaceField(controller),
+          PersonaSkinId.memoryCollectors => _PlaceField(
+            controller.place,
+            destination: destination,
+            recent: recentPlaces,
+          ),
           PersonaSkinId.coupleRituals => _CoupleInputs(
             controller: controller,
             selfName: selfName,
@@ -336,20 +345,28 @@ class _MinutesPicker extends StatelessWidget {
 }
 
 class _PlaceField extends StatelessWidget {
-  const _PlaceField(this.c);
+  const _PlaceField(
+    this.controller, {
+    required this.destination,
+    required this.recent,
+  });
 
-  final PostExtrasController c;
+  final TextEditingController controller;
+  final String? destination;
+  final List<String> recent;
 
   @override
   Widget build(BuildContext context) {
     final l10n = CheckinL10n.of(context);
-    return UiTextField(
+    return PlacePicker(
       fieldKey: const ValueKey('checkin-place'),
       label: l10n.checkin_extraPlaceLabel,
       hint: l10n.checkin_extraPlaceHint,
-      controller: c.place,
-      textCapitalization: TextCapitalization.words,
-      inputFormatters: [_RuneLimit(extrasPlaceMax)],
+      controller: controller,
+      destination: destination,
+      recent: recent,
+      maxRunes: extrasPlaceMax,
+      inputFormatters: const [_RuneLimit(extrasPlaceMax)],
     );
   }
 }

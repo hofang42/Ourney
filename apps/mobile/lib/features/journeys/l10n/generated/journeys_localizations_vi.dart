@@ -1050,22 +1050,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_dna_trophy_hint => 'Cúp 7.5';
 
   @override
-  String get journeys_dna_place_search => 'Nhập điểm đến...';
-
-  @override
-  String get journeys_dna_place_country => 'Việt Nam';
-
-  @override
-  String get journeys_dna_place_dalat => 'Đà Lạt';
-
-  @override
-  String get journeys_dna_place_hoian => 'Hội An';
-
-  @override
-  String get journeys_dna_place_phuquoc => 'Phú Quốc';
-
-  @override
-  String get journeys_dna_place_pine => 'Rừng thông và sương';
+  String get journeys_dna_place_search => 'Tìm điểm đến';
 
   @override
   String get journeys_dna_dates_open => 'chưa hẹn ngày về';

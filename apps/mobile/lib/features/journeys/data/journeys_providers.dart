@@ -175,6 +175,24 @@ final archivedJourneysProvider = StreamProvider.autoDispose<List<Journey>>((
   return ref.watch(journeyRepositoryProvider).watchArchived();
 }, retry: _noRetry);
 
+/// Suggestions from locally stored trips, including ended and archived trips.
+final recentTripPlacesProvider = FutureProvider.autoDispose<List<String>>((
+  ref,
+) async {
+  ref.watch(currentUserIdProvider);
+  final all = await ref.watch(journeyRepositoryProvider).allMine();
+  final trips =
+      all.where((journey) => journey.templateId == TemplateId.travel).toList()
+        ..sort((a, b) {
+          final byDate = b.startDate.compareTo(a.startDate);
+          return byDate == 0 ? a.id.compareTo(b.id) : byDate;
+        });
+  return [
+    for (final trip in trips)
+      if (trip.dna?['place'] case final String place) place,
+  ];
+}, retry: _noRetry);
+
 /// Ids of the journeys the caller pinned (per-user, also local-only). The
 /// list provider already orders pinned journeys first.
 final pinnedJourneyIdsProvider = StreamProvider.autoDispose<Set<String>>((ref) {

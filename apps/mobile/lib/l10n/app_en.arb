@@ -47,6 +47,7 @@
   "nav_profile": "Profile and settings",
   "nav_activity": "Activity",
   "nav_profileTab": "Profile",
+  "common_usePlace": "Use “{place}”",
   "common_retry": "Retry",
   "common_cancel": "Cancel",
   "common_ok": "OK",

@@ -1949,38 +1949,8 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_dna_place_search.
   ///
   /// In vi, this message translates to:
-  /// **'Nhập điểm đến...'**
+  /// **'Tìm điểm đến'**
   String get journeys_dna_place_search;
-
-  /// No description provided for @journeys_dna_place_country.
-  ///
-  /// In vi, this message translates to:
-  /// **'Việt Nam'**
-  String get journeys_dna_place_country;
-
-  /// No description provided for @journeys_dna_place_dalat.
-  ///
-  /// In vi, this message translates to:
-  /// **'Đà Lạt'**
-  String get journeys_dna_place_dalat;
-
-  /// No description provided for @journeys_dna_place_hoian.
-  ///
-  /// In vi, this message translates to:
-  /// **'Hội An'**
-  String get journeys_dna_place_hoian;
-
-  /// No description provided for @journeys_dna_place_phuquoc.
-  ///
-  /// In vi, this message translates to:
-  /// **'Phú Quốc'**
-  String get journeys_dna_place_phuquoc;
-
-  /// No description provided for @journeys_dna_place_pine.
-  ///
-  /// In vi, this message translates to:
-  /// **'Rừng thông và sương'**
-  String get journeys_dna_place_pine;
 
   /// No description provided for @journeys_dna_dates_open.
   ///

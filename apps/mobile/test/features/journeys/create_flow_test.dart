@@ -679,8 +679,13 @@ void _dnaGroup() {
       expect(_key('dna-page-place'), findsOneWidget);
       await _tap(tester, 'create-next');
       expect(_key('dna-page-place'), findsOneWidget, reason: 'needs a place');
-      await _tap(tester, 'dna-place_dalat');
-      expect(_key('dna-pine'), findsOneWidget);
+      await tester.enterText(_key('dna-place-field'), 'dalat');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'vn-destination-da-lat');
+      expect(
+        tester.widget<TextField>(_key('dna-place-field')).controller!.text,
+        'Da Lat',
+      );
       await _tap(tester, 'create-next');
       expect(_key('dna-page-dates'), findsOneWidget);
       final day = testNow.day;
@@ -709,7 +714,8 @@ void _dnaGroup() {
 
     Future<void> toDates(WidgetTester tester) async {
       await _tap(tester, 'template-travel');
-      await _tap(tester, 'dna-place_dalat');
+      await tester.enterText(_key('dna-place-field'), 'Da Lat');
+      await tester.pumpAndSettle();
       await _tap(tester, 'create-next');
       expect(_key('dna-page-dates'), findsOneWidget);
     }
@@ -734,6 +740,7 @@ void _dnaGroup() {
       final draft = h.journeys.created.single;
       expect(draft.durationDays, isNull);
       expect(draft.startDate, const LocalDate(2026, 10, 20));
+      expect(draft.dna?['place'], 'Da Lat');
     });
 
     testWidgets('travel: a short trip shows and saves the shortest journey '
@@ -987,22 +994,57 @@ void _dnaGroup() {
     );
 
     testWidgets(
-      'travel: typing a custom destination filters non-matching preset cities (UX-23)',
+      'travel: recent trips, international results and a custom destination',
       (tester) async {
-        await _open(tester);
+        final semantics = tester.ensureSemantics();
+        addTearDown(semantics.dispose);
+        await _open(
+          tester,
+          journeys: FakeJourneyRepository(
+            journeys: [
+              testJourney(
+                id: 'earlier',
+                templateId: TemplateId.travel,
+                status: JourneyStatus.ended,
+                startDate: const LocalDate(2026, 9, 10),
+              ).copyWith(dna: {'place': 'Đà Lạt'}),
+              testJourney(
+                id: 'recent',
+                templateId: TemplateId.travel,
+              ).copyWith(dna: {'place': 'Hội An'}),
+              testJourney(id: 'non-trip')
+                  .copyWith(dna: {'place': 'Not a trip'}),
+            ],
+          ),
+        );
         await _tap(tester, 'template-travel');
-        expect(_key('dna-place_dalat'), findsOneWidget);
-        expect(_key('dna-place_hoian'), findsOneWidget);
-        expect(_key('dna-place_phuquoc'), findsOneWidget);
-        await tester.enterText(_key('dna-place-field'), 'Da');
-        await tester.pumpAndSettle();
-        expect(_key('dna-place_dalat'), findsOneWidget);
-        expect(_key('dna-place_hoian'), findsNothing);
+        expect(
+          tester.getTopLeft(_key('vn-destination-hoi-an')).dy,
+          lessThan(tester.getTopLeft(_key('vn-destination-da-lat')).dy),
+        );
+        expect(find.text('Not a trip'), findsNothing);
         await tester.enterText(_key('dna-place-field'), 'Tokyo');
         await tester.pumpAndSettle();
-        expect(_key('dna-place_dalat'), findsNothing);
-        expect(_key('dna-place_hoian'), findsNothing);
-        expect(_key('dna-place_phuquoc'), findsNothing);
+        expect(find.bySemanticsLabel('Tokyo, Japan'), findsOneWidget);
+        expect(_key('vn-destination-hoi-an'), findsNothing);
+
+        await tester.enterText(
+          _key('dna-place-field'),
+          '  A cabin by the lake  ',
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Use “A cabin by the lake”'), findsOneWidget);
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+        expect(_key('place-use-text'), findsOneWidget);
+        await _tap(tester, 'place-use-text');
+        expect(
+          tester.widget<TextField>(_key('dna-place-field')).controller!.text,
+          'A cabin by the lake',
+        );
+        expect(_key('place-use-text'), findsNothing);
+        await _tap(tester, 'create-next');
+        expect(_key('dna-page-dates'), findsOneWidget);
       },
     );
   });
