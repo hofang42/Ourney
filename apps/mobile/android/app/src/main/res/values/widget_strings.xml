@@ -34,7 +34,10 @@
     <string name="widget_squad_couple_badge">Couple · Day %1$d</string>
     <string name="widget_squad_empty_title">No Squad journeys yet</string>
     <string name="widget_squad_empty_subtitle">Join friends or your partner in Ourney</string>
-    <string name="widget_squad_solo_only_subtitle">You have %1$d solo journeys — start a Squad or use the Today widget</string>
+    <plurals name="widget_squad_solo_only_subtitle">
+        <item quantity="one">You have %1$d solo journey — start a Squad or use the Today widget</item>
+        <item quantity="other">You have %1$d solo journeys — start a Squad or use the Today widget</item>
+    </plurals>
     <string name="widget_squad_empty_cta">Open Squads</string>
     <string name="widget_squad_me_done">You\'re done</string>
     <string name="widget_squad_me_pending">Your turn</string>

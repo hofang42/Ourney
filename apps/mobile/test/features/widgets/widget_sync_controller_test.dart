@@ -48,6 +48,22 @@ class _NoOpThumbPreparer implements WidgetThumbPreparer {
   }
 }
 
+class _GatedThumbPreparer extends _NoOpThumbPreparer {
+  _GatedThumbPreparer(this._gate);
+
+  final Future<void> _gate;
+  int prepareCalls = 0;
+
+  @override
+  Future<List<WidgetThumbPayload>> prepare(
+    List<WidgetThumbRequest> requests,
+  ) async {
+    prepareCalls++;
+    await _gate;
+    return super.prepare(requests);
+  }
+}
+
 class _SignedInUser extends CurrentUserId {
   @override
   String? build() => 'user-a';
@@ -89,12 +105,23 @@ class _AuthGatedJourneyRepository extends FakeReminderJourneyRepository {
 }
 
 class _StalledGroupRepository implements GroupRepository {
-  final Completer<List<MemberToday>> _neverCompletes =
-      Completer<List<MemberToday>>();
+  int activeWatchTodaySubscriptions = 0;
+  int cancelCount = 0;
 
   @override
-  Stream<List<MemberToday>> watchToday(String journeyId) =>
-      _neverCompletes.future.asStream();
+  Stream<List<MemberToday>> watchToday(String journeyId) {
+    late final StreamController<List<MemberToday>> controller;
+    controller = StreamController<List<MemberToday>>(
+      onListen: () {
+        activeWatchTodaySubscriptions++;
+      },
+      onCancel: () {
+        activeWatchTodaySubscriptions--;
+        cancelCount++;
+      },
+    );
+    return controller.stream;
+  }
 
   @override
   Future<String> joinByCode(String code) => throw UnimplementedError();
@@ -239,7 +266,8 @@ void main() {
       );
       expect(fakeBridge.liveActivitySyncs.last, isNull);
 
-      // 5. Sign-out triggers resetAccountLocalState -> wipes prefs & calls clearAll().
+      // 5. Sign-out triggers resetAccountLocalState -> wipes prefs, calls clearAll(),
+      // and writes an authState: 'signedOut' snapshot so widgets render SignedOut (P1-1).
       (container.read(currentUserIdProvider.notifier) as _SignedInUser)
           .signOut();
       await pumpEventQueue();
@@ -248,6 +276,12 @@ void main() {
       expect(thumbPreparer.clearCacheCount, greaterThanOrEqualTo(1));
       expect(container.read(widgetPhotoModeProvider), WidgetPhotoMode.smart);
       expect(container.read(dismissedLiveWindowKeyProvider), isNull);
+      final signedOutJson =
+          jsonDecode(fakeBridge.snapshotSyncs.last.snapshotJson)
+              as Map<String, Object?>;
+      expect(signedOutJson['authState'], 'signedOut');
+      expect(signedOutJson['journeys'] as List<Object?>, isEmpty);
+      expect(signedOutJson['squads'] as List<Object?>, isEmpty);
     },
   );
 
@@ -806,7 +840,12 @@ void main() {
 
         expect(container.read(journeysListProvider).value, isEmpty);
         expect(fakeBridge.clearAllCount, greaterThanOrEqualTo(1));
-        expect(fakeBridge.snapshotSyncs, isEmpty);
+        expect(fakeBridge.snapshotSyncs, hasLength(1));
+        final preLoginJson =
+            jsonDecode(fakeBridge.snapshotSyncs.single.snapshotJson)
+                as Map<String, Object?>;
+        expect(preLoginJson['authState'], 'signedOut');
+        expect(preLoginJson['journeys'] as List<Object?>, isEmpty);
 
         // Now sign in as 'user-a' -> journeysListProvider & pinnedJourneyIdsProvider
         // must automatically rebuild and sync both active journeys to snapshot_v1.json!
@@ -821,7 +860,7 @@ void main() {
           container.read(pinnedJourneyIdsProvider).value,
           contains('j-after-login-1'),
         );
-        expect(fakeBridge.snapshotSyncs, isNotEmpty);
+        expect(fakeBridge.snapshotSyncs.length, greaterThanOrEqualTo(2));
 
         final latestJson =
             jsonDecode(fakeBridge.snapshotSyncs.last.snapshotJson)
@@ -835,12 +874,13 @@ void main() {
     );
 
     test(
-      'Rank 3: stalled groupRepository.watchToday RPC times out cleanly and '
-      'writes snapshot using local groupCheckIns fallback',
+      'Rank 3 & P2-2: stalled groupRepository.watchToday RPC times out cleanly, '
+      'cancels its StreamSubscription immediately, and writes snapshot using local fallback',
       () async {
         final prefs = await testPrefs();
         final fakeBridge = FakeWidgetBridgeGateway();
         final thumbPreparer = _NoOpThumbPreparer();
+        final stalledGroups = _StalledGroupRepository();
 
         final soloJ = Journey(
           id: 'j-solo-fast',
@@ -883,9 +923,7 @@ void main() {
             checkInRepositoryProvider.overrideWithValue(
               FakeReminderCheckInRepository(),
             ),
-            groupRepositoryProvider.overrideWithValue(
-              _StalledGroupRepository(),
-            ),
+            groupRepositoryProvider.overrideWithValue(stalledGroups),
             notificationGatewayProvider.overrideWithValue(
               FakeNotificationGateway(granted: true),
             ),
@@ -908,12 +946,91 @@ void main() {
           lessThan(2500),
           reason: 'Stalled group_today RPC must time out at 1200ms, not 30s',
         );
+        expect(
+          stalledGroups.activeWatchTodaySubscriptions,
+          0,
+          reason: 'Timed-out watchToday stream subscription must be cancelled',
+        );
+        expect(stalledGroups.cancelCount, greaterThanOrEqualTo(1));
         expect(fakeBridge.snapshotSyncs, hasLength(1));
         final decoded =
             jsonDecode(fakeBridge.snapshotSyncs.single.snapshotJson)
                 as Map<String, Object?>;
         expect(decoded['journeys'] as List<Object?>, hasLength(2));
         expect(decoded['squads'] as List<Object?>, hasLength(1));
+      },
+    );
+
+    test(
+      'P2-1: clearAll() during an in-flight syncNow() aborts the stale sync '
+      'before it can re-poison _lastSnapshotDigest',
+      () async {
+        final prefs = await testPrefs();
+        final fakeBridge = FakeWidgetBridgeGateway();
+        final gate = Completer<void>();
+        final gatedThumbPreparer = _GatedThumbPreparer(gate.future);
+
+        final journey = Journey(
+          id: journeyId,
+          ownerId: 'user-a',
+          kind: JourneyKind.solo,
+          templateId: TemplateId.englishDaily,
+          title: 'In-Flight Clear Race',
+          emoji: '',
+          startDate: const LocalDate(2026, 11, 10),
+          durationDays: 30,
+          timezone: 'Asia/Ho_Chi_Minh',
+          visibility: JourneyVisibility.private,
+          status: JourneyStatus.active,
+        );
+
+        final container = ProviderContainer(
+          overrides: [
+            appConfigProvider.overrideWithValue(testBackendConfig),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            supabaseClientProvider.overrideWithValue(null),
+            currentUserIdProvider.overrideWith(_SignedInUser.new),
+            widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
+            widgetThumbPreparerProvider.overrideWithValue(gatedThumbPreparer),
+            journeyRepositoryProvider.overrideWithValue(
+              FakeReminderJourneyRepository([journey]),
+            ),
+            checkInRepositoryProvider.overrideWithValue(
+              FakeReminderCheckInRepository(),
+            ),
+            notificationGatewayProvider.overrideWithValue(
+              FakeNotificationGateway(granted: true),
+            ),
+            reminderDeviceTimezoneProvider.overrideWith(
+              (ref) async => 'Asia/Ho_Chi_Minh',
+            ),
+            journeysClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+            remindersClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+            widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final controller = container.read(widgetSyncControllerProvider);
+
+        // Start sync #1, which suspends inside _thumbPreparer.prepare.
+        final inFlightSync = controller.syncNow();
+        await pumpEventQueue();
+        expect(gatedThumbPreparer.prepareCalls, 1);
+
+        // Call clearAll() while sync #1 is still suspended (simulating account reset).
+        final clearFuture = controller.clearAll();
+        gate.complete();
+        await Future.wait([inFlightSync, clearFuture]);
+
+        // Stale sync #1 must have been aborted before calling syncSnapshot.
+        expect(fakeBridge.snapshotSyncs, isEmpty);
+        expect(fakeBridge.clearAllCount, 1);
+
+        // A subsequent non-forced syncNow() with the same journey data must NOT be
+        // suppressed by a poisoned digest from sync #1.
+        await controller.syncNow();
+        expect(fakeBridge.snapshotSyncs, hasLength(1));
       },
     );
 

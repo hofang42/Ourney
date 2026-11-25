@@ -163,8 +163,9 @@ class SquadGlanceWidget : GlanceAppWidget() {
                         palette = palette,
                         iconRes = R.drawable.ic_ourney_sticker_squad,
                         title = l10n.getString(R.string.widget_squad_empty_title),
-                        subtitle = l10n.getString(
-                            R.string.widget_squad_solo_only_subtitle,
+                        subtitle = l10n.resources.getQuantityString(
+                            R.plurals.widget_squad_solo_only_subtitle,
+                            state.soloCount,
                             state.soloCount,
                         ),
                         ctaText = l10n.getString(R.string.widget_squad_empty_cta),

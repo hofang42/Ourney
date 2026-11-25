@@ -358,16 +358,20 @@ class WidgetPrivacySnapshot {
   const WidgetPrivacySnapshot({
     required this.photoMode,
     required this.redactLockScreenTitles,
+    this.explicitRedactLockScreenTitles,
     required this.liveActivityEnabled,
   });
 
   final String photoMode;
   final bool redactLockScreenTitles;
+  final bool? explicitRedactLockScreenTitles;
   final bool liveActivityEnabled;
 
   Map<String, Object?> toJson() => {
     'photoMode': photoMode,
     'redactLockScreenTitles': redactLockScreenTitles,
+    if (explicitRedactLockScreenTitles == true)
+      'explicitRedactLockScreenTitles': true,
     'liveActivityEnabled': liveActivityEnabled,
   };
 }
@@ -582,6 +586,7 @@ abstract final class WidgetSnapshotBuilder {
         privacy: WidgetPrivacySnapshot(
           photoMode: photoMode.wireName,
           redactLockScreenTitles: redactTitles,
+          explicitRedactLockScreenTitles: explicitRedactLockScreenTitles,
           liveActivityEnabled: liveActivityEnabled,
         ),
         defaultJourneyId: null,
@@ -979,6 +984,7 @@ abstract final class WidgetSnapshotBuilder {
       privacy: WidgetPrivacySnapshot(
         photoMode: photoMode.wireName,
         redactLockScreenTitles: redactTitles,
+        explicitRedactLockScreenTitles: explicitRedactLockScreenTitles,
         liveActivityEnabled: liveActivityEnabled,
       ),
       defaultJourneyId: resolvedDefaultId,

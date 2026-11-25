@@ -127,12 +127,15 @@ object WidgetActions {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
 
-    suspend fun refreshAllWidgets(context: Context) {
+    suspend fun refreshAllWidgets(
+        context: Context,
+        clearSelections: Boolean = false,
+    ) {
         val manager = GlanceAppWidgetManager(context)
         val seq = System.currentTimeMillis()
-        refreshWidgetClass(context, manager, TodayGlanceWidget(), seq)
-        refreshWidgetClass(context, manager, StreakGlanceWidget(), seq)
-        refreshWidgetClass(context, manager, SquadGlanceWidget(), seq)
+        refreshWidgetClass(context, manager, TodayGlanceWidget(), seq, clearSelections)
+        refreshWidgetClass(context, manager, StreakGlanceWidget(), seq, clearSelections)
+        refreshWidgetClass(context, manager, SquadGlanceWidget(), seq, clearSelections)
     }
 
     private suspend fun <T : GlanceAppWidget> refreshWidgetClass(
@@ -140,13 +143,19 @@ object WidgetActions {
         manager: GlanceAppWidgetManager,
         widget: T,
         seq: Long,
+        clearSelections: Boolean,
     ) {
         try {
             val glanceIds = manager.getGlanceIds(widget.javaClass)
             for (glanceId in glanceIds) {
                 try {
                     updateAppWidgetState(context, glanceId) { prefs ->
-                        prefs[WidgetPrefsKeys.SNAPSHOT_SEQ] = seq
+                        if (clearSelections) {
+                            prefs.remove(WidgetPrefsKeys.SELECTED_ID)
+                            prefs.remove(WidgetPrefsKeys.CYCLE_INDEX)
+                        }
+                        val prevSeq = prefs[WidgetPrefsKeys.SNAPSHOT_SEQ] ?: 0L
+                        prefs[WidgetPrefsKeys.SNAPSHOT_SEQ] = maxOf(seq, prevSeq + 1L)
                     }
                     widget.update(context, glanceId)
                 } catch (_: Exception) {
@@ -160,9 +169,12 @@ object WidgetActions {
         }
     }
 
-    fun refreshAllWidgetsAsync(context: Context) {
+    fun refreshAllWidgetsAsync(
+        context: Context,
+        clearSelections: Boolean = false,
+    ) {
         CoroutineScope(Dispatchers.Default).launch {
-            refreshAllWidgets(context)
+            refreshAllWidgets(context, clearSelections = clearSelections)
         }
     }
 }
@@ -178,13 +190,14 @@ class CycleTodayJourneyAction : ActionCallback {
         glanceId: GlanceId,
         parameters: ActionParameters,
     ) {
-        val nextState = WidgetSnapshotStore.fromContext(context).cycleTodayJourney()
+        WidgetSnapshotStore.fromContext(context).cycleTodayJourney()
         try {
             updateAppWidgetState(context, glanceId) { prefs ->
-                val current = prefs[WidgetPrefsKeys.CYCLE_INDEX]
-                    ?: (nextState.selectedTodayIndex - 1).coerceAtLeast(0)
+                val current = prefs[WidgetPrefsKeys.CYCLE_INDEX] ?: 0
                 prefs[WidgetPrefsKeys.CYCLE_INDEX] = current + 1
-                prefs[WidgetPrefsKeys.SNAPSHOT_SEQ] = System.currentTimeMillis()
+                val prevSeq = prefs[WidgetPrefsKeys.SNAPSHOT_SEQ] ?: 0L
+                prefs[WidgetPrefsKeys.SNAPSHOT_SEQ] =
+                    maxOf(System.currentTimeMillis(), prevSeq + 1L)
             }
         } catch (_: Exception) {
         }

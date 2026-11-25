@@ -5,12 +5,14 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowInsets
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -100,6 +102,8 @@ class OurneyWidgetConfigureActivity : Activity() {
         val isDark = OurneyGlanceTheme.resolveIsDark(this, snapshot?.themeMode)
         val l10n = OurneyGlanceTheme.localizedContext(this, snapshot?.locale)
         val palette = OurneyGlanceTheme.neutralShellPalette(isDark)
+        @Suppress("DEPRECATION")
+        window?.navigationBarColor = palette.bg
 
         val options = buildOptions(snapshot, l10n, palette, isDark)
         val rawSelectedId = store.getWidgetSelection(appWidgetId)
@@ -224,18 +228,23 @@ class OurneyWidgetConfigureActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT,
             )
-            setOnClickListener { finish() }
+            setPadding(0, dp(32f), 0, 0)
+            setOnClickListener {
+                if (!saving) finish()
+            }
         }
 
         val screenWidthDp = resources.configuration.screenWidthDp
         val maxSheetWidthPx = if (screenWidthDp >= 600) dp(520f) else ViewGroup.LayoutParams.MATCH_PARENT
         val horizontalPadPx = if (screenWidthDp < 360) dp(16f) else dp(20f)
+        val topSheetPadPx = dp(14f)
+        val baseBottomSheetPadPx = dp(24f)
 
         val sheet = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             isClickable = true
             isFocusable = true
-            setPadding(horizontalPadPx, dp(14f), horizontalPadPx, dp(24f))
+            setPadding(horizontalPadPx, topSheetPadPx, horizontalPadPx, baseBottomSheetPadPx)
             background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 setColor(palette.bg)
@@ -244,6 +253,35 @@ class OurneyWidgetConfigureActivity : Activity() {
                 setStroke(dp(2f), palette.outline)
             }
         }
+
+        root.setOnApplyWindowInsetsListener { v, insets ->
+            val (topInset, bottomInset) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val sysInsets = insets.getInsets(
+                    WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout(),
+                )
+                sysInsets.top to sysInsets.bottom
+            } else {
+                @Suppress("DEPRECATION")
+                insets.systemWindowInsetTop to insets.systemWindowInsetBottom
+            }
+            v.setPadding(0, topInset + dp(32f), 0, 0)
+            sheet.setPadding(
+                horizontalPadPx,
+                topSheetPadPx,
+                horizontalPadPx,
+                baseBottomSheetPadPx + bottomInset,
+            )
+            insets
+        }
+        root.addOnAttachStateChangeListener(
+            object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) {
+                    v.requestApplyInsets()
+                }
+
+                override fun onViewDetachedFromWindow(v: View) = Unit
+            },
+        )
 
         // Top drag handle bar
         val handle = View(this).apply {
@@ -295,7 +333,9 @@ class OurneyWidgetConfigureActivity : Activity() {
                 setColor(palette.fill)
                 setStroke(dp(1.5f), palette.outline)
             }
-            setOnClickListener { finish() }
+            setOnClickListener {
+                if (!saving) finish()
+            }
             val closeIcon = ImageView(this@OurneyWidgetConfigureActivity).apply {
                 setImageResource(R.drawable.ic_ourney_sticker_close)
                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
@@ -515,7 +555,11 @@ class OurneyWidgetConfigureActivity : Activity() {
             )
             widgetKind == WidgetConfigKind.SQUAD && snapshot.squads.isEmpty() && snapshot.journeys.isNotEmpty() -> Triple(
                 l10n.getString(R.string.widget_squad_empty_title),
-                l10n.getString(R.string.widget_squad_solo_only_subtitle, snapshot.journeys.size),
+                l10n.resources.getQuantityString(
+                    R.plurals.widget_squad_solo_only_subtitle,
+                    snapshot.journeys.size,
+                    snapshot.journeys.size,
+                ),
                 WidgetActions.groupsHubIntent(this),
             )
             snapshot.journeys.isEmpty() -> Triple(
@@ -617,8 +661,14 @@ class OurneyWidgetConfigureActivity : Activity() {
                 val manager = GlanceAppWidgetManager(appCtx)
                 val glanceId = manager.getGlanceIdBy(id)
                 updateAppWidgetState(appCtx, glanceId) { prefs ->
-                    prefs[WidgetPrefsKeys.SELECTED_ID] = chosenId
-                    prefs[WidgetPrefsKeys.SNAPSHOT_SEQ] = System.currentTimeMillis()
+                    if (chosenId == WidgetSnapshot.AUTO_SELECTION_ID) {
+                        prefs.remove(WidgetPrefsKeys.SELECTED_ID)
+                    } else {
+                        prefs[WidgetPrefsKeys.SELECTED_ID] = chosenId
+                    }
+                    val prevSeq = prefs[WidgetPrefsKeys.SNAPSHOT_SEQ] ?: 0L
+                    prefs[WidgetPrefsKeys.SNAPSHOT_SEQ] =
+                        maxOf(System.currentTimeMillis(), prevSeq + 1L)
                     prefs[WidgetPrefsKeys.CYCLE_INDEX] = 0
                 }
                 when (kind) {

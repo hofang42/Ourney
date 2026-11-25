@@ -82,7 +82,7 @@ class OurneyWidgetBridge(context: Context) : MethodChannel.MethodCallHandler {
             val ok = store.clearAll()
             CheckInLiveUpdateManager.cancel(appContext)
             CheckInWindowReceiver.cancelScheduledRollovers(appContext)
-            WidgetActions.refreshAllWidgetsAsync(appContext)
+            WidgetActions.refreshAllWidgetsAsync(appContext, clearSelections = true)
             mainHandler.post {
                 result.success(ok)
             }

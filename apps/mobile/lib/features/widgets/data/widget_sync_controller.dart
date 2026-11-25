@@ -74,11 +74,15 @@ class WidgetSyncController {
 
   Timer? _debounceTimer;
   final Set<Timer> _activeTimers = <Timer>{};
+  final Set<StreamSubscription<Object?>> _activeSubscriptions =
+      <StreamSubscription<Object?>>{};
   bool _microtaskScheduled = false;
   Future<void> _serial = Future.value();
   bool _pendingConsumeNativeState = false;
   bool _pendingForceSync = false;
   bool _disposed = false;
+  int _epoch = 0;
+  bool _nativeClearedForSignedOut = false;
 
   String? _lastSnapshotDigest;
   String? _lastLiveActivityDigest;
@@ -135,17 +139,24 @@ class WidgetSyncController {
     if (consumeNativeState) _pendingConsumeNativeState = true;
     final effectiveForce = force || _pendingForceSync;
     _pendingForceSync = false;
+    final requestEpoch = _epoch;
     _debounceTimer?.cancel();
     _debounceTimer = null;
-    final next = _serial.then((_) => _runSync(force: effectiveForce));
+    final next = _serial.then(
+      (_) => _runSync(force: effectiveForce, requestEpoch: requestEpoch),
+    );
     _serial = next.catchError((Object _) {});
     return _serial;
   }
 
   /// Unconditionally deletes `snapshot_v1.json`, `state.json`, all cached
   /// widget thumbnails, and ends all active Live Activities / Live Updates
-  /// (called on sign-out / account switch / account deletion, §4.5, §7.1).
+  /// (called on sign-out / account switch / account deletion, §4.5, §7.1),
+  /// then writes a privacy-safe `authState: "signedOut"` snapshot when signed
+  /// out so Home Screen widgets render `SignedOut` rather than `Unsynced`.
   Future<void> clearAll() {
+    _epoch++;
+    final clearEpoch = _epoch;
     _debounceTimer?.cancel();
     _debounceTimer = null;
     _pendingConsumeNativeState = false;
@@ -154,31 +165,96 @@ class WidgetSyncController {
     _lastLiveActivityDigest = null;
     _lastActiveWindow = null;
     _lastSnapshot = null;
+    _nativeClearedForSignedOut = false;
     final next = _serial.then((_) async {
+      _lastSnapshotDigest = null;
+      _lastLiveActivityDigest = null;
+      _lastActiveWindow = null;
+      _lastSnapshot = null;
       await _thumbPreparer.clearCache();
       await _gateway.clearAll();
+      if (_disposed || clearEpoch != _epoch) return;
+      if (_ref.read(authStatusProvider) == AuthStatus.signedOut) {
+        _nativeClearedForSignedOut = true;
+        await _syncSignedOutSnapshot(
+          force: true,
+          requestEpoch: clearEpoch,
+        );
+      }
     });
     _serial = next.catchError((Object _) {});
     return _serial;
   }
 
-  Future<void> _runSync({required bool force}) async {
-    if (_disposed) return;
+  Future<void> _syncSignedOutSnapshot({
+    required bool force,
+    required int requestEpoch,
+  }) async {
+    if (_disposed || requestEpoch != _epoch) return;
+    final now = _ref.read(widgetsClockProvider).now().toUtc();
+    final locale = _ref.read(reminderLocaleProvider).languageCode;
+    final themeMode = _ref.read(themeModeProvider);
+    final photoMode = _ref.read(widgetPhotoModeProvider);
+    final explicitRedact = _ref.read(redactLockScreenTitlesPrefProvider);
+    final liveEnabled = _ref.read(liveActivityEnabledProvider);
+
+    final snapshot = WidgetSnapshotBuilder.build(
+      now: now,
+      authStatus: AuthStatus.signedOut,
+      journeyInputs: const [],
+      locale: locale,
+      themeMode: themeMode,
+      photoMode: photoMode,
+      explicitRedactLockScreenTitles: explicitRedact,
+      liveActivityEnabled: liveEnabled,
+    );
+    _lastSnapshot = snapshot;
+
+    final fullSnapshotDigest = sha256
+        .convert(utf8.encode('${snapshot.computeContentDigest()}|'))
+        .toString();
+    if (force || fullSnapshotDigest != _lastSnapshotDigest) {
+      final synced = await _gateway.syncSnapshot(
+        snapshotJson: snapshot.toJsonString(),
+        thumbs: const [],
+      );
+      if (_disposed || requestEpoch != _epoch) return;
+      if (synced) {
+        _lastSnapshotDigest = fullSnapshotDigest;
+      }
+    }
+  }
+
+  Future<void> _runSync({
+    required bool force,
+    required int requestEpoch,
+  }) async {
+    if (_disposed || requestEpoch != _epoch) return;
     try {
       final authStatus = _ref.read(authStatusProvider);
       if (authStatus == AuthStatus.signedOut) {
-        _lastSnapshotDigest = null;
-        _lastLiveActivityDigest = null;
-        _lastActiveWindow = null;
-        _lastSnapshot = null;
-        await _thumbPreparer.clearCache();
-        await _gateway.clearAll();
+        if (!_nativeClearedForSignedOut) {
+          _lastSnapshotDigest = null;
+          _lastLiveActivityDigest = null;
+          _lastActiveWindow = null;
+          _lastSnapshot = null;
+          await _thumbPreparer.clearCache();
+          await _gateway.clearAll();
+          if (_disposed || requestEpoch != _epoch) return;
+          _nativeClearedForSignedOut = true;
+        }
+        await _syncSignedOutSnapshot(
+          force: force,
+          requestEpoch: requestEpoch,
+        );
         return;
       }
+      _nativeClearedForSignedOut = false;
 
       if (_pendingConsumeNativeState) {
         _pendingConsumeNativeState = false;
         await _consumeNativeState();
+        if (_disposed || requestEpoch != _epoch) return;
       }
 
       final now = _ref.read(widgetsClockProvider).now().toUtc();
@@ -207,10 +283,17 @@ class WidgetSyncController {
           deviceTimezone = null;
         }
       }
+      if (_disposed || requestEpoch != _epoch) return;
 
       final pinnedIds = await _readPinnedIds();
       final blockedIds = await _readBlockedIds();
       final journeyInputs = await _readJourneyInputs(currentUserId);
+      if (_disposed ||
+          requestEpoch != _epoch ||
+          _ref.read(authStatusProvider) != authStatus ||
+          _ref.read(currentUserIdProvider) != currentUserId) {
+        return;
+      }
 
       final snapshot = WidgetSnapshotBuilder.build(
         now: now,
@@ -232,11 +315,18 @@ class WidgetSyncController {
         currentUserId: currentUserId,
         dismissedWindowKey: dismissedWindowKey,
       );
-      _lastSnapshot = snapshot;
 
       final preparedThumbs = await _thumbPreparer.prepare(
         snapshot.thumbRequests,
       );
+      if (_disposed ||
+          requestEpoch != _epoch ||
+          _ref.read(authStatusProvider) != authStatus ||
+          _ref.read(currentUserIdProvider) != currentUserId) {
+        return;
+      }
+      _lastSnapshot = snapshot;
+
       final thumbPathsSignature = [
         for (final t in preparedThumbs)
           '${t.id}:${t.sourcePath}:${t.maxSide}:${t.blur}',
@@ -254,6 +344,7 @@ class WidgetSyncController {
           snapshotJson: snapshot.toJsonString(),
           thumbs: preparedThumbs,
         );
+        if (_disposed || requestEpoch != _epoch) return;
         if (synced) {
           _lastSnapshotDigest = fullSnapshotDigest;
         }
@@ -274,6 +365,7 @@ class WidgetSyncController {
       final liveDigest = _computeLiveDigest(livePlan);
       if (force || liveDigest != _lastLiveActivityDigest) {
         final synced = await _gateway.syncLiveActivity(livePlan.channelPayload);
+        if (_disposed || requestEpoch != _epoch) return;
         if (synced) {
           _lastLiveActivityDigest = liveDigest;
         }
@@ -307,27 +399,54 @@ class WidgetSyncController {
     }
   }
 
-  Future<T> _withTimeout<T>(Future<T> future, Duration timeout) {
+  Future<T> _firstWithTimeout<T>(Stream<T> stream, Duration timeout) {
     final completer = Completer<T>();
-    final timer = Timer(timeout, () {
+    late final StreamSubscription<T> sub;
+    late final Timer timer;
+
+    void cleanup() {
+      if (_activeTimers.remove(timer)) {
+        timer.cancel();
+      }
+      if (_activeSubscriptions.remove(sub)) {
+        unawaited(sub.cancel());
+      }
+    }
+
+    timer = Timer(timeout, () {
       _activeTimers.removeWhere((t) => !t.isActive);
+      cleanup();
       if (!completer.isCompleted) {
         completer.completeError(
-          TimeoutException('Widget sync read timed out', timeout),
+          TimeoutException('Widget sync stream read timed out', timeout),
         );
       }
     });
     _activeTimers.add(timer);
-    future.then(
+
+    sub = stream.listen(
       (value) {
-        if (_activeTimers.remove(timer)) timer.cancel();
-        if (!completer.isCompleted) completer.complete(value);
+        cleanup();
+        if (!completer.isCompleted) {
+          completer.complete(value);
+        }
       },
       onError: (Object error, StackTrace stackTrace) {
-        if (_activeTimers.remove(timer)) timer.cancel();
-        if (!completer.isCompleted) completer.completeError(error, stackTrace);
+        cleanup();
+        if (!completer.isCompleted) {
+          completer.completeError(error, stackTrace);
+        }
       },
+      onDone: () {
+        cleanup();
+        if (!completer.isCompleted) {
+          completer.completeError(StateError('No element'));
+        }
+      },
+      cancelOnError: true,
     );
+    _activeSubscriptions.add(sub);
+
     return completer.future;
   }
 
@@ -335,8 +454,8 @@ class WidgetSyncController {
     final cached = _ref.read(pinnedJourneyIdsProvider);
     if (cached.hasValue) return cached.requireValue;
     try {
-      return await _withTimeout(
-        _ref.read(journeyRepositoryProvider).watchPinnedJourneyIds().first,
+      return await _firstWithTimeout(
+        _ref.read(journeyRepositoryProvider).watchPinnedJourneyIds(),
         localReadTimeout,
       );
     } on Object {
@@ -348,8 +467,8 @@ class WidgetSyncController {
     final cached = _ref.read(groupBlockedIdsProvider);
     if (cached.hasValue) return cached.requireValue;
     try {
-      return await _withTimeout(
-        _ref.read(safetyRepositoryProvider).watchBlockedIds().first,
+      return await _firstWithTimeout(
+        _ref.read(safetyRepositoryProvider).watchBlockedIds(),
         localReadTimeout,
       );
     } on Object {
@@ -366,8 +485,8 @@ class WidgetSyncController {
       journeys = cachedJourneys.requireValue;
     } else {
       try {
-        journeys = await _withTimeout(
-          _ref.read(journeyRepositoryProvider).watchActive().first,
+        journeys = await _firstWithTimeout(
+          _ref.read(journeyRepositoryProvider).watchActive(),
           localReadTimeout,
         );
       } on Object {
@@ -386,8 +505,8 @@ class WidgetSyncController {
         membership = cachedMembership.requireValue;
       } else {
         try {
-          membership = await _withTimeout(
-            _ref.read(journeyRepositoryProvider).watchMyMembership(j.id).first,
+          membership = await _firstWithTimeout(
+            _ref.read(journeyRepositoryProvider).watchMyMembership(j.id),
             localReadTimeout,
           );
         } on Object {
@@ -402,11 +521,10 @@ class WidgetSyncController {
         myCheckIns = cachedMyCheckIns.requireValue;
       } else {
         try {
-          myCheckIns = await _withTimeout(
+          myCheckIns = await _firstWithTimeout(
             _ref
                 .read(checkInRepositoryProvider)
-                .watchForJourney(j.id, userId: effectiveUserId)
-                .first,
+                .watchForJourney(j.id, userId: effectiveUserId),
             localReadTimeout,
           );
         } on Object {
@@ -422,8 +540,8 @@ class WidgetSyncController {
           groupMembers = cachedGroupToday.requireValue;
         } else {
           try {
-            groupMembers = await _withTimeout(
-              _ref.read(groupRepositoryProvider).watchToday(j.id).first,
+            groupMembers = await _firstWithTimeout(
+              _ref.read(groupRepositoryProvider).watchToday(j.id),
               groupRpcTimeout,
             );
           } on Object {
@@ -435,8 +553,8 @@ class WidgetSyncController {
           groupCheckIns = cachedGroupCheckIns.requireValue;
         } else {
           try {
-            groupCheckIns = await _withTimeout(
-              _ref.read(checkInRepositoryProvider).watchForJourney(j.id).first,
+            groupCheckIns = await _firstWithTimeout(
+              _ref.read(checkInRepositoryProvider).watchForJourney(j.id),
               localReadTimeout,
             );
           } on Object {
@@ -467,6 +585,10 @@ class WidgetSyncController {
       timer.cancel();
     }
     _activeTimers.clear();
+    for (final sub in _activeSubscriptions) {
+      unawaited(sub.cancel());
+    }
+    _activeSubscriptions.clear();
   }
 }
 

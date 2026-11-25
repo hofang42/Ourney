@@ -89,7 +89,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
                 val selectedId = prefSelectedId
                     ?.takeIf { it.isNotBlank() }
                     ?: diskState.selectionFor(appWidgetId)
-                val cycleIndex = prefCycleIndex ?: diskState.selectedTodayIndex
+                val cycleIndex = prefCycleIndex ?: 0
                 val cardState = WidgetSnapshot.resolveTodayCardState(
                     snapshot = snapshot,
                     selectedId = selectedId,

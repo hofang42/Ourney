@@ -34,7 +34,9 @@
     <string name="widget_squad_couple_badge">Cặp đôi · Ngày %1$d</string>
     <string name="widget_squad_empty_title">Chưa có hành trình đồng đội</string>
     <string name="widget_squad_empty_subtitle">Tham gia cùng bạn bè hoặc người thương trên Ourney</string>
-    <string name="widget_squad_solo_only_subtitle">Bạn có %1$d hành trình cá nhân — tạo nhóm mới hoặc dùng widget Hôm nay</string>
+    <plurals name="widget_squad_solo_only_subtitle">
+        <item quantity="other">Bạn có %1$d hành trình cá nhân — tạo nhóm mới hoặc dùng widget Hôm nay</item>
+    </plurals>
     <string name="widget_squad_empty_cta">Mở Đồng đội</string>
     <string name="widget_squad_me_done">Bạn đã xong</string>
     <string name="widget_squad_me_pending">Đến lượt bạn</string>

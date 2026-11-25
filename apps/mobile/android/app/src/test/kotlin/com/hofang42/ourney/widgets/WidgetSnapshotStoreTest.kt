@@ -689,5 +689,27 @@ class WidgetSnapshotStoreTest {
         assertEquals(WidgetSnapshot.AUTO_SELECTION_ID, store.getWidgetSelection(102))
         assertEquals(WidgetSnapshot.AUTO_SELECTION_ID, store.getWidgetSelection(103))
         assertTrue(store.readState().widgetSelections.isEmpty())
+
+        // 8. Sign-out transition (P1-1): wiping store via clearAll() then writing the
+        // signed-out snapshot resolves all 3 widget cards to SignedOut (not Unsynced)
+        assertTrue(store.clearAll())
+        store.writeSnapshotAtomically(
+            """{"schemaVersion":1,"authState":"signedOut","locale":"vi","themeMode":"system","journeys":[],"squads":[]}""",
+        )
+        val postSignOutSnap = store.readSnapshot(at1200Utc)
+        assertNotNull(postSignOutSnap)
+        assertTrue(postSignOutSnap!!.isSignedOut)
+        assertEquals(
+            JourneyWidgetCardState.SignedOut,
+            WidgetSnapshot.resolveTodayCardState(postSignOutSnap),
+        )
+        assertEquals(
+            JourneyWidgetCardState.SignedOut,
+            WidgetSnapshot.resolveStreakCardState(postSignOutSnap),
+        )
+        assertEquals(
+            SquadWidgetCardState.SignedOut,
+            WidgetSnapshot.resolveSquadCardState(postSignOutSnap),
+        )
     }
 }
