@@ -41,7 +41,7 @@
   "widgets_liveActivitySubAndroid": "Shows an ongoing countdown on your status bar and Lock Screen starting 30 minutes before your reminder (or 18:00 when a streak is at risk) and clears as soon as you post.",
   "widgets_secDefaultJourney": "featured widget journey",
   "widgets_defaultJourneyAuto": "Automatic (prioritize next unchecked)",
-  "widgets_defaultJourneyAutoSub": "Advances to your next pending journey as soon as you check in",
+  "widgets_defaultJourneyAutoSub": "Used by widgets set to Automatic. Long-press any widget on your Home Screen to pin a specific journey.",
   "widgets_secSetup": "how to add to your home screen",
   "widgets_setupStep1Title": "1. Touch and hold your Home Screen or Lock Screen",
   "widgets_setupStep1TitleAndroid": "1. Touch and hold your Home Screen",

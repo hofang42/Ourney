@@ -156,7 +156,7 @@ class WidgetsL10nVi extends WidgetsL10n {
 
   @override
   String get widgets_defaultJourneyAutoSub =>
-      'Tự chuyển sang hành trình tiếp theo ngay khi bạn hoàn tất một tấm ảnh';
+      'Áp dụng cho tiện ích ở chế độ Tự động. Nhấn giữ tiện ích trên Màn hình chính để chọn riêng từng hành trình.';
 
   @override
   String get widgets_secSetup => 'cách thêm ra màn hình chính';

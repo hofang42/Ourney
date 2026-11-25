@@ -208,6 +208,18 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/ourney_squad_widget_info" />
         </receiver>
+        <!-- Lightweight Soft Neo-Brutalist per-widget journey/squad configuration sheet. -->
+        <activity
+            android:name=".widgets.OurneyWidgetConfigureActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Ourney.WidgetConfigure"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
         <!-- Check-In Window Live Update & inexact midnight widget rollover receiver. -->
         <receiver
             android:name=".widgets.CheckInWindowReceiver"

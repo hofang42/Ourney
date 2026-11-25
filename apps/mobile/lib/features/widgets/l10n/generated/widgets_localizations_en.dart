@@ -155,7 +155,7 @@ class WidgetsL10nEn extends WidgetsL10n {
 
   @override
   String get widgets_defaultJourneyAutoSub =>
-      'Advances to your next pending journey as soon as you check in';
+      'Used by widgets set to Automatic. Long-press any widget on your Home Screen to pin a specific journey.';
 
   @override
   String get widgets_secSetup => 'how to add to your home screen';

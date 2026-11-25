@@ -84,12 +84,15 @@ class WidgetSnapshotStore(val rootDir: File) {
      * - Copies/downsamples only missing `<id>.jpg` files (`0 CPU` on cache hit).
      * - Does NOT blur thumbnails again on the native side (Dart pre-blurs once at `sigma = 18`).
      * - Sweeps orphan files in `thumbs/` not referenced by [referencedRelPaths] or [specs].
+     *
+     * @return `true` if any thumbnail file was newly created or deleted on disk.
      */
     @Synchronized
-    fun syncThumbs(specs: List<ThumbSpec>, referencedRelPaths: Set<String>) {
+    fun syncThumbs(specs: List<ThumbSpec>, referencedRelPaths: Set<String>): Boolean {
         if (!thumbsDir.exists()) {
             thumbsDir.mkdirs()
         }
+        var changed = false
         val keepFileNames = mutableSetOf<String>()
         for (rel in referencedRelPaths) {
             sanitizeFileName(rel.substringAfterLast('/'))?.let(keepFileNames::add)
@@ -105,13 +108,19 @@ class WidgetSnapshotStore(val rootDir: File) {
             val srcFile = File(spec.sourcePath)
             if (!srcFile.isFile || srcFile.length() <= 0L) continue
             prepareThumbFile(srcFile, destFile, spec.maxSide)
+            if (destFile.isFile && destFile.length() > 0L) {
+                changed = true
+            }
         }
 
         thumbsDir.listFiles()?.forEach { existing ->
             if (existing.isFile && existing.name !in keepFileNames) {
-                existing.delete()
+                if (existing.delete()) {
+                    changed = true
+                }
             }
         }
+        return changed
     }
 
     /**
@@ -165,6 +174,56 @@ class WidgetSnapshotStore(val rootDir: File) {
             dismissedWindowKey = windowKey,
             dismissedWindowDate = WidgetMutableState.todayUtcDateString(nowEpochMs),
         )
+        writeState(next)
+        return next
+    }
+
+    /**
+     * Returns the persisted journey/squad selection (`"auto"` or `<journeyId>`)
+     * for [appWidgetId].
+     */
+    @Synchronized
+    fun getWidgetSelection(appWidgetId: Int): String {
+        if (appWidgetId <= 0) return WidgetSnapshot.AUTO_SELECTION_ID
+        return readState().selectionFor(appWidgetId)
+    }
+
+    /**
+     * Persists a per-[appWidgetId] journey/squad selection (`"auto"` or `<journeyId>`).
+     */
+    @Synchronized
+    fun setWidgetSelection(appWidgetId: Int, selectedId: String): WidgetMutableState {
+        val current = readState()
+        if (appWidgetId <= 0) return current
+        val normalized = selectedId.trim().ifEmpty { WidgetSnapshot.AUTO_SELECTION_ID }
+        val updatedMap = current.widgetSelections.toMutableMap()
+        if (normalized == WidgetSnapshot.AUTO_SELECTION_ID) {
+            updatedMap.remove(appWidgetId)
+        } else {
+            updatedMap[appWidgetId] = normalized
+        }
+        val next = current.copy(widgetSelections = updatedMap)
+        writeState(next)
+        return next
+    }
+
+    /**
+     * Removes persisted selections for deleted [appWidgetIds] (called from
+     * `GlanceAppWidgetReceiver.onDeleted`).
+     */
+    @Synchronized
+    fun removeWidgetSelections(appWidgetIds: IntArray): WidgetMutableState {
+        val current = readState()
+        if (appWidgetIds.isEmpty() || current.widgetSelections.isEmpty()) return current
+        val updatedMap = current.widgetSelections.toMutableMap()
+        var changed = false
+        for (id in appWidgetIds) {
+            if (updatedMap.remove(id) != null) {
+                changed = true
+            }
+        }
+        if (!changed) return current
+        val next = current.copy(widgetSelections = updatedMap)
         writeState(next)
         return next
     }
