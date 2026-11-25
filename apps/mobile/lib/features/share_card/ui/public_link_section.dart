@@ -7,11 +7,11 @@ import '../../../app/providers.dart';
 import '../../../app/theme/motion.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
-import '../../journeys/data/journeys_providers.dart' show myMembershipProvider;
 import '../../profile/settings_providers.dart' show hideWeightOnShareProvider;
 import '../../sharing/data/sharing_providers.dart' show shareStateProvider;
 import '../../sharing/ui/share_journey_sheet.dart'
     show choosePublicLinkTitle, isSensitiveTemplate, showSensitiveLinkWarning;
+import '../data/share_card_providers.dart' show shareMembershipProvider;
 import '../domain/share_card_content.dart';
 import '../l10n/generated/share_card_localizations.dart';
 
@@ -55,7 +55,7 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
   );
 
   bool get _hideTitleNow => _hideTitle(
-    ref.read(myMembershipProvider(widget.journey.id)).value,
+    ref.read(shareMembershipProvider(widget.journey.id)).value,
     ref.read(hideWeightOnShareProvider),
   );
 
@@ -72,14 +72,13 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
     final ui = context.ui;
     final journey = widget.journey;
     final hideTitle = _hideTitle(
-      ref.watch(myMembershipProvider(journey.id)).value,
+      ref.watch(shareMembershipProvider(journey.id)).value,
       ref.watch(hideWeightOnShareProvider),
     );
     final cachedToken = _overridden ? _token : activePublicToken(journey);
     final state = ref.watch(shareStateProvider(journey.id)).value;
     final token =
-        isTitledPublicSlug(cachedToken) &&
-            (hideTitle || (!_overridden && state?.linkOn == true))
+        isTitledPublicSlug(cachedToken) && (hideTitle || state?.linkOn == true)
         ? state?.publicAddress(hideTitle: hideTitle)
         : cachedToken;
     final uri = _uriFor(token);
@@ -177,10 +176,16 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
     await _getAndCopy(approvedTitle: approvedTitle);
   }
 
-  void _showLink(PublicLinkResult result) => setState(() {
-    _overridden = true;
-    _token = result.address(hideTitle: _hideTitleNow);
-  });
+  void _showLink(PublicLinkResult result) {
+    final provider = shareStateProvider(widget.journey.id);
+    if (ref.read(provider).value?.publicToken != result.address()) {
+      ref.invalidate(provider);
+    }
+    setState(() {
+      _overridden = true;
+      _token = result.address(hideTitle: _hideTitleNow);
+    });
+  }
 
   Future<void> _getAndCopy({
     String? approvedTitle,

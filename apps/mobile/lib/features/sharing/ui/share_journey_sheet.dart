@@ -283,7 +283,7 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
     }
   }
 
-  Future<void> _copyLink() async {
+  Future<void> _copyLink(String? displayedAddress) async {
     setState(() => _linkBusy = true);
     try {
       final result = await ref
@@ -295,7 +295,9 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
             hideWeight: ref.read(hideWeightOnShareProvider),
           );
       if (!mounted) return;
-      final address = result.address(hideTitle: _hideLinkTitleNow);
+      final address = result.address(
+        hideTitle: _hideLinkTitleNow || result.slug != displayedAddress,
+      );
       final uri = address == null ? null : _linkUri(address);
       if (uri == null) return;
       await Clipboard.setData(ClipboardData(text: uri.toString()));
@@ -413,7 +415,7 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
             (consents != null &&
                 myConsent?.status != ShareConsentStatus.accepted));
     final owner = _isOwner();
-    final publicAddress = owner
+    final publicAddress = owner && state.linkOn
         ? state.publicAddress(
             hideTitle: _hideLinkTitle(
               ref.watch(myMembershipProvider(_journey.id)).value,
@@ -475,7 +477,7 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
           under18: _under18,
           busy: _linkBusy,
           linkUri: publicAddress == null ? null : _linkUri(publicAddress),
-          onCopy: _copyLink,
+          onCopy: () => _copyLink(publicAddress),
           onLink: (on) => _setLink(on),
           onReset: () => _setLink(true, reset: true),
           onPublic: _setPublic,

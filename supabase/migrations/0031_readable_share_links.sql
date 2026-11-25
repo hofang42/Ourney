@@ -125,6 +125,11 @@ begin
     raise exception 'forbidden' using errcode = '42501';
   end if;
 
+  if p_enabled and (not coalesce(p_existing_only, false) or p_reset)
+     and j.status not in ('ended', 'archived') then
+    raise exception 'invalid';
+  end if;
+
   if (coalesce(p_existing_only, false) and j.public_token is null)
      or (p_expected_slug is not null and p_expected_slug is distinct from j.public_slug) then
     -- A copy cannot re-enable a revoked link. Reset only the address the
@@ -137,9 +142,6 @@ begin
     end if;
   elsif coalesce(p_enabled, false) or j.public_token is not null then
     if coalesce(p_enabled, false) then
-      if j.status not in ('ended', 'archived') then
-        raise exception 'invalid';
-      end if;
       -- Only the exact title the owner approved can become part of the URL.
       if p_approved_title collate "C" = j.title collate "C"
          and not v_hide_title then
