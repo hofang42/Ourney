@@ -9,7 +9,7 @@ public struct StreakWidget: Widget {
   public init() {}
 
   public var body: some WidgetConfiguration {
-    StaticConfiguration(kind: kind, provider: OurneyTimelineProvider()) { entry in
+    StaticConfiguration(kind: kind, provider: OurneyTimelineProvider(kind: kind)) { entry in
       StreakWidgetEntryView(entry: entry)
     }
     .configurationDisplayName(WidgetL10n.tr("widget.streak.gallery.title"))

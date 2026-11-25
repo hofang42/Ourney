@@ -4,121 +4,6 @@ import WidgetKit
 import AppIntents
 #endif
 
-// MARK: - Shared Timeline Entry & Provider
-
-public struct OurneyWidgetEntry: TimelineEntry {
-  public let date: Date
-  public let snapshot: WidgetSnapshot?
-  public let state: WidgetInteractiveState
-  public let pinnedId: String?
-  public let isPreview: Bool
-  public let appGroupAvailable: Bool
-
-  public init(
-    date: Date,
-    snapshot: WidgetSnapshot?,
-    state: WidgetInteractiveState = WidgetInteractiveState(),
-    pinnedId: String? = nil,
-    isPreview: Bool = false,
-    appGroupAvailable: Bool = true
-  ) {
-    self.date = date
-    self.snapshot = snapshot
-    self.state = state
-    self.pinnedId = WidgetSnapshot.normalizedPinnedId(pinnedId)
-    self.isPreview = isPreview
-    self.appGroupAvailable = appGroupAvailable
-  }
-}
-
-public struct OurneyTimelineProvider: TimelineProvider {
-  public init() {}
-
-  public static func buildSnapshotEntry(
-    isPreview: Bool,
-    pinnedId: String? = nil
-  ) -> OurneyWidgetEntry {
-    let now = Date()
-    let sharedRoot = WidgetSnapshotStore.sharedRootDirectory()
-    if let sharedRoot, let loaded = WidgetSnapshotStore.loadSnapshot(at: now, rootDirectory: sharedRoot) {
-      return OurneyWidgetEntry(
-        date: now,
-        snapshot: loaded,
-        state: WidgetSnapshotStore.loadState(rootDirectory: sharedRoot),
-        pinnedId: pinnedId,
-        isPreview: isPreview
-      )
-    } else if isPreview {
-      return OurneyWidgetEntry(
-        date: now,
-        snapshot: WidgetPreviewFixtures.sampleTodaySnapshot,
-        pinnedId: pinnedId,
-        isPreview: true
-      )
-    } else {
-      return OurneyWidgetEntry(
-        date: now,
-        snapshot: nil,
-        pinnedId: pinnedId,
-        appGroupAvailable: sharedRoot != nil
-      )
-    }
-  }
-
-  public static func buildTimeline(pinnedId: String? = nil) -> Timeline<OurneyWidgetEntry> {
-    let now = Date()
-    let sharedRoot = WidgetSnapshotStore.sharedRootDirectory()
-    guard let sharedRoot, let baseSnapshot = WidgetSnapshotStore.loadSnapshot(at: now, rootDirectory: sharedRoot) else {
-      let emptyEntry = OurneyWidgetEntry(
-        date: now,
-        snapshot: nil,
-        pinnedId: pinnedId,
-        appGroupAvailable: sharedRoot != nil
-      )
-      let nextReload = now.addingTimeInterval(3600)
-      return Timeline(entries: [emptyEntry], policy: .after(nextReload))
-    }
-    let state = WidgetSnapshotStore.loadState(rootDirectory: sharedRoot)
-
-    // Build up to 4 zero-budget scheduled entries (now, 18:00 evening cue, 21:00 streak alert, 00:00 midnight rollover).
-    let dates = baseSnapshot.scheduledTimelineDates(from: now)
-    let entries: [OurneyWidgetEntry] = dates.map { entryDate in
-      let evaluated = baseSnapshot.evaluated(at: entryDate)
-      return OurneyWidgetEntry(
-        date: entryDate,
-        snapshot: evaluated,
-        state: state,
-        pinnedId: pinnedId,
-        isPreview: false
-      )
-    }
-
-    let lastDate = dates.last ?? now
-    let nextReload = lastDate > now
-      ? lastDate.addingTimeInterval(60)
-      : now.addingTimeInterval(3600)
-    return Timeline(entries: entries, policy: .after(nextReload))
-  }
-
-  public func placeholder(in context: Context) -> OurneyWidgetEntry {
-    OurneyWidgetEntry(
-      date: Date(),
-      snapshot: WidgetPreviewFixtures.sampleTodaySnapshot,
-      state: WidgetInteractiveState(),
-      pinnedId: nil,
-      isPreview: true
-    )
-  }
-
-  public func getSnapshot(in context: Context, completion: @escaping (OurneyWidgetEntry) -> Void) {
-    completion(Self.buildSnapshotEntry(isPreview: context.isPreview))
-  }
-
-  public func getTimeline(in context: Context, completion: @escaping (Timeline<OurneyWidgetEntry>) -> Void) {
-    completion(Self.buildTimeline())
-  }
-}
-
 // MARK: - Today Check-In Widget (§3.1 #1)
 
 public struct TodayWidget: Widget {
@@ -127,7 +12,7 @@ public struct TodayWidget: Widget {
   public init() {}
 
   public var body: some WidgetConfiguration {
-    StaticConfiguration(kind: kind, provider: OurneyTimelineProvider()) { entry in
+    StaticConfiguration(kind: kind, provider: OurneyTimelineProvider(kind: kind)) { entry in
       TodayWidgetEntryView(entry: entry)
     }
     .configurationDisplayName(WidgetL10n.tr("widget.today.gallery.title"))
@@ -136,13 +21,28 @@ public struct TodayWidget: Widget {
   }
 }
 
+struct TodayBasicWidget: Widget {
+  let kind = OurneyWidgetKind.todayBasic
+
+  var body: some WidgetConfiguration {
+    StaticConfiguration(kind: kind, provider: OurneyTimelineProvider(kind: kind)) { entry in
+      TodayWidgetEntryView(entry: entry, allowsCycling: false)
+    }
+    .configurationDisplayName(WidgetL10n.tr("widget.today.basic.gallery.title"))
+    .description(WidgetL10n.tr("widget.today.basic.gallery.desc"))
+    .supportedFamilies([.systemSmall, .systemMedium])
+  }
+}
+
 public struct TodayWidgetEntryView: View {
   @Environment(\.widgetFamily) private var family
   @Environment(\.colorScheme) private var colorScheme
   public let entry: OurneyWidgetEntry
+  private let allowsCycling: Bool
 
-  public init(entry: OurneyWidgetEntry) {
+  public init(entry: OurneyWidgetEntry, allowsCycling: Bool = true) {
     self.entry = entry
+    self.allowsCycling = allowsCycling
   }
 
   public var body: some View {
@@ -159,7 +59,7 @@ public struct TodayWidgetEntryView: View {
       if case .ready(let journey) = cardState { return journey }
       return nil
     }()
-    let isPinned = snapshot?.isTodayJourneyPinned(entry.pinnedId) ?? false
+    let canCycle = allowsCycling && !(snapshot?.isTodayJourneyPinned(entry.pinnedId) ?? false)
     let theme = OurneyWidgetTheme.resolve(
       skinId: featured?.skinId,
       colorVariant: featured?.colorVariant ?? 0,
@@ -192,7 +92,7 @@ public struct TodayWidgetEntryView: View {
               snapshot: snap,
               journey: journey,
               entryDate: entry.date,
-              isPinned: isPinned,
+              allowsCycling: canCycle,
               theme: theme
             )
           case .systemLarge:
@@ -200,7 +100,7 @@ public struct TodayWidgetEntryView: View {
               snapshot: snap,
               journey: journey,
               entryDate: entry.date,
-              isPinned: isPinned,
+              allowsCycling: canCycle,
               theme: theme
             )
           default:
@@ -208,7 +108,7 @@ public struct TodayWidgetEntryView: View {
               snapshot: snap,
               journey: journey,
               entryDate: entry.date,
-              isPinned: isPinned,
+              allowsCycling: canCycle,
               theme: theme
             )
           }
@@ -262,7 +162,7 @@ private struct TodaySmallView: View {
   let snapshot: WidgetSnapshot
   let journey: WidgetJourneyItem
   let entryDate: Date
-  let isPinned: Bool
+  let allowsCycling: Bool
   let theme: OurneyWidgetTheme
 
   var body: some View {
@@ -270,7 +170,7 @@ private struct TodaySmallView: View {
     let phase = journey.phase(at: entryDate)
     let pendingList = snapshot.journeys.filter { !$0.checkedInToday }
     let pendingIndex = (pendingList.firstIndex(where: { $0.id == journey.id }) ?? 0) + 1
-    let showCycleControl = !isPinned && pendingList.count >= 2 && !journey.checkedInToday
+    let showCycleControl = allowsCycling && pendingList.count >= 2 && !journey.checkedInToday
     let destination = journey.checkedInToday
       ? OurneyDeepLinks.journey(id: journey.id)
       : OurneyDeepLinks.capture(journeyId: journey.id)
@@ -426,7 +326,7 @@ private struct TodayMediumView: View {
   let snapshot: WidgetSnapshot
   let journey: WidgetJourneyItem
   let entryDate: Date
-  let isPinned: Bool
+  let allowsCycling: Bool
   let theme: OurneyWidgetTheme
 
   var body: some View {
@@ -451,7 +351,7 @@ private struct TodayMediumView: View {
 
           Spacer(minLength: 2)
 
-          if !isPinned && pendingList.count >= 2 && !journey.checkedInToday {
+          if allowsCycling && pendingList.count >= 2 && !journey.checkedInToday {
             TodayCycleJourneyButton(
               currentIndex: pendingIndex,
               totalPending: pendingList.count,
@@ -582,7 +482,7 @@ private struct TodayLargeView: View {
   let snapshot: WidgetSnapshot
   let journey: WidgetJourneyItem
   let entryDate: Date
-  let isPinned: Bool
+  let allowsCycling: Bool
   let theme: OurneyWidgetTheme
 
   var body: some View {
@@ -611,7 +511,7 @@ private struct TodayLargeView: View {
 
         Spacer()
 
-        if !isPinned && pendingList.count >= 2 && !journey.checkedInToday {
+        if allowsCycling && pendingList.count >= 2 && !journey.checkedInToday {
           TodayCycleJourneyButton(
             currentIndex: pendingIndex,
             totalPending: pendingList.count,

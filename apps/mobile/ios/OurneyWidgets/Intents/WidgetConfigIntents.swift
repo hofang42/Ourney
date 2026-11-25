@@ -33,17 +33,11 @@ public struct JourneyWidgetEntity: AppEntity, Equatable {
     self.subtitle = option.subtitle
   }
 
-  public static func auto(
-    at referenceDate: Date = Date(),
-    rootDirectory: URL? = nil,
-    fallbackLocale: String? = nil
-  ) -> JourneyWidgetEntity {
+  fileprivate static var automatic: JourneyWidgetEntity {
     JourneyWidgetEntity(
-      option: WidgetSnapshotStore.defaultJourneyEntityOption(
-        at: referenceDate,
-        rootDirectory: rootDirectory,
-        fallbackLocale: fallbackLocale
-      )
+      id: WidgetSnapshot.autoEntityId,
+      title: WidgetL10n.autoJourneyOptionTitle(locale: ""),
+      subtitle: WidgetL10n.autoJourneyOptionSubtitle(locale: "")
     )
   }
 
@@ -65,15 +59,35 @@ public struct JourneyEntityQuery: EntityQuery {
   public init() {}
 
   public func entities(for identifiers: [JourneyWidgetEntity.ID]) async throws -> [JourneyWidgetEntity] {
-    WidgetSnapshotStore.journeyEntityOptions(for: identifiers).map(JourneyWidgetEntity.init(option:))
+    let operation = "query journey entities"
+    return WidgetDiagnostics.trace(operation) {
+      WidgetSnapshotStore.journeyEntityOptions(
+        for: identifiers,
+        onSnapshotError: { WidgetDiagnostics.record("\(operation) error \($0)") }
+      ).map(JourneyWidgetEntity.init(option:))
+    }
   }
 
   public func suggestedEntities() async throws -> [JourneyWidgetEntity] {
-    WidgetSnapshotStore.suggestedJourneyEntityOptions().map(JourneyWidgetEntity.init(option:))
+    let operation = "query journey suggested"
+    return WidgetDiagnostics.trace(operation) {
+      let options = WidgetSnapshotStore.suggestedJourneyEntityOptions(
+        onSnapshotError: { WidgetDiagnostics.record("\(operation) error \($0)") }
+      )
+      if options.count == 1 {
+        WidgetDiagnostics.record("\(operation) automaticOnly")
+      }
+      return options.map(JourneyWidgetEntity.init(option:))
+    }
   }
 
   public func defaultResult() async -> JourneyWidgetEntity? {
-    JourneyWidgetEntity.auto()
+    let operation = "query journey default"
+    return WidgetDiagnostics.trace(operation) {
+      JourneyWidgetEntity(option: WidgetSnapshotStore.defaultJourneyEntityOption(
+        onSnapshotError: { WidgetDiagnostics.record("\(operation) error \($0)") }
+      ))
+    }
   }
 }
 
@@ -101,17 +115,11 @@ public struct SquadWidgetEntity: AppEntity, Equatable {
     self.subtitle = option.subtitle
   }
 
-  public static func auto(
-    at referenceDate: Date = Date(),
-    rootDirectory: URL? = nil,
-    fallbackLocale: String? = nil
-  ) -> SquadWidgetEntity {
+  fileprivate static var automatic: SquadWidgetEntity {
     SquadWidgetEntity(
-      option: WidgetSnapshotStore.defaultSquadEntityOption(
-        at: referenceDate,
-        rootDirectory: rootDirectory,
-        fallbackLocale: fallbackLocale
-      )
+      id: WidgetSnapshot.autoEntityId,
+      title: WidgetL10n.autoSquadOptionTitle(locale: ""),
+      subtitle: WidgetL10n.autoSquadOptionSubtitle(locale: "")
     )
   }
 
@@ -133,24 +141,39 @@ public struct SquadEntityQuery: EntityQuery {
   public init() {}
 
   public func entities(for identifiers: [SquadWidgetEntity.ID]) async throws -> [SquadWidgetEntity] {
-    WidgetSnapshotStore.squadEntityOptions(for: identifiers).map(SquadWidgetEntity.init(option:))
+    let operation = "query squad entities"
+    return WidgetDiagnostics.trace(operation) {
+      WidgetSnapshotStore.squadEntityOptions(
+        for: identifiers,
+        onSnapshotError: { WidgetDiagnostics.record("\(operation) error \($0)") }
+      ).map(SquadWidgetEntity.init(option:))
+    }
   }
 
   public func suggestedEntities() async throws -> [SquadWidgetEntity] {
-    WidgetSnapshotStore.suggestedSquadEntityOptions().map(SquadWidgetEntity.init(option:))
+    let operation = "query squad suggested"
+    return WidgetDiagnostics.trace(operation) {
+      let options = WidgetSnapshotStore.suggestedSquadEntityOptions(
+        onSnapshotError: { WidgetDiagnostics.record("\(operation) error \($0)") }
+      )
+      if options.count == 1 {
+        WidgetDiagnostics.record("\(operation) automaticOnly")
+      }
+      return options.map(SquadWidgetEntity.init(option:))
+    }
   }
 
   public func defaultResult() async -> SquadWidgetEntity? {
-    SquadWidgetEntity.auto()
+    let operation = "query squad default"
+    return WidgetDiagnostics.trace(operation) {
+      SquadWidgetEntity(option: WidgetSnapshotStore.defaultSquadEntityOption(
+        onSnapshotError: { WidgetDiagnostics.record("\(operation) error \($0)") }
+      ))
+    }
   }
 }
 
 // MARK: - WidgetConfigurationIntent Definitions (§B.4)
-
-@available(iOS 17.0, iOSApplicationExtension 17.0, *)
-public protocol OurneyPinningConfigurationIntent: WidgetConfigurationIntent {
-  var pinnedEntityId: String? { get }
-}
 
 @available(iOS 17.0, iOSApplicationExtension 17.0, *)
 public struct SelectTodayJourneyIntent: WidgetConfigurationIntent, OurneyPinningConfigurationIntent {
@@ -161,7 +184,7 @@ public struct SelectTodayJourneyIntent: WidgetConfigurationIntent, OurneyPinning
   public var journey: JourneyWidgetEntity?
 
   public init() {
-    self.journey = .auto()
+    self.journey = .automatic
   }
 
   public init(journey: JourneyWidgetEntity?) {
@@ -182,7 +205,7 @@ public struct SelectStreakJourneyIntent: WidgetConfigurationIntent, OurneyPinnin
   public var journey: JourneyWidgetEntity?
 
   public init() {
-    self.journey = .auto()
+    self.journey = .automatic
   }
 
   public init(journey: JourneyWidgetEntity?) {
@@ -203,7 +226,7 @@ public struct SelectSquadIntent: WidgetConfigurationIntent, OurneyPinningConfigu
   public var squad: SquadWidgetEntity?
 
   public init() {
-    self.squad = .auto()
+    self.squad = .automatic
   }
 
   public init(squad: SquadWidgetEntity?) {
@@ -224,7 +247,7 @@ public struct SelectLockScreenJourneyIntent: WidgetConfigurationIntent, OurneyPi
   public var journey: JourneyWidgetEntity?
 
   public init() {
-    self.journey = .auto()
+    self.journey = .automatic
   }
 
   public init(journey: JourneyWidgetEntity?) {
@@ -236,36 +259,7 @@ public struct SelectLockScreenJourneyIntent: WidgetConfigurationIntent, OurneyPi
   }
 }
 
-// MARK: - iOS 17+ AppIntentTimelineProvider & Configurable Widgets (§B.2)
-
-@available(iOS 17.0, iOSApplicationExtension 17.0, *)
-public struct OurneyAppIntentTimelineProvider<ConfigurationIntent: OurneyPinningConfigurationIntent>: AppIntentTimelineProvider {
-  public typealias Entry = OurneyWidgetEntry
-  public typealias Intent = ConfigurationIntent
-
-  public init() {}
-
-  public func placeholder(in context: Context) -> OurneyWidgetEntry {
-    OurneyWidgetEntry(
-      date: Date(),
-      snapshot: WidgetPreviewFixtures.sampleTodaySnapshot,
-      state: WidgetInteractiveState(),
-      pinnedId: nil,
-      isPreview: true
-    )
-  }
-
-  public func snapshot(for configuration: ConfigurationIntent, in context: Context) async -> OurneyWidgetEntry {
-    OurneyTimelineProvider.buildSnapshotEntry(
-      isPreview: context.isPreview,
-      pinnedId: configuration.pinnedEntityId
-    )
-  }
-
-  public func timeline(for configuration: ConfigurationIntent, in context: Context) async -> Timeline<OurneyWidgetEntry> {
-    OurneyTimelineProvider.buildTimeline(pinnedId: configuration.pinnedEntityId)
-  }
-}
+// MARK: - Configurable Widgets
 
 @available(iOS 17.0, iOSApplicationExtension 17.0, *)
 public struct TodayConfigurableWidget: Widget {
@@ -277,7 +271,7 @@ public struct TodayConfigurableWidget: Widget {
     AppIntentConfiguration(
       kind: kind,
       intent: SelectTodayJourneyIntent.self,
-      provider: OurneyAppIntentTimelineProvider<SelectTodayJourneyIntent>()
+      provider: OurneyAppIntentTimelineProvider<SelectTodayJourneyIntent>(kind: kind)
     ) { entry in
       TodayWidgetEntryView(entry: entry)
     }
@@ -297,7 +291,7 @@ public struct StreakConfigurableWidget: Widget {
     AppIntentConfiguration(
       kind: kind,
       intent: SelectStreakJourneyIntent.self,
-      provider: OurneyAppIntentTimelineProvider<SelectStreakJourneyIntent>()
+      provider: OurneyAppIntentTimelineProvider<SelectStreakJourneyIntent>(kind: kind)
     ) { entry in
       StreakWidgetEntryView(entry: entry)
     }
@@ -317,7 +311,7 @@ public struct SquadConfigurableWidget: Widget {
     AppIntentConfiguration(
       kind: kind,
       intent: SelectSquadIntent.self,
-      provider: OurneyAppIntentTimelineProvider<SelectSquadIntent>()
+      provider: OurneyAppIntentTimelineProvider<SelectSquadIntent>(kind: kind)
     ) { entry in
       SquadWidgetEntryView(entry: entry)
     }
@@ -337,7 +331,7 @@ public struct LockScreenConfigurableWidget: Widget {
     AppIntentConfiguration(
       kind: kind,
       intent: SelectLockScreenJourneyIntent.self,
-      provider: OurneyAppIntentTimelineProvider<SelectLockScreenJourneyIntent>()
+      provider: OurneyAppIntentTimelineProvider<SelectLockScreenJourneyIntent>(kind: kind)
     ) { entry in
       LockScreenWidgetEntryView(entry: entry)
     }

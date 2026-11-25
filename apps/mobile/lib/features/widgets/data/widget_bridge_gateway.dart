@@ -114,6 +114,9 @@ abstract interface class WidgetBridgeGateway {
   /// Queries OS widget, App Group, ActivityKit, and Android 16 promoted Live
   /// Update support.
   Future<WidgetCapabilities> getCapabilities();
+
+  /// Reads recent extension diagnostics from the iOS App Group.
+  Future<List<String>> getWidgetDiagnostics();
 }
 
 /// Production [WidgetBridgeGateway] backed by `MethodChannel('ourney/widgets')`.
@@ -204,6 +207,19 @@ class MethodChannelWidgetBridgeGateway implements WidgetBridgeGateway {
       return WidgetCapabilities.unsupported;
     }
   }
+
+  @override
+  Future<List<String>> getWidgetDiagnostics() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return const [];
+    try {
+      return await channel.invokeListMethod<String>('getWidgetDiagnostics') ??
+          const [];
+    } on PlatformException {
+      return const [];
+    } on MissingPluginException {
+      return const [];
+    }
+  }
 }
 
 /// Recorded `syncSnapshot` call on [FakeWidgetBridgeGateway].
@@ -230,6 +246,7 @@ class FakeWidgetBridgeGateway implements WidgetBridgeGateway {
   });
 
   WidgetCapabilities capabilities;
+  List<String> widgetDiagnostics = const [];
   Map<String, Object?>? pendingWidgetState;
   bool nextSyncSnapshotResult = true;
   bool nextSyncLiveActivityResult = true;
@@ -277,6 +294,9 @@ class FakeWidgetBridgeGateway implements WidgetBridgeGateway {
 
   @override
   Future<WidgetCapabilities> getCapabilities() async => capabilities;
+
+  @override
+  Future<List<String>> getWidgetDiagnostics() async => widgetDiagnostics;
 }
 
 final widgetBridgeGatewayProvider = Provider<WidgetBridgeGateway>(

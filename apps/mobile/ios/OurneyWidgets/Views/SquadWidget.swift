@@ -9,7 +9,7 @@ public struct SquadWidget: Widget {
   public init() {}
 
   public var body: some WidgetConfiguration {
-    StaticConfiguration(kind: kind, provider: OurneyTimelineProvider()) { entry in
+    StaticConfiguration(kind: kind, provider: OurneyTimelineProvider(kind: kind)) { entry in
       SquadWidgetEntryView(entry: entry)
     }
     .configurationDisplayName(WidgetL10n.tr("widget.squad.gallery.title"))

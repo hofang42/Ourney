@@ -122,6 +122,30 @@ abstract class WidgetsL10n {
   /// **'Bản cài này chưa cho widget đọc dữ liệu. Widget sẽ hoạt động ở bản TestFlight/App Store hoặc khi cài qua AltStore/SideStore.'**
   String get widgets_appGroupUnavailable;
 
+  /// Heading for the collapsible iOS widget diagnostics panel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chẩn đoán tiện ích'**
+  String get widgets_diagnosticsTitle;
+
+  /// Shown when the iOS widget diagnostics log is empty.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa ghi nhận sự kiện nào của tiện ích.'**
+  String get widgets_diagnosticsEmpty;
+
+  /// Button to copy the widget diagnostics log.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sao chép nhật ký'**
+  String get widgets_diagnosticsCopy;
+
+  /// Confirmation after copying the widget diagnostics log.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã sao chép nhật ký tiện ích'**
+  String get widgets_diagnosticsCopied;
+
   /// Section heading for the interactive widget preview gallery.
   ///
   /// In vi, this message translates to:

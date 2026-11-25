@@ -24,6 +24,19 @@ class WidgetsL10nVi extends WidgetsL10n {
       'Bản cài này chưa cho widget đọc dữ liệu. Widget sẽ hoạt động ở bản TestFlight/App Store hoặc khi cài qua AltStore/SideStore.';
 
   @override
+  String get widgets_diagnosticsTitle => 'Chẩn đoán tiện ích';
+
+  @override
+  String get widgets_diagnosticsEmpty =>
+      'Chưa ghi nhận sự kiện nào của tiện ích.';
+
+  @override
+  String get widgets_diagnosticsCopy => 'Sao chép nhật ký';
+
+  @override
+  String get widgets_diagnosticsCopied => 'Đã sao chép nhật ký tiện ích';
+
+  @override
   String get widgets_secPreview => 'xem trước tiện ích';
 
   @override

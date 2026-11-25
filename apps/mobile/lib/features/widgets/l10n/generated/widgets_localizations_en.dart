@@ -24,6 +24,18 @@ class WidgetsL10nEn extends WidgetsL10n {
       'This install can’t share data with widgets. Widgets will work with the TestFlight or App Store version, or when installed through AltStore or SideStore.';
 
   @override
+  String get widgets_diagnosticsTitle => 'Widget diagnostics';
+
+  @override
+  String get widgets_diagnosticsEmpty => 'No widget events recorded yet.';
+
+  @override
+  String get widgets_diagnosticsCopy => 'Copy log';
+
+  @override
+  String get widgets_diagnosticsCopied => 'Widget log copied';
+
+  @override
   String get widgets_secPreview => 'widget preview';
 
   @override

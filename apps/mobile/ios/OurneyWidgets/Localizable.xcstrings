@@ -289,6 +289,38 @@
         }
       }
     },
+    "widget.today.basic.gallery.desc" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See today's check-in with automatic journey selection."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xem l??t ch?p h?m nay v?i h?nh tr?nh ???c ch?n t? ??ng."
+          }
+        }
+      }
+    },
+    "widget.today.basic.gallery.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today (basic)"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "H?m nay (c? b?n)"
+          }
+        }
+      }
+    },
     "widget.today.gallery.desc" : {
       "localizations" : {
         "en" : {

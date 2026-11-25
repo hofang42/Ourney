@@ -16,6 +16,22 @@
   "@widgets_appGroupUnavailable": {
     "description": "Notice on iOS when the app installation lacks a shared widget data container."
   },
+  "widgets_diagnosticsTitle": "Chẩn đoán tiện ích",
+  "@widgets_diagnosticsTitle": {
+    "description": "Heading for the collapsible iOS widget diagnostics panel."
+  },
+  "widgets_diagnosticsEmpty": "Chưa ghi nhận sự kiện nào của tiện ích.",
+  "@widgets_diagnosticsEmpty": {
+    "description": "Shown when the iOS widget diagnostics log is empty."
+  },
+  "widgets_diagnosticsCopy": "Sao chép nhật ký",
+  "@widgets_diagnosticsCopy": {
+    "description": "Button to copy the widget diagnostics log."
+  },
+  "widgets_diagnosticsCopied": "Đã sao chép nhật ký tiện ích",
+  "@widgets_diagnosticsCopied": {
+    "description": "Confirmation after copying the widget diagnostics log."
+  },
   "widgets_secPreview": "xem trước tiện ích",
   "@widgets_secPreview": {
     "description": "Section heading for the interactive widget preview gallery."

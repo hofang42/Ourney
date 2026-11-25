@@ -44,6 +44,11 @@ public final class OurneyWidgetBridge {
       handleConsumeWidgetState(result: result)
     case "getCapabilities":
       result(currentCapabilities())
+    case "getWidgetDiagnostics":
+      ioQueue.async {
+        let lines = WidgetDiagnostics.recentLines()
+        DispatchQueue.main.async { result(lines) }
+      }
     default:
       result(FlutterMethodNotImplemented)
     }

@@ -10,6 +10,7 @@ public enum OurneyWidgetConstants {
 
 public enum OurneyWidgetKind {
   public static let today = "OurneyTodayWidget"
+  public static let todayBasic = "OurneyTodayBasicWidget"
   public static let streak = "OurneyStreakWidget"
   public static let squad = "OurneySquadWidget"
   public static let lockScreen = "OurneyLockScreenWidget"
@@ -1269,16 +1270,26 @@ public enum WidgetSnapshotStore {
 
   public static func loadSnapshot(
     at referenceDate: Date = Date(),
-    rootDirectory: URL? = nil
+    rootDirectory: URL? = nil,
+    onError: ((String) -> Void)? = nil
   ) -> WidgetSnapshot? {
     guard let root = rootDirectory ?? activeRootDirectory() else {
+      onError?("storageUnavailable")
       return nil
     }
     let fileURL = root.appendingPathComponent(OurneyWidgetConstants.snapshotFileName)
-    guard let data = try? Data(contentsOf: fileURL) else {
+    let data: Data
+    do {
+      data = try Data(contentsOf: fileURL)
+    } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+      onError?("snapshotMissing")
+      return nil
+    } catch {
+      onError?("snapshotReadFailed")
       return nil
     }
     guard let raw = try? JSONDecoder().decode(WidgetSnapshot.self, from: data) else {
+      onError?("snapshotDecodeFailed")
       return nil
     }
     return raw.evaluated(at: referenceDate)
@@ -1408,9 +1419,10 @@ public enum WidgetSnapshotStore {
   public static func defaultJourneyEntityOption(
     at referenceDate: Date = Date(),
     rootDirectory: URL? = nil,
-    fallbackLocale: String? = nil
+    fallbackLocale: String? = nil,
+    onSnapshotError: ((String) -> Void)? = nil
   ) -> WidgetEntityOption {
-    let snapshot = loadSnapshot(at: referenceDate, rootDirectory: rootDirectory)
+    let snapshot = loadSnapshot(at: referenceDate, rootDirectory: rootDirectory, onError: onSnapshotError)
     let locale = snapshot?.locale ?? fallbackLocale ?? ""
     return WidgetEntityOption(
       id: WidgetSnapshot.autoEntityId,
@@ -1422,9 +1434,10 @@ public enum WidgetSnapshotStore {
   public static func suggestedJourneyEntityOptions(
     at referenceDate: Date = Date(),
     rootDirectory: URL? = nil,
-    fallbackLocale: String? = nil
+    fallbackLocale: String? = nil,
+    onSnapshotError: ((String) -> Void)? = nil
   ) -> [WidgetEntityOption] {
-    let snapshot = loadSnapshot(at: referenceDate, rootDirectory: rootDirectory)
+    let snapshot = loadSnapshot(at: referenceDate, rootDirectory: rootDirectory, onError: onSnapshotError)
     let locale = snapshot?.locale ?? fallbackLocale ?? ""
     var options: [WidgetEntityOption] = [
       WidgetEntityOption(
@@ -1457,9 +1470,10 @@ public enum WidgetSnapshotStore {
     for identifiers: [String],
     at referenceDate: Date = Date(),
     rootDirectory: URL? = nil,
-    fallbackLocale: String? = nil
+    fallbackLocale: String? = nil,
+    onSnapshotError: ((String) -> Void)? = nil
   ) -> [WidgetEntityOption] {
-    let snapshot = loadSnapshot(at: referenceDate, rootDirectory: rootDirectory)
+    let snapshot = loadSnapshot(at: referenceDate, rootDirectory: rootDirectory, onError: onSnapshotError)
     let locale = snapshot?.locale ?? fallbackLocale ?? ""
     let isSignedOut = snapshot?.isSignedOut ?? true
     return identifiers.map { rawId in
@@ -1496,9 +1510,10 @@ public enum WidgetSnapshotStore {
   public static func defaultSquadEntityOption(
     at referenceDate: Date = Date(),
     rootDirectory: URL? = nil,
-    fallbackLocale: String? = nil
+    fallbackLocale: String? = nil,
+    onSnapshotError: ((String) -> Void)? = nil
   ) -> WidgetEntityOption {
-    let snapshot = loadSnapshot(at: referenceDate, rootDirectory: rootDirectory)
+    let snapshot = loadSnapshot(at: referenceDate, rootDirectory: rootDirectory, onError: onSnapshotError)
     let locale = snapshot?.locale ?? fallbackLocale ?? ""
     return WidgetEntityOption(
       id: WidgetSnapshot.autoEntityId,
@@ -1510,9 +1525,10 @@ public enum WidgetSnapshotStore {
   public static func suggestedSquadEntityOptions(
     at referenceDate: Date = Date(),
     rootDirectory: URL? = nil,
-    fallbackLocale: String? = nil
+    fallbackLocale: String? = nil,
+    onSnapshotError: ((String) -> Void)? = nil
   ) -> [WidgetEntityOption] {
-    let snapshot = loadSnapshot(at: referenceDate, rootDirectory: rootDirectory)
+    let snapshot = loadSnapshot(at: referenceDate, rootDirectory: rootDirectory, onError: onSnapshotError)
     let locale = snapshot?.locale ?? fallbackLocale ?? ""
     var options: [WidgetEntityOption] = [
       WidgetEntityOption(
@@ -1545,9 +1561,10 @@ public enum WidgetSnapshotStore {
     for identifiers: [String],
     at referenceDate: Date = Date(),
     rootDirectory: URL? = nil,
-    fallbackLocale: String? = nil
+    fallbackLocale: String? = nil,
+    onSnapshotError: ((String) -> Void)? = nil
   ) -> [WidgetEntityOption] {
-    let snapshot = loadSnapshot(at: referenceDate, rootDirectory: rootDirectory)
+    let snapshot = loadSnapshot(at: referenceDate, rootDirectory: rootDirectory, onError: onSnapshotError)
     let locale = snapshot?.locale ?? fallbackLocale ?? ""
     let isSignedOut = snapshot?.isSignedOut ?? true
     return identifiers.map { rawId in

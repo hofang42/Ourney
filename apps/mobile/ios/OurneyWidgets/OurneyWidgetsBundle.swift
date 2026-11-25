@@ -6,10 +6,12 @@ enum OurneyWidgetsLauncher {
   @MainActor static func main() {
     #if canImport(AppIntents)
     if #available(iOSApplicationExtension 17.0, iOS 17.0, *) {
+      WidgetDiagnostics.record("extension launch configuration=appIntent")
       OurneyConfigurableWidgetsBundle.main()
       return
     }
     #endif
+    WidgetDiagnostics.record("extension launch configuration=static")
     OurneyLegacyWidgetsBundle.main()
   }
 }
@@ -23,6 +25,7 @@ struct OurneyConfigurableWidgetsBundle: WidgetBundle {
     StreakConfigurableWidget()
     SquadConfigurableWidget()
     LockScreenConfigurableWidget()
+    TodayBasicWidget()
     #if canImport(ActivityKit)
     CheckInLiveActivity()
     #endif

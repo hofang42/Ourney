@@ -18,7 +18,7 @@ public struct LockScreenWidget: Widget {
   }
 
   public var body: some WidgetConfiguration {
-    StaticConfiguration(kind: kind, provider: OurneyTimelineProvider()) { entry in
+    StaticConfiguration(kind: kind, provider: OurneyTimelineProvider(kind: kind)) { entry in
       LockScreenWidgetEntryView(entry: entry)
     }
     .configurationDisplayName(WidgetL10n.tr("widget.lock.gallery.title"))
