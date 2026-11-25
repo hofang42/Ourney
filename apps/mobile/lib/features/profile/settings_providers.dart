@@ -1,9 +1,61 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../auth/auth_providers.dart';
+
+/// Whether the signed-in account has a password set (`public.auth_has_password()`),
+/// seeded synchronously from per-uid SharedPreferences (`auth.hasPassword.<uid>`)
+/// and refreshed asynchronously from [AuthRepository.hasPassword].
+final hasPasswordProvider = NotifierProvider<HasPasswordController, bool>(
+  HasPasswordController.new,
+);
+
+class HasPasswordController extends Notifier<bool> {
+  int _epoch = 0;
+
+  @override
+  bool build() {
+    final localOnly = ref.watch(appConfigProvider).localOnly;
+    final uid = ref.watch(currentUserIdProvider);
+    if (localOnly || uid == null) return false;
+    final prefs = ref.watch(sharedPreferencesProvider);
+    final cached =
+        prefs.getBool(AuthMethodPrefs.hasPasswordKeyFor(uid)) ?? false;
+    final epoch = ++_epoch;
+    unawaited(_refresh(uid, epoch));
+    return cached;
+  }
+
+  Future<void> _refresh(String uid, int epoch) async {
+    try {
+      final hasPw = await ref.read(authRepositoryProvider).hasPassword();
+      if (!ref.mounted || _epoch != epoch) return;
+      if (ref.read(currentUserIdProvider) != uid) return;
+      state = hasPw;
+      await ref
+          .read(sharedPreferencesProvider)
+          .setBool(AuthMethodPrefs.hasPasswordKeyFor(uid), hasPw);
+    } on Object {
+      // Offline or transient failure: keep the cached value.
+    }
+  }
+
+  Future<void> setHasPassword(bool value) async {
+    _epoch++;
+    state = value;
+    final uid = ref.read(currentUserIdProvider);
+    if (uid != null) {
+      await ref
+          .read(sharedPreferencesProvider)
+          .setBool(AuthMethodPrefs.hasPasswordKeyFor(uid), value);
+    }
+  }
+}
 
 /// Theme preference (Figma `themePreference`: light / dark / system).
 /// Persisted; `app.dart` reads it for `MaterialApp.themeMode`.

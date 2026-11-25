@@ -45,6 +45,20 @@ abstract interface class RemoteApi {
   /// Verifies the recovery code (signs in) then sets [newPassword].
   Future<void> resetPassword(String email, String code, String newPassword);
 
+  /// Whether the signed-in account has a password set (`rpc auth_has_password`).
+  Future<bool> hasPassword();
+
+  /// Sends a 6-digit reauthentication nonce code to the signed-in account's email.
+  Future<void> sendReauthentication();
+
+  /// Updates the signed-in account's password.
+  Future<void> updatePassword(
+    String newPassword, {
+    String? currentPassword,
+    String? nonce,
+    bool signOutOthers = false,
+  });
+
   /// Signs out. [global] also revokes the refresh tokens of every device
   /// (falls back to a local sign-out when the server is unreachable). Never
   /// throws.

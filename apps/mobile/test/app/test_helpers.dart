@@ -56,6 +56,7 @@ Future<ProviderContainer> pumpOurneyApp(
   AuthRepository? auth,
   List<Override> overrides = const [],
   Locale locale = const Locale('vi'),
+  Map<String, Object> initialPrefs = const {},
 }) async {
   tester.platformDispatcher.localesTestValue = [locale];
   addTearDown(tester.platformDispatcher.clearLocalesTestValue);
@@ -65,6 +66,7 @@ Future<ProviderContainer> pumpOurneyApp(
       SafetyPrefs.eulaAccepted: true,
       SafetyPrefs.termsVersionFor(auth?.currentUserId ?? 'u1'): kTermsVersion,
     },
+    ...initialPrefs,
   });
   final container = ProviderContainer(
     overrides: [
@@ -86,13 +88,19 @@ Future<ProviderContainer> pumpOurneyApp(
 
 /// Minimal controllable [AuthRepository] for router/provider tests.
 class FakeAuthRepository implements AuthRepository {
-  FakeAuthRepository({this.userId, this.termsVersion, this.identifier});
+  FakeAuthRepository({
+    this.userId,
+    this.termsVersion,
+    this.identifier,
+    this.hasPasswordValue = false,
+  });
 
   String? userId;
 
   /// Terms version recorded on the (fake) account.
   int? termsVersion;
   String? identifier;
+  bool hasPasswordValue;
   final recordedTerms = <int>[];
   final _changes = StreamController<String?>.broadcast();
 
@@ -154,7 +162,26 @@ class FakeAuthRepository implements AuthRepository {
     String email,
     String code,
     String newPassword,
-  ) async => emit('u1');
+  ) async {
+    hasPasswordValue = true;
+    emit('u1');
+  }
+
+  @override
+  Future<bool> hasPassword() async => userId != null && hasPasswordValue;
+
+  @override
+  Future<void> sendReauthentication() async {}
+
+  @override
+  Future<void> updatePassword(
+    String newPassword, {
+    String? currentPassword,
+    String? nonce,
+    bool signOutOthers = false,
+  }) async {
+    hasPasswordValue = true;
+  }
 
   @override
   Future<void> requestDeleteCode() async {}

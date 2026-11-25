@@ -210,6 +210,29 @@ class FakeRemoteApi implements RemoteApi {
       _maybeFail('resetPassword', email, code);
 
   @override
+  Future<bool> hasPassword() async {
+    if (userId == null) return false;
+    final res = await rpc('auth_has_password');
+    return res == true;
+  }
+
+  @override
+  Future<void> sendReauthentication() =>
+      _maybeFail('sendReauthentication', userId ?? '');
+
+  @override
+  Future<void> updatePassword(
+    String newPassword, {
+    String? currentPassword,
+    String? nonce,
+    bool signOutOthers = false,
+  }) => _maybeFail('updatePassword', newPassword, {
+    'currentPassword': currentPassword,
+    'nonce': nonce,
+    'signOutOthers': signOutOthers,
+  });
+
+  @override
   Future<void> signOut({bool global = false}) async {
     calls.add(RemoteCall('signOut', global ? 'global' : 'local'));
     if (global && hangGlobalSignOut) {

@@ -853,6 +853,180 @@ abstract class ProfileL10n {
   /// In vi, this message translates to:
   /// **'NGÔN NGỮ'**
   String get profile_settings_languageEyebrow;
+
+  /// Settings group: password and account security.
+  ///
+  /// In vi, this message translates to:
+  /// **'bảo mật'**
+  String get profile_settings_secSecurity;
+
+  /// Settings row title when the account has no password yet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đặt mật khẩu'**
+  String get profile_settings_setPassword;
+
+  /// Settings row subtitle when the account has no password yet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tùy chọn — bạn vẫn luôn đăng nhập được bằng mã 6 số'**
+  String get profile_settings_setPasswordSub;
+
+  /// Settings row title when the account has a password.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi mật khẩu'**
+  String get profile_settings_changePassword;
+
+  /// Settings row subtitle when the account has a password.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang bật song song với mã đăng nhập 6 số'**
+  String get profile_settings_changePasswordSub;
+
+  /// Read-only settings row title for phone-only accounts.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mật khẩu'**
+  String get profile_settings_passwordPhoneOnly;
+
+  /// Read-only settings row subtitle for phone-only accounts.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tài khoản số điện thoại đăng nhập bằng mã SMS'**
+  String get profile_settings_passwordPhoneOnlySub;
+
+  /// Sheet title when setting a password for the first time.
+  ///
+  /// In vi, this message translates to:
+  /// **'đặt mật khẩu.'**
+  String get profile_password_setTitle;
+
+  /// Sheet lead explaining optional password coexistence.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn có thể đăng nhập bằng mật khẩu này hoặc mã 6 số gửi tới {email}.'**
+  String profile_password_setLead(String email);
+
+  /// Sheet title when changing an existing password.
+  ///
+  /// In vi, this message translates to:
+  /// **'đổi mật khẩu.'**
+  String get profile_password_changeTitle;
+
+  /// New password field label.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mật khẩu mới'**
+  String get profile_password_newLabel;
+
+  /// Password minimum length validation error.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mật khẩu cần ít nhất 8 ký tự.'**
+  String get profile_password_shortError;
+
+  /// Error when the new password matches the existing password.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mật khẩu mới cần khác mật khẩu hiện tại.'**
+  String get profile_password_sameError;
+
+  /// Toggle label to revoke other sessions when changing password.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đăng xuất khỏi các thiết bị khác'**
+  String get profile_password_signOutOthers;
+
+  /// Toggle subtitle to keep current device signed in.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giữ phiên đăng nhập trên máy này'**
+  String get profile_password_signOutOthersSub;
+
+  /// Primary action button in the password sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lưu mật khẩu'**
+  String get profile_password_save;
+
+  /// Primary action button label while busy.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang lưu…'**
+  String get profile_password_saving;
+
+  /// Reauthentication code step title in the password sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'xác minh bằng mã.'**
+  String get profile_password_codeTitle;
+
+  /// Reauthentication code step lead.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập mã 6 số vừa gửi tới {email} để lưu mật khẩu.'**
+  String profile_password_codeLead(String email);
+
+  /// Semantics label for the 6-digit reauthentication OTP field.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mã xác minh 6 số'**
+  String get profile_password_codeLabel;
+
+  /// Error when the reauthentication nonce is wrong or expired.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mã chưa đúng hoặc đã hết hạn. Kiểm tra lại nhé.'**
+  String get profile_password_codeWrong;
+
+  /// Resend reauthentication code button.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi lại mã'**
+  String get profile_password_resend;
+
+  /// Resend cooldown countdown.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi lại sau {seconds}s'**
+  String profile_password_resendIn(int seconds);
+
+  /// Confirmation after resending the reauthentication code.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã gửi mã mới.'**
+  String get profile_password_codeResent;
+
+  /// Rate limit error in the password sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn thử hơi nhiều rồi. Đợi một chút rồi thử lại nhé.'**
+  String get profile_password_rateLimited;
+
+  /// Toast after setting a password for the first time.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã đặt mật khẩu.'**
+  String get profile_password_savedSet;
+
+  /// Toast after changing an existing password.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã đổi mật khẩu.'**
+  String get profile_password_savedChanged;
+
+  /// Semantics for show password toggle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hiện mật khẩu'**
+  String get profile_password_show;
+
+  /// Semantics for hide password toggle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ẩn mật khẩu'**
+  String get profile_password_hide;
 }
 
 class _ProfileL10nDelegate extends LocalizationsDelegate<ProfileL10n> {

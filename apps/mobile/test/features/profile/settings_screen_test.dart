@@ -7,8 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/locale_override.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/features/auth/auth_providers.dart';
 import 'package:ourney/features/profile/settings_providers.dart';
 import 'package:ourney/ui/ui.dart';
+import 'package:ourney_core/ourney_core.dart'
+    show OurneyErrorCode, OurneyException;
 
 import '../../app/test_helpers.dart' show pumpOurneyApp, testBackendConfig;
 import '../journeys/journeys_fakes.dart' show FakeJourneyRepository, testJourney;
@@ -135,6 +138,7 @@ void main() {
       expect(find.text('me@example.com'), findsOneWidget);
       final headings = [
         'tài khoản',
+        'bảo mật',
         'nhắc nhở',
         'giao diện & ngôn ngữ',
         'riêng tư & an toàn',
@@ -187,6 +191,7 @@ void main() {
       final c = await pumpOurneyApp(tester);
       await goTo(tester, c, '/profile/settings');
       expect(byKey('settings-account-id'), findsNothing);
+      expect(byKey('settings-password'), findsNothing);
       expect(byKey('settings-signout'), findsNothing);
       expect(byKey('settings-delete'), findsNothing);
       expect(byKey('settings-haptics'), findsOneWidget);
@@ -233,6 +238,190 @@ void main() {
             ),
           ),
           findsOneWidget,
+        );
+        // Phone-only account shows read-only SMS explanation row in Bảo mật.
+        expect(byKey('settings-password'), findsOneWidget);
+        expect(find.text('Mật khẩu'), findsOneWidget);
+        expect(
+          find.text('Tài khoản số điện thoại đăng nhập bằng mã SMS'),
+          findsOneWidget,
+        );
+        expect(
+          tester.widget<UiRow>(byKey('settings-password')).onPressed,
+          isNull,
+        );
+      },
+    );
+  });
+
+  group('settings security / password (Bảo mật)', () {
+    testWidgets(
+      'first-time set password (hasPassword=false): reauth nonce flow, leaves other devices signed in, flips row to Đổi mật khẩu',
+      (tester) async {
+        final auth = RecordingAuthRepository(
+          userId: 'u1',
+          hasPasswordValue: false,
+        );
+        final c = await pumpBackendApp(
+          tester,
+          auth: auth,
+          profiles: FakeProfileRepository(aliceProfile),
+        );
+        await goTo(tester, c, '/profile/settings');
+
+        expect(byKey('settings-password'), findsOneWidget);
+        expect(find.text('Đặt mật khẩu'), findsOneWidget);
+        expect(
+          find.text('Tùy chọn — bạn vẫn luôn đăng nhập được bằng mã 6 số'),
+          findsOneWidget,
+        );
+
+        await tester.ensureVisible(byKey('settings-password'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('settings-password'));
+        await tester.pumpAndSettle();
+
+        expect(byKey('profile-password-sheet'), findsOneWidget);
+        expect(find.text('đặt mật khẩu.'), findsOneWidget);
+        // First-time set does NOT offer sign-out-others switch.
+        expect(byKey('password-sheet-sign-out-others'), findsNothing);
+
+        // Short password rejected client-side without calling sendReauthentication.
+        await tester.enterText(byKey('password-sheet-new'), 'short');
+        await tester.tap(byKey('password-sheet-continue'));
+        await tester.pumpAndSettle();
+        expect(find.text('Mật khẩu cần ít nhất 8 ký tự.'), findsOneWidget);
+        expect(auth.calls, isEmpty);
+
+        // Valid password sends reauthentication code and advances to Step 2.
+        await tester.enterText(byKey('password-sheet-new'), 'strongpass123');
+        await tester.tap(byKey('password-sheet-continue'));
+        await tester.pumpAndSettle();
+        expect(auth.calls, ['sendReauthentication']);
+        expect(find.text('xác minh bằng mã.'), findsOneWidget);
+        expect(byKey('password-sheet-otp'), findsOneWidget);
+
+        // Entering 6 digits submits updatePassword with nonce and signOutOthers=false.
+        await tester.enterText(byKey('password-sheet-otp'), '654321');
+        await tester.pumpAndSettle();
+        expect(auth.calls.last, 'updatePassword:strongpass123:nonce=654321:signOutOthers=false');
+        expect(byKey('profile-password-sheet'), findsNothing);
+        expect(c.read(hasPasswordProvider), isTrue);
+        expect(
+          c
+              .read(sharedPreferencesProvider)
+              .getBool(AuthMethodPrefs.hasPasswordKeyFor('u1')),
+          isTrue,
+        );
+        expect(
+          c
+              .read(sharedPreferencesProvider)
+              .getString(AuthMethodPrefs.lastMethodKey),
+          RememberedAuthMethod.password.wireName,
+        );
+        // Settings row now displays "Đổi mật khẩu".
+        expect(find.text('Đổi mật khẩu'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'change password (hasPassword=true): reauth flow, sign-out-others default ON and toggleable, wrong code and same_password errors',
+      (tester) async {
+        final auth = RecordingAuthRepository(
+          userId: 'u1',
+          hasPasswordValue: true,
+        );
+        final c = await pumpBackendApp(
+          tester,
+          auth: auth,
+          profiles: FakeProfileRepository(aliceProfile),
+        );
+        await goTo(tester, c, '/profile/settings');
+        await tester.pumpAndSettle();
+
+        expect(find.text('Đổi mật khẩu'), findsOneWidget);
+        expect(
+          find.text('Đang bật song song với mã đăng nhập 6 số'),
+          findsOneWidget,
+        );
+
+        await tester.ensureVisible(byKey('settings-password'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('settings-password'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('đổi mật khẩu.'), findsOneWidget);
+        expect(byKey('password-sheet-sign-out-others'), findsOneWidget);
+        expect(
+          tester
+              .widget<UiSwitchRow>(byKey('password-sheet-sign-out-others'))
+              .value,
+          isTrue,
+        );
+
+        await tester.enterText(byKey('password-sheet-new'), 'rotatedpass99');
+        await tester.tap(byKey('password-sheet-continue'));
+        await tester.pumpAndSettle();
+        expect(auth.calls, ['sendReauthentication']);
+
+        // 1. Wrong/expired nonce shows inline error on code step.
+        auth.updatePasswordError = const OurneyException(
+          OurneyErrorCode.invalid,
+          '400 (reauthentication_not_valid): invalid nonce',
+        );
+        await tester.enterText(byKey('password-sheet-otp'), '111111');
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Mã chưa đúng hoặc đã hết hạn. Kiểm tra lại nhé.'),
+          findsOneWidget,
+        );
+        expect(byKey('password-sheet-otp'), findsOneWidget);
+
+        // 2. same_password returns to Step 1 with same-password message.
+        auth.updatePasswordError = const OurneyException(
+          OurneyErrorCode.invalid,
+          '422 (same_password): New password should be different',
+        );
+        await tester.enterText(byKey('password-sheet-otp'), '222222');
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Mật khẩu mới cần khác mật khẩu hiện tại.'),
+          findsOneWidget,
+        );
+        expect(byKey('password-sheet-new'), findsOneWidget);
+
+        // 3. Succeed with default signOutOthers = true.
+        auth.updatePasswordError = null;
+        await tester.enterText(byKey('password-sheet-new'), 'brandnewpass99');
+        await tester.tap(byKey('password-sheet-continue'));
+        await tester.pumpAndSettle();
+        await tester.enterText(byKey('password-sheet-otp'), '333333');
+        await tester.pumpAndSettle();
+        expect(
+          auth.calls.last,
+          'updatePassword:brandnewpass99:nonce=333333:signOutOthers=true',
+        );
+        expect(byKey('profile-password-sheet'), findsNothing);
+
+        // 4. Re-open and toggle signOutOthers OFF -> passes signOutOthers=false.
+        await tester.tap(byKey('settings-password'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('password-sheet-sign-out-others'));
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<UiSwitchRow>(byKey('password-sheet-sign-out-others'))
+              .value,
+          isFalse,
+        );
+        await tester.enterText(byKey('password-sheet-new'), 'anotherpass99');
+        await tester.tap(byKey('password-sheet-continue'));
+        await tester.pumpAndSettle();
+        await tester.enterText(byKey('password-sheet-otp'), '444444');
+        await tester.pumpAndSettle();
+        expect(
+          auth.calls.last,
+          'updatePassword:anotherpass99:nonce=444444:signOutOthers=false',
         );
       },
     );

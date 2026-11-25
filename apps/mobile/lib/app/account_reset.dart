@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/auth/auth_providers.dart';
 import '../features/feedback/data/feedback_providers.dart';
 import '../features/import/data/import_providers.dart';
 import '../features/journeys/data/create_progress.dart';
@@ -56,7 +57,9 @@ Future<void> resetAccountLocalState(
           (SafetyPrefs.userIdOfTermsKey(key) != null &&
               SafetyPrefs.userIdOfTermsKey(key) != nextUserId) ||
           (FeedbackPrefs.userIdOfKey(key) != null &&
-              FeedbackPrefs.userIdOfKey(key) != nextUserId))
+              FeedbackPrefs.userIdOfKey(key) != nextUserId) ||
+          (AuthMethodPrefs.userIdOfHasPasswordKey(key) != null &&
+              AuthMethodPrefs.userIdOfHasPasswordKey(key) != nextUserId))
         key,
   };
   final removals = <Future<void>>[];
@@ -83,6 +86,7 @@ Future<void> resetAccountLocalState(
     ..invalidate(createProgressProvider)
     ..invalidate(hideWeightOnShareProvider)
     ..invalidate(blurPhotosOnShareProvider)
+    ..invalidate(hasPasswordProvider)
     ..invalidate(reminderSettingsProvider)
     ..invalidate(streakAlertsEnabledProvider)
     ..invalidate(reminderBannerProvider)

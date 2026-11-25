@@ -428,4 +428,104 @@ class ProfileL10nEn extends ProfileL10n {
 
   @override
   String get profile_settings_languageEyebrow => 'LANGUAGE';
+
+  @override
+  String get profile_settings_secSecurity => 'security';
+
+  @override
+  String get profile_settings_setPassword => 'Set password';
+
+  @override
+  String get profile_settings_setPasswordSub =>
+      'Optional — you can always sign in with a 6-digit code';
+
+  @override
+  String get profile_settings_changePassword => 'Change password';
+
+  @override
+  String get profile_settings_changePasswordSub =>
+      'Active alongside 6-digit sign-in codes';
+
+  @override
+  String get profile_settings_passwordPhoneOnly => 'Password';
+
+  @override
+  String get profile_settings_passwordPhoneOnlySub =>
+      'Phone accounts sign in with SMS codes';
+
+  @override
+  String get profile_password_setTitle => 'set password.';
+
+  @override
+  String profile_password_setLead(String email) {
+    return 'You can sign in with this password or a 6-digit code sent to $email.';
+  }
+
+  @override
+  String get profile_password_changeTitle => 'change password.';
+
+  @override
+  String get profile_password_newLabel => 'New password';
+
+  @override
+  String get profile_password_shortError => 'Use at least 8 characters.';
+
+  @override
+  String get profile_password_sameError =>
+      'New password must be different from your current password.';
+
+  @override
+  String get profile_password_signOutOthers => 'Sign out of other devices';
+
+  @override
+  String get profile_password_signOutOthersSub =>
+      'Keeps you signed in on this device';
+
+  @override
+  String get profile_password_save => 'Save password';
+
+  @override
+  String get profile_password_saving => 'Saving…';
+
+  @override
+  String get profile_password_codeTitle => 'confirm with a code.';
+
+  @override
+  String profile_password_codeLead(String email) {
+    return 'Enter the 6-digit code sent to $email to save your password.';
+  }
+
+  @override
+  String get profile_password_codeLabel => '6-digit verification code';
+
+  @override
+  String get profile_password_codeWrong =>
+      'That code is wrong or expired. Check it and try again.';
+
+  @override
+  String get profile_password_resend => 'Resend code';
+
+  @override
+  String profile_password_resendIn(int seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
+  String get profile_password_codeResent => 'New code sent.';
+
+  @override
+  String get profile_password_rateLimited =>
+      'Too many tries. Wait a moment and try again.';
+
+  @override
+  String get profile_password_savedSet => 'Password set.';
+
+  @override
+  String get profile_password_savedChanged => 'Password updated.';
+
+  @override
+  String get profile_password_show => 'Show password';
+
+  @override
+  String get profile_password_hide => 'Hide password';
 }

@@ -255,6 +255,27 @@ void main() {
     expect(layer.auth.isLocalOnly, isTrue);
     expect(layer.auth.currentUserId, isNull);
     expect(await layer.auth.watchUserId().first, isNull);
+    expect(await layer.auth.hasPassword(), isFalse);
+    await expectLater(
+      layer.auth.sendReauthentication(),
+      throwsA(
+        isA<OurneyException>().having(
+          (e) => e.error,
+          'error',
+          OurneyErrorCode.offline,
+        ),
+      ),
+    );
+    await expectLater(
+      layer.auth.updatePassword('password123', nonce: '123456'),
+      throwsA(
+        isA<OurneyException>().having(
+          (e) => e.error,
+          'error',
+          OurneyErrorCode.offline,
+        ),
+      ),
+    );
     await expectLater(
       layer.auth.sendOtp('a@b.c'),
       throwsA(

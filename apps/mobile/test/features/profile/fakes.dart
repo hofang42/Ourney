@@ -15,13 +15,15 @@ import '../../app/test_helpers.dart';
 
 /// Records calls and lets each auth step fail with a chosen error.
 class RecordingAuthRepository extends FakeAuthRepository {
-  RecordingAuthRepository({super.userId});
+  RecordingAuthRepository({super.userId, super.hasPasswordValue});
 
   final List<String> calls = [];
   Object? sendOtpError;
   Object? verifyOtpError;
   Object? deleteError;
   Object? signOutError;
+  Object? sendReauthenticationError;
+  Object? updatePasswordError;
 
   @override
   Future<void> sendOtp(String email) async {
@@ -102,7 +104,28 @@ class RecordingAuthRepository extends FakeAuthRepository {
   ) async {
     calls.add('reset:$email:$code');
     if (verifyOtpError case final e?) throw e;
+    hasPasswordValue = true;
     emit('u1');
+  }
+
+  @override
+  Future<void> sendReauthentication() async {
+    calls.add('sendReauthentication');
+    if (sendReauthenticationError case final e?) throw e;
+  }
+
+  @override
+  Future<void> updatePassword(
+    String newPassword, {
+    String? currentPassword,
+    String? nonce,
+    bool signOutOthers = false,
+  }) async {
+    calls.add(
+      'updatePassword:$newPassword:nonce=${nonce ?? ''}:signOutOthers=$signOutOthers',
+    );
+    if (updatePasswordError case final e?) throw e;
+    hasPasswordValue = true;
   }
 
   @override
@@ -202,12 +225,14 @@ Future<ProviderContainer> pumpBackendApp(
   bool onboarded = true,
   bool eulaAccepted = true,
   bool phoneAvailable = false,
+  Map<String, Object> initialPrefs = const {},
 }) => pumpOurneyApp(
   tester,
   config: testBackendConfig,
   auth: auth,
   onboarded: onboarded,
   eulaAccepted: eulaAccepted,
+  initialPrefs: initialPrefs,
   overrides: [
     phoneAuthAvailableProvider.overrideWith((ref) async => phoneAvailable),
     profileRepositoryProvider.overrideWithValue(

@@ -78,8 +78,33 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
 
   /// The server said phone sign-in is off (despite the settings probe).
   bool _phoneDisabled = false;
+  bool _passwordSignInFailed = false;
+  bool _userTouchedFlowOrInput = false;
+  bool _pendingRememberedPhone = false;
   int _cooldown = 0;
   Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    final raw = ref
+        .read(sharedPreferencesProvider)
+        .getString(AuthMethodPrefs.lastMethodKey);
+    switch (RememberedAuthMethod.fromWire(raw)) {
+      case RememberedAuthMethod.password:
+        _flow = _Flow.password;
+      case RememberedAuthMethod.phoneCode:
+        final phoneReady =
+            ref.read(phoneAuthAvailableProvider).asData?.value ?? false;
+        if (phoneReady) {
+          _flow = _Flow.phoneCode;
+        } else {
+          _pendingRememberedPhone = true;
+        }
+      case RememberedAuthMethod.emailCode || null:
+        _flow = _Flow.emailCode;
+    }
+  }
 
   _Tab get _tab => _flow == _Flow.phoneCode ? _Tab.phone : _Tab.email;
   String get _normalizedEmail => _email.text.trim().toLowerCase();
@@ -149,6 +174,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     setState(() {
       _flowDirection = nextDirection;
       _flow = flow;
+      _userTouchedFlowOrInput = true;
+      _pendingRememberedPhone = false;
+      _passwordSignInFailed = false;
       _codeStep = false;
       _submitted = false;
       _error = null;
@@ -169,6 +197,26 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     return true;
   }
 
+  /// One-tap recovery after a failed password sign-in: keeps the typed email,
+  /// switches to email OTP, and immediately sends the 6-digit login code.
+  Future<void> _sendCodeForCurrentEmail() async {
+    if (_busy) return;
+    _timer?.cancel();
+    setState(() {
+      _flowDirection = -1;
+      _flow = _Flow.emailCode;
+      _userTouchedFlowOrInput = true;
+      _pendingRememberedPhone = false;
+      _passwordSignInFailed = false;
+      _codeStep = false;
+      _error = null;
+      _offline = false;
+      _password.clear();
+      _showPassword = false;
+    });
+    await _submitForm();
+  }
+
   /// Sends whatever the current form needs (first send and resend).
   Future<void> _submitForm({bool resend = false}) async {
     final l10n = AuthL10n.of(context);
@@ -176,9 +224,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
       _submitted = true;
       _error = null;
       _offline = false;
+      _passwordSignInFailed = false;
     });
     if (!_formValid) return;
     final auth = ref.read(authRepositoryProvider);
+    final prefs = ref.read(sharedPreferencesProvider);
     final router = GoRouter.of(context);
     final profiles = _profiles();
     final quiz = ref.read(onboardingQuizProvider.notifier);
@@ -199,6 +249,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
         case _Flow.password:
           step = AuthStep.passwordSignIn;
           await auth.signInWithPassword(_normalizedEmail, _password.text);
+          unawaited(
+            prefs.setString(
+              AuthMethodPrefs.lastMethodKey,
+              RememberedAuthMethod.password.wireName,
+            ),
+          );
+          if (auth.currentUserId case final uid?) {
+            unawaited(
+              prefs.setBool(AuthMethodPrefs.hasPasswordKeyFor(uid), true),
+            );
+          }
           await _finishSignIn(
             router,
             auth,
@@ -212,15 +273,21 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
       }
     } on Object catch (e) {
       if (!mounted) return;
-      final unavailable =
-          e is OurneyException && e.error == OurneyErrorCode.unavailable;
+      final errCode = e is OurneyException ? e.error : OurneyErrorCode.unknown;
+      final unavailable = errCode == OurneyErrorCode.unavailable;
+      final isPasswordInvalid =
+          step == AuthStep.passwordSignIn &&
+          (errCode == OurneyErrorCode.invalid ||
+              errCode == OurneyErrorCode.unauthenticated);
       setState(() {
         _busy = false;
         _offline = _isOffline(e);
         _error = _offline ? null : authErrorMessage(l10n, e, step);
+        _passwordSignInFailed = !_offline && isPasswordInvalid;
         if (unavailable && _flow == _Flow.phoneCode) {
           // SMS is off on the server: hide Phone and go back to email.
           _phoneDisabled = true;
+          _pendingRememberedPhone = false;
           _flowDirection = -1;
           _flow = _Flow.emailCode;
           _submitted = false;
@@ -266,6 +333,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     // as soon as the user id is emitted.
     final router = GoRouter.of(context);
     final auth = ref.read(authRepositoryProvider);
+    final prefs = ref.read(sharedPreferencesProvider);
     final profiles = _profiles();
     final quiz = ref.read(onboardingQuizProvider.notifier);
     final eula = ref.read(eulaAcceptedProvider.notifier);
@@ -278,11 +346,34 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
         case _Flow.phoneCode:
           step = AuthStep.verifyPhone;
           await auth.verifyPhoneOtp(_e164!, code);
+          unawaited(
+            prefs.setString(
+              AuthMethodPrefs.lastMethodKey,
+              RememberedAuthMethod.phoneCode.wireName,
+            ),
+          );
         case _Flow.reset:
           step = AuthStep.resetConfirm;
           await auth.resetPassword(_normalizedEmail, code, _password.text);
+          unawaited(
+            prefs.setString(
+              AuthMethodPrefs.lastMethodKey,
+              RememberedAuthMethod.password.wireName,
+            ),
+          );
+          if (auth.currentUserId case final uid?) {
+            unawaited(
+              prefs.setBool(AuthMethodPrefs.hasPasswordKeyFor(uid), true),
+            );
+          }
         case _Flow.emailCode || _Flow.password:
           await auth.verifyOtp(_normalizedEmail, code);
+          unawaited(
+            prefs.setString(
+              AuthMethodPrefs.lastMethodKey,
+              RememberedAuthMethod.emailCode.wireName,
+            ),
+          );
       }
     } on Object catch (e) {
       if (!mounted) return;
@@ -447,6 +538,19 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<bool>>(phoneAuthAvailableProvider, (prev, next) {
+      if (!_pendingRememberedPhone) return;
+      final available = next.asData?.value;
+      if (available == null) return;
+      _pendingRememberedPhone = false;
+      if (available &&
+          !_userTouchedFlowOrInput &&
+          !_codeStep &&
+          !_phoneDisabled &&
+          _email.text.isEmpty) {
+        setState(() => _flow = _Flow.phoneCode);
+      }
+    });
     final l10n = AuthL10n.of(context);
     final ui = context.ui;
     final codeStep = _codeStep;
@@ -680,6 +784,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
               ? TextInputAction.next
               : TextInputAction.send,
           error: emailError,
+          onChanged: (_) {
+            _userTouchedFlowOrInput = true;
+            _pendingRememberedPhone = false;
+            if (_passwordSignInFailed) {
+              setState(() => _passwordSignInFailed = false);
+            }
+          },
           onSubmitted: (_) =>
               _busy || _needsPasswordField ? null : _submitForm(),
         ),
@@ -689,6 +800,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
       ],
       if (_error != null)
         UiFlowError(key: const ValueKey('auth-error'), message: _error!),
+      if (_flow == _Flow.password && _passwordSignInFailed) ...[
+        const SizedBox(height: UiSpace.sm),
+        UiButton.secondary(
+          key: const ValueKey('auth-send-code-instead'),
+          label: l10n.auth_sendCodeForEmail,
+          compact: true,
+          glyph: OurneyIcon(name: 'mail', size: 18, flat: true, color: ui.ink),
+          onPressed: _busy ? null : _sendCodeForCurrentEmail,
+        ),
+      ],
       const SizedBox(height: 20),
       UiFlowButton(
         key: const ValueKey('auth-send'),

@@ -426,4 +426,105 @@ class ProfileL10nVi extends ProfileL10n {
 
   @override
   String get profile_settings_languageEyebrow => 'NGÔN NGỮ';
+
+  @override
+  String get profile_settings_secSecurity => 'bảo mật';
+
+  @override
+  String get profile_settings_setPassword => 'Đặt mật khẩu';
+
+  @override
+  String get profile_settings_setPasswordSub =>
+      'Tùy chọn — bạn vẫn luôn đăng nhập được bằng mã 6 số';
+
+  @override
+  String get profile_settings_changePassword => 'Đổi mật khẩu';
+
+  @override
+  String get profile_settings_changePasswordSub =>
+      'Đang bật song song với mã đăng nhập 6 số';
+
+  @override
+  String get profile_settings_passwordPhoneOnly => 'Mật khẩu';
+
+  @override
+  String get profile_settings_passwordPhoneOnlySub =>
+      'Tài khoản số điện thoại đăng nhập bằng mã SMS';
+
+  @override
+  String get profile_password_setTitle => 'đặt mật khẩu.';
+
+  @override
+  String profile_password_setLead(String email) {
+    return 'Bạn có thể đăng nhập bằng mật khẩu này hoặc mã 6 số gửi tới $email.';
+  }
+
+  @override
+  String get profile_password_changeTitle => 'đổi mật khẩu.';
+
+  @override
+  String get profile_password_newLabel => 'Mật khẩu mới';
+
+  @override
+  String get profile_password_shortError => 'Mật khẩu cần ít nhất 8 ký tự.';
+
+  @override
+  String get profile_password_sameError =>
+      'Mật khẩu mới cần khác mật khẩu hiện tại.';
+
+  @override
+  String get profile_password_signOutOthers =>
+      'Đăng xuất khỏi các thiết bị khác';
+
+  @override
+  String get profile_password_signOutOthersSub =>
+      'Giữ phiên đăng nhập trên máy này';
+
+  @override
+  String get profile_password_save => 'Lưu mật khẩu';
+
+  @override
+  String get profile_password_saving => 'Đang lưu…';
+
+  @override
+  String get profile_password_codeTitle => 'xác minh bằng mã.';
+
+  @override
+  String profile_password_codeLead(String email) {
+    return 'Nhập mã 6 số vừa gửi tới $email để lưu mật khẩu.';
+  }
+
+  @override
+  String get profile_password_codeLabel => 'Mã xác minh 6 số';
+
+  @override
+  String get profile_password_codeWrong =>
+      'Mã chưa đúng hoặc đã hết hạn. Kiểm tra lại nhé.';
+
+  @override
+  String get profile_password_resend => 'Gửi lại mã';
+
+  @override
+  String profile_password_resendIn(int seconds) {
+    return 'Gửi lại sau ${seconds}s';
+  }
+
+  @override
+  String get profile_password_codeResent => 'Đã gửi mã mới.';
+
+  @override
+  String get profile_password_rateLimited =>
+      'Bạn thử hơi nhiều rồi. Đợi một chút rồi thử lại nhé.';
+
+  @override
+  String get profile_password_savedSet => 'Đã đặt mật khẩu.';
+
+  @override
+  String get profile_password_savedChanged => 'Đã đổi mật khẩu.';
+
+  @override
+  String get profile_password_show => 'Hiện mật khẩu';
+
+  @override
+  String get profile_password_hide => 'Ẩn mật khẩu';
 }

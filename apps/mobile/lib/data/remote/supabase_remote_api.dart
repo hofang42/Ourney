@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:ourney_core/ourney_core.dart'
+    show OurneyErrorCode, OurneyException;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'error_mapping.dart';
@@ -29,6 +31,7 @@ class SupabaseRemoteApi implements RemoteApi {
   final HttpClient _http;
   String? _termsUserId;
   int? _acceptedTermsVersion;
+  String? _verifiedRecoveryKey;
 
   StorageFileApi _bucket(String path) =>
       _client.storage.from(storageBucketFor(path));
@@ -168,26 +171,86 @@ class SupabaseRemoteApi implements RemoteApi {
   Future<void> resetPassword(String email, String code, String newPassword) =>
       guardRemote(() async {
         final trimmedEmail = email.trim();
+        final trimmedCode = code.trim();
+        final recoveryKey = '${trimmedEmail.toLowerCase()}:$trimmedCode';
         final currentEmail = _client.auth.currentUser?.email;
-        if (currentEmail == null ||
+        if (_verifiedRecoveryKey != recoveryKey ||
+            currentEmail == null ||
             currentEmail.toLowerCase() != trimmedEmail.toLowerCase()) {
           await _client.auth
               .verifyOTP(
                 email: trimmedEmail,
-                token: code.trim(),
+                token: trimmedCode,
                 type: OtpType.recovery,
               )
               .timeout(remoteRequestTimeout);
+          _verifiedRecoveryKey = recoveryKey;
         }
         await _client.auth
             .updateUser(UserAttributes(password: newPassword))
             .timeout(remoteRequestTimeout);
+        _verifiedRecoveryKey = null;
+        await _signOutOthersBestEffort();
       });
+
+  @override
+  Future<bool> hasPassword() => guardRemote(() async {
+    if (currentUserId == null) return false;
+    final res = await _client
+        .rpc<Object?>('auth_has_password')
+        .timeout(remoteRequestTimeout);
+    return res == true;
+  });
+
+  @override
+  Future<void> sendReauthentication() => guardRemote(() async {
+    await _client.auth.reauthenticate().timeout(remoteRequestTimeout);
+  });
+
+  @override
+  Future<void> updatePassword(
+    String newPassword, {
+    String? currentPassword,
+    String? nonce,
+    bool signOutOthers = false,
+  }) => guardRemote(() async {
+    if (currentPassword != null) {
+      final email = _client.auth.currentUser?.email;
+      if (email == null || email.isEmpty) {
+        throw const OurneyException(OurneyErrorCode.invalid);
+      }
+      await _client.auth
+          .signInWithPassword(email: email, password: currentPassword)
+          .timeout(remoteRequestTimeout);
+    }
+    await _client.auth
+        .updateUser(
+          UserAttributes(
+            password: newPassword,
+            nonce: nonce?.trim(),
+          ),
+        )
+        .timeout(remoteRequestTimeout);
+    if (signOutOthers) {
+      await _signOutOthersBestEffort();
+    }
+  });
+
+  Future<void> _signOutOthersBestEffort() async {
+    try {
+      await _client.auth
+          .signOut(scope: SignOutScope.others)
+          .timeout(remoteSignOutTimeout);
+    } on Object {
+      // Best-effort revocation of other devices; keep the active session.
+    }
+  }
 
   @override
   Future<void> signOut({bool global = false}) async {
     _termsUserId = null;
     _acceptedTermsVersion = null;
+    _verifiedRecoveryKey = null;
     if (global) {
       try {
         await _client.auth

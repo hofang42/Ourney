@@ -226,7 +226,7 @@ double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
 enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
-secure_password_change = false
+secure_password_change = true
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
 max_frequency = "1s"
 # Number of characters used in the email OTP.
@@ -260,6 +260,11 @@ content_path = "./supabase/templates/confirmation.html"
 [auth.email.template.recovery]
 subject = "Mã đặt lại mật khẩu Ourney / Your Ourney password reset code"
 content_path = "./supabase/templates/recovery.html"
+
+# Step-up reauthentication sends a 6-digit code (setting or changing a password in Settings).
+[auth.email.template.reauthentication]
+subject = "Mã xác minh bảo mật Ourney / Your Ourney security code"
+content_path = "./supabase/templates/reauthentication.html"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]

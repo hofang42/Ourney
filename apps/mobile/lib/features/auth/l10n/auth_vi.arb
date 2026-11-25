@@ -157,15 +157,15 @@
   "@auth_useCode": {
     "description": "Link to switch to emailed-code mode."
   },
-  "auth_forgot": "Quên mật khẩu?",
+  "auth_forgot": "Quên hoặc chưa đặt mật khẩu?",
   "@auth_forgot": {
-    "description": "Link to the reset flow."
+    "description": "Link to the reset / first-time password flow."
   },
-  "auth_resetTitle": "đặt lại mật khẩu.",
+  "auth_resetTitle": "đặt mật khẩu mới.",
   "@auth_resetTitle": {
     "description": "Reset title."
   },
-  "auth_resetSubtitle": "Nhập email, Ourney gửi mã 6 số để đặt mật khẩu mới.",
+  "auth_resetSubtitle": "Nhập email, Ourney gửi mã 6 số để bạn đặt mật khẩu.",
   "@auth_resetSubtitle": {
     "description": "Reset subtitle."
   },
@@ -177,9 +177,13 @@
   "@auth_backToSignIn": {
     "description": "Link back to sign-in."
   },
-  "auth_errorWrongPassword": "Sai mật khẩu. Thử lại hoặc đăng nhập bằng mã.",
+  "auth_errorWrongPassword": "Mật khẩu chưa đúng, hoặc tài khoản này chưa đặt mật khẩu.",
   "@auth_errorWrongPassword": {
-    "description": "Password sign-in error."
+    "description": "Non-enumerating password sign-in error."
+  },
+  "auth_sendCodeForEmail": "Gửi mã đăng nhập cho email này",
+  "@auth_sendCodeForEmail": {
+    "description": "One-tap button after failed password sign-in to send an email OTP code."
   },
   "auth_errorSendFailed": "Chưa gửi được mã. Thử lại sau ít phút.",
   "@auth_errorSendFailed": {

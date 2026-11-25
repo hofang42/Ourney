@@ -7,6 +7,7 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
+import '../../auth/auth_providers.dart';
 import '../../feedback/data/feedback_providers.dart';
 import '../../onboarding/onboarding_providers.dart';
 import '../../safety/data/safety_providers.dart';
@@ -126,6 +127,7 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
   Future<void> _delete(String? code) async {
     final l10n = ProfileL10n.of(context);
     final auth = ref.read(authRepositoryProvider);
+    final prefs = ref.read(sharedPreferencesProvider);
     final onboarding = ref.read(onboardingCompleteProvider.notifier);
     final eula = ref.read(eulaAcceptedProvider.notifier);
     final quiz = ref.read(onboardingQuizProvider.notifier);
@@ -161,6 +163,9 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
       return;
     }
     await onboarding.reset();
+    if (prefs.containsKey(AuthMethodPrefs.lastMethodKey)) {
+      await prefs.remove(AuthMethodPrefs.lastMethodKey);
+    }
     // A new account on this device must accept the terms again (FR-F3).
     await eula.reset();
     await quiz.clear();

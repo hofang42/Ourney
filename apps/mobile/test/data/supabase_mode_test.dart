@@ -825,4 +825,35 @@ void main() {
     );
     expect(await db.select(db.profiles).get(), isEmpty);
   });
+
+  test(
+    'hasPassword, sendReauthentication, and updatePassword delegate to remote',
+    () async {
+      remote.rpcHandlers['auth_has_password'] = (_) => false;
+      expect(await layer.auth.hasPassword(), isFalse);
+      expect(
+        remote.callsOf('rpc').where((c) => c.target == 'auth_has_password'),
+        hasLength(1),
+      );
+
+      remote.rpcHandlers['auth_has_password'] = (_) => true;
+      expect(await layer.auth.hasPassword(), isTrue);
+
+      await layer.auth.sendReauthentication();
+      expect(remote.callsOf('sendReauthentication'), hasLength(1));
+
+      await layer.auth.updatePassword(
+        'newpassword123',
+        nonce: '654321',
+        signOutOthers: true,
+      );
+      final upd = remote.callsOf('updatePassword').single;
+      expect(upd.target, 'newpassword123');
+      expect(upd.args, {
+        'currentPassword': null,
+        'nonce': '654321',
+        'signOutOthers': true,
+      });
+    },
+  );
 }

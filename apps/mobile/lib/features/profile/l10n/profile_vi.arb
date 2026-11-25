@@ -430,5 +430,136 @@
   "profile_settings_languageEyebrow": "NGÔN NGỮ",
   "@profile_settings_languageEyebrow": {
     "description": "Small label above the language control."
+  },
+  "profile_settings_secSecurity": "bảo mật",
+  "@profile_settings_secSecurity": {
+    "description": "Settings group: password and account security."
+  },
+  "profile_settings_setPassword": "Đặt mật khẩu",
+  "@profile_settings_setPassword": {
+    "description": "Settings row title when the account has no password yet."
+  },
+  "profile_settings_setPasswordSub": "Tùy chọn — bạn vẫn luôn đăng nhập được bằng mã 6 số",
+  "@profile_settings_setPasswordSub": {
+    "description": "Settings row subtitle when the account has no password yet."
+  },
+  "profile_settings_changePassword": "Đổi mật khẩu",
+  "@profile_settings_changePassword": {
+    "description": "Settings row title when the account has a password."
+  },
+  "profile_settings_changePasswordSub": "Đang bật song song với mã đăng nhập 6 số",
+  "@profile_settings_changePasswordSub": {
+    "description": "Settings row subtitle when the account has a password."
+  },
+  "profile_settings_passwordPhoneOnly": "Mật khẩu",
+  "@profile_settings_passwordPhoneOnly": {
+    "description": "Read-only settings row title for phone-only accounts."
+  },
+  "profile_settings_passwordPhoneOnlySub": "Tài khoản số điện thoại đăng nhập bằng mã SMS",
+  "@profile_settings_passwordPhoneOnlySub": {
+    "description": "Read-only settings row subtitle for phone-only accounts."
+  },
+  "profile_password_setTitle": "đặt mật khẩu.",
+  "@profile_password_setTitle": {
+    "description": "Sheet title when setting a password for the first time."
+  },
+  "profile_password_setLead": "Bạn có thể đăng nhập bằng mật khẩu này hoặc mã 6 số gửi tới {email}.",
+  "@profile_password_setLead": {
+    "description": "Sheet lead explaining optional password coexistence.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "profile_password_changeTitle": "đổi mật khẩu.",
+  "@profile_password_changeTitle": {
+    "description": "Sheet title when changing an existing password."
+  },
+  "profile_password_newLabel": "Mật khẩu mới",
+  "@profile_password_newLabel": {
+    "description": "New password field label."
+  },
+  "profile_password_shortError": "Mật khẩu cần ít nhất 8 ký tự.",
+  "@profile_password_shortError": {
+    "description": "Password minimum length validation error."
+  },
+  "profile_password_sameError": "Mật khẩu mới cần khác mật khẩu hiện tại.",
+  "@profile_password_sameError": {
+    "description": "Error when the new password matches the existing password."
+  },
+  "profile_password_signOutOthers": "Đăng xuất khỏi các thiết bị khác",
+  "@profile_password_signOutOthers": {
+    "description": "Toggle label to revoke other sessions when changing password."
+  },
+  "profile_password_signOutOthersSub": "Giữ phiên đăng nhập trên máy này",
+  "@profile_password_signOutOthersSub": {
+    "description": "Toggle subtitle to keep current device signed in."
+  },
+  "profile_password_save": "Lưu mật khẩu",
+  "@profile_password_save": {
+    "description": "Primary action button in the password sheet."
+  },
+  "profile_password_saving": "Đang lưu…",
+  "@profile_password_saving": {
+    "description": "Primary action button label while busy."
+  },
+  "profile_password_codeTitle": "xác minh bằng mã.",
+  "@profile_password_codeTitle": {
+    "description": "Reauthentication code step title in the password sheet."
+  },
+  "profile_password_codeLead": "Nhập mã 6 số vừa gửi tới {email} để lưu mật khẩu.",
+  "@profile_password_codeLead": {
+    "description": "Reauthentication code step lead.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "profile_password_codeLabel": "Mã xác minh 6 số",
+  "@profile_password_codeLabel": {
+    "description": "Semantics label for the 6-digit reauthentication OTP field."
+  },
+  "profile_password_codeWrong": "Mã chưa đúng hoặc đã hết hạn. Kiểm tra lại nhé.",
+  "@profile_password_codeWrong": {
+    "description": "Error when the reauthentication nonce is wrong or expired."
+  },
+  "profile_password_resend": "Gửi lại mã",
+  "@profile_password_resend": {
+    "description": "Resend reauthentication code button."
+  },
+  "profile_password_resendIn": "Gửi lại sau {seconds}s",
+  "@profile_password_resendIn": {
+    "description": "Resend cooldown countdown.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "profile_password_codeResent": "Đã gửi mã mới.",
+  "@profile_password_codeResent": {
+    "description": "Confirmation after resending the reauthentication code."
+  },
+  "profile_password_rateLimited": "Bạn thử hơi nhiều rồi. Đợi một chút rồi thử lại nhé.",
+  "@profile_password_rateLimited": {
+    "description": "Rate limit error in the password sheet."
+  },
+  "profile_password_savedSet": "Đã đặt mật khẩu.",
+  "@profile_password_savedSet": {
+    "description": "Toast after setting a password for the first time."
+  },
+  "profile_password_savedChanged": "Đã đổi mật khẩu.",
+  "@profile_password_savedChanged": {
+    "description": "Toast after changing an existing password."
+  },
+  "profile_password_show": "Hiện mật khẩu",
+  "@profile_password_show": {
+    "description": "Semantics for show password toggle."
+  },
+  "profile_password_hide": "Ẩn mật khẩu",
+  "@profile_password_hide": {
+    "description": "Semantics for hide password toggle."
   }
 }

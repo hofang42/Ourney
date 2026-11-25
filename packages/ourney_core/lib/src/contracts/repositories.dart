@@ -80,6 +80,26 @@ abstract interface class AuthRepository {
   Future<void> sendPasswordReset(String email);
   Future<void> resetPassword(String email, String code, String newPassword);
 
+  /// Whether the signed-in account has a password set (`rpc auth_has_password`).
+  /// False when signed out or in local-only mode.
+  Future<bool> hasPassword();
+
+  /// Sends a 6-digit reauthentication nonce code to the signed-in account's
+  /// email (`auth.reauthenticate()`) for setting or changing a password.
+  Future<void> sendReauthentication();
+
+  /// Sets or updates the signed-in account's password to [newPassword],
+  /// passing [nonce] (from [sendReauthentication]) or verifying
+  /// [currentPassword] when provided. When [signOutOthers] is true, revokes
+  /// other devices' sessions (`SignOutScope.others`) best-effort while keeping
+  /// this device signed in.
+  Future<void> updatePassword(
+    String newPassword, {
+    String? currentPassword,
+    String? nonce,
+    bool signOutOthers = false,
+  });
+
   Future<void> signOut();
 
   /// Deletes the account and all media server-side (Edge Function
@@ -277,6 +297,7 @@ enum OurneyErrorCode {
   linksNotAllowed('links_not_allowed'), // 23514 (0024 URL guard)
   invalidCapturedAt('invalid_captured_at'), // 22008
   consentRequired('consent_required'), // v1.3: group share needs consent first
+  reauthenticationNeeded('reauthentication_needed'), // GoTrue secure_password_change
   // Edge Function codes.
   methodNotAllowed('method_not_allowed'),
   storageListingFailed('storage_listing_failed'),
