@@ -256,7 +256,10 @@ public enum WidgetL10n {
     if pending <= 0 {
       return en ? "All done today" : "Đã xong hôm nay"
     }
-    return en ? "\(pending) left today" : "Còn \(pending) hành trình"
+    if en {
+      return pending == 1 ? "1 photo waiting" : "\(pending) photos waiting"
+    }
+    return "Chờ \(pending) khung ảnh"
   }
 
   public static func lockScreenInline(streak: Int, pending: Int, locale: String) -> String {
@@ -264,7 +267,7 @@ public enum WidgetL10n {
     if pending <= 0 {
       return en ? "\(streak)d · All done" : "\(streak) ngày · Đã xong"
     }
-    return en ? "\(streak)d · \(pending) left" : "\(streak) ngày · Còn \(pending)"
+    return en ? "\(streak)d · \(pending) waiting" : "\(streak) ngày · Chờ \(pending)"
   }
 
   public static func liveActivityWindowLabel(atRisk: Bool, skinId: String, locale: String) -> String {
