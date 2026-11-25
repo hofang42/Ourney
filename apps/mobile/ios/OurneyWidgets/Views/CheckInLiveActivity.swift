@@ -58,7 +58,7 @@ public struct CheckInLiveActivity: Widget {
               .lineLimit(1)
 
               let rawTitle = state.journeyTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-              let displayTitle = (state.redactTitleOnLockScreen || rawTitle.isEmpty)
+              let displayTitle = rawTitle.isEmpty
                 ? WidgetL10n.lockScreenRedactedTitle(locale: state.locale)
                 : rawTitle
 
@@ -66,6 +66,7 @@ public struct CheckInLiveActivity: Widget {
                 .font(OurneyWidgetFont.title(13))
                 .foregroundColor(OurneyWidgetTheme.cameraDark.ink)
                 .lineLimit(1)
+                .privacySensitive(state.redactTitleOnLockScreen && !rawTitle.isEmpty)
             }
           }
         }

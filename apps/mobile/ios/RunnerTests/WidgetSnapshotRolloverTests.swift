@@ -462,7 +462,8 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
       )
     )
 
-    // (c) Verify canonical redactLockScreenTitles precedence over legacy redactTitleOnLockScreen.
+    // (c) Verify canonical redactLockScreenTitles precedence over legacy redactTitleOnLockScreen
+    //     and fail-closed default when payload keys and cachedSnapshot are absent.
     XCTAssertTrue(
       OurneyWidgetBridge.resolveRedactLockScreenTitles(
         topDict: [
@@ -490,6 +491,12 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
     XCTAssertTrue(
       OurneyWidgetBridge.resolveRedactLockScreenTitles(
         topDict: ["redactTitleOnLockScreen": true]
+      )
+    )
+    XCTAssertTrue(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [:],
+        cachedSnapshot: nil
       )
     )
 
@@ -692,24 +699,92 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
       "You have 1 solo journey — start or join a Squad, or use the Today widget."
     )
 
-    // 5. Smart Lock Screen title redaction with per-journey `isSensitive`:
-    //    In smart mode, sensitive weight-loss journey is redacted, while pinned non-sensitive study
-    //    journey displays its title unless explicitRedactLockScreenTitles == true.
+    // 5. Fail-closed Lock Screen title redaction (§B.5):
+    //    (a) When `redactLockScreenTitles == true` and `explicitRedactLockScreenTitles == nil`
+    //        (current Dart `snapshot_v1.json` wire format), ALL journeys redact to `"Ourney"`
+    //        so the user's "Hide journey titles on Lock Screen" toggle is always respected.
     XCTAssertTrue(soloOnlySnap.shouldRedactLockScreenTitle(for: soloWeight))
-    XCTAssertFalse(soloOnlySnap.shouldRedactLockScreenTitle(for: soloStudy))
+    XCTAssertTrue(soloOnlySnap.shouldRedactLockScreenTitle(for: soloStudy))
+    XCTAssertTrue(soloOnlySnap.shouldRedactLockScreenTitle(for: nil))
 
+    //    (b) When `redactLockScreenTitles == false` and `explicitRedactLockScreenTitles == nil`,
+    //        sensitive journeys (`isEffectiveSensitiveJourney`: `isSensitive`, `quiet`, `type-weight`)
+    //        still fail-closed to `"Ourney"`, while non-sensitive journeys display their title.
+    let implicitWeightWithoutFlag = WidgetJourneyItem(
+      id: "legacy-weight",
+      title: "Giảm cân 30 ngày",
+      kind: "solo",
+      skinId: "quiet",
+      typeIcon: "type-weight",
+      isSensitive: false
+    )
+    let unredactedToggleSnap = WidgetSnapshot(
+      authState: "ready",
+      locale: "vi",
+      privacy: WidgetPrivacySettings(
+        photoMode: "smart",
+        redactLockScreenTitles: false
+      ),
+      journeys: [soloWeight, implicitWeightWithoutFlag, soloStudy],
+      squads: []
+    )
+    XCTAssertTrue(unredactedToggleSnap.shouldRedactLockScreenTitle(for: soloWeight))
+    XCTAssertTrue(unredactedToggleSnap.shouldRedactLockScreenTitle(for: implicitWeightWithoutFlag))
+    XCTAssertFalse(unredactedToggleSnap.shouldRedactLockScreenTitle(for: soloStudy))
+
+    //    (c) When `privacy` or `redactLockScreenTitles` is omitted in JSON, `WidgetPrivacySettings`
+    //        defaults `redactLockScreenTitles` to `true` (fail-closed).
+    let omittedPrivacyJson = """
+    {
+      "schemaVersion": 1,
+      "generatedAtUtc": "2026-11-24T10:00:00.000Z",
+      "authState": "ready",
+      "locale": "vi",
+      "journeys": [
+        {
+          "id": "quiet-1",
+          "title": "Giảm cân",
+          "skinId": "quiet",
+          "typeIcon": "type-weight"
+        }
+      ]
+    }
+    """
+    let omittedPrivacySnap = try JSONDecoder().decode(
+      WidgetSnapshot.self,
+      from: try XCTUnwrap(omittedPrivacyJson.data(using: .utf8))
+    )
+    XCTAssertTrue(omittedPrivacySnap.privacy.redactLockScreenTitles)
+    XCTAssertTrue(omittedPrivacySnap.shouldRedactLockScreenTitle(for: omittedPrivacySnap.journeys.first))
+    XCTAssertTrue(omittedPrivacySnap.shouldRedactLockScreenTitle(for: soloStudy))
+
+    //    (d) Explicit `explicitRedactLockScreenTitles` override (`true` or `false`) is honored when present.
     let forcedRedactSnap = WidgetSnapshot(
       authState: "ready",
       locale: "vi",
       privacy: WidgetPrivacySettings(
         photoMode: "smart",
-        redactLockScreenTitles: true,
+        redactLockScreenTitles: false,
         explicitRedactLockScreenTitles: true
       ),
       journeys: [soloWeight, soloStudy],
       squads: []
     )
     XCTAssertTrue(forcedRedactSnap.shouldRedactLockScreenTitle(for: soloStudy))
+
+    let explicitOptOutSnap = WidgetSnapshot(
+      authState: "ready",
+      locale: "vi",
+      privacy: WidgetPrivacySettings(
+        photoMode: "smart",
+        redactLockScreenTitles: true,
+        explicitRedactLockScreenTitles: false
+      ),
+      journeys: [soloWeight, soloStudy],
+      squads: []
+    )
+    XCTAssertFalse(explicitOptOutSnap.shouldRedactLockScreenTitle(for: soloWeight))
+    XCTAssertFalse(explicitOptOutSnap.shouldRedactLockScreenTitle(for: soloStudy))
 
     // 6. Bridge write outcome & capabilities
     let bridge = OurneyWidgetBridge()

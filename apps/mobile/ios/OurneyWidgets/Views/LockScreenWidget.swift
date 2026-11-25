@@ -77,7 +77,7 @@ public struct LockScreenWidgetEntryView: View {
       return snapshot?.totals.completedTodayCount ?? 0
     }()
 
-    let redactTitle = snapshot?.shouldRedactLockScreenTitle(for: featured) ?? false
+    let redactTitle = snapshot?.shouldRedactLockScreenTitle(for: featured) ?? true
 
     let statusTextOverride: String? = {
       switch cardState {

@@ -480,7 +480,7 @@ public final class OurneyWidgetBridge {
       ?? (topDict["redactTitleOnLockScreen"] as? Bool)
       ?? (resolvedWindowDict["redactTitleOnLockScreen"] as? Bool)
       ?? cachedSnapshot?.privacy.redactLockScreenTitles
-      ?? false
+      ?? true
   }
 
   private static func parseDateArg(_ raw: Any?) -> Date? {

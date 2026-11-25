@@ -405,25 +405,22 @@ public struct WidgetSnapshot: Codable, Equatable {
   }
 
   /// Evaluates whether a journey's title should be redacted to `"Ourney"` on the Lock Screen (§B.5).
-  /// - Honors explicit `privacy.explicitRedactLockScreenTitles` when present.
-  /// - In smart mode (`privacy.photoMode == "smart"`), when the account has a mix of sensitive
-  ///   (weight-loss / `isSensitive`) and non-sensitive journeys, redacts sensitive journeys while
-  ///   allowing non-sensitive pinned/featured journeys to display their title.
+  /// - Fail-closed by default:
+  ///   1. Honors explicit `privacy.explicitRedactLockScreenTitles` (`true` or `false`) when present.
+  ///   2. When `explicitRedactLockScreenTitles` is `nil` (current Dart `snapshot_v1.json` wire format),
+  ///      redacts whenever `privacy.redactLockScreenTitles == true` so the user's Lock Screen toggle is
+  ///      always respected across all journeys.
+  ///   3. When `privacy.redactLockScreenTitles == false`, still redacts sensitive journeys
+  ///      (`isEffectiveSensitiveJourney`: `isSensitive`, `quiet`, `weightLoss`, `type-weight`) so
+  ///      weight-loss titles never leak even on older/partial snapshots.
   public func shouldRedactLockScreenTitle(for journey: WidgetJourneyItem?) -> Bool {
     if let explicit = privacy.explicitRedactLockScreenTitles {
       return explicit
     }
-    guard let item = journey else {
-      return privacy.redactLockScreenTitles
+    if privacy.redactLockScreenTitles {
+      return true
     }
-    if !privacy.redactLockScreenTitles {
-      return item.isSensitive
-    }
-    if privacy.photoMode == "smart",
-       journeys.contains(where: \.isEffectiveSensitiveJourney) {
-      return item.isEffectiveSensitiveJourney
-    }
-    return true
+    return journey?.isEffectiveSensitiveJourney ?? false
   }
 }
 
@@ -435,7 +432,7 @@ public struct WidgetPrivacySettings: Codable, Equatable {
 
   public init(
     photoMode: String = "smart",
-    redactLockScreenTitles: Bool = false,
+    redactLockScreenTitles: Bool = true,
     explicitRedactLockScreenTitles: Bool? = nil,
     liveActivityEnabled: Bool = true
   ) {
@@ -455,7 +452,7 @@ public struct WidgetPrivacySettings: Codable, Equatable {
   public init(from decoder: Decoder) throws {
     let c = try decoder.container(keyedBy: CodingKeys.self)
     self.photoMode = try c.decodeIfPresent(String.self, forKey: .photoMode) ?? "smart"
-    self.redactLockScreenTitles = try c.decodeIfPresent(Bool.self, forKey: .redactLockScreenTitles) ?? false
+    self.redactLockScreenTitles = try c.decodeIfPresent(Bool.self, forKey: .redactLockScreenTitles) ?? true
     self.explicitRedactLockScreenTitles = try c.decodeIfPresent(Bool.self, forKey: .explicitRedactLockScreenTitles)
     self.liveActivityEnabled = try c.decodeIfPresent(Bool.self, forKey: .liveActivityEnabled) ?? true
   }

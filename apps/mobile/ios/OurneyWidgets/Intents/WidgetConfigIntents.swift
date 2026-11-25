@@ -49,9 +49,14 @@ public struct JourneyWidgetEntity: AppEntity, Equatable {
 
   public var displayRepresentation: DisplayRepresentation {
     if let sub = subtitle, !sub.isEmpty {
-      return DisplayRepresentation(title: "\(title)", subtitle: "\(sub)")
+      return DisplayRepresentation(
+        title: LocalizedStringResource(stringLiteral: title),
+        subtitle: LocalizedStringResource(stringLiteral: sub)
+      )
     }
-    return DisplayRepresentation(title: "\(title)")
+    return DisplayRepresentation(
+      title: LocalizedStringResource(stringLiteral: title)
+    )
   }
 }
 
@@ -112,9 +117,14 @@ public struct SquadWidgetEntity: AppEntity, Equatable {
 
   public var displayRepresentation: DisplayRepresentation {
     if let sub = subtitle, !sub.isEmpty {
-      return DisplayRepresentation(title: "\(title)", subtitle: "\(sub)")
+      return DisplayRepresentation(
+        title: LocalizedStringResource(stringLiteral: title),
+        subtitle: LocalizedStringResource(stringLiteral: sub)
+      )
     }
-    return DisplayRepresentation(title: "\(title)")
+    return DisplayRepresentation(
+      title: LocalizedStringResource(stringLiteral: title)
+    )
   }
 }
 
@@ -143,14 +153,16 @@ public protocol OurneyPinningConfigurationIntent: WidgetConfigurationIntent {
 }
 
 @available(iOS 17.0, iOSApplicationExtension 17.0, *)
-public struct SelectTodayJourneyIntent: OurneyPinningConfigurationIntent {
+public struct SelectTodayJourneyIntent: WidgetConfigurationIntent, OurneyPinningConfigurationIntent {
   public static var title: LocalizedStringResource = "Select Today Journey"
   public static var description = IntentDescription("Choose Automatic or pin a specific journey to this Today widget.")
 
   @Parameter(title: "Journey")
   public var journey: JourneyWidgetEntity?
 
-  public init() {}
+  public init() {
+    self.journey = .auto()
+  }
 
   public init(journey: JourneyWidgetEntity?) {
     self.journey = journey
@@ -162,14 +174,16 @@ public struct SelectTodayJourneyIntent: OurneyPinningConfigurationIntent {
 }
 
 @available(iOS 17.0, iOSApplicationExtension 17.0, *)
-public struct SelectStreakJourneyIntent: OurneyPinningConfigurationIntent {
+public struct SelectStreakJourneyIntent: WidgetConfigurationIntent, OurneyPinningConfigurationIntent {
   public static var title: LocalizedStringResource = "Select Streak Journey"
   public static var description = IntentDescription("Choose Automatic or pin a specific journey to this Streak widget.")
 
   @Parameter(title: "Journey")
   public var journey: JourneyWidgetEntity?
 
-  public init() {}
+  public init() {
+    self.journey = .auto()
+  }
 
   public init(journey: JourneyWidgetEntity?) {
     self.journey = journey
@@ -181,14 +195,16 @@ public struct SelectStreakJourneyIntent: OurneyPinningConfigurationIntent {
 }
 
 @available(iOS 17.0, iOSApplicationExtension 17.0, *)
-public struct SelectSquadIntent: OurneyPinningConfigurationIntent {
+public struct SelectSquadIntent: WidgetConfigurationIntent, OurneyPinningConfigurationIntent {
   public static var title: LocalizedStringResource = "Select Squad"
   public static var description = IntentDescription("Choose Automatic or pin a specific Squad or Couple journey to this widget.")
 
   @Parameter(title: "Squad")
   public var squad: SquadWidgetEntity?
 
-  public init() {}
+  public init() {
+    self.squad = .auto()
+  }
 
   public init(squad: SquadWidgetEntity?) {
     self.squad = squad
@@ -200,14 +216,16 @@ public struct SelectSquadIntent: OurneyPinningConfigurationIntent {
 }
 
 @available(iOS 17.0, iOSApplicationExtension 17.0, *)
-public struct SelectLockScreenJourneyIntent: OurneyPinningConfigurationIntent {
+public struct SelectLockScreenJourneyIntent: WidgetConfigurationIntent, OurneyPinningConfigurationIntent {
   public static var title: LocalizedStringResource = "Select Lock Screen Journey"
   public static var description = IntentDescription("Choose Automatic or pin a specific journey to this Lock Screen widget.")
 
   @Parameter(title: "Journey")
   public var journey: JourneyWidgetEntity?
 
-  public init() {}
+  public init() {
+    self.journey = .auto()
+  }
 
   public init(journey: JourneyWidgetEntity?) {
     self.journey = journey
