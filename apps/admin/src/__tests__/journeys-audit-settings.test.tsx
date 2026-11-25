@@ -226,4 +226,166 @@ describe('JourneysPage, AuditPage, and SettingsPage', () => {
       ).toBeInTheDocument()
     })
   })
+
+  it('formats action-contextual audit meta on AuditPage without leaking "Không rõ (<raw>)" / "Unknown (<raw>)" across moderation.resolve, words.upsert, words.delete, waitlist.export_csv, feature_requests.update, and system.reset_storage_purge', async () => {
+    const baseRow = SQL_FIXTURE_AUDIT_LIST.items[0]
+    const contextualAuditRows = [
+      {
+        ...baseRow,
+        id: 2001,
+        action: 'moderation.resolve',
+        target_type: 'moderation_queue',
+        target_id: 'mq-01',
+        reason: 'Confirmed harassment takedown',
+        meta: {
+          action: 'remove_content',
+          status: 'actioned',
+          target_user_id: 'usr-88',
+        },
+      },
+      {
+        ...baseRow,
+        id: 2002,
+        action: 'words.upsert',
+        target_type: 'word',
+        target_id: 'tu_xau',
+        reason: null,
+        meta: {
+          lang: 'vi',
+          match_mode: 'diacritic_word',
+          category: 'self_harm',
+          enabled: true,
+        },
+      },
+      {
+        ...baseRow,
+        id: 2003,
+        action: 'words.delete',
+        target_type: 'word',
+        target_id: 'badword',
+        reason: 'False positive cleanup',
+        meta: {
+          lang: 'en',
+          match_mode: 'word',
+          category: 'profanity',
+        },
+      },
+      {
+        ...baseRow,
+        id: 2004,
+        action: 'waitlist.export_csv',
+        target_type: 'waitlist',
+        target_id: null,
+        reason: null,
+        meta: {
+          row_count: 120,
+          lang: 'all',
+          platform: 'all',
+          mail_status: 'all',
+          converted: 'all',
+        },
+      },
+      {
+        ...baseRow,
+        id: 2005,
+        action: 'feature_requests.update',
+        target_type: 'feature_request',
+        target_id: 'fr-101',
+        reason: 'Triaged into squad roadmap',
+        meta: {
+          old_status: 'new',
+          new_status: 'planned',
+          old_category: 'other',
+          new_category: 'squad',
+        },
+      },
+      {
+        ...baseRow,
+        id: 2006,
+        action: 'system.reset_storage_purge',
+        target_type: 'system',
+        target_id: 'pending_storage_purge',
+        reason: 'Reset after storage outage',
+        meta: {
+          reset_count: 4,
+        },
+      },
+    ]
+
+    vi.spyOn(adminApi, 'listAuditLog').mockResolvedValue({
+      items: contextualAuditRows,
+      next_before_id: null,
+    })
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <I18nProvider initialLang="vi">
+          <AuditPage />
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Quyết định: Gỡ bỏ nội dung · Trạng thái: Đã xử phạt'),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(
+          'Ngôn ngữ: Tiếng Việt (VI) · Chế độ khớp: Từ có dấu chính xác · Danh mục: Tự gây hại',
+        ),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(
+          'Ngôn ngữ: Tiếng Anh (EN) · Chế độ khớp: Từ nguyên vẹn · Danh mục: Ngôn từ thô tục',
+        ),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText('Số dòng: 120 · Ngôn ngữ: Mọi ngôn ngữ'),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(
+          'Trạng thái cũ: Mới gửi · Trạng thái: Đã lên kế hoạch · Danh mục cũ: Khác · Danh mục: Nhóm bạn (Squad)',
+        ),
+      ).toBeInTheDocument()
+      expect(screen.getByText('Đã đặt lại: 4')).toBeInTheDocument()
+    })
+    expect(document.body.textContent).not.toContain('Không rõ')
+    expect(document.body.textContent).not.toContain('Unknown')
+    unmount()
+
+    render(
+      <MemoryRouter>
+        <I18nProvider initialLang="en">
+          <AuditPage />
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Action: Remove Content · Status: Actioned'),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(
+          'Language: Vietnamese (VI) · Match Mode: Exact Diacritic Word · Category: Self-Harm',
+        ),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(
+          'Language: English (EN) · Match Mode: Whole Word · Category: Profanity',
+        ),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText('Rows: 120 · Language: All languages'),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(
+          'Prev Status: New · Status: Planned · Prev Category: Other · Category: Squad',
+        ),
+      ).toBeInTheDocument()
+      expect(screen.getByText('Reset: 4')).toBeInTheDocument()
+    })
+    expect(document.body.textContent).not.toContain('Không rõ')
+    expect(document.body.textContent).not.toContain('Unknown')
+  })
 })

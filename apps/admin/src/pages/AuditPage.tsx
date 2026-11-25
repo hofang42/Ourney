@@ -168,80 +168,83 @@ export function AuditPage() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td className="tabular">
-                  <div style={{ fontWeight: 700 }}>#{r.id}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-                    {fmtDateTime(r.created_at, lang)}
-                  </div>
-                </td>
-                <td style={{ fontWeight: 700 }}>
-                  {r.admin_email || t('Hệ thống', 'System')}
-                </td>
-                <td>
-                  <span className="badge badge-primary">
-                    {formatAuditAction(r.action, lang)}
-                  </span>
-                </td>
-                <td>
-                  <span className="badge">
-                    {formatTargetType(r.target_type, lang)}
-                  </span>{' '}
-                  <span style={{ fontSize: '0.8rem' }}>
-                    {formatAuditTargetId(r.target_id, lang)}
-                  </span>
-                </td>
-                <td>
-                  <div>{formatAuditReason(r.reason, lang)}</div>
-                  {formatAuditMetaSummary(r.meta, lang) && (
-                    <div
-                      style={{
-                        fontSize: '0.78rem',
-                        color: 'var(--soft)',
-                        marginTop: 2,
-                      }}
-                    >
-                      {formatAuditMetaSummary(r.meta, lang)}
+            {rows.map((r) => {
+              const metaSummary = formatAuditMetaSummary(r.meta, lang, r.action)
+              return (
+                <tr key={r.id}>
+                  <td className="tabular">
+                    <div style={{ fontWeight: 700 }}>#{r.id}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+                      {fmtDateTime(r.created_at, lang)}
                     </div>
-                  )}
-                  {r.meta && Object.keys(r.meta).length > 0 && (
-                    <details style={{ marginTop: 4, fontSize: '0.75rem' }}>
-                      <summary
-                        style={{ cursor: 'pointer', color: 'var(--muted)' }}
-                      >
-                        {t('Chi tiết kỹ thuật', 'Technical details')}
-                      </summary>
-                      <code
+                  </td>
+                  <td style={{ fontWeight: 700 }}>
+                    {r.admin_email || t('Hệ thống', 'System')}
+                  </td>
+                  <td>
+                    <span className="badge badge-primary">
+                      {formatAuditAction(r.action, lang)}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="badge">
+                      {formatTargetType(r.target_type, lang)}
+                    </span>{' '}
+                    <span style={{ fontSize: '0.8rem' }}>
+                      {formatAuditTargetId(r.target_id, lang)}
+                    </span>
+                  </td>
+                  <td>
+                    <div>{formatAuditReason(r.reason, lang)}</div>
+                    {metaSummary && (
+                      <div
                         style={{
-                          display: 'block',
-                          fontSize: '0.75rem',
-                          color: 'var(--muted)',
+                          fontSize: '0.78rem',
+                          color: 'var(--soft)',
                           marginTop: 2,
                         }}
                       >
-                        {JSON.stringify(r.meta)}
-                      </code>
-                    </details>
-                  )}
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    className="btn"
-                    aria-label={`${t('Chép JSON', 'Copy JSON')} #${r.id}`}
-                    onClick={() => void handleCopyJson(r)}
-                  >
-                    <OIcon name="copy" size={16} />
-                    <span>
-                      {copiedId === r.id
-                        ? t('Đã chép', 'Copied')
-                        : t('Chép JSON', 'Copy JSON')}
-                    </span>
-                  </button>
-                </td>
-              </tr>
-            ))}
+                        {metaSummary}
+                      </div>
+                    )}
+                    {r.meta && Object.keys(r.meta).length > 0 && (
+                      <details style={{ marginTop: 4, fontSize: '0.75rem' }}>
+                        <summary
+                          style={{ cursor: 'pointer', color: 'var(--muted)' }}
+                        >
+                          {t('Chi tiết kỹ thuật', 'Technical details')}
+                        </summary>
+                        <code
+                          style={{
+                            display: 'block',
+                            fontSize: '0.75rem',
+                            color: 'var(--muted)',
+                            marginTop: 2,
+                          }}
+                        >
+                          {JSON.stringify(r.meta)}
+                        </code>
+                      </details>
+                    )}
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn"
+                      aria-label={`${t('Chép JSON', 'Copy JSON')} #${r.id}`}
+                      onClick={() => void handleCopyJson(r)}
+                    >
+                      <OIcon name="copy" size={16} />
+                      <span>
+                        {copiedId === r.id
+                          ? t('Đã chép', 'Copied')
+                          : t('Chép JSON', 'Copy JSON')}
+                      </span>
+                    </button>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>

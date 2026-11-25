@@ -9,6 +9,7 @@ import {
   formatAdminError,
   formatAdminRole,
   formatAuditAction,
+  formatAuditMetaSummary,
   formatFeatureRequestCategory,
   formatFeatureRequestStatus,
   formatJourneyKind,
@@ -191,6 +192,75 @@ describe('AdminAuthGuard, Central Error Mapper (UX-10), and Localization Helpers
       'Unknown (escalated)',
     )
     expect(formatAdminRole('super_root', 'vi')).toBe('Không rõ (super_root)')
+
+    // Action-contextual formatAuditMetaSummary assertions (Finding R1)
+    expect(
+      formatAuditMetaSummary(
+        { action: 'ban_user', status: 'actioned' },
+        'vi',
+        'moderation.resolve',
+      ),
+    ).toBe('Quyết định: Khóa tài khoản & xóa nội dung · Trạng thái: Đã xử phạt')
+    expect(
+      formatAuditMetaSummary(
+        { action: 'dismiss', status: 'dismissed' },
+        'en',
+        'moderation.resolve',
+      ),
+    ).toBe('Action: Dismiss Report · Status: Dismissed')
+    expect(
+      formatAuditMetaSummary(
+        { lang: 'vi', match_mode: 'diacritic_word', category: 'self_harm' },
+        'vi',
+        'words.upsert',
+      ),
+    ).toBe(
+      'Ngôn ngữ: Tiếng Việt (VI) · Chế độ khớp: Từ có dấu chính xác · Danh mục: Tự gây hại',
+    )
+    expect(
+      formatAuditMetaSummary(
+        { lang: 'any', match_mode: 'substring', category: 'csae' },
+        'en',
+        'words.delete',
+      ),
+    ).toBe(
+      'Language: Any language · Match Mode: Substring · Category: Child Safety (CSAE)',
+    )
+    expect(
+      formatAuditMetaSummary(
+        { row_count: 120, lang: 'all', platform: 'all' },
+        'vi',
+        'waitlist.export_csv',
+      ),
+    ).toBe('Số dòng: 120 · Ngôn ngữ: Mọi ngôn ngữ')
+    expect(
+      formatAuditMetaSummary(
+        { row_count: 120, lang: 'all', platform: 'all' },
+        'en',
+        'waitlist.export_csv',
+      ),
+    ).toBe('Rows: 120 · Language: All languages')
+    expect(
+      formatAuditMetaSummary(
+        {
+          old_status: 'new',
+          new_status: 'planned',
+          old_category: 'other',
+          new_category: 'squad',
+        },
+        'en',
+        'feature_requests.update',
+      ),
+    ).toBe(
+      'Prev Status: New · Status: Planned · Prev Category: Other · Category: Squad',
+    )
+    expect(
+      formatAuditMetaSummary(
+        { reset_count: 5 },
+        'vi',
+        'system.reset_storage_purge',
+      ),
+    ).toBe('Đã đặt lại: 5')
   })
 
   it('extracts Edge Function status and JSON error code from FunctionsHttpError context in invokeAdminAction', async () => {

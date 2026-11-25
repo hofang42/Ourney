@@ -938,11 +938,72 @@ export function formatAuditReason(
   return trimmed
 }
 
+const MODERATION_STATUS_VALUES = new Set([
+  'open',
+  'overdue',
+  'quarantined',
+  'actioned',
+  'dismissed',
+])
+
+const WORD_CATEGORY_VALUES = new Set([
+  'profanity',
+  'slur',
+  'sexual',
+  'violence',
+  'self_harm',
+  'csae',
+])
+
+function formatAuditMetaStatus(
+  raw: string,
+  lang: Lang,
+  normAction: string,
+): string {
+  const normVal = raw.toLowerCase().trim()
+  if (normAction.startsWith('moderation.')) {
+    return formatModerationStatus(raw, lang)
+  }
+  if (normAction.startsWith('feature_requests.')) {
+    return formatFeatureRequestStatus(raw, lang)
+  }
+  if (normAction.startsWith('users.')) {
+    return formatUserStatus(raw, lang)
+  }
+  if (normAction.startsWith('journeys.')) {
+    return formatJourneyStatus(raw, lang)
+  }
+  if (MODERATION_STATUS_VALUES.has(normVal)) {
+    return formatModerationStatus(raw, lang)
+  }
+  return formatFeatureRequestStatus(raw, lang)
+}
+
+function formatAuditMetaCategory(
+  raw: string,
+  lang: Lang,
+  normAction: string,
+): string {
+  const normVal = raw.toLowerCase().trim()
+  if (normAction.startsWith('words.')) {
+    return formatWordCategory(raw, lang)
+  }
+  if (normAction.startsWith('feature_requests.')) {
+    return formatFeatureRequestCategory(raw, lang)
+  }
+  if (WORD_CATEGORY_VALUES.has(normVal)) {
+    return formatWordCategory(raw, lang)
+  }
+  return formatFeatureRequestCategory(raw, lang)
+}
+
 export function formatAuditMetaSummary(
   meta: Record<string, unknown> | null | undefined,
   lang: Lang = getCurrentLang(),
+  action?: string | null,
 ): string {
   if (!meta || typeof meta !== 'object') return ''
+  const normAction = (action ?? '').toLowerCase().trim()
   const parts: string[] = []
   for (const [k, v] of Object.entries(meta)) {
     if (v === null || v === undefined || v === '') continue
@@ -950,18 +1011,23 @@ export function formatAuditMetaSummary(
       case 'status':
       case 'new_status':
         parts.push(
-          `${pick(lang, 'Trạng thái', 'Status')}: ${formatFeatureRequestStatus(String(v), lang)}`,
+          `${pick(lang, 'Trạng thái', 'Status')}: ${formatAuditMetaStatus(String(v), lang, normAction)}`,
         )
         break
       case 'old_status':
         parts.push(
-          `${pick(lang, 'Trạng thái cũ', 'Prev Status')}: ${formatFeatureRequestStatus(String(v), lang)}`,
+          `${pick(lang, 'Trạng thái cũ', 'Prev Status')}: ${formatAuditMetaStatus(String(v), lang, normAction)}`,
         )
         break
       case 'category':
       case 'new_category':
         parts.push(
-          `${pick(lang, 'Danh mục', 'Category')}: ${formatFeatureRequestCategory(String(v), lang)}`,
+          `${pick(lang, 'Danh mục', 'Category')}: ${formatAuditMetaCategory(String(v), lang, normAction)}`,
+        )
+        break
+      case 'old_category':
+        parts.push(
+          `${pick(lang, 'Danh mục cũ', 'Prev Category')}: ${formatAuditMetaCategory(String(v), lang, normAction)}`,
         )
         break
       case 'action':
@@ -971,7 +1037,11 @@ export function formatAuditMetaSummary(
         break
       case 'kind':
         parts.push(
-          `${pick(lang, 'Loại', 'Kind')}: ${formatModerationKind(String(v), lang)}`,
+          `${pick(lang, 'Loại', 'Kind')}: ${
+            normAction.startsWith('journeys.')
+              ? formatJourneyKind(String(v), lang)
+              : formatModerationKind(String(v), lang)
+          }`,
         )
         break
       case 'role':
@@ -985,10 +1055,20 @@ export function formatAuditMetaSummary(
           `${pick(lang, 'Chế độ khớp', 'Match Mode')}: ${formatWordMatchMode(String(v), lang)}`,
         )
         break
-      case 'lang':
-        parts.push(
-          `${pick(lang, 'Ngôn ngữ', 'Language')}: ${formatWordLang(String(v), lang)}`,
-        )
+      case 'lang': {
+        const rawLang = String(v).toLowerCase().trim()
+        const formattedLang =
+          rawLang === 'all'
+            ? pick(lang, 'Mọi ngôn ngữ', 'All languages')
+            : formatWordLang(String(v), lang)
+        parts.push(`${pick(lang, 'Ngôn ngữ', 'Language')}: ${formattedLang}`)
+        break
+      }
+      case 'row_count':
+        parts.push(`${pick(lang, 'Số dòng', 'Rows')}: ${String(v)}`)
+        break
+      case 'reset_count':
+        parts.push(`${pick(lang, 'Đã đặt lại', 'Reset')}: ${String(v)}`)
         break
       case 'wipe_ugc':
         parts.push(
