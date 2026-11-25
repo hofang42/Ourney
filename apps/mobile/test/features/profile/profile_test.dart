@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
+import 'package:ourney/features/auth/auth_providers.dart';
 import 'package:ourney/features/profile/avatar_picker.dart';
 import 'package:ourney/features/profile/profile_providers.dart';
 import 'package:ourney/features/profile/routes.dart';
@@ -361,6 +362,12 @@ void main() {
       final auth = RecordingAuthRepository(userId: 'u1')
         ..deleteError = const OurneyException(OurneyErrorCode.invalid);
       final c = await signedIn(tester, auth: auth);
+      await c
+          .read(sharedPreferencesProvider)
+          .setString(
+            AuthMethodPrefs.lastMethodKey,
+            RememberedAuthMethod.password.wireName,
+          );
       await toCodeStep(tester);
       expect(auth.calls, ['requestDeleteCode']);
 
@@ -376,6 +383,12 @@ void main() {
       // Wrong code: back on the code step with an error, nothing reset.
       expect(find.text('Mã chưa đúng. Kiểm tra lại nhé.'), findsOneWidget);
       expect(c.read(onboardingCompleteProvider), isTrue);
+      expect(
+        c
+            .read(sharedPreferencesProvider)
+            .getString(AuthMethodPrefs.lastMethodKey),
+        RememberedAuthMethod.password.wireName,
+      );
 
       auth.deleteError = null;
       await tester.enterText(byKey('profile-delete-otp'), '654321');
@@ -385,6 +398,12 @@ void main() {
       expect(auth.calls.last, 'deleteAccount:654321');
       expect(c.read(onboardingCompleteProvider), isFalse);
       expect(c.read(eulaAcceptedProvider), isFalse);
+      expect(
+        c
+            .read(sharedPreferencesProvider)
+            .getString(AuthMethodPrefs.lastMethodKey),
+        isNull,
+      );
     });
 
     testWidgets('retryable server error shows the final step error', (

@@ -132,14 +132,14 @@ class AuthL10nEn extends AuthL10n {
   String get auth_useCode => 'Use a code instead';
 
   @override
-  String get auth_forgot => 'Forgot password?';
+  String get auth_forgot => 'Forgot or no password yet?';
 
   @override
-  String get auth_resetTitle => 'reset password.';
+  String get auth_resetTitle => 'set a new password.';
 
   @override
   String get auth_resetSubtitle =>
-      'Enter your email and Ourney sends a 6-digit code to set a new password.';
+      'Enter your email and Ourney will send a 6-digit code to set your password.';
 
   @override
   String get auth_resetConfirm => 'Set password';
@@ -149,7 +149,10 @@ class AuthL10nEn extends AuthL10n {
 
   @override
   String get auth_errorWrongPassword =>
-      'Wrong password. Try again or sign in with a code.';
+      'Wrong password, or this account doesn\'t have a password yet.';
+
+  @override
+  String get auth_sendCodeForEmail => 'Send a sign-in code to this email';
 
   @override
   String get auth_errorSendFailed =>

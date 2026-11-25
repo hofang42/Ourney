@@ -96,6 +96,8 @@ OurneyErrorCode _authCodeFor(String? code, String? status) => switch (code) {
   'captcha_failed' ||
   'user_banned' => OurneyErrorCode.forbidden,
   'otp_expired' ||
+  'reauthentication_needed' ||
+  'reauthentication_not_valid' ||
   'validation_failed' ||
   'email_address_invalid' ||
   'phone_invalid' ||

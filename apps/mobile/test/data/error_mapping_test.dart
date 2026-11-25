@@ -213,6 +213,14 @@ void main() {
       );
       expect(codeOf(ex('captcha_failed')), OurneyErrorCode.forbidden);
       expect(codeOf(ex('user_banned', '403')), OurneyErrorCode.forbidden);
+      expect(
+        codeOf(ex('reauthentication_needed', '400')),
+        OurneyErrorCode.invalid,
+      );
+      expect(
+        codeOf(ex('reauthentication_not_valid', '400')),
+        OurneyErrorCode.invalid,
+      );
       expect(codeOf(ex('otp_expired', '500')), OurneyErrorCode.invalid);
       expect(codeOf(ex('validation_failed', '500')), OurneyErrorCode.invalid);
       expect(

@@ -18,6 +18,7 @@ import 'profile_screen.dart' show profileEditPath;
 import 'settings_providers.dart';
 import 'share_privacy_sync.dart';
 import 'widgets/delete_account_dialog.dart';
+import 'widgets/password_sheet.dart';
 import 'widgets/sign_out_flow.dart';
 
 /// Route of the settings screen (sub-path of `/profile`).
@@ -64,6 +65,9 @@ class SettingsScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            const SizedBox(height: UiSpace.lg),
+            UiListHeading(title: l10n.profile_settings_secSecurity),
+            const _Card(child: _PasswordRow()),
             const SizedBox(height: UiSpace.lg),
           ],
           UiListHeading(title: l10n.profile_settings_secReminders),
@@ -320,6 +324,66 @@ class _SignedInRow extends ConsumerWidget {
             height: 1.4,
             color: context.ui.inkMuted,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Security row (`Settings -> Bảo mật`): shows "Đặt mật khẩu" vs "Đổi mật khẩu"
+/// for email accounts (backed by `hasPasswordProvider`), or a read-only SMS
+/// explanation row for phone-only accounts.
+class _PasswordRow extends ConsumerWidget {
+  const _PasswordRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ProfileL10n.of(context);
+    ref.watch(currentUserIdProvider);
+    final String? id;
+    try {
+      id = ref.watch(authRepositoryProvider).signInIdentifier;
+    } on Object {
+      return const SizedBox.shrink();
+    }
+    if (id == null) return const SizedBox.shrink();
+    final email = id;
+    final isEmail = email.contains('@');
+    if (!isEmail) {
+      return MergeSemantics(
+        child: UiRow(
+          key: const ValueKey('settings-password'),
+          leading: const OurneyIcon(name: 'lock', flat: true),
+          title: l10n.profile_settings_passwordPhoneOnly,
+          subtitle: SettingsScreen._sub(
+            context,
+            l10n.profile_settings_passwordPhoneOnlySub,
+          ),
+          divider: false,
+        ),
+      );
+    }
+    final hasPassword = ref.watch(hasPasswordProvider);
+    return UiRow(
+      key: const ValueKey('settings-password'),
+      leading: const OurneyIcon(name: 'lock', flat: true),
+      title: hasPassword
+          ? l10n.profile_settings_changePassword
+          : l10n.profile_settings_setPassword,
+      subtitle: SettingsScreen._sub(
+        context,
+        hasPassword
+            ? l10n.profile_settings_changePasswordSub
+            : l10n.profile_settings_setPasswordSub,
+      ),
+      divider: false,
+      onPressed: () => unawaited(
+        PasswordSheet.show(
+          context,
+          email: email,
+          mode: hasPassword
+              ? PasswordSheetMode.change
+              : PasswordSheetMode.set,
         ),
       ),
     );

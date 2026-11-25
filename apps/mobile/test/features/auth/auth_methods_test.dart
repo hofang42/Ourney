@@ -90,19 +90,120 @@ void main() {
       expect(location(c), isNot(AppRoutes.auth));
     });
 
-    testWidgets('wrong password shows a mapped error', (tester) async {
-      final auth = RecordingAuthRepository()
-        ..signInError = const OurneyException(OurneyErrorCode.invalid);
-      await pumpBackendApp(tester, auth: auth);
-      await tapVisible(tester, 'auth-use-password');
-      await tester.enterText(byKey('auth-email'), 'a@b.co');
-      await tester.enterText(byKey('auth-password'), 'wrongwrong');
-      await tapVisible(tester, 'auth-send');
-      expect(
-        find.text('Sai mật khẩu. Thử lại hoặc đăng nhập bằng mã.'),
-        findsOneWidget,
-      );
-    });
+    testWidgets(
+      'wrong password or no password shows non-enumerating hint and 1-tap send-code button',
+      (tester) async {
+        final auth = RecordingAuthRepository()
+          ..signInError = const OurneyException(OurneyErrorCode.invalid);
+        await pumpBackendApp(tester, auth: auth);
+        await tapVisible(tester, 'auth-use-password');
+        await tester.enterText(byKey('auth-email'), 'A@b.co');
+        await tester.enterText(byKey('auth-password'), 'wrongwrong');
+        await tapVisible(tester, 'auth-send');
+        expect(
+          find.text(
+            'Mật khẩu chưa đúng, hoặc tài khoản này chưa đặt mật khẩu.',
+          ),
+          findsOneWidget,
+        );
+        expect(byKey('auth-send-code-instead'), findsOneWidget);
+        expect(
+          tester.getSize(byKey('auth-send-code-instead')).height,
+          greaterThanOrEqualTo(48),
+        );
+
+        // 1-tap recovery: keeps the normalized email, calls sendOtp, and lands
+        // directly on the 6-digit code step.
+        await tapVisible(tester, 'auth-send-code-instead');
+        expect(auth.calls, ['signIn:a@b.co', 'sendOtp:a@b.co']);
+        expect(byKey('auth-step-code'), findsOneWidget);
+        expect(find.textContaining('a@b.co'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'banned or rate-limited password sign-in does not show send-code-instead button',
+      (tester) async {
+        final auth = RecordingAuthRepository()
+          ..signInError = const OurneyException(OurneyErrorCode.forbidden);
+        await pumpBackendApp(tester, auth: auth);
+        await tapVisible(tester, 'auth-use-password');
+        await tester.enterText(byKey('auth-email'), 'banned@b.co');
+        await tester.enterText(byKey('auth-password'), 'hunter2hunter2');
+        await tapVisible(tester, 'auth-send');
+        expect(byKey('auth-error'), findsOneWidget);
+        expect(byKey('auth-send-code-instead'), findsNothing);
+
+        auth.signInError = const OurneyException(OurneyErrorCode.rateLimited);
+        await tapVisible(tester, 'auth-send');
+        expect(byKey('auth-error'), findsOneWidget);
+        expect(byKey('auth-send-code-instead'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'remembered password preselects password flow and switching to email code updates lastMethod',
+      (tester) async {
+        final auth = RecordingAuthRepository();
+        final c = await pumpBackendApp(
+          tester,
+          auth: auth,
+          initialPrefs: {
+            AuthMethodPrefs.lastMethodKey:
+                RememberedAuthMethod.password.wireName,
+          },
+        );
+        expect(byKey('auth-step-password'), findsOneWidget);
+        expect(
+          find.text('Quên hoặc chưa đặt mật khẩu?'),
+          findsOneWidget,
+        );
+
+        // Switching to email code and completing OTP updates lastMethod to emailCode.
+        await tapVisible(tester, 'auth-use-code');
+        expect(byKey('auth-step-email'), findsOneWidget);
+        await tester.enterText(byKey('auth-email'), 'code@b.co');
+        await tapVisible(tester, 'auth-send');
+        await tester.enterText(byKey('auth-code'), '123456');
+        await tester.pumpAndSettle();
+        expect(
+          c.read(sharedPreferencesProvider).getString(AuthMethodPrefs.lastMethodKey),
+          RememberedAuthMethod.emailCode.wireName,
+        );
+      },
+    );
+
+    testWidgets(
+      'remembered phoneCode preselects phone tab when phoneAuthAvailable is true',
+      (tester) async {
+        await pumpBackendApp(
+          tester,
+          auth: RecordingAuthRepository(),
+          phoneAvailable: true,
+          initialPrefs: {
+            AuthMethodPrefs.lastMethodKey:
+                RememberedAuthMethod.phoneCode.wireName,
+          },
+        );
+        expect(byKey('auth-step-phoneCode'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'remembered phoneCode falls back to emailCode when phoneAuthAvailable is false',
+      (tester) async {
+        await pumpBackendApp(
+          tester,
+          auth: RecordingAuthRepository(),
+          phoneAvailable: false,
+          initialPrefs: {
+            AuthMethodPrefs.lastMethodKey:
+                RememberedAuthMethod.phoneCode.wireName,
+          },
+        );
+        expect(byKey('auth-step-email'), findsOneWidget);
+      },
+    );
 
     testWidgets('forgot password: code + new password (M2)', (tester) async {
       final auth = RecordingAuthRepository();
@@ -130,6 +231,28 @@ void main() {
       expect(auth.calls.last, 'reset:a@b.co:123456');
       expect(auth.recordedTerms, isEmpty);
     });
+
+    testWidgets(
+      'R-2: leaving forgot-password code step or flow calls cancelPasswordFlow',
+      (tester) async {
+        final auth = RecordingAuthRepository();
+        await pumpBackendApp(tester, auth: auth, eulaAccepted: false);
+        await tapVisible(tester, 'auth-use-password');
+        await tapVisible(tester, 'auth-forgot');
+        await tester.enterText(byKey('auth-email'), 'a@b.co');
+        await tapVisible(tester, 'auth-send');
+        expect(byKey('auth-step-code'), findsOneWidget);
+        expect(auth.cancelPasswordFlowCalls, 0);
+
+        await tester.tap(byKey('auth-back'));
+        await tester.pumpAndSettle();
+        expect(auth.cancelPasswordFlowCalls, 1);
+
+        await tester.tap(byKey('auth-flow-back'));
+        await tester.pumpAndSettle();
+        expect(auth.cancelPasswordFlowCalls, 2);
+      },
+    );
 
     testWidgets('phone option is hidden when the server has phone off', (
       tester,
