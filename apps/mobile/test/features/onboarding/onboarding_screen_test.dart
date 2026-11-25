@@ -200,7 +200,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(byKey('onboarding-who-couple'));
       await tester.pumpAndSettle();
-      expect(find.text('mình sẽ dùng phong cách Hai đứa mình'), findsOneWidget);
+      expect(
+        find.text('Ourney sẽ dùng phong cách Hai đứa mình'),
+        findsOneWidget,
+      );
       await tester.tap(byKey('onboarding-quiz-next'));
       await tester.pumpAndSettle();
       await tester.tap(byKey('onboarding-reminder-07:00'));
@@ -451,7 +454,7 @@ void main() {
         (v) => result = v,
       );
       expect(
-        find.text('để mình khẽ nhắc trước khi chuỗi đứt.'),
+        find.text('để ourney nhắc nhẹ vào giờ bạn chọn.'),
         findsOneWidget,
       );
       expect(find.textContaining('21:00'), findsOneWidget);

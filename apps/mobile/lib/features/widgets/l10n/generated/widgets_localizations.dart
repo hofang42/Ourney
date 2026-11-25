@@ -191,7 +191,7 @@ abstract class WidgetsL10n {
   /// Urgent badge shown in widget preview when streak is at risk.
   ///
   /// In vi, this message translates to:
-  /// **'Sắp đứt chuỗi · trước nửa đêm'**
+  /// **'Vẫn kịp hôm nay · đến nửa đêm'**
   String get widgets_previewAtRiskBadge;
 
   /// Status badge in widget preview when today is still pending.
@@ -299,37 +299,37 @@ abstract class WidgetsL10n {
   /// Switch subtitle for redacting journey titles on the Lock Screen (Android).
   ///
   /// In vi, this message translates to:
-  /// **'Trên Màn hình khóa, thông báo đếm ngược chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.'**
+  /// **'Trên Màn hình khóa, cập nhật trực tiếp chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.'**
   String get widgets_redactTitlesSubAndroid;
 
   /// Section heading for Check-In Window Live Activity / Live Update.
   ///
   /// In vi, this message translates to:
-  /// **'đếm ngược cuối ngày'**
+  /// **'khung giờ buổi tối'**
   String get widgets_secLiveActivity;
 
   /// Switch label for enabling Live Activities (iOS).
   ///
   /// In vi, this message translates to:
-  /// **'Live Activity & đếm ngược khung giờ chụp'**
+  /// **'Live Activity & khung giờ chụp tối'**
   String get widgets_liveActivityLabel;
 
   /// Switch label for enabling Live Updates (Android).
   ///
   /// In vi, this message translates to:
-  /// **'Cập nhật trực tiếp & đếm ngược thanh trạng thái'**
+  /// **'Cập nhật trực tiếp & khung giờ thanh trạng thái'**
   String get widgets_liveActivityLabelAndroid;
 
   /// Switch subtitle for Live Activities (iOS).
   ///
   /// In vi, this message translates to:
-  /// **'Hiện đồng hồ đếm ngược trên Dynamic Island / Màn hình khóa từ 30 phút trước giờ nhắc (hoặc từ 18:00 khi chuỗi sắp đứt) và tự tắt ngay khi bạn chụp xong.'**
+  /// **'Hiện khung giờ chụp trên Dynamic Island / Màn hình khóa từ 30 phút trước giờ nhắc (hoặc từ 18:00 khi đang có chuỗi) và tự tắt ngay khi bạn chụp xong.'**
   String get widgets_liveActivitySub;
 
   /// Switch subtitle for Live Updates (Android).
   ///
   /// In vi, this message translates to:
-  /// **'Hiện đồng hồ đếm ngược trên thanh trạng thái và Màn hình khóa từ 30 phút trước giờ nhắc (hoặc từ 18:00 khi chuỗi sắp đứt) và tự tắt ngay khi bạn chụp xong.'**
+  /// **'Hiện khung giờ chụp trên thanh trạng thái và Màn hình khóa từ 30 phút trước giờ nhắc (hoặc từ 18:00 khi đang có chuỗi) và tự tắt ngay khi bạn chụp xong.'**
   String get widgets_liveActivitySubAndroid;
 
   /// Section heading for selecting the default journey shown on widgets.
@@ -347,7 +347,7 @@ abstract class WidgetsL10n {
   /// Subtitle for automatic journey selection.
   ///
   /// In vi, this message translates to:
-  /// **'Tự chuyển sang hành trình tiếp theo ngay khi bạn hoàn tất một tấm ảnh'**
+  /// **'Áp dụng cho tiện ích ở chế độ Tự động. Nhấn giữ tiện ích trên Màn hình chính để chọn riêng từng hành trình.'**
   String get widgets_defaultJourneyAutoSub;
 
   /// Section heading for the 3-step OS widget setup guide.

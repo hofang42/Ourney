@@ -446,7 +446,7 @@ class GroupsL10nVi extends GroupsL10n {
 
   @override
   String groups_wallWaiting(String name) {
-    return '$name · ĐANG CHỜ';
+    return '$name · CHƯA CHỤP';
   }
 
   @override

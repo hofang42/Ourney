@@ -50,11 +50,11 @@
   "@reminders_pickTimeHelp": {
     "description": "Help text at the top of the time picker dialog."
   },
-  "reminders_streakAlertTitle": "Cảnh báo streak lúc 21:00",
+  "reminders_streakAlertTitle": "Nhắc giữ chuỗi lúc 21:00",
   "@reminders_streakAlertTitle": {
     "description": "Title of the switch for the 21:00 streak-about-to-break alert."
   },
-  "reminders_streakAlertSubtitle": "Nếu đến 21:00 bạn vẫn chưa check-in mà đang có streak.",
+  "reminders_streakAlertSubtitle": "Nhắc nhẹ lúc 21:00 nếu bạn đang có chuỗi mà chưa chụp hôm nay.",
   "@reminders_streakAlertSubtitle": {
     "description": "Subtitle of the streak alert switch."
   },
@@ -90,7 +90,7 @@
   "@reminders_permissionTitle": {
     "description": "Title of the in-context dialog shown before the OS notification prompt."
   },
-  "reminders_permissionMessage": "Ourney chỉ gửi những lời nhắc bạn đặt, và báo lúc 21:00 khi streak sắp mất. Không quảng cáo.",
+  "reminders_permissionMessage": "Ourney chỉ gửi giờ nhắc bạn chọn và lời nhắc nhẹ lúc 21:00 khi đang có chuỗi. Không quảng cáo.",
   "@reminders_permissionMessage": {
     "description": "Body of the in-context dialog shown before the OS notification prompt."
   },
@@ -116,11 +116,11 @@
       }
     }
   },
-  "reminders_alertTitle": "Streak sắp mất",
+  "reminders_alertTitle": "Vẫn kịp cho hôm nay",
   "@reminders_alertTitle": {
     "description": "Title of the 21:00 streak alert notification."
   },
-  "reminders_alertBody": "{journey}: chuỗi {count} ngày sẽ mất lúc nửa đêm. Một tấm ảnh là giữ được.",
+  "reminders_alertBody": "{journey}: chuỗi {count} ngày còn mở đến nửa đêm. Một tấm ảnh nhỏ là đủ.",
   "@reminders_alertBody": {
     "description": "Body of the 21:00 streak alert notification.",
     "placeholders": {
@@ -138,7 +138,7 @@
   "@reminders_channelName": {
     "description": "Android notification channel name (shown in system settings)."
   },
-  "reminders_channelDescription": "Lời nhắc check-in hằng ngày và cảnh báo streak sắp mất.",
+  "reminders_channelDescription": "Lời nhắc check-in hằng ngày và nhắc giữ chuỗi buổi tối.",
   "@reminders_channelDescription": {
     "description": "Android notification channel description."
   }

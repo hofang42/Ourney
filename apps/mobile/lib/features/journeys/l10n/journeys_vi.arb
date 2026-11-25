@@ -165,7 +165,7 @@
       }
     }
   },
-  "journeys_cellMissed": "Ngày {day}, {date}: bỏ lỡ",
+  "journeys_cellMissed": "Ngày {day}, {date}: chưa chụp",
   "@journeys_cellMissed": {
     "placeholders": {
       "day": {
@@ -498,7 +498,7 @@
       }
     }
   },
-  "journeys_todayAtRisk": "Sắp đứt chuỗi",
+  "journeys_todayAtRisk": "Đang có chuỗi",
   "@journeys_todayAtRisk": {
     "description": "Today sheet group: streak about to break."
   },
@@ -617,7 +617,7 @@
       }
     }
   },
-  "journeys_ticketTagQuiet": "Chỉ mình mình thấy. Từng chút một.",
+  "journeys_ticketTagQuiet": "Chỉ mình bạn thấy. Từng chút một.",
   "@journeys_ticketTagQuiet": {
     "description": "Departure ticket preview text."
   },
@@ -633,11 +633,11 @@
   "@journeys_ticketTagCouple": {
     "description": "Departure ticket preview text."
   },
-  "journeys_ticketTagFlexer": "Ra khỏi giường. Chạy tiếp.",
+  "journeys_ticketTagFlexer": "Bền bỉ từng bước. Chạy tiếp.",
   "@journeys_ticketTagFlexer": {
     "description": "Departure ticket preview text."
   },
-  "journeys_ticketTagFlexerTrain": "Ra khỏi giường. Tập tiếp.",
+  "journeys_ticketTagFlexerTrain": "Bền bỉ từng buổi. Tập tiếp.",
   "@journeys_ticketTagFlexerTrain": {
     "description": "Departure ticket preview text for non-running workouts."
   },

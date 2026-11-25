@@ -68,7 +68,7 @@ void main() {
               find.text('1/3 ĐÃ ĐIỂM DANH'),
               findsNothing,
             ); // U10: one bar only
-            expect(find.text('BAO · ĐANG CHỜ'), findsOneWidget);
+            expect(find.text('BAO · CHƯA CHỤP'), findsOneWidget);
           case 'quiet':
             expect(find.text('Nhóm hôm nay.'), findsOneWidget);
             expect(find.text('Chưa chụp'), findsNWidgets(2));

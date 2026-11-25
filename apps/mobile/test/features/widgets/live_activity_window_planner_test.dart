@@ -9,6 +9,7 @@ WidgetJourneyItem _journeyItem({
   bool checkedInToday = false,
   bool atRisk = true,
   int currentStreak = 14,
+  bool isSensitive = false,
   String eveningCueAtUtc = '2026-11-24T11:00:00.000Z', // 18:00 ICT
   String streakAlertAtUtc = '2026-11-24T14:00:00.000Z', // 21:00 ICT
   String midnightRolloverUtc = '2026-11-24T17:00:00.000Z', // 24:00 ICT
@@ -35,6 +36,7 @@ WidgetJourneyItem _journeyItem({
   reminderAtUtc: reminderAtUtc,
   heroThumbFile: null,
   heroThumbBlurred: false,
+  isSensitive: isSensitive,
   weekStrip: const [
     WidgetWeekDayItem(
       date: '2026-11-24',
@@ -133,6 +135,24 @@ void main() {
       expect(plan.window, isNotNull);
       expect(plan.channelPayload!['redactTitleOnLockScreen'], isTrue);
       expect(plan.channelPayload!['redactLockScreenTitles'], isTrue);
+      expect(
+        plan.channelPayload!['statusText'],
+        'Chuỗi 14 ngày · còn mở đến nửa đêm',
+      );
+
+      final enPlan = LiveActivityWindowPlanner.plan(
+        now: DateTime.utc(2026, 11, 24, 11, 0),
+        authStatus: AuthStatus.signedIn,
+        liveActivityEnabled: true,
+        streakAlertsEnabled: true,
+        redactTitleOnLockScreen: false,
+        locale: 'en',
+        journeys: [item],
+      );
+      expect(
+        enPlan.channelPayload!['statusText'],
+        '14-day streak · open until midnight',
+      );
     });
 
     test(
@@ -239,5 +259,32 @@ void main() {
         'All checked in! Streak 15',
       );
     });
+
+    test(
+      'sensitive journey always redacts Lock Screen Live Activity title even when toggle is OFF',
+      () {
+        final sensitivePending = _journeyItem(
+          id: 'j-weight',
+          title: 'Giảm cân 60 ngày',
+          isSensitive: true,
+          atRisk: true,
+        );
+        final plan = LiveActivityWindowPlanner.plan(
+          now: DateTime.utc(2026, 11, 24, 14, 0),
+          authStatus: AuthStatus.signedIn,
+          liveActivityEnabled: true,
+          streakAlertsEnabled: true,
+          redactLockScreenTitles: false,
+          locale: 'vi',
+          journeys: [sensitivePending],
+        );
+        expect(plan.action, LiveActivityAction.startOrUpdate);
+        expect(plan.window!.isSensitive, isTrue);
+        expect(plan.window!.toJson()['isSensitive'], isTrue);
+        expect(plan.channelPayload!['isSensitive'], isTrue);
+        expect(plan.channelPayload!['redactLockScreenTitles'], isTrue);
+        expect(plan.channelPayload!['redactTitleOnLockScreen'], isTrue);
+      },
+    );
   });
 }

@@ -605,7 +605,7 @@ abstract class ProfileL10n {
   /// No description provided for @profile_settings_remindersSub.
   ///
   /// In vi, this message translates to:
-  /// **'Giờ nhắc từng hành trình và báo trước khi chuỗi đứt'**
+  /// **'Giờ nhắc từng hành trình và nhắc buổi tối lúc 21:00'**
   String get profile_settings_remindersSub;
 
   /// No description provided for @profile_settings_widgetsRow.
@@ -617,7 +617,7 @@ abstract class ProfileL10n {
   /// No description provided for @profile_settings_widgetsSub.
   ///
   /// In vi, this message translates to:
-  /// **'Tiện ích màn hình chính, màn hình khóa và đếm ngược cuối ngày'**
+  /// **'Tiện ích màn hình chính, màn hình khóa và khung giờ chụp buổi tối'**
   String get profile_settings_widgetsSub;
 
   /// No description provided for @profile_settings_themeLight.

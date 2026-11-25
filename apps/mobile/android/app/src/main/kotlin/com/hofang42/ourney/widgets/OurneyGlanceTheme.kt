@@ -32,6 +32,7 @@ data class OurneyWidgetPalette(
     val brand: Int,
     val flame: Int,
     val warn: Int,
+    val timeCue: Int = if (isDark) 0xFFF2A93B.toInt() else 0xFF8A4300.toInt(),
     val success: Int,
     val successSoft: Int,
     val borderWidthDp: Float,
@@ -48,6 +49,7 @@ data class OurneyWidgetPalette(
     val buttonLabelProvider: ColorProvider get() = ColorProvider(Color(buttonLabel))
     val flameProvider: ColorProvider get() = ColorProvider(Color(flame))
     val warnProvider: ColorProvider get() = ColorProvider(Color(warn))
+    val timeCueProvider: ColorProvider get() = ColorProvider(Color(timeCue))
     val successProvider: ColorProvider get() = ColorProvider(Color(success))
     val successSoftProvider: ColorProvider get() = ColorProvider(Color(successSoft))
 
@@ -190,6 +192,7 @@ object OurneyGlanceTheme {
             brand = 0xFFFF8A3D.toInt(),
             flame = 0xFFD97706.toInt(),
             warn = 0xFFB33A0A.toInt(),
+            timeCue = 0xFF8A4300.toInt(),
             success = 0xFF287747.toInt(),
             successSoft = 0xFFDCFCE7.toInt(),
             borderWidthDp = 2.0f,
@@ -213,6 +216,7 @@ object OurneyGlanceTheme {
             brand = 0xFFFF8A3D.toInt(),
             flame = 0xFFF2A93B.toInt(),
             warn = 0xFFF2A070.toInt(),
+            timeCue = 0xFFF2A93B.toInt(),
             success = 0xFF6FCF8E.toInt(),
             successSoft = 0xFF1F3B2A.toInt(),
             borderWidthDp = 2.0f,
@@ -272,6 +276,7 @@ object OurneyGlanceTheme {
             brand = 0xFFFF8A3D.toInt(),
             flame = if (isDark) 0xFFF2A93B.toInt() else 0xFFD97706.toInt(),
             warn = if (isDark) 0xFFF2A070.toInt() else 0xFFB33A0A.toInt(),
+            timeCue = if (isDark) 0xFFF2A93B.toInt() else 0xFF8A4300.toInt(),
             success = if (isDark) 0xFF6FCF8E.toInt() else 0xFF287747.toInt(),
             successSoft = if (isDark) 0xFF1F3B2A.toInt() else 0xFFDCFCE7.toInt(),
             borderWidthDp = skin.borderWidthDp,

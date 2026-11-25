@@ -62,7 +62,7 @@ class WidgetsL10nEn extends WidgetsL10n {
   String get widgets_previewDoneBadge => 'Checked in today';
 
   @override
-  String get widgets_previewAtRiskBadge => 'Streak at risk · before midnight';
+  String get widgets_previewAtRiskBadge => 'Open for today · until midnight';
 
   @override
   String get widgets_previewPendingBadge => 'Not checked in yet';
@@ -128,23 +128,22 @@ class WidgetsL10nEn extends WidgetsL10n {
       'On the Lock Screen, live updates show \"Ourney\" instead of specific journey names.';
 
   @override
-  String get widgets_secLiveActivity => 'evening countdown';
+  String get widgets_secLiveActivity => 'evening check-in window';
 
   @override
-  String get widgets_liveActivityLabel =>
-      'Live Activity & check-in window countdown';
+  String get widgets_liveActivityLabel => 'Live Activity & check-in window';
 
   @override
   String get widgets_liveActivityLabelAndroid =>
-      'Live Updates & status-bar countdown';
+      'Live Updates & status-bar check-in';
 
   @override
   String get widgets_liveActivitySub =>
-      'Shows a live countdown on Dynamic Island / Lock Screen starting 30 minutes before your reminder (or 18:00 when a streak is at risk) and clears as soon as you post.';
+      'Shows your check-in window on Dynamic Island / Lock Screen starting 30 minutes before your reminder (or 18:00 for active streaks) and clears right after you post.';
 
   @override
   String get widgets_liveActivitySubAndroid =>
-      'Shows an ongoing countdown on your status bar and Lock Screen starting 30 minutes before your reminder (or 18:00 when a streak is at risk) and clears as soon as you post.';
+      'Shows your check-in window on the status bar and Lock Screen starting 30 minutes before your reminder (or 18:00 for active streaks) and clears right after you post.';
 
   @override
   String get widgets_secDefaultJourney => 'featured widget journey';
@@ -155,7 +154,7 @@ class WidgetsL10nEn extends WidgetsL10n {
 
   @override
   String get widgets_defaultJourneyAutoSub =>
-      'Advances to your next pending journey as soon as you check in';
+      'Used by widgets set to Automatic. Long-press any widget on your Home Screen to pin a specific journey.';
 
   @override
   String get widgets_secSetup => 'how to add to your home screen';

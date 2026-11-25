@@ -77,7 +77,7 @@ void main() {
 
   test('shell status colours read on bg and surface (4.5:1)', () {
     final ui = OurneyUi.dark;
-    for (final c in [ui.danger, ui.warn, ui.success, ui.flame]) {
+    for (final c in [ui.danger, ui.warn, ui.timeCue, ui.success, ui.flame]) {
       expect(_c(c, ui.bg), greaterThanOrEqualTo(4.5));
       expect(_c(c, ui.surface), greaterThanOrEqualTo(4.5));
     }

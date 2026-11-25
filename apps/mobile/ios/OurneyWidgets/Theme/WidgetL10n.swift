@@ -74,11 +74,7 @@ public enum WidgetL10n {
     case .completed:
       return en ? "Checked in" : "Đã hoàn thành"
     case .urgentAtRisk:
-      // Gentler Streak lesson (§1.1): quietTransformer uses calm copy even near midnight.
-      if skinId == "quiet" {
-        return en ? "Still time for today" : "Vẫn kịp cho hôm nay"
-      }
-      return en ? "Keep your \(streak)d streak!" : "Giữ chuỗi \(streak) ngày!"
+      return en ? "Still time for today" : "Vẫn kịp cho hôm nay"
     case .eveningCue:
       return en ? "Evening window open" : "Đến giờ chụp tối nay"
     case .daytime:
@@ -273,8 +269,8 @@ public enum WidgetL10n {
 
   public static func liveActivityWindowLabel(atRisk: Bool, skinId: String, locale: String) -> String {
     let en = isEnglish(locale)
-    if atRisk && skinId != "quiet" {
-      return en ? "STREAK AT RISK" : "SẮP HẾT HẠN CHUỖI"
+    if atRisk {
+      return en ? "EVENING WINDOW" : "KHUNG GIỜ BUỔI TỐI"
     }
     return en ? "CHECK-IN WINDOW" : "KHUNG GIỜ CHECK-IN"
   }

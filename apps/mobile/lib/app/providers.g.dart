@@ -1117,7 +1117,7 @@ final class ActiveJourneyProvider
   }
 }
 
-String _$activeJourneyHash() => r'e1e6c8260209fc5a6ccbd454d0a7536f64b1e870';
+String _$activeJourneyHash() => r'ccbabd63370ee4680280a669272c2dbab9d787e5';
 
 /// Persona skin of the active journey, or null for the neutral Ourney base
 /// (no journey yet, or the repository is not available).

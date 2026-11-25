@@ -102,6 +102,7 @@ abstract final class LiveActivityWindowPlanner {
         (j) => j.id == previousActiveWindow.journeyId,
         orElse: () => journeys.first,
       );
+      final redactForFinished = effectiveRedact || finishedJourney.isSensitive;
       final celebrationPayload = <String, Object?>{
         'windowKey': previousActiveWindow.windowKey,
         'journeyId': finishedJourney.id,
@@ -109,6 +110,7 @@ abstract final class LiveActivityWindowPlanner {
         'skinId': finishedJourney.skinId,
         'colorVariant': finishedJourney.colorVariant,
         'typeIcon': finishedJourney.typeIcon,
+        'isSensitive': finishedJourney.isSensitive,
         'currentStreak': finishedJourney.currentStreak,
         'atRisk': false,
         'pendingCount': 0,
@@ -117,8 +119,8 @@ abstract final class LiveActivityWindowPlanner {
         'windowStartUtc': previousActiveWindow.windowStartUtc,
         'deadlineUtc': previousActiveWindow.deadlineUtc,
         'locale': normalizedLocale,
-        'redactLockScreenTitles': effectiveRedact,
-        'redactTitleOnLockScreen': effectiveRedact,
+        'redactLockScreenTitles': redactForFinished,
+        'redactTitleOnLockScreen': redactForFinished,
         'celebrateAndDismiss': true,
         'isCompletedCelebration': true,
         'snapLabel': isEn ? 'Snap now' : 'Chụp ngay',
@@ -199,23 +201,25 @@ abstract final class LiveActivityWindowPlanner {
         totalActiveCount: totalActive,
         windowStartUtc: windowStartUtc.toIso8601String(),
         deadlineUtc: deadlineUtc.toIso8601String(),
+        isSensitive: j.isSensitive,
       );
 
       final remaining = deadlineUtc.difference(nowUtc);
       final shortCritical = _formatShortCriticalText(remaining, isEn: isEn);
       final statusText = j.atRisk
           ? (isEn
-                ? 'Keep your ${j.currentStreak}-day streak before midnight'
-                : 'Giữ chuỗi ${j.currentStreak} ngày trước nửa đêm')
+                ? '${j.currentStreak}-day streak · open until midnight'
+                : 'Chuỗi ${j.currentStreak} ngày · còn mở đến nửa đêm')
           : (isEn
                 ? 'Day ${j.dayNumber} check-in window is open'
                 : 'Khung giờ check-in ngày ${j.dayNumber} đang mở');
+      final redactForJourney = effectiveRedact || j.isSensitive;
 
       final payload = <String, Object?>{
         ...window.toJson(),
         'locale': normalizedLocale,
-        'redactLockScreenTitles': effectiveRedact,
-        'redactTitleOnLockScreen': effectiveRedact,
+        'redactLockScreenTitles': redactForJourney,
+        'redactTitleOnLockScreen': redactForJourney,
         'celebrateAndDismiss': false,
         'isCompletedCelebration': false,
         'snapLabel': isEn ? 'Snap now' : 'Chụp ngay',

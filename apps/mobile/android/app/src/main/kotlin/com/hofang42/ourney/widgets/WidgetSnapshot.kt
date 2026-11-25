@@ -71,13 +71,22 @@ data class WidgetSnapshot(
 
     /**
      * Selects the primary journey to display in `OurneyTodayWidget`, supporting
-     * interactive cycling across pending journeys via [state.selectedTodayIndex].
+     * per-widget pinned [selectedId] (falling back to `"auto"` when the pinned
+     * journey ends, archives, or is deleted) and interactive cycling across
+     * pending journeys via [cycleIndex].
      */
-    fun selectTodayJourney(state: WidgetMutableState): WidgetJourneyItem? {
+    fun selectTodayJourney(
+        selectedId: String? = AUTO_SELECTION_ID,
+        cycleIndex: Int = 0,
+    ): WidgetJourneyItem? {
         if (journeys.isEmpty()) return null
+        val normalizedId = selectedId?.trim()?.takeIf { it.isNotEmpty() } ?: AUTO_SELECTION_ID
+        if (normalizedId != AUTO_SELECTION_ID) {
+            journeys.firstOrNull { it.id == normalizedId }?.let { return it }
+        }
         val pending = journeys.filter { !it.checkedInToday }
         if (pending.size >= 2) {
-            val idx = state.selectedTodayIndex.mod(pending.size)
+            val idx = cycleIndex.coerceAtLeast(0).mod(pending.size)
             return pending[idx]
         }
         if (pending.size == 1) {
@@ -89,12 +98,41 @@ data class WidgetSnapshot(
         return journeys.first()
     }
 
+    fun selectTodayJourney(state: WidgetMutableState): WidgetJourneyItem? =
+        selectTodayJourney(
+            selectedId = AUTO_SELECTION_ID,
+            cycleIndex = state.selectedTodayIndex,
+        )
+
     /**
-     * Selects the journey for `OurneyStreakWidget` (prefers `defaultJourneyId`,
-     * then highest active streak or first journey).
+     * True when [selectedId] pins an active journey currently present in [journeys].
      */
-    fun selectStreakJourney(): WidgetJourneyItem? {
+    fun isPinnedJourneyActive(selectedId: String?): Boolean {
+        val normalizedId = selectedId?.trim()?.takeIf { it.isNotEmpty() } ?: return false
+        if (normalizedId == AUTO_SELECTION_ID) return false
+        return journeys.any { it.id == normalizedId }
+    }
+
+    /**
+     * True when [selectedId] pins an active squad currently present in [squads].
+     */
+    fun isPinnedSquadActive(selectedId: String?): Boolean {
+        val normalizedId = selectedId?.trim()?.takeIf { it.isNotEmpty() } ?: return false
+        if (normalizedId == AUTO_SELECTION_ID) return false
+        return squads.any { it.journeyId == normalizedId }
+    }
+
+    /**
+     * Selects the journey for `OurneyStreakWidget` (prefers per-widget pinned
+     * [selectedId], falling back to `defaultJourneyId`, then highest active
+     * streak or first journey).
+     */
+    fun selectStreakJourney(selectedId: String? = AUTO_SELECTION_ID): WidgetJourneyItem? {
         if (journeys.isEmpty()) return null
+        val normalizedId = selectedId?.trim()?.takeIf { it.isNotEmpty() } ?: AUTO_SELECTION_ID
+        if (normalizedId != AUTO_SELECTION_ID) {
+            journeys.firstOrNull { it.id == normalizedId }?.let { return it }
+        }
         if (!defaultJourneyId.isNullOrBlank()) {
             journeys.firstOrNull { it.id == defaultJourneyId }?.let { return it }
         }
@@ -102,10 +140,15 @@ data class WidgetSnapshot(
     }
 
     /**
-     * Selects the primary squad/couple journey for `OurneySquadWidget`.
+     * Selects the primary squad/couple journey for `OurneySquadWidget` (prefers
+     * per-widget pinned [selectedId], falling back to `defaultJourneyId` or first squad).
      */
-    fun selectSquad(): WidgetSquadItem? {
+    fun selectSquad(selectedId: String? = AUTO_SELECTION_ID): WidgetSquadItem? {
         if (squads.isEmpty()) return null
+        val normalizedId = selectedId?.trim()?.takeIf { it.isNotEmpty() } ?: AUTO_SELECTION_ID
+        if (normalizedId != AUTO_SELECTION_ID) {
+            squads.firstOrNull { it.journeyId == normalizedId }?.let { return it }
+        }
         if (!defaultJourneyId.isNullOrBlank()) {
             squads.firstOrNull { it.journeyId == defaultJourneyId }?.let { return it }
         }
@@ -152,6 +195,69 @@ data class WidgetSnapshot(
     }
 
     companion object {
+        const val AUTO_SELECTION_ID = "auto"
+
+        fun resolveTodayCardState(
+            snapshot: WidgetSnapshot?,
+            selectedId: String? = AUTO_SELECTION_ID,
+            cycleIndex: Int = 0,
+        ): JourneyWidgetCardState {
+            if (snapshot == null) return JourneyWidgetCardState.Unsynced
+            if (snapshot.isSignedOut) return JourneyWidgetCardState.SignedOut
+            val journey = snapshot.selectTodayJourney(selectedId, cycleIndex)
+                ?: return JourneyWidgetCardState.NoJourneys
+            val isPinned = snapshot.isPinnedJourneyActive(selectedId)
+            val pending = snapshot.journeys.filter { !it.checkedInToday }
+            val pendingIndex = if (!isPinned && pending.size >= 2) {
+                (pending.indexOfFirst { it.id == journey.id }.takeIf { it >= 0 } ?: 0) + 1
+            } else {
+                1
+            }
+            val pendingCount = if (isPinned) 1 else pending.size
+            return JourneyWidgetCardState.Ready(
+                journey = journey,
+                isPinned = isPinned,
+                pendingIndex = pendingIndex,
+                pendingCount = pendingCount,
+            )
+        }
+
+        fun resolveStreakCardState(
+            snapshot: WidgetSnapshot?,
+            selectedId: String? = AUTO_SELECTION_ID,
+        ): JourneyWidgetCardState {
+            if (snapshot == null) return JourneyWidgetCardState.Unsynced
+            if (snapshot.isSignedOut) return JourneyWidgetCardState.SignedOut
+            val journey = snapshot.selectStreakJourney(selectedId)
+                ?: return JourneyWidgetCardState.NoJourneys
+            return JourneyWidgetCardState.Ready(
+                journey = journey,
+                isPinned = snapshot.isPinnedJourneyActive(selectedId),
+                pendingIndex = 1,
+                pendingCount = 1,
+            )
+        }
+
+        fun resolveSquadCardState(
+            snapshot: WidgetSnapshot?,
+            selectedId: String? = AUTO_SELECTION_ID,
+        ): SquadWidgetCardState {
+            if (snapshot == null) return SquadWidgetCardState.Unsynced
+            if (snapshot.isSignedOut) return SquadWidgetCardState.SignedOut
+            val squad = snapshot.selectSquad(selectedId)
+            if (squad == null) {
+                return if (snapshot.journeys.isNotEmpty()) {
+                    SquadWidgetCardState.SoloOnlyAccount(soloCount = snapshot.journeys.size)
+                } else {
+                    SquadWidgetCardState.NoJourneysAtAll
+                }
+            }
+            return SquadWidgetCardState.Ready(
+                squad = squad,
+                isPinned = snapshot.isPinnedSquadActive(selectedId),
+            )
+        }
+
         fun parseIsoEpochMs(iso: String?): Long? {
             if (iso.isNullOrBlank()) return null
             return try {
@@ -275,6 +381,7 @@ data class WidgetJourneyItem(
     val heroThumbFile: String?,
     val heroThumbBlurred: Boolean,
     val weekStrip: List<WidgetWeekDay>,
+    val isSensitive: Boolean = false,
 ) {
     val isOpenEnded: Boolean
         get() = totalDays == null || totalDays <= 0
@@ -471,6 +578,7 @@ data class WidgetJourneyItem(
                 heroThumbFile = obj.optNullableString("heroThumbFile"),
                 heroThumbBlurred = obj.optBooleanCompat("heroThumbBlurred", false),
                 weekStrip = strip,
+                isSensitive = obj.optBooleanCompat("isSensitive", false),
             )
         }
     }
@@ -606,6 +714,7 @@ data class WidgetLiveWindow(
     val deadlineUtc: String,
     val celebrateAndDismiss: Boolean = false,
     val redactLockScreenTitles: Boolean? = null,
+    val isSensitive: Boolean = false,
 ) {
     fun isActiveAt(nowEpochMs: Long, state: WidgetMutableState): Boolean {
         if (state.dismissedWindowKey == windowKey) return false
@@ -644,6 +753,7 @@ data class WidgetLiveWindow(
                 deadlineUtc = deadlineUtc,
                 celebrateAndDismiss = celebrate,
                 redactLockScreenTitles = redactLockScreen,
+                isSensitive = obj.optBooleanCompat("isSensitive", false),
             )
         }
 
@@ -680,20 +790,60 @@ data class WidgetLiveWindow(
                 celebrateAndDismiss = (map["celebrateAndDismiss"] as? Boolean) ?: false,
                 redactLockScreenTitles = (map["redactLockScreenTitles"] as? Boolean)
                     ?: (map["redactTitleOnLockScreen"] as? Boolean),
+                isSensitive = (map["isSensitive"] as? Boolean) ?: false,
             )
         }
     }
 }
 
 /**
+ * Explicit 4-state resolution for `OurneyTodayWidget` and `OurneyStreakWidget`
+ * (§A.3), distinguishing a freshly dropped widget before the first app sync
+ * ([Unsynced]) from a signed-out account ([SignedOut]) and a signed-in account
+ * with zero journeys ([NoJourneys]).
+ */
+sealed interface JourneyWidgetCardState {
+    data object Unsynced : JourneyWidgetCardState
+    data object SignedOut : JourneyWidgetCardState
+    data object NoJourneys : JourneyWidgetCardState
+    data class Ready(
+        val journey: WidgetJourneyItem,
+        val isPinned: Boolean,
+        val pendingIndex: Int,
+        val pendingCount: Int,
+    ) : JourneyWidgetCardState
+}
+
+/**
+ * Explicit 5-state resolution for `OurneySquadWidget` (§A.3, Rank 5), adding
+ * [SoloOnlyAccount] when a signed-in user has active solo journeys but zero
+ * group/couple journeys.
+ */
+sealed interface SquadWidgetCardState {
+    data object Unsynced : SquadWidgetCardState
+    data object SignedOut : SquadWidgetCardState
+    data object NoJourneysAtAll : SquadWidgetCardState
+    data class SoloOnlyAccount(val soloCount: Int) : SquadWidgetCardState
+    data class Ready(
+        val squad: WidgetSquadItem,
+        val isPinned: Boolean,
+    ) : SquadWidgetCardState
+}
+
+/**
  * Mutable interactive widget state stored in `state.json` so Glance
- * `ActionCallback`s and `CheckInWindowReceiver` never mutate `snapshot_v1.json`.
+ * `ActionCallback`s, `OurneyWidgetConfigureActivity`, and `CheckInWindowReceiver`
+ * never mutate `snapshot_v1.json`.
  */
 data class WidgetMutableState(
     val selectedTodayIndex: Int = 0,
     val dismissedWindowKey: String? = null,
     val dismissedWindowDate: String? = null,
+    val widgetSelections: Map<Int, String> = emptyMap(),
 ) {
+    fun selectionFor(appWidgetId: Int): String =
+        widgetSelections[appWidgetId]?.takeIf { it.isNotBlank() } ?: WidgetSnapshot.AUTO_SELECTION_ID
+
     fun toJsonString(): String {
         val obj = JSONObject()
         obj.put("selectedTodayIndex", selectedTodayIndex)
@@ -702,6 +852,17 @@ data class WidgetMutableState(
         }
         if (!dismissedWindowDate.isNullOrBlank()) {
             obj.put("dismissedWindowDate", dismissedWindowDate)
+        }
+        if (widgetSelections.isNotEmpty()) {
+            val selObj = JSONObject()
+            for ((widgetId, selection) in widgetSelections) {
+                if (widgetId > 0 && selection.isNotBlank()) {
+                    selObj.put(widgetId.toString(), selection)
+                }
+            }
+            if (selObj.length() > 0) {
+                obj.put("widgetSelections", selObj)
+            }
         }
         return obj.toString()
     }
@@ -722,10 +883,25 @@ data class WidgetMutableState(
 
         fun fromJson(jsonString: String): WidgetMutableState {
             val obj = JSONObject(jsonString)
+            val selObj = obj.optObjectOrNull("widgetSelections")
+            val selections = buildMap<Int, String> {
+                if (selObj != null) {
+                    val keys = selObj.keys()
+                    while (keys.hasNext()) {
+                        val rawKey = keys.next()
+                        val id = rawKey.toIntOrNull() ?: continue
+                        val sel = selObj.optCleanString(rawKey, "")
+                        if (id > 0 && sel.isNotBlank()) {
+                            put(id, sel)
+                        }
+                    }
+                }
+            }
             return WidgetMutableState(
                 selectedTodayIndex = obj.optIntCompat("selectedTodayIndex", 0).coerceAtLeast(0),
                 dismissedWindowKey = obj.optNullableString("dismissedWindowKey"),
                 dismissedWindowDate = obj.optNullableString("dismissedWindowDate"),
+                widgetSelections = selections,
             )
         }
     }

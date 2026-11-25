@@ -78,7 +78,7 @@
   "@widgets_previewDoneBadge": {
     "description": "Badge shown in widget preview when today's check-in is complete."
   },
-  "widgets_previewAtRiskBadge": "Sắp đứt chuỗi · trước nửa đêm",
+  "widgets_previewAtRiskBadge": "Vẫn kịp hôm nay · đến nửa đêm",
   "@widgets_previewAtRiskBadge": {
     "description": "Urgent badge shown in widget preview when streak is at risk."
   },
@@ -158,27 +158,27 @@
   "@widgets_redactTitlesSub": {
     "description": "Switch subtitle for redacting journey titles on the Lock Screen (iOS)."
   },
-  "widgets_redactTitlesSubAndroid": "Trên Màn hình khóa, thông báo đếm ngược chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.",
+  "widgets_redactTitlesSubAndroid": "Trên Màn hình khóa, cập nhật trực tiếp chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.",
   "@widgets_redactTitlesSubAndroid": {
     "description": "Switch subtitle for redacting journey titles on the Lock Screen (Android)."
   },
-  "widgets_secLiveActivity": "đếm ngược cuối ngày",
+  "widgets_secLiveActivity": "khung giờ buổi tối",
   "@widgets_secLiveActivity": {
     "description": "Section heading for Check-In Window Live Activity / Live Update."
   },
-  "widgets_liveActivityLabel": "Live Activity & đếm ngược khung giờ chụp",
+  "widgets_liveActivityLabel": "Live Activity & khung giờ chụp tối",
   "@widgets_liveActivityLabel": {
     "description": "Switch label for enabling Live Activities (iOS)."
   },
-  "widgets_liveActivityLabelAndroid": "Cập nhật trực tiếp & đếm ngược thanh trạng thái",
+  "widgets_liveActivityLabelAndroid": "Cập nhật trực tiếp & khung giờ thanh trạng thái",
   "@widgets_liveActivityLabelAndroid": {
     "description": "Switch label for enabling Live Updates (Android)."
   },
-  "widgets_liveActivitySub": "Hiện đồng hồ đếm ngược trên Dynamic Island / Màn hình khóa từ 30 phút trước giờ nhắc (hoặc từ 18:00 khi chuỗi sắp đứt) và tự tắt ngay khi bạn chụp xong.",
+  "widgets_liveActivitySub": "Hiện khung giờ chụp trên Dynamic Island / Màn hình khóa từ 30 phút trước giờ nhắc (hoặc từ 18:00 khi đang có chuỗi) và tự tắt ngay khi bạn chụp xong.",
   "@widgets_liveActivitySub": {
     "description": "Switch subtitle for Live Activities (iOS)."
   },
-  "widgets_liveActivitySubAndroid": "Hiện đồng hồ đếm ngược trên thanh trạng thái và Màn hình khóa từ 30 phút trước giờ nhắc (hoặc từ 18:00 khi chuỗi sắp đứt) và tự tắt ngay khi bạn chụp xong.",
+  "widgets_liveActivitySubAndroid": "Hiện khung giờ chụp trên thanh trạng thái và Màn hình khóa từ 30 phút trước giờ nhắc (hoặc từ 18:00 khi đang có chuỗi) và tự tắt ngay khi bạn chụp xong.",
   "@widgets_liveActivitySubAndroid": {
     "description": "Switch subtitle for Live Updates (Android)."
   },
@@ -190,7 +190,7 @@
   "@widgets_defaultJourneyAuto": {
     "description": "Default option that automatically prioritizes pinned/at-risk unchecked journeys."
   },
-  "widgets_defaultJourneyAutoSub": "Tự chuyển sang hành trình tiếp theo ngay khi bạn hoàn tất một tấm ảnh",
+  "widgets_defaultJourneyAutoSub": "Áp dụng cho tiện ích ở chế độ Tự động. Nhấn giữ tiện ích trên Màn hình chính để chọn riêng từng hành trình.",
   "@widgets_defaultJourneyAutoSub": {
     "description": "Subtitle for automatic journey selection."
   },

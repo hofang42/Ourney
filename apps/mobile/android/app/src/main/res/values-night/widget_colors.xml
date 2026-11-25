@@ -10,6 +10,7 @@
     <color name="widget_brand">#FF8A3D</color>
     <color name="widget_flame">#F2A93B</color>
     <color name="widget_warn">#F2A070</color>
+    <color name="widget_time_cue">#F2A93B</color>
     <color name="widget_success">#6FCF8E</color>
     <color name="widget_success_soft">#1F3B2A</color>
 </resources>

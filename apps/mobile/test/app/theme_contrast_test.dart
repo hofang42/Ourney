@@ -31,6 +31,13 @@ void main() {
     test('${entry.key}: danger reads on the background (3:1)', () {
       expect(contrast(ui.danger, ui.bg), greaterThanOrEqualTo(3.0));
     });
+
+    test('${entry.key}: warn and timeCue meet 4.5:1 on bg and surface', () {
+      expect(contrast(ui.warn, ui.bg), greaterThanOrEqualTo(4.5));
+      expect(contrast(ui.warn, ui.surface), greaterThanOrEqualTo(4.5));
+      expect(contrast(ui.timeCue, ui.bg), greaterThanOrEqualTo(4.5));
+      expect(contrast(ui.timeCue, ui.surface), greaterThanOrEqualTo(4.5));
+    });
   }
 
   // The journey styles: label on the accent fill, ink on the paper.
