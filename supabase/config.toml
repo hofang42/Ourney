@@ -245,7 +245,7 @@ otp_expiry = 3600
 # sender_name = "Admin"
 
 # Email OTP templates: show the 6-digit code ({{ .Token }}), never a link.
-# Only magic_link and confirmation are code-based. recovery, invite and email_change still use the
+# magic_link, confirmation and recovery are code-based. invite and email_change still use the
 # default LINK emails: add code templates for them if the app ever uses those flows.
 # deploy-hosted.sh reads these subjects from here when it pushes the templates to the hosted project.
 [auth.email.template.magic_link]
@@ -256,15 +256,10 @@ content_path = "./supabase/templates/magic_link.html"
 subject = "Mã xác nhận Ourney / Your Ourney confirmation code"
 content_path = "./supabase/templates/confirmation.html"
 
-# Password reset sends a 6-digit code (the app asks for it, no link).
+# Password reset and in-app password setup/change send a 6-digit code (the app asks for it, no link).
 [auth.email.template.recovery]
 subject = "Mã đặt lại mật khẩu Ourney / Your Ourney password reset code"
 content_path = "./supabase/templates/recovery.html"
-
-# Step-up reauthentication sends a 6-digit code (setting or changing a password in Settings).
-[auth.email.template.reauthentication]
-subject = "Mã xác minh bảo mật Ourney / Your Ourney security code"
-content_path = "./supabase/templates/reauthentication.html"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]

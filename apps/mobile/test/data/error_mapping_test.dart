@@ -215,7 +215,7 @@ void main() {
       expect(codeOf(ex('user_banned', '403')), OurneyErrorCode.forbidden);
       expect(
         codeOf(ex('reauthentication_needed', '400')),
-        OurneyErrorCode.reauthenticationNeeded,
+        OurneyErrorCode.invalid,
       );
       expect(
         codeOf(ex('reauthentication_not_valid', '400')),

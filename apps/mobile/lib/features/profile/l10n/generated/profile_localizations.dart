@@ -1004,6 +1004,18 @@ abstract class ProfileL10n {
   /// **'Bạn thử hơi nhiều rồi. Đợi một chút rồi thử lại nhé.'**
   String get profile_password_rateLimited;
 
+  /// Generic error when sending the 6-digit password verification code fails.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa gửi được mã xác minh. Thử lại nhé.'**
+  String get profile_password_sendError;
+
+  /// Generic error when saving the password fails.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa lưu được mật khẩu. Thử lại nhé.'**
+  String get profile_password_saveError;
+
   /// Toast after setting a password for the first time.
   ///
   /// In vi, this message translates to:

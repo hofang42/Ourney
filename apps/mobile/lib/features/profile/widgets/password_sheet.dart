@@ -17,12 +17,14 @@ enum PasswordSheetMode { set, change }
 ///
 /// 1. New password (>= 8 chars, show/hide toggle) + in [PasswordSheetMode.change]
 ///    a default-ON "Sign out of other devices" switch. Submitting triggers
-///    `AuthRepository.sendReauthentication()` (`auth.reauthenticate()`) to email
-///    a 6-digit nonce code.
+///    `AuthRepository.sendPasswordReset(email)` to email a 6-digit recovery
+///    code (or, if a 6-digit code was already verified in this sheet before a
+///    `same_password` / `weak_password` response, saves directly on the kept
+///    verified session without sending a second email).
 /// 2. 6-digit verification code (`UiOtpField`) + 60s resend cooldown. Submitting
-///    calls `AuthRepository.updatePassword(newPassword, nonce: code,
-///    signOutOthers: ...)` so `nonce` is passed in all cases (compatible with
-///    `secure_password_change = true`).
+///    calls `AuthRepository.updatePassword(newPassword, code: code,
+///    signOutOthers: ...)` so GoTrue always verifies the recovery OTP before
+///    updating `encrypted_password`.
 class PasswordSheet extends ConsumerStatefulWidget {
   const PasswordSheet({
     required this.email,
@@ -59,6 +61,7 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
   final _newPassword = TextEditingController();
   final _code = TextEditingController();
   final _codeFocus = FocusNode();
+  final Set<String> _rejectedSamePasswords = <String>{};
 
   _Stage _stage = _Stage.password;
   int _direction = 1;
@@ -66,6 +69,7 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
   bool _signOutOthers = true;
   bool _submitted = false;
   bool _busy = false;
+  String? _verifiedCode;
   String? _error;
   String? _info;
   int _cooldown = 0;
@@ -92,12 +96,15 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
     });
   }
 
-  String _mapError(Object e, ProfileL10n l10n) {
+  String _mapError(Object e, ProfileL10n l10n, {required bool isSend}) {
     final code = e is OurneyException ? e.error : OurneyErrorCode.unknown;
     return switch (code) {
       OurneyErrorCode.rateLimited => l10n.profile_password_rateLimited,
       OurneyErrorCode.offline => l10n.profile_offlineError,
-      _ => l10n.profile_saveError,
+      _ =>
+        isSend
+            ? l10n.profile_password_sendError
+            : l10n.profile_password_saveError,
     };
   }
 
@@ -114,8 +121,10 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
     });
   }
 
-  /// Step 1 -> 2: validates the new password and sends the 6-digit
-  /// reauthentication nonce code to [widget.email].
+  /// Step 1 -> 2 (or direct save when `_verifiedCode` is already verified):
+  /// validates the new password client-side first, then either reuses the
+  /// already-verified recovery code or sends a 6-digit recovery code to
+  /// [widget.email].
   Future<void> _requestCode({bool resend = false}) async {
     final l10n = ProfileL10n.of(context);
     setState(() {
@@ -127,21 +136,31 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
       unawaited(UiHaptics.reject());
       return;
     }
+    if (_rejectedSamePasswords.contains(_newPassword.text)) {
+      setState(() => _error = l10n.profile_password_sameError);
+      unawaited(UiHaptics.reject());
+      return;
+    }
+    if (!resend && _verifiedCode != null) {
+      await _submitCode(codeOverride: _verifiedCode);
+      return;
+    }
     final auth = ref.read(authRepositoryProvider);
     setState(() => _busy = true);
     try {
-      await auth.sendReauthentication();
+      await auth.sendPasswordReset(widget.email);
     } on Object catch (e) {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = _mapError(e, l10n);
+        _error = _mapError(e, l10n, isSend: true);
       });
       return;
     }
     if (!mounted) return;
     setState(() {
       _busy = false;
+      _verifiedCode = null;
       _direction = 1;
       _stage = _Stage.code;
       if (resend) {
@@ -153,10 +172,11 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
     _codeFocus.requestFocus();
   }
 
-  /// Step 2: submits [newPassword] with the 6-digit reauthentication [nonce].
-  Future<void> _submitCode() async {
+  /// Step 2 (or direct retry after `same_password`): submits [newPassword]
+  /// with the 6-digit recovery [code].
+  Future<void> _submitCode({String? codeOverride}) async {
     final l10n = ProfileL10n.of(context);
-    final code = _code.text.trim();
+    final code = (codeOverride ?? _code.text).trim();
     if (code.length != 6 || _busy) return;
 
     final auth = ref.read(authRepositoryProvider);
@@ -176,7 +196,7 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
     try {
       await auth.updatePassword(
         _newPassword.text,
-        nonce: code,
+        code: code,
         signOutOthers: _isChange && _signOutOthers,
       );
     } on Object catch (e) {
@@ -185,8 +205,10 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
       final detail = e is OurneyException ? (e.detail ?? '') : '';
       if (detail.contains('same_password')) {
         _timer?.cancel();
+        _rejectedSamePasswords.add(_newPassword.text);
         setState(() {
           _busy = false;
+          _verifiedCode = code;
           _direction = -1;
           _stage = _Stage.password;
           _code.clear();
@@ -200,6 +222,7 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
         _timer?.cancel();
         setState(() {
           _busy = false;
+          _verifiedCode = code;
           _direction = -1;
           _stage = _Stage.password;
           _code.clear();
@@ -211,13 +234,16 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
       }
       final isBadCode =
           errCode == OurneyErrorCode.invalid ||
-          errCode == OurneyErrorCode.unauthenticated ||
-          errCode == OurneyErrorCode.reauthenticationNeeded;
+          errCode == OurneyErrorCode.unauthenticated;
       setState(() {
         _busy = false;
+        _verifiedCode = null;
+        if (isBadCode) {
+          _code.clear();
+        }
         _error = isBadCode
             ? l10n.profile_password_codeWrong
-            : _mapError(e, l10n);
+            : _mapError(e, l10n, isSend: false);
       });
       if (isBadCode) unawaited(UiHaptics.reject());
       return;
@@ -253,29 +279,6 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              if (_stage == _Stage.code) ...[
-                UiIconButton(
-                  key: const ValueKey('password-sheet-back'),
-                  glyph: OurneyIcon(name: 'back', flat: true, color: ui.ink),
-                  label: l10n.profile_back,
-                  onPressed: _busy ? null : _backToPassword,
-                ),
-                const SizedBox(width: UiSpace.xs),
-              ] else ...[
-                OurneyIcon(name: 'lock', flat: true, color: ui.ink, size: 26),
-                const SizedBox(width: UiSpace.sm),
-              ],
-              Expanded(
-                child: Semantics(
-                  header: true,
-                  child: Text(title, style: UiText.h2(color: ui.ink)),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: UiSpace.sm),
           UiDirectionalSwitcher(
             step: _stage.name,
             direction: _direction,
@@ -286,10 +289,44 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
               key: ValueKey('password-sheet-stage-${_stage.name}'),
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: switch (_stage) {
-                _Stage.password => _passwordChildren(l10n, ui),
-                _Stage.code => _codeChildren(l10n, ui),
-              },
+              children: [
+                Row(
+                  children: [
+                    if (_stage == _Stage.code) ...[
+                      UiIconButton(
+                        key: const ValueKey('password-sheet-back'),
+                        glyph: OurneyIcon(
+                          name: 'back',
+                          flat: true,
+                          color: ui.ink,
+                        ),
+                        label: l10n.profile_back,
+                        onPressed: _busy ? null : _backToPassword,
+                      ),
+                      const SizedBox(width: UiSpace.xs),
+                    ] else ...[
+                      OurneyIcon(
+                        name: 'lock',
+                        flat: true,
+                        color: ui.ink,
+                        size: 26,
+                      ),
+                      const SizedBox(width: UiSpace.sm),
+                    ],
+                    Expanded(
+                      child: Semantics(
+                        header: true,
+                        child: Text(title, style: UiText.h2(color: ui.ink)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: UiSpace.sm),
+                ...switch (_stage) {
+                  _Stage.password => _passwordChildren(l10n, ui),
+                  _Stage.code => _codeChildren(l10n, ui),
+                },
+              ],
             ),
           ),
         ],
@@ -409,7 +446,10 @@ class _PasswordSheetState extends ConsumerState<PasswordSheet> {
       ],
       if (_info != null) ...[
         const SizedBox(height: UiSpace.sm),
-        Text(_info!, style: UiText.body(size: 13, color: ui.success)),
+        Semantics(
+          liveRegion: true,
+          child: Text(_info!, style: UiText.body(size: 13, color: ui.success)),
+        ),
       ],
       UiTextAction(
         key: const ValueKey('password-sheet-resend'),

@@ -198,23 +198,52 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   }
 
   /// One-tap recovery after a failed password sign-in: keeps the typed email,
-  /// switches to email OTP, and immediately sends the 6-digit login code.
+  /// sends the 6-digit login code while keeping the form in place, and
+  /// transitions once directly to `auth-step-code` (or `auth-step-email` with
+  /// the error if sending fails).
   Future<void> _sendCodeForCurrentEmail() async {
-    if (_busy) return;
+    if (_busy || !_emailPattern.hasMatch(_normalizedEmail)) return;
+    final l10n = AuthL10n.of(context);
+    final auth = ref.read(authRepositoryProvider);
     _timer?.cancel();
     setState(() {
-      _flowDirection = -1;
-      _flow = _Flow.emailCode;
+      _busy = true;
       _userTouchedFlowOrInput = true;
       _pendingRememberedPhone = false;
       _passwordSignInFailed = false;
-      _codeStep = false;
       _error = null;
       _offline = false;
+    });
+    try {
+      await auth.sendOtp(_normalizedEmail);
+    } on Object catch (e) {
+      if (!mounted) return;
+      final isOff = _isOffline(e);
+      setState(() {
+        _busy = false;
+        _flowDirection = -1;
+        _flow = _Flow.emailCode;
+        _codeStep = false;
+        _submitted = false;
+        _password.clear();
+        _showPassword = false;
+        _offline = isOff;
+        _error = isOff ? null : authErrorMessage(l10n, e, AuthStep.sendOtp);
+      });
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _flowDirection = 1;
+      _flow = _Flow.emailCode;
+      _codeStep = true;
+      _submitted = false;
       _password.clear();
       _showPassword = false;
     });
-    await _submitForm();
+    _startCooldown();
+    _codeFocus.requestFocus();
   }
 
   /// Sends whatever the current form needs (first send and resend).

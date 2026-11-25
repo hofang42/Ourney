@@ -217,18 +217,12 @@ class FakeRemoteApi implements RemoteApi {
   }
 
   @override
-  Future<void> sendReauthentication() =>
-      _maybeFail('sendReauthentication', userId ?? '');
-
-  @override
   Future<void> updatePassword(
     String newPassword, {
-    String? currentPassword,
-    String? nonce,
+    required String code,
     bool signOutOthers = false,
   }) => _maybeFail('updatePassword', newPassword, {
-    'currentPassword': currentPassword,
-    'nonce': nonce,
+    'code': code,
     'signOutOthers': signOutOthers,
   });
 

@@ -257,17 +257,7 @@ void main() {
     expect(await layer.auth.watchUserId().first, isNull);
     expect(await layer.auth.hasPassword(), isFalse);
     await expectLater(
-      layer.auth.sendReauthentication(),
-      throwsA(
-        isA<OurneyException>().having(
-          (e) => e.error,
-          'error',
-          OurneyErrorCode.offline,
-        ),
-      ),
-    );
-    await expectLater(
-      layer.auth.updatePassword('password123', nonce: '123456'),
+      layer.auth.updatePassword('password123', code: '123456'),
       throwsA(
         isA<OurneyException>().having(
           (e) => e.error,

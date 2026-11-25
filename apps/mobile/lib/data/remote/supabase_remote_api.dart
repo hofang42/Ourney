@@ -32,16 +32,58 @@ class SupabaseRemoteApi implements RemoteApi {
   String? _termsUserId;
   int? _acceptedTermsVersion;
   String? _verifiedRecoveryKey;
+  bool _resetInFlight = false;
+  String? _preResetUserId;
+  final StreamController<String?> _resetRelease =
+      StreamController<String?>.broadcast();
 
   StorageFileApi _bucket(String path) =>
       _client.storage.from(storageBucketFor(path));
 
   @override
-  String? get currentUserId => _client.auth.currentUser?.id;
+  String? get currentUserId =>
+      _resetInFlight ? _preResetUserId : _client.auth.currentUser?.id;
 
   @override
-  Stream<String?> watchUserId() =>
-      _client.auth.onAuthStateChange.map((s) => s.session?.user.id).distinct();
+  Stream<String?> watchUserId() {
+    late final StreamController<String?> controller;
+    StreamSubscription<AuthState>? authSub;
+    StreamSubscription<String?>? releaseSub;
+    controller = StreamController<String?>(
+      onListen: () {
+        authSub = _client.auth.onAuthStateChange.listen(
+          (s) {
+            if (_resetInFlight) return;
+            if (!controller.isClosed) {
+              controller.add(s.session?.user.id);
+            }
+          },
+          onError: (Object e, StackTrace st) {
+            if (!controller.isClosed) controller.addError(e, st);
+          },
+        );
+        releaseSub = _resetRelease.stream.listen((uid) {
+          if (!controller.isClosed) {
+            controller.add(uid);
+          }
+        });
+      },
+      onCancel: () async {
+        await authSub?.cancel();
+        await releaseSub?.cancel();
+      },
+    );
+    return controller.stream.distinct();
+  }
+
+  void _releaseResetHold({bool emit = false}) {
+    final wasHeld = _resetInFlight;
+    _resetInFlight = false;
+    _preResetUserId = null;
+    if (emit && wasHeld) {
+      _resetRelease.add(_client.auth.currentUser?.id);
+    }
+  }
 
   @override
   String? get signInIdentifier {
@@ -104,6 +146,8 @@ class SupabaseRemoteApi implements RemoteApi {
           type: OtpType.email,
         )
         .timeout(remoteRequestTimeout);
+    _verifiedRecoveryKey = null;
+    _releaseResetHold(emit: true);
   });
 
   @override
@@ -123,6 +167,8 @@ class SupabaseRemoteApi implements RemoteApi {
               type: OtpType.sms,
             )
             .timeout(remoteRequestTimeout);
+        _verifiedRecoveryKey = null;
+        _releaseResetHold(emit: true);
       });
 
   @override
@@ -134,6 +180,10 @@ class SupabaseRemoteApi implements RemoteApi {
               password: password,
             )
             .timeout(remoteRequestTimeout);
+        if (res.session != null) {
+          _verifiedRecoveryKey = null;
+          _releaseResetHold(emit: true);
+        }
         return res.session == null;
       });
 
@@ -147,6 +197,8 @@ class SupabaseRemoteApi implements RemoteApi {
               type: OtpType.signup,
             )
             .timeout(remoteRequestTimeout);
+        _verifiedRecoveryKey = null;
+        _releaseResetHold(emit: true);
       });
 
   @override
@@ -158,6 +210,8 @@ class SupabaseRemoteApi implements RemoteApi {
               password: password,
             )
             .timeout(remoteRequestTimeout);
+        _verifiedRecoveryKey = null;
+        _releaseResetHold(emit: true);
       });
 
   @override
@@ -172,25 +226,47 @@ class SupabaseRemoteApi implements RemoteApi {
       guardRemote(() async {
         final trimmedEmail = email.trim();
         final trimmedCode = code.trim();
-        final recoveryKey = '${trimmedEmail.toLowerCase()}:$trimmedCode';
-        final currentEmail = _client.auth.currentUser?.email;
-        if (_verifiedRecoveryKey != recoveryKey ||
-            currentEmail == null ||
-            currentEmail.toLowerCase() != trimmedEmail.toLowerCase()) {
-          await _client.auth
-              .verifyOTP(
-                email: trimmedEmail,
-                token: trimmedCode,
-                type: OtpType.recovery,
-              )
-              .timeout(remoteRequestTimeout);
-          _verifiedRecoveryKey = recoveryKey;
+        if (!_resetInFlight) {
+          _preResetUserId = _client.auth.currentUser?.id;
+          _resetInFlight = true;
         }
-        await _client.auth
-            .updateUser(UserAttributes(password: newPassword))
-            .timeout(remoteRequestTimeout);
+        final currentEmail = _client.auth.currentUser?.email;
+        final currentUid = _client.auth.currentUser?.id ?? '';
+        final recoveryKey =
+            '$currentUid:${trimmedEmail.toLowerCase()}:$trimmedCode';
+        final needsVerify =
+            _verifiedRecoveryKey != recoveryKey ||
+            currentEmail == null ||
+            currentEmail.toLowerCase() != trimmedEmail.toLowerCase();
+        if (needsVerify) {
+          try {
+            await _client.auth
+                .verifyOTP(
+                  email: trimmedEmail,
+                  token: trimmedCode,
+                  type: OtpType.recovery,
+                )
+                .timeout(remoteRequestTimeout);
+          } on Object {
+            if (_verifiedRecoveryKey == null) {
+              _releaseResetHold();
+            }
+            rethrow;
+          }
+          final verifiedUid = _client.auth.currentUser?.id ?? '';
+          _verifiedRecoveryKey =
+              '$verifiedUid:${trimmedEmail.toLowerCase()}:$trimmedCode';
+        }
+        try {
+          await _client.auth
+              .updateUser(UserAttributes(password: newPassword))
+              .timeout(remoteRequestTimeout);
+        } on AuthException catch (e) {
+          if (e.code != 'same_password') rethrow;
+        }
         _verifiedRecoveryKey = null;
         await _signOutOthersBestEffort();
+        _releaseResetHold(emit: true);
       });
 
   @override
@@ -203,34 +279,37 @@ class SupabaseRemoteApi implements RemoteApi {
   });
 
   @override
-  Future<void> sendReauthentication() => guardRemote(() async {
-    await _client.auth.reauthenticate().timeout(remoteRequestTimeout);
-  });
-
-  @override
   Future<void> updatePassword(
     String newPassword, {
-    String? currentPassword,
-    String? nonce,
+    required String code,
     bool signOutOthers = false,
   }) => guardRemote(() async {
-    if (currentPassword != null) {
-      final email = _client.auth.currentUser?.email;
-      if (email == null || email.isEmpty) {
-        throw const OurneyException(OurneyErrorCode.invalid);
-      }
+    final email = _client.auth.currentUser?.email?.trim();
+    if (email == null || email.isEmpty) {
+      throw const OurneyException(OurneyErrorCode.invalid);
+    }
+    final trimmedCode = code.trim();
+    if (trimmedCode.isEmpty) {
+      throw const OurneyException(OurneyErrorCode.invalid);
+    }
+    final currentUid = _client.auth.currentUser?.id ?? '';
+    final recoveryKey = '$currentUid:${email.toLowerCase()}:$trimmedCode';
+    if (_verifiedRecoveryKey != recoveryKey) {
       await _client.auth
-          .signInWithPassword(email: email, password: currentPassword)
+          .verifyOTP(
+            email: email,
+            token: trimmedCode,
+            type: OtpType.recovery,
+          )
           .timeout(remoteRequestTimeout);
+      final verifiedUid = _client.auth.currentUser?.id ?? '';
+      _verifiedRecoveryKey =
+          '$verifiedUid:${email.toLowerCase()}:$trimmedCode';
     }
     await _client.auth
-        .updateUser(
-          UserAttributes(
-            password: newPassword,
-            nonce: nonce?.trim(),
-          ),
-        )
+        .updateUser(UserAttributes(password: newPassword))
         .timeout(remoteRequestTimeout);
+    _verifiedRecoveryKey = null;
     if (signOutOthers) {
       await _signOutOthersBestEffort();
     }
@@ -251,6 +330,7 @@ class SupabaseRemoteApi implements RemoteApi {
     _termsUserId = null;
     _acceptedTermsVersion = null;
     _verifiedRecoveryKey = null;
+    _releaseResetHold();
     if (global) {
       try {
         await _client.auth

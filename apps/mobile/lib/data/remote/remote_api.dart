@@ -48,14 +48,11 @@ abstract interface class RemoteApi {
   /// Whether the signed-in account has a password set (`rpc auth_has_password`).
   Future<bool> hasPassword();
 
-  /// Sends a 6-digit reauthentication nonce code to the signed-in account's email.
-  Future<void> sendReauthentication();
-
-  /// Updates the signed-in account's password.
+  /// Verifies the 6-digit recovery [code] for the signed-in account's email and
+  /// updates the password to [newPassword].
   Future<void> updatePassword(
     String newPassword, {
-    String? currentPassword,
-    String? nonce,
+    required String code,
     bool signOutOthers = false,
   });
 

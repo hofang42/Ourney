@@ -22,7 +22,6 @@ class RecordingAuthRepository extends FakeAuthRepository {
   Object? verifyOtpError;
   Object? deleteError;
   Object? signOutError;
-  Object? sendReauthenticationError;
   Object? updatePasswordError;
 
   @override
@@ -109,20 +108,13 @@ class RecordingAuthRepository extends FakeAuthRepository {
   }
 
   @override
-  Future<void> sendReauthentication() async {
-    calls.add('sendReauthentication');
-    if (sendReauthenticationError case final e?) throw e;
-  }
-
-  @override
   Future<void> updatePassword(
     String newPassword, {
-    String? currentPassword,
-    String? nonce,
+    required String code,
     bool signOutOthers = false,
   }) async {
     calls.add(
-      'updatePassword:$newPassword:nonce=${nonce ?? ''}:signOutOthers=$signOutOthers',
+      'updatePassword:$newPassword:code=$code:signOutOthers=$signOutOthers',
     );
     if (updatePasswordError case final e?) throw e;
     hasPasswordValue = true;

@@ -517,6 +517,14 @@ class ProfileL10nVi extends ProfileL10n {
       'Bạn thử hơi nhiều rồi. Đợi một chút rồi thử lại nhé.';
 
   @override
+  String get profile_password_sendError =>
+      'Chưa gửi được mã xác minh. Thử lại nhé.';
+
+  @override
+  String get profile_password_saveError =>
+      'Chưa lưu được mật khẩu. Thử lại nhé.';
+
+  @override
   String get profile_password_savedSet => 'Đã đặt mật khẩu.';
 
   @override

@@ -546,6 +546,14 @@
   "@profile_password_rateLimited": {
     "description": "Rate limit error in the password sheet."
   },
+  "profile_password_sendError": "Chưa gửi được mã xác minh. Thử lại nhé.",
+  "@profile_password_sendError": {
+    "description": "Generic error when sending the 6-digit password verification code fails."
+  },
+  "profile_password_saveError": "Chưa lưu được mật khẩu. Thử lại nhé.",
+  "@profile_password_saveError": {
+    "description": "Generic error when saving the password fails."
+  },
   "profile_password_savedSet": "Đã đặt mật khẩu.",
   "@profile_password_savedSet": {
     "description": "Toast after setting a password for the first time."

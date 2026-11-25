@@ -84,13 +84,9 @@ class LocalAuthRepository implements AuthRepository {
   Future<bool> hasPassword() async => false;
 
   @override
-  Future<void> sendReauthentication() async => _needsServer();
-
-  @override
   Future<void> updatePassword(
     String newPassword, {
-    String? currentPassword,
-    String? nonce,
+    required String code,
     bool signOutOthers = false,
   }) async => _needsServer();
 
@@ -236,18 +232,13 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<bool> hasPassword() => remote.hasPassword();
 
   @override
-  Future<void> sendReauthentication() => remote.sendReauthentication();
-
-  @override
   Future<void> updatePassword(
     String newPassword, {
-    String? currentPassword,
-    String? nonce,
+    required String code,
     bool signOutOthers = false,
   }) => remote.updatePassword(
     newPassword,
-    currentPassword: currentPassword,
-    nonce: nonce,
+    code: code,
     signOutOthers: signOutOthers,
   );
 

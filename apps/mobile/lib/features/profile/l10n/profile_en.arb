@@ -161,6 +161,8 @@
   "profile_password_resendIn": "Resend in {seconds}s",
   "profile_password_codeResent": "New code sent.",
   "profile_password_rateLimited": "Too many tries. Wait a moment and try again.",
+  "profile_password_sendError": "Couldn't send the verification code. Please try again.",
+  "profile_password_saveError": "Couldn't save your password. Please try again.",
   "profile_password_savedSet": "Password set.",
   "profile_password_savedChanged": "Password updated.",
   "profile_password_show": "Show password",

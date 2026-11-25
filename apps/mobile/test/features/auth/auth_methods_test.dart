@@ -109,7 +109,7 @@ void main() {
         expect(byKey('auth-send-code-instead'), findsOneWidget);
         expect(
           tester.getSize(byKey('auth-send-code-instead')).height,
-          greaterThanOrEqualTo(44),
+          greaterThanOrEqualTo(48),
         );
 
         // 1-tap recovery: keeps the normalized email, calls sendOtp, and lands

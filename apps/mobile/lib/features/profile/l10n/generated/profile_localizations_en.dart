@@ -518,6 +518,14 @@ class ProfileL10nEn extends ProfileL10n {
       'Too many tries. Wait a moment and try again.';
 
   @override
+  String get profile_password_sendError =>
+      'Couldn\'t send the verification code. Please try again.';
+
+  @override
+  String get profile_password_saveError =>
+      'Couldn\'t save your password. Please try again.';
+
+  @override
   String get profile_password_savedSet => 'Password set.';
 
   @override

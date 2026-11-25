@@ -48,17 +48,6 @@ void main() {
     expect(OurneyErrorCode.unavailable.wireName, 'unavailable');
   });
 
-  test('reauthentication_needed round-trips', () {
-    expect(
-      OurneyErrorCode.fromWire('reauthentication_needed'),
-      OurneyErrorCode.reauthenticationNeeded,
-    );
-    expect(
-      OurneyErrorCode.reauthenticationNeeded.wireName,
-      'reauthentication_needed',
-    );
-  });
-
   test('unknown strings map to unknown', () {
     expect(OurneyErrorCode.fromWire('something_new'), OurneyErrorCode.unknown);
   });
