@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/locale_override.dart';
@@ -13,6 +12,7 @@ import '../../app/theme/motion.dart';
 import '../../ui/ui.dart';
 import '../auth/phone_format.dart';
 import '../safety/safety_paths.dart';
+import '../update/data/update_providers.dart';
 import 'l10n/generated/profile_localizations.dart';
 import 'profile_screen.dart' show profileEditPath;
 import 'settings_providers.dart';
@@ -393,14 +393,11 @@ class _PasswordRow extends ConsumerWidget {
 /// App version and build, read once from the platform (empty when the
 /// platform channel is not available, e.g. in tests).
 final appVersionProvider = FutureProvider<String>((ref) async {
-  try {
-    final info = await PackageInfo.fromPlatform();
-    return info.buildNumber.isEmpty
-        ? info.version
-        : '${info.version} (${info.buildNumber})';
-  } on Object {
-    return '';
-  }
+  final info = ref.watch(packageInfoProvider) ?? await readUpdatePackageInfo();
+  if (info == null) return '';
+  return info.buildNumber.isEmpty
+      ? info.version
+      : '${info.version} (${info.buildNumber})';
 });
 
 class _VersionRow extends ConsumerWidget {

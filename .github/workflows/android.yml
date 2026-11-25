@@ -22,8 +22,16 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: write # needed only to attach the APK to a GitHub Release on tags
+    outputs:
+      public_apk_uploaded: ${{ steps.public_release.outputs.uploaded }}
     steps:
       - uses: actions/checkout@v7
+
+      - name: Check Android release metadata
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: node scripts/release/metadata.mjs check "$TAG_NAME"
 
       # AGP 9.x (android/settings.gradle.kts) requires JDK 17 minimum.
       - uses: actions/setup-java@v6
@@ -141,6 +149,7 @@ jobs:
       # this repo stays private. Needs a PUBLIC_RELEASE_TOKEN secret with write
       # access to hofang42/ourney-releases; skipped with a warning when unset.
       - name: Publish APK to public release repo (hofang42/ourney-releases)
+        id: public_release
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
@@ -158,3 +167,22 @@ jobs:
               --title "Ourney $TAG_NAME" \
               --notes "Ourney Android Release ($TAG_NAME). Tải và mở file Ourney.apk để cài đặt."
           fi
+          echo "uploaded=true" >> "$GITHUB_OUTPUT"
+
+  publish-manifest:
+    name: Publish Android update policy
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') && needs.build.outputs.public_apk_uploaded == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: release
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Publish version policy for the public APK
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: bash scripts/release/publish-manifest.sh "$TAG_NAME"

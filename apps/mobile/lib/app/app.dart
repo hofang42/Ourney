@@ -15,6 +15,7 @@ import '../features/onboarding/l10n/generated/onboarding_localizations.dart';
 import '../features/profile/settings_providers.dart' show themeModeProvider;
 import '../features/profile/share_privacy_sync.dart' show SharePrivacyHealHook;
 import '../features/reminders/data/reminder_scheduler.dart';
+import '../features/update/data/update_providers.dart';
 import '../features/widgets/data/widget_sync_controller.dart'
     show WidgetLifecycleHook;
 import '../l10n/generated/app_localizations.dart';
@@ -38,6 +39,7 @@ class OurneyApp extends ConsumerWidget {
     ref.watch(hapticsEnabledProvider);
     // Sign-out / account deletion clears the previous account's local state.
     ref.watch(accountSessionResetProvider);
+    ref.watch(appUpdateLifecycleProvider);
     // A retold journey a kill interrupted is finished in the background.
     ref.watch(importResumeProvider);
     // tz database decoded after the first frame (camera ready < 1 s).

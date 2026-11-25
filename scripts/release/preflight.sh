@@ -5,7 +5,7 @@
 #
 # Checks, run from the repository you want to release:
 #   1. tag looks like vX.Y.Z
-#   2. version name in apps/mobile/pubspec.yaml equals X.Y.Z
+#   2. pubspec version and build number, release metadata, migration minimums
 #   3. working tree is clean
 #   4. current branch is main and equals origin/main
 #   5. the latest CI run on main succeeded and ran for this commit (gh, read-only)
@@ -19,13 +19,11 @@ if [ "$#" -ne 1 ]; then
 fi
 TAG="$1"
 
-if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+if ! [[ "$TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
   echo "error: tag '$TAG' must look like vX.Y.Z (for example v0.1.0)" >&2
   exit 2
 fi
-VERSION="${TAG#v}"
-
-for t in git gh; do
+for t in git gh node; do
   if ! command -v "$t" > /dev/null 2>&1; then
     echo "error: required tool not found on PATH: $t" >&2
     exit 1
@@ -33,6 +31,7 @@ for t in git gh; do
 done
 
 ROOT="$(git rev-parse --show-toplevel)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
 failures=0
@@ -42,17 +41,9 @@ fail() {
   failures=$((failures + 1))
 }
 
-# 2. pubspec version name (the part before '+')
-PUBSPEC="apps/mobile/pubspec.yaml"
-if [ -f "$PUBSPEC" ]; then
-  pub_version="$(sed -n 's/^version:[[:space:]]*\([^+[:space:]]*\).*/\1/p' "$PUBSPEC" | head -n 1)"
-  if [ "$pub_version" = "$VERSION" ]; then
-    ok "pubspec version name is $pub_version"
-  else
-    fail "pubspec version name is '${pub_version:-<none>}', expected '$VERSION' (bump it in $PUBSPEC via a PR)"
-  fi
-else
-  fail "$PUBSPEC not found"
+# 2. pubspec, metadata, and migration requirements for this tag
+if ! node "$SCRIPT_DIR/metadata.mjs" check "$TAG"; then
+  fail "release metadata checks failed"
 fi
 
 # 3. clean working tree (untracked files count)

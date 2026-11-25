@@ -1,0 +1,23 @@
+{
+  "min_supported": {
+    "android": "1.0.0",
+    "ios": "1.0.0"
+  },
+  "recommended": {
+    "android": "1.1.0",
+    "ios": "1.1.0"
+  },
+  "force_on_major": true,
+  "notes": {
+    "vi": [
+      "Tiện ích màn hình chính và khung giờ chụp buổi tối nhẹ nhàng hơn",
+      "Đặt hoặc đổi mật khẩu ngay trong phần Cài đặt",
+      "Góp ý và bình chọn tính năng mới trực tiếp trên Ourney"
+    ],
+    "en": [
+      "Calmer home screen widgets and evening check-in window",
+      "Set or change your password right in Settings",
+      "Suggest and vote on new features directly in Ourney"
+    ]
+  }
+}
