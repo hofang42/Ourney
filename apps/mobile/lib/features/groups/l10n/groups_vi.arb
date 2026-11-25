@@ -364,7 +364,7 @@
       }
     }
   },
-  "groups_wallWaiting": "{name} · ĐANG CHỜ",
+  "groups_wallWaiting": "{name} · CHƯA CHỤP",
   "@groups_wallWaiting": {
     "placeholders": {
       "name": {

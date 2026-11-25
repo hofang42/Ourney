@@ -605,7 +605,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_cellMissed.
   ///
   /// In vi, this message translates to:
-  /// **'Ngày {day}, {date}: bỏ lỡ'**
+  /// **'Ngày {day}, {date}: chưa chụp'**
   String journeys_cellMissed(int day, String date);
 
   /// No description provided for @journeys_cellToday.
@@ -983,7 +983,7 @@ abstract class JourneysL10n {
   /// Today sheet group: streak about to break.
   ///
   /// In vi, this message translates to:
-  /// **'Sắp đứt chuỗi'**
+  /// **'Đang có chuỗi'**
   String get journeys_todayAtRisk;
 
   /// Today sheet group: the other journeys.
@@ -1103,7 +1103,7 @@ abstract class JourneysL10n {
   /// Departure ticket preview text.
   ///
   /// In vi, this message translates to:
-  /// **'Chỉ mình mình thấy. Từng chút một.'**
+  /// **'Chỉ mình bạn thấy. Từng chút một.'**
   String get journeys_ticketTagQuiet;
 
   /// Departure ticket preview text.
@@ -1127,13 +1127,13 @@ abstract class JourneysL10n {
   /// Departure ticket preview text.
   ///
   /// In vi, this message translates to:
-  /// **'Ra khỏi giường. Chạy tiếp.'**
+  /// **'Bền bỉ từng bước. Chạy tiếp.'**
   String get journeys_ticketTagFlexer;
 
   /// Departure ticket preview text for non-running workouts.
   ///
   /// In vi, this message translates to:
-  /// **'Ra khỏi giường. Tập tiếp.'**
+  /// **'Bền bỉ từng buổi. Tập tiếp.'**
   String get journeys_ticketTagFlexerTrain;
 
   /// Departure ticket preview text.

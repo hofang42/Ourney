@@ -170,4 +170,67 @@ void main() {
       isFalse,
     );
   });
+
+  test(
+    'gentle copy guard: reminder, streak, and widget l10n contain zero pressuring phrases or raw emojis',
+    () {
+      final bannedAllArbs = RegExp(
+        r'sắp mất|sắp đứt|sắp hết hạn|cảnh báo streak|TẬP ĐI|Ra khỏi giường|cả nhóm đang chờ|'
+        r'about to break|streak at risk|streak alert|streak-saver|whole squad is waiting|GO TRAIN|Get out of bed|'
+        r'\u{1F525}',
+        caseSensitive: false,
+        unicode: true,
+      );
+      final bannedReminderWidget = RegExp(
+        r'sắp mất|sắp đứt|sắp hết hạn|sẽ mất|cảnh báo streak|TẬP ĐI|đang chờ|'
+        r'about to break|streak at risk|streak alert|GO TRAIN|whole squad is waiting',
+        caseSensitive: false,
+      );
+
+      for (final (name, dir, file, _) in arbSets()) {
+        for (final locale in ['vi', 'en']) {
+          final arb = readArb('$dir/${file}_$locale.arb');
+          for (final key in messageKeys(arb)) {
+            final raw = arb[key];
+            if (raw is! String) continue;
+            expect(
+              bannedAllArbs.hasMatch(raw),
+              isFalse,
+              reason: '$name.$key ($locale) contains pressuring copy: "$raw"',
+            );
+            final isReminderOrWidgetKey =
+                name == 'reminders' ||
+                name == 'widgets' ||
+                key.startsWith('reminderBanner_') ||
+                key.startsWith('streak_') ||
+                key == 'groups_wallWaiting';
+            if (isReminderOrWidgetKey) {
+              expect(
+                bannedReminderWidget.hasMatch(raw),
+                isFalse,
+                reason:
+                    '$name.$key ($locale) contains banned reminder/widget phrase: "$raw"',
+              );
+            }
+          }
+        }
+      }
+
+      final nativeFiles = [
+        'ios/OurneyWidgets/Theme/WidgetL10n.swift',
+        'ios/OurneyWidgets/Localizable.xcstrings',
+        'android/app/src/main/res/values/widget_strings.xml',
+        'android/app/src/main/res/values-en/widget_strings.xml',
+        'android/app/src/main/res/values-vi/widget_strings.xml',
+      ];
+      for (final relPath in nativeFiles) {
+        final content = File(relPath).readAsStringSync();
+        expect(
+          bannedReminderWidget.hasMatch(content),
+          isFalse,
+          reason: '$relPath contains banned pressuring reminder/widget phrase',
+        );
+      }
+    },
+  );
 }

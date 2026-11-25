@@ -41,11 +41,11 @@ class RemindersL10nVi extends RemindersL10n {
   String get reminders_pickTimeHelp => 'Giờ nhắc check-in';
 
   @override
-  String get reminders_streakAlertTitle => 'Cảnh báo streak lúc 21:00';
+  String get reminders_streakAlertTitle => 'Nhắc giữ chuỗi lúc 21:00';
 
   @override
   String get reminders_streakAlertSubtitle =>
-      'Nếu đến 21:00 bạn vẫn chưa check-in mà đang có streak.';
+      'Nhắc nhẹ lúc 21:00 nếu bạn đang có chuỗi mà chưa chụp hôm nay.';
 
   @override
   String get reminders_emptyTitle => 'Chưa có hành trình nào';
@@ -76,7 +76,7 @@ class RemindersL10nVi extends RemindersL10n {
 
   @override
   String get reminders_permissionMessage =>
-      'Ourney chỉ gửi những lời nhắc bạn đặt, và báo lúc 21:00 khi streak sắp mất. Không quảng cáo.';
+      'Ourney chỉ gửi giờ nhắc bạn chọn và lời nhắc nhẹ lúc 21:00 khi đang có chuỗi. Không quảng cáo.';
 
   @override
   String get reminders_permissionContinue => 'Tiếp tục';
@@ -93,11 +93,11 @@ class RemindersL10nVi extends RemindersL10n {
   }
 
   @override
-  String get reminders_alertTitle => 'Streak sắp mất';
+  String get reminders_alertTitle => 'Vẫn kịp cho hôm nay';
 
   @override
   String reminders_alertBody(String journey, int count) {
-    return '$journey: chuỗi $count ngày sẽ mất lúc nửa đêm. Một tấm ảnh là giữ được.';
+    return '$journey: chuỗi $count ngày còn mở đến nửa đêm. Một tấm ảnh nhỏ là đủ.';
   }
 
   @override
@@ -105,5 +105,5 @@ class RemindersL10nVi extends RemindersL10n {
 
   @override
   String get reminders_channelDescription =>
-      'Lời nhắc check-in hằng ngày và cảnh báo streak sắp mất.';
+      'Lời nhắc check-in hằng ngày và nhắc giữ chuỗi buổi tối.';
 }

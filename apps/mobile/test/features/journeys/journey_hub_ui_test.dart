@@ -46,7 +46,7 @@ void main() {
 
       expect(_key('today-sheet'), findsOneWidget);
       expect(find.text('1 left'), findsOneWidget);
-      expect(find.text('At risk'), findsOneWidget);
+      expect(find.text('Active streaks'), findsOneWidget);
       await _tap(tester, _key('today-row-j1'));
       expect(h.location, '/capture?journeyId=j1');
     });

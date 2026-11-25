@@ -72,11 +72,11 @@ class DepartureTicket extends StatefulWidget {
   static const Duration stampSettleDuration = UiMotion.sheetEnter;
 
   static const _taglines = {
-    'quiet': 'Chỉ mình mình thấy. Từng chút một.',
-    'squad': 'Điểm danh mỗi ngày, cả hội cùng lên!',
+    'quiet': 'Chỉ mình bạn thấy. Từng chút một.',
+    'squad': 'Điểm danh mỗi ngày, cả nhóm cùng lên!',
     'memory': 'Mang về thật nhiều khung hình.',
     'couple': 'Mỗi ngày một nửa, ghép lại thành một.',
-    'flexer': 'Ra khỏi giường. Tập tiếp.',
+    'flexer': 'Bền bỉ từng buổi. Tập tiếp.',
     'minimal': '',
   };
 

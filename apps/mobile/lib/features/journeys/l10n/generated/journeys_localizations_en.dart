@@ -297,7 +297,7 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String journeys_cellMissed(int day, String date) {
-    return 'Day $day, $date: missed';
+    return 'Day $day, $date: no photo';
   }
 
   @override
@@ -391,14 +391,14 @@ class JourneysL10nEn extends JourneysL10n {
     String _temp0 = intl.Intl.pluralLogic(
       hours,
       locale: localeName,
-      other: 'Ends in ${hours}h',
-      one: 'Ends in 1h',
+      other: '${hours}h left today',
+      one: '1h left today',
     );
     return '$_temp0';
   }
 
   @override
-  String get journeys_endsSoon => 'Ends in under an hour';
+  String get journeys_endsSoon => 'Under 1h left today';
 
   @override
   String get journeys_startsToday => 'Starts today';
@@ -528,7 +528,7 @@ class JourneysL10nEn extends JourneysL10n {
   }
 
   @override
-  String get journeys_todayAtRisk => 'At risk';
+  String get journeys_todayAtRisk => 'Active streaks';
 
   @override
   String get journeys_todayRest => 'Everything else';
@@ -613,10 +613,11 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_ticketTagCouple => 'One half each day, together a whole.';
 
   @override
-  String get journeys_ticketTagFlexer => 'Get out of bed. Keep running.';
+  String get journeys_ticketTagFlexer => 'Every run counts. Keep moving.';
 
   @override
-  String get journeys_ticketTagFlexerTrain => 'Get out of bed. Keep training.';
+  String get journeys_ticketTagFlexerTrain =>
+      'Every session counts. Keep moving.';
 
   @override
   String get journeys_ticketPreview => 'Departure ticket preview';

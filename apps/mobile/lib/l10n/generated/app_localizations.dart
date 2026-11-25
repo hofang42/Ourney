@@ -275,7 +275,7 @@ abstract class AppLocalizations {
   /// No description provided for @streak_atRisk.
   ///
   /// In vi, this message translates to:
-  /// **'Sắp mất chuỗi'**
+  /// **'Còn kịp hôm nay'**
   String get streak_atRisk;
 
   /// Local-only mode (FR-A5): shown where a feature needs the backend, e.g. groups.
@@ -323,7 +323,7 @@ abstract class AppLocalizations {
   /// Daily reminder banner copy, squad skin.
   ///
   /// In vi, this message translates to:
-  /// **'Tới giờ điểm danh! Cả nhóm đang chờ.'**
+  /// **'Đến giờ góp một tấm cùng cả nhóm nhé.'**
   String get reminderBanner_daily_squad;
 
   /// Daily reminder banner copy, memory skin.
@@ -341,7 +341,7 @@ abstract class AppLocalizations {
   /// Daily reminder banner copy, flexer skin.
   ///
   /// In vi, this message translates to:
-  /// **'ĐẾN GIỜ. TẬP ĐI.'**
+  /// **'KHUNG GIỜ TẬP ĐÃ MỞ.'**
   String get reminderBanner_daily_flexer;
 
   /// Daily reminder banner copy, minimal skin.
@@ -359,7 +359,7 @@ abstract class AppLocalizations {
   /// Streak-at-risk reminder banner copy, squad skin.
   ///
   /// In vi, this message translates to:
-  /// **'Chuỗi {streak} sắp đứt lúc {time}. Chụp ngay nào!'**
+  /// **'Chuỗi {streak} ngày mở đến {time}. Cùng giữ nhịp nhé.'**
   String reminderBanner_streak_squad(int streak, String time);
 
   /// Streak-at-risk reminder banner copy, memory skin.
@@ -371,7 +371,7 @@ abstract class AppLocalizations {
   /// Streak-at-risk reminder banner copy, couple skin.
   ///
   /// In vi, this message translates to:
-  /// **'Chuỗi {streak} ngày sắp đứt lúc {time}.'**
+  /// **'Chuỗi {streak} ngày còn mở đến {time}.'**
   String reminderBanner_streak_couple(int streak, String time);
 
   /// Streak-at-risk reminder banner copy, flexer skin.
@@ -383,13 +383,13 @@ abstract class AppLocalizations {
   /// Streak-at-risk reminder banner copy, minimal skin.
   ///
   /// In vi, this message translates to:
-  /// **'CHUỖI {streak}. {time}.'**
+  /// **'CHUỖI {streak} · ĐẾN {time}.'**
   String reminderBanner_streak_minimal(int streak, String time);
 
   /// Missed-day chip, squad skin.
   ///
   /// In vi, this message translates to:
-  /// **'NGÀY {day} · LỠ'**
+  /// **'NGÀY {day} · TẠM NGHỈ'**
   String missedDay_chipSquad(int day);
 
   /// Missed-day chip, quiet skin.
@@ -401,7 +401,7 @@ abstract class AppLocalizations {
   /// Sheet title.
   ///
   /// In vi, this message translates to:
-  /// **'ngày lỡ.'**
+  /// **'nghỉ một nhịp.'**
   String get missedDay_titleSquad;
 
   /// Sheet title.
@@ -413,7 +413,7 @@ abstract class AppLocalizations {
   /// Sheet body.
   ///
   /// In vi, this message translates to:
-  /// **'Lỡ một hôm thôi. Mai về lại đường nào!'**
+  /// **'Nghỉ một hôm không sao cả. Sẵn sàng thì đi tiếp cùng nhóm!'**
   String get missedDay_bodySquad;
 
   /// Sheet body.

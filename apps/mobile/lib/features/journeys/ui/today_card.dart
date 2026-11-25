@@ -28,7 +28,6 @@ class TodayCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = JourneysL10n.of(context);
-    final ui = context.ui;
     final journey = progress.journey;
     final style = styleOfJourney(journey);
     final pal = JourneyPalette.of(context, style);
@@ -190,7 +189,7 @@ class TodayCard extends ConsumerWidget {
                             size: 12,
                             weight: FontWeight.w600,
                             height: 1.3,
-                            color: ui.warn,
+                            color: pal.inkAt(0.78),
                           ),
                         ),
                       ),

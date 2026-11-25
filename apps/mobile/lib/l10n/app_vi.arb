@@ -94,7 +94,7 @@
       }
     }
   },
-  "streak_atRisk": "Sắp mất chuỗi",
+  "streak_atRisk": "Còn kịp hôm nay",
   "needsServer_title": "Cần kết nối máy chủ",
   "@needsServer_title": {
     "description": "Local-only mode (FR-A5): shown where a feature needs the backend, e.g. groups."
@@ -117,7 +117,7 @@
   "@reminderBanner_daily_quiet": {
     "description": "Daily reminder banner copy, quiet skin."
   },
-  "reminderBanner_daily_squad": "Tới giờ điểm danh! Cả nhóm đang chờ.",
+  "reminderBanner_daily_squad": "Đến giờ góp một tấm cùng cả nhóm nhé.",
   "@reminderBanner_daily_squad": {
     "description": "Daily reminder banner copy, squad skin."
   },
@@ -129,7 +129,7 @@
   "@reminderBanner_daily_couple": {
     "description": "Daily reminder banner copy, couple skin."
   },
-  "reminderBanner_daily_flexer": "ĐẾN GIỜ. TẬP ĐI.",
+  "reminderBanner_daily_flexer": "KHUNG GIỜ TẬP ĐÃ MỞ.",
   "@reminderBanner_daily_flexer": {
     "description": "Daily reminder banner copy, flexer skin."
   },
@@ -154,7 +154,7 @@
       }
     }
   },
-  "reminderBanner_streak_squad": "Chuỗi {streak} sắp đứt lúc {time}. Chụp ngay nào!",
+  "reminderBanner_streak_squad": "Chuỗi {streak} ngày mở đến {time}. Cùng giữ nhịp nhé.",
   "@reminderBanner_streak_squad": {
     "description": "Streak-at-risk reminder banner copy, squad skin.",
     "placeholders": {
@@ -175,7 +175,7 @@
       }
     }
   },
-  "reminderBanner_streak_couple": "Chuỗi {streak} ngày sắp đứt lúc {time}.",
+  "reminderBanner_streak_couple": "Chuỗi {streak} ngày còn mở đến {time}.",
   "@reminderBanner_streak_couple": {
     "description": "Streak-at-risk reminder banner copy, couple skin.",
     "placeholders": {
@@ -199,7 +199,7 @@
       }
     }
   },
-  "reminderBanner_streak_minimal": "CHUỖI {streak}. {time}.",
+  "reminderBanner_streak_minimal": "CHUỖI {streak} · ĐẾN {time}.",
   "@reminderBanner_streak_minimal": {
     "description": "Streak-at-risk reminder banner copy, minimal skin.",
     "placeholders": {
@@ -211,7 +211,7 @@
       }
     }
   },
-  "missedDay_chipSquad": "NGÀY {day} · LỠ",
+  "missedDay_chipSquad": "NGÀY {day} · TẠM NGHỈ",
   "@missedDay_chipSquad": {
     "description": "Missed-day chip, squad skin.",
     "placeholders": {
@@ -229,7 +229,7 @@
       }
     }
   },
-  "missedDay_titleSquad": "ngày lỡ.",
+  "missedDay_titleSquad": "nghỉ một nhịp.",
   "@missedDay_titleSquad": {
     "description": "Sheet title."
   },
@@ -237,7 +237,7 @@
   "@missedDay_titleQuiet": {
     "description": "Sheet title."
   },
-  "missedDay_bodySquad": "Lỡ một hôm thôi. Mai về lại đường nào!",
+  "missedDay_bodySquad": "Nghỉ một hôm không sao cả. Sẵn sàng thì đi tiếp cùng nhóm!",
   "@missedDay_bodySquad": {
     "description": "Sheet body."
   },

@@ -320,6 +320,38 @@
           }
         }
       }
+    },
+    "widget.phase.still_time" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Still time for today"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vẫn kịp cho hôm nay"
+          }
+        }
+      }
+    },
+    "widget.live.evening_window" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EVENING WINDOW"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KHUNG GIỜ BUỔI TỐI"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

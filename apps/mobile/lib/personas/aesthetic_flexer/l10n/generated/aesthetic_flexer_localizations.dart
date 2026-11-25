@@ -131,7 +131,7 @@ abstract class AestheticFlexerL10n {
   /// Tiêu đề khi hành trình không có chỉ số
   ///
   /// In vi, this message translates to:
-  /// **'{active}/{total} NGÀY TẬP · 🔥 {streak} CHUỖI'**
+  /// **'{active}/{total} NGÀY TẬP · CHUỖI {streak}'**
   String aesthetic_flexer_activeDaysHeader(int active, int total, int streak);
 
   /// Nhãn mốc ngày 1

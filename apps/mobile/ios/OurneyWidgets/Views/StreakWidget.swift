@@ -166,7 +166,7 @@ private struct StreakSmallCardView: View {
 
           Text(WidgetL10n.streakCountLabel(journey.currentStreak, locale: locale).uppercased())
             .font(OurneyWidgetFont.body(9.5, bold: true))
-            .foregroundColor(phase == .urgentAtRisk ? theme.warn : theme.inkMuted)
+            .foregroundColor(phase == .urgentAtRisk ? theme.timeCue : theme.inkMuted)
             .lineLimit(1)
             .minimumScaleFactor(0.75)
         }

@@ -115,7 +115,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get streak_atRisk => 'Streak at risk';
+  String get streak_atRisk => 'Still time today';
 
   @override
   String get needsServer_title => 'Server needed';
@@ -142,7 +142,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reminderBanner_daily_squad =>
-      'Check-in time! The whole squad is waiting.';
+      'Time to add today\'s photo with your squad.';
 
   @override
   String get reminderBanner_daily_memory => 'Add one more frame to the roll?';
@@ -151,7 +151,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reminderBanner_daily_couple => 'You two, it\'s time.';
 
   @override
-  String get reminderBanner_daily_flexer => 'TIME. GO TRAIN.';
+  String get reminderBanner_daily_flexer => 'SESSION WINDOW OPEN.';
 
   @override
   String reminderBanner_daily_minimal(int day) {
@@ -165,7 +165,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String reminderBanner_streak_squad(int streak, String time) {
-    return 'Streak $streak breaks at $time. Snap now!';
+    return 'Streak $streak stays open until $time. Add yours today.';
   }
 
   @override
@@ -175,7 +175,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String reminderBanner_streak_couple(int streak, String time) {
-    return 'Your $streak-day streak breaks at $time.';
+    return 'Your $streak-day streak stays open until $time.';
   }
 
   @override
@@ -185,12 +185,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String reminderBanner_streak_minimal(int streak, String time) {
-    return 'STREAK $streak. $time.';
+    return 'STREAK $streak · UNTIL $time.';
   }
 
   @override
   String missedDay_chipSquad(int day) {
-    return 'DAY $day · MISSED';
+    return 'DAY $day · PAUSE';
   }
 
   @override
@@ -199,14 +199,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get missedDay_titleSquad => 'missed day.';
+  String get missedDay_titleSquad => 'a quick breather.';
 
   @override
   String get missedDay_titleQuiet => 'rest day.';
 
   @override
   String get missedDay_bodySquad =>
-      'Just one day missed. Back on track tomorrow!';
+      'Taking a day off is okay. Jump back in whenever you\'re ready.';
 
   @override
   String get missedDay_bodyQuiet => 'A rest day does not erase the journey.';

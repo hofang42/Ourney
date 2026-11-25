@@ -148,6 +148,7 @@ public struct OurneyWidgetTheme {
   public let successRGB: OurneyRGB
   public let successSoftRGB: OurneyRGB
   public let warnRGB: OurneyRGB
+  public let timeCueRGB: OurneyRGB
   public let dangerRGB: OurneyRGB
   public let flameRGB: OurneyRGB
 
@@ -166,6 +167,7 @@ public struct OurneyWidgetTheme {
   public var success: Color { successRGB.color }
   public var successSoft: Color { successSoftRGB.color }
   public var warn: Color { warnRGB.color }
+  public var timeCue: Color { timeCueRGB.color }
   public var danger: Color { dangerRGB.color }
   public var flame: Color { flameRGB.color }
 
@@ -189,6 +191,7 @@ public struct OurneyWidgetTheme {
     successRGB: OurneyRGB(hex: 0x287747),
     successSoftRGB: OurneyRGB(hex: 0xDCFCE7),
     warnRGB: OurneyRGB(hex: 0xB33A0A),
+    timeCueRGB: OurneyRGB(hex: 0x8A4300),
     dangerRGB: OurneyRGB(hex: 0xB3261E),
     flameRGB: OurneyRGB(hex: 0xD97706)
   )
@@ -213,6 +216,7 @@ public struct OurneyWidgetTheme {
     successRGB: OurneyRGB(hex: 0x6FCF8E),
     successSoftRGB: OurneyRGB(hex: 0x1F3B2A),
     warnRGB: OurneyRGB(hex: 0xF2A070),
+    timeCueRGB: OurneyRGB(hex: 0xF2A93B),
     dangerRGB: OurneyRGB(hex: 0xF2A097),
     flameRGB: OurneyRGB(hex: 0xF2A93B)
   )
@@ -237,6 +241,7 @@ public struct OurneyWidgetTheme {
     successRGB: OurneyRGB(hex: 0x6FCF8E),
     successSoftRGB: OurneyRGB(hex: 0x1F3B2A),
     warnRGB: OurneyRGB(hex: 0xF2A070),
+    timeCueRGB: OurneyRGB(hex: 0xF2A93B),
     dangerRGB: OurneyRGB(hex: 0xFF4D6D),
     flameRGB: OurneyRGB(hex: 0xF2A93B)
   )
@@ -438,6 +443,7 @@ public struct OurneyWidgetTheme {
       successRGB: base.successRGB,
       successSoftRGB: base.successSoftRGB,
       warnRGB: base.warnRGB,
+      timeCueRGB: base.timeCueRGB,
       dangerRGB: base.dangerRGB,
       flameRGB: base.flameRGB
     )

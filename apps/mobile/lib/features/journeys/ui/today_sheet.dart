@@ -223,10 +223,10 @@ class _TodayRow extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               OurneyIcon(
-                name: warn ? 'clock' : 'flame',
+                name: 'flame',
                 size: 15,
                 flat: true,
-                color: warn ? ui.warn : ui.flame,
+                color: ui.flame,
               ),
               const SizedBox(width: 3),
               Text(
