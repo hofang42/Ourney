@@ -18,9 +18,19 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
+import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 
 class MainActivity : FlutterActivity() {
     private var pendingStoragePermissionCallback: ((Boolean) -> Unit)? = null
+    private val mediaSaverExecutor = Executors.newSingleThreadExecutor()
+
+    override fun onDestroy() {
+        pendingStoragePermissionCallback?.invoke(false)
+        pendingStoragePermissionCallback = null
+        mediaSaverExecutor.shutdown()
+        super.onDestroy()
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -85,6 +95,7 @@ class MainActivity : FlutterActivity() {
                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
             ) == PackageManager.PERMISSION_GRANTED
             if (!granted) {
+                pendingStoragePermissionCallback?.invoke(false)
                 pendingStoragePermissionCallback = { allowed ->
                     if (allowed) {
                         saveFileToMediaStore(sourceFile, fileName, mimeType, result)
@@ -115,66 +126,91 @@ class MainActivity : FlutterActivity() {
         result: MethodChannel.Result,
     ) {
         val resolver = applicationContext.contentResolver
-        var insertedUri: Uri? = null
         try {
-            val nowSeconds = System.currentTimeMillis() / 1000
-            val values = ContentValues().apply {
-                put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
-                put(MediaStore.Images.Media.MIME_TYPE, mimeType)
-                put(MediaStore.Images.Media.DATE_ADDED, nowSeconds)
-                put(MediaStore.Images.Media.DATE_MODIFIED, nowSeconds)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    put(
-                        MediaStore.Images.Media.RELATIVE_PATH,
-                        "${Environment.DIRECTORY_PICTURES}/Ourney",
-                    )
-                    put(MediaStore.Images.Media.IS_PENDING, 1)
-                } else {
-                    val picturesDir = File(
-                        Environment.getExternalStoragePublicDirectory(
-                            Environment.DIRECTORY_PICTURES,
-                        ),
-                        "Ourney",
-                    )
-                    if (!picturesDir.exists() && !picturesDir.mkdirs()) {
-                        result.error(
-                            "SAVE_FAILED",
-                            "Could not create Pictures/Ourney directory",
-                            null,
-                        )
-                        return
+            mediaSaverExecutor.execute {
+                var insertedUri: Uri? = null
+                try {
+                    val nowSeconds = System.currentTimeMillis() / 1000
+                    val values = ContentValues().apply {
+                        put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+                        put(MediaStore.Images.Media.MIME_TYPE, mimeType)
+                        put(MediaStore.Images.Media.DATE_ADDED, nowSeconds)
+                        put(MediaStore.Images.Media.DATE_MODIFIED, nowSeconds)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            put(
+                                MediaStore.Images.Media.RELATIVE_PATH,
+                                "${Environment.DIRECTORY_PICTURES}/Ourney",
+                            )
+                            put(MediaStore.Images.Media.IS_PENDING, 1)
+                        } else {
+                            val picturesDir = File(
+                                Environment.getExternalStoragePublicDirectory(
+                                    Environment.DIRECTORY_PICTURES,
+                                ),
+                                "Ourney",
+                            )
+                            if (!picturesDir.exists() && !picturesDir.mkdirs()) {
+                                runOnUiThread {
+                                    result.error(
+                                        "SAVE_FAILED",
+                                        "Could not create Pictures/Ourney directory",
+                                        null,
+                                    )
+                                }
+                                return@execute
+                            }
+                            val targetFile = File(picturesDir, fileName)
+                            put(MediaStore.Images.Media.DATA, targetFile.absolutePath)
+                        }
                     }
-                    val targetFile = File(picturesDir, fileName)
-                    put(MediaStore.Images.Media.DATA, targetFile.absolutePath)
+                    val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+                    if (uri == null) {
+                        runOnUiThread {
+                            result.error("SAVE_FAILED", "MediaStore insert returned null", null)
+                        }
+                        return@execute
+                    }
+                    insertedUri = uri
+                    val copied = resolver.openOutputStream(uri)?.use { out ->
+                        sourceFile.inputStream().use { input ->
+                            input.copyTo(out)
+                        }
+                        true
+                    } ?: false
+                    if (!copied) {
+                        runCatching { resolver.delete(uri, null, null) }
+                        runOnUiThread {
+                            result.error(
+                                "SAVE_FAILED",
+                                "Could not open MediaStore output stream",
+                                null,
+                            )
+                        }
+                        return@execute
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        val publishValues = ContentValues().apply {
+                            put(MediaStore.Images.Media.IS_PENDING, 0)
+                        }
+                        resolver.update(uri, publishValues, null, null)
+                    }
+                    val savedUri = uri.toString()
+                    runOnUiThread {
+                        result.success(savedUri)
+                    }
+                } catch (se: SecurityException) {
+                    insertedUri?.let { runCatching { resolver.delete(it, null, null) } }
+                    runOnUiThread {
+                        result.error("PERMISSION_DENIED", se.message, null)
+                    }
+                } catch (e: Exception) {
+                    insertedUri?.let { runCatching { resolver.delete(it, null, null) } }
+                    runOnUiThread {
+                        result.error("SAVE_FAILED", e.message, null)
+                    }
                 }
             }
-            val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-            if (uri == null) {
-                result.error("SAVE_FAILED", "MediaStore insert returned null", null)
-                return
-            }
-            insertedUri = uri
-            resolver.openOutputStream(uri)?.use { out ->
-                sourceFile.inputStream().use { input ->
-                    input.copyTo(out)
-                }
-            } ?: run {
-                resolver.delete(uri, null, null)
-                result.error("SAVE_FAILED", "Could not open MediaStore output stream", null)
-                return
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val publishValues = ContentValues().apply {
-                    put(MediaStore.Images.Media.IS_PENDING, 0)
-                }
-                resolver.update(uri, publishValues, null, null)
-            }
-            result.success(uri.toString())
-        } catch (se: SecurityException) {
-            insertedUri?.let { runCatching { resolver.delete(it, null, null) } }
-            result.error("PERMISSION_DENIED", se.message, null)
-        } catch (e: Exception) {
-            insertedUri?.let { runCatching { resolver.delete(it, null, null) } }
+        } catch (e: RejectedExecutionException) {
             result.error("SAVE_FAILED", e.message, null)
         }
     }

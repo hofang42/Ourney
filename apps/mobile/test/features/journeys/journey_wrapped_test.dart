@@ -449,5 +449,57 @@ void main() {
         );
       }
     }
+
+    testWidgets(
+      'open-ended journey computes consistency against elapsed span, not 100% (UX-20)',
+      (tester) async {
+        // Started Oct 1, checked in on Oct 1, 5, 10 (3 out of 10 elapsed days).
+        final j = Journey(
+          id: 'j-open',
+          ownerId: 'u1',
+          kind: JourneyKind.solo,
+          templateId: TemplateId.custom,
+          title: 'Daily read',
+          emoji: '✨',
+          startDate: const LocalDate(2026, 10, 1),
+          durationDays: null,
+          timezone: testTz,
+          visibility: JourneyVisibility.private,
+          status: JourneyStatus.ended,
+        );
+        await pumpJourneys(
+          tester,
+          locale: const Locale('en'),
+          location: JourneysPaths.wrapped(j.id),
+          journeys: FakeJourneyRepository(
+            journeys: [j],
+            memberships: {j.id: testMembership(j)},
+          ),
+          checkIns: FakeCheckInRepository([
+            testCheckIn(j.id, const LocalDate(2026, 10, 1)),
+            testCheckIn(j.id, const LocalDate(2026, 10, 5)),
+            testCheckIn(j.id, const LocalDate(2026, 10, 10)),
+          ]),
+        );
+        await tester.tap(_key('wrapped-segment-2'));
+        await tester.pumpAndSettle();
+        expect(find.text('3/10 DAYS · 30% CONSISTENT'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'non-running workout wrapped summary shows completed days instead of 0 KM (UX-24)',
+      (tester) async {
+        final j = testJourney(
+          status: JourneyStatus.ended,
+          templateId: TemplateId.workout30,
+        ).copyWith(dna: const {'sport': 'gym', 'measure': 'session'});
+        await _open(tester, journey: j);
+        await tester.tap(_key('wrapped-segment-4'));
+        await tester.pumpAndSettle();
+        expect(find.text('4/14 FINISHED'), findsOneWidget);
+        expect(find.textContaining('0 KM'), findsNothing);
+      },
+    );
   });
 }

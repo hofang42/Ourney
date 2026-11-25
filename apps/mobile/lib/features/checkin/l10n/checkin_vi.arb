@@ -223,6 +223,14 @@
   "@checkin_extraDishHint": {
     "description": "Post screen per-skin input."
   },
+  "checkin_extraMomentLabel": "Khoảnh khắc hôm nay",
+  "@checkin_extraMomentLabel": {
+    "description": "Post screen per-skin input."
+  },
+  "checkin_extraMomentHint": "Để trống cũng được",
+  "@checkin_extraMomentHint": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraCookLabel": "Ai nấu?",
   "@checkin_extraCookLabel": {
     "description": "Post screen per-skin input."
@@ -237,6 +245,10 @@
   },
   "checkin_extraHeartsLabel": "Bữa này mấy tim?",
   "@checkin_extraHeartsLabel": {
+    "description": "Post screen per-skin input."
+  },
+  "checkin_extraHeartsMomentLabel": "Hôm nay mấy tim?",
+  "@checkin_extraHeartsMomentLabel": {
     "description": "Post screen per-skin input."
   },
   "checkin_extraHeartsValue": "{count} tim",

@@ -236,6 +236,7 @@ class ActiveJourneyId extends _$ActiveJourneyId {
 /// first active journey (what the capture screen preselects), else null.
 @Riverpod(keepAlive: true, retry: _noRetry)
 Stream<Journey?> activeJourney(Ref ref) {
+  ref.watch(currentUserIdProvider);
   final id = ref.watch(activeJourneyIdProvider);
   return mapWithNow(ref, ref.watch(journeyRepositoryProvider).watchActive(), (
     all,

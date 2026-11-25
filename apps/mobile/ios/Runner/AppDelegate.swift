@@ -112,19 +112,37 @@ import flutter_local_notifications
       }
 
       let fileUrl = URL(fileURLWithPath: path)
+      let stateLock = NSLock()
       var createdAssetId: String?
       PHPhotoLibrary.shared().performChanges({
         let request = PHAssetChangeRequest.creationRequestForAssetFromImage(atFileURL: fileUrl)
-        createdAssetId = request?.placeholderForCreatedAsset?.localIdentifier
+        let localId = request?.placeholderForCreatedAsset?.localIdentifier
+        stateLock.lock()
+        createdAssetId = localId
+        stateLock.unlock()
       }) { success, error in
+        stateLock.lock()
+        let savedAssetId = createdAssetId
+        stateLock.unlock()
         DispatchQueue.main.async {
-          if success {
-            result(createdAssetId ?? fileUrl.path)
+          if success, let savedAssetId = savedAssetId, !savedAssetId.isEmpty {
+            result(savedAssetId)
           } else {
+            let nsError = error as NSError?
+            let isPermissionError: Bool
+            if #available(iOS 15, *), let photosError = error as? PHPhotosError {
+              isPermissionError =
+                photosError.code == .accessUserDenied || photosError.code == .accessRestricted
+            } else {
+              isPermissionError =
+                nsError?.domain == PHPhotosErrorDomain
+                && (nsError?.code == 3311 || nsError?.code == 3310)
+            }
             result(
               FlutterError(
-                code: "SAVE_FAILED",
-                message: error?.localizedDescription ?? "Could not save image to Photos",
+                code: isPermissionError ? "PERMISSION_DENIED" : "SAVE_FAILED",
+                message: error?.localizedDescription
+                  ?? "Could not create Photos asset from file",
                 details: nil
               )
             )

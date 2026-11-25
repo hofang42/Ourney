@@ -329,10 +329,14 @@ void main() {
       final wItem = snapshot.journeys.firstWhere((j) => j.id == 'j-weight');
       expect(wItem.heroThumbFile, isNotNull);
       expect(wItem.heroThumbBlurred, isTrue);
+      expect(wItem.isSensitive, isTrue);
+      expect(wItem.toJson()['isSensitive'], isTrue);
 
       final sItem = snapshot.journeys.firstWhere((j) => j.id == 'j-study');
       expect(sItem.heroThumbFile, isNotNull);
       expect(sItem.heroThumbBlurred, isFalse);
+      expect(sItem.isSensitive, isFalse);
+      expect(sItem.toJson()['isSensitive'], isFalse);
 
       // In smart mode, squad member avatars are shown, but todayThumbFile is omitted!
       final squad = snapshot.squads.single;
@@ -636,6 +640,91 @@ void main() {
           'checkins/j1/u-me/yesterday_t.jpg',
         );
         expect(snapEn.squads.single.members.single.displayName, 'Me');
+      },
+    );
+
+    test(
+      'pins privacy JSON keys for iOS Lock Screen title redaction (P3-3): '
+      'toggle ON redacts all titles; toggle OFF redacts only sensitive journeys',
+      () {
+        final inputs = [
+          WidgetJourneyBuildInput(journey: weightJourney),
+          WidgetJourneyBuildInput(journey: studyJourney),
+        ];
+
+        // 1. User toggle ON (explicitRedactLockScreenTitles: true) ->
+        // emits redactLockScreenTitles: true AND explicitRedactLockScreenTitles: true
+        // so iOS shouldRedactLockScreenTitle redacts ALL journey titles.
+        final toggleOnSnap = WidgetSnapshotBuilder.build(
+          now: nowUtc,
+          authStatus: AuthStatus.signedIn,
+          explicitRedactLockScreenTitles: true,
+          journeyInputs: inputs,
+        );
+        final toggleOnJson =
+            jsonDecode(toggleOnSnap.toJsonString()) as Map<String, Object?>;
+        final privacyOn = toggleOnJson['privacy'] as Map<String, Object?>;
+        expect(privacyOn['redactLockScreenTitles'], isTrue);
+        expect(privacyOn['explicitRedactLockScreenTitles'], isTrue);
+
+        // 2. User toggle OFF (explicitRedactLockScreenTitles: false) ->
+        // emits redactLockScreenTitles: false and OMITS explicitRedactLockScreenTitles
+        // while keeping per-journey isSensitive: true/false, so iOS
+        // shouldRedactLockScreenTitle falls through to journey.isEffectiveSensitiveJourney
+        // (redacting only sensitive journeys, showing non-sensitive titles).
+        final toggleOffSnap = WidgetSnapshotBuilder.build(
+          now: nowUtc,
+          authStatus: AuthStatus.signedIn,
+          explicitRedactLockScreenTitles: false,
+          journeyInputs: inputs,
+        );
+        final toggleOffJson =
+            jsonDecode(toggleOffSnap.toJsonString()) as Map<String, Object?>;
+        final privacyOff = toggleOffJson['privacy'] as Map<String, Object?>;
+        expect(privacyOff['redactLockScreenTitles'], isFalse);
+        expect(
+          privacyOff.containsKey('explicitRedactLockScreenTitles'),
+          isFalse,
+        );
+        final journeysOff = (toggleOffJson['journeys'] as List<Object?>)
+            .cast<Map<String, Object?>>();
+        final weightJson = journeysOff.firstWhere((j) => j['id'] == 'j-weight');
+        final studyJson = journeysOff.firstWhere((j) => j['id'] == 'j-study');
+        expect(weightJson['isSensitive'], isTrue);
+        expect(studyJson['isSensitive'], isFalse);
+
+        // 3. Unset toggle (explicitRedactLockScreenTitles: null) ->
+        // omits explicitRedactLockScreenTitles and defaults redactLockScreenTitles
+        // to true when a sensitive journey is present, or false otherwise.
+        final unsetMixedSnap = WidgetSnapshotBuilder.build(
+          now: nowUtc,
+          authStatus: AuthStatus.signedIn,
+          journeyInputs: inputs,
+        );
+        final privacyUnsetMixed =
+            (jsonDecode(unsetMixedSnap.toJsonString())
+                    as Map<String, Object?>)['privacy']
+                as Map<String, Object?>;
+        expect(privacyUnsetMixed['redactLockScreenTitles'], isTrue);
+        expect(
+          privacyUnsetMixed.containsKey('explicitRedactLockScreenTitles'),
+          isFalse,
+        );
+
+        final unsetNonSensitiveSnap = WidgetSnapshotBuilder.build(
+          now: nowUtc,
+          authStatus: AuthStatus.signedIn,
+          journeyInputs: [WidgetJourneyBuildInput(journey: studyJourney)],
+        );
+        final privacyUnsetStudy =
+            (jsonDecode(unsetNonSensitiveSnap.toJsonString())
+                    as Map<String, Object?>)['privacy']
+                as Map<String, Object?>;
+        expect(privacyUnsetStudy['redactLockScreenTitles'], isFalse);
+        expect(
+          privacyUnsetStudy.containsKey('explicitRedactLockScreenTitles'),
+          isFalse,
+        );
       },
     );
   });

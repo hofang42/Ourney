@@ -622,6 +622,9 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_ticketTagFlexer => 'Get out of bed. Keep running.';
 
   @override
+  String get journeys_ticketTagFlexerTrain => 'Get out of bed. Keep training.';
+
+  @override
   String get journeys_ticketPreview => 'Departure ticket preview';
 
   @override
@@ -1046,13 +1049,13 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_dna_ghost_body =>
-      'This private photo becomes your alignment frame on the following days.';
+      'Show a translucent silhouette guide in the camera so every photo lines up.';
 
   @override
-  String get journeys_dna_ghost_now => 'Take it now';
+  String get journeys_dna_ghost_now => 'Turn on ghost guide';
 
   @override
-  String get journeys_dna_ghost_later => 'Maybe later.';
+  String get journeys_dna_ghost_later => 'Keep it off for now.';
 
   @override
   String get journeys_dna_trophy_label => 'Trophy name';
@@ -1061,7 +1064,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_dna_trophy_hint => 'Trophy 7.5';
 
   @override
-  String get journeys_dna_place_search => 'Search for a place...';
+  String get journeys_dna_place_search => 'Destination or place...';
 
   @override
   String get journeys_dna_place_country => 'Vietnam';
@@ -1148,6 +1151,18 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_home_introCouple => 'What are you two cooking today?';
+
+  @override
+  String get journeys_home_introCoupleSave =>
+      'What are you two saving for today?';
+
+  @override
+  String get journeys_home_introCoupleLdr =>
+      'How did you two bridge the distance today?';
+
+  @override
+  String get journeys_home_introCoupleCustom =>
+      'What moment did you two share today?';
 
   @override
   String get journeys_home_offlineQuiet =>
@@ -1261,7 +1276,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_edit_previewTag => 'PREVIEW';
 
   @override
-  String get journeys_edit_hudPreview => 'Camera HUD';
+  String get journeys_edit_hudPreview => 'Daily check-in';
 
   @override
   String journeys_edit_dayOf(int day, int total) {
@@ -1427,7 +1442,7 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_edit_membersOnlyHint =>
-      'squad journeys have no public link';
+      'a public link can be created with member consent once the journey ends';
 
   @override
   String get journeys_edit_quietLock => 'Private';
@@ -1681,6 +1696,11 @@ class JourneysL10nEn extends JourneysL10n {
   }
 
   @override
+  String journeys_home_squadChipOpen(String title) {
+    return '$title · OPEN-ENDED';
+  }
+
+  @override
   String journeys_home_squadToday(int done, int total) {
     return '$done/$total TODAY';
   }
@@ -1692,6 +1712,9 @@ class JourneysL10nEn extends JourneysL10n {
   String journeys_home_trophyDay(int day) {
     return 'DAY $day';
   }
+
+  @override
+  String get journeys_home_trophyOpen => 'OPEN-ENDED';
 
   @override
   String journeys_home_filmRoll(int frames, int total) {
@@ -1750,6 +1773,11 @@ class JourneysL10nEn extends JourneysL10n {
   @override
   String journeys_home_flexRan(int done, int total) {
     return '$done/$total RAN';
+  }
+
+  @override
+  String journeys_home_flexTrained(int done, int total) {
+    return '$done/$total TRAINED';
   }
 
   @override

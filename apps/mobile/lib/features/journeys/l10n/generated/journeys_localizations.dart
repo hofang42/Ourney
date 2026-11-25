@@ -1130,6 +1130,12 @@ abstract class JourneysL10n {
   /// **'Ra khỏi giường. Chạy tiếp.'**
   String get journeys_ticketTagFlexer;
 
+  /// Departure ticket preview text for non-running workouts.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ra khỏi giường. Tập tiếp.'**
+  String get journeys_ticketTagFlexerTrain;
+
   /// Departure ticket preview text.
   ///
   /// In vi, this message translates to:
@@ -1913,19 +1919,19 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_dna_ghost_body.
   ///
   /// In vi, this message translates to:
-  /// **'Ảnh riêng tư này sẽ làm khung căn dáng ở những ngày tiếp theo.'**
+  /// **'Hiện khung bóng mờ trong máy ảnh để ngày nào chụp cũng khớp một góc.'**
   String get journeys_dna_ghost_body;
 
   /// No description provided for @journeys_dna_ghost_now.
   ///
   /// In vi, this message translates to:
-  /// **'Chụp ngay'**
+  /// **'Bật khung căn dáng'**
   String get journeys_dna_ghost_now;
 
   /// No description provided for @journeys_dna_ghost_later.
   ///
   /// In vi, this message translates to:
-  /// **'Để sau vậy.'**
+  /// **'Tắt đi, để bật sau.'**
   String get journeys_dna_ghost_later;
 
   /// No description provided for @journeys_dna_trophy_label.
@@ -1943,7 +1949,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_dna_place_search.
   ///
   /// In vi, this message translates to:
-  /// **'Tìm một nơi...'**
+  /// **'Nhập điểm đến...'**
   String get journeys_dna_place_search;
 
   /// No description provided for @journeys_dna_place_country.
@@ -2101,6 +2107,24 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Hôm nay hai đứa nấu gì?'**
   String get journeys_home_introCouple;
+
+  /// No description provided for @journeys_home_introCoupleSave.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay hai đứa góp thêm được gì?'**
+  String get journeys_home_introCoupleSave;
+
+  /// No description provided for @journeys_home_introCoupleLdr.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay hai đứa gửi gì cho nhau?'**
+  String get journeys_home_introCoupleLdr;
+
+  /// No description provided for @journeys_home_introCoupleCustom.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay hai đứa có khoảnh khắc gì cùng nhau?'**
+  String get journeys_home_introCoupleCustom;
 
   /// No description provided for @journeys_home_offlineQuiet.
   ///
@@ -2291,7 +2315,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_edit_hudPreview.
   ///
   /// In vi, this message translates to:
-  /// **'HUD máy ảnh'**
+  /// **'Check-in mỗi ngày'**
   String get journeys_edit_hudPreview;
 
   /// No description provided for @journeys_edit_dayOf.
@@ -2603,7 +2627,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_edit_membersOnlyHint.
   ///
   /// In vi, this message translates to:
-  /// **'hành trình nhóm không có link công khai'**
+  /// **'có thể tạo link công khai khi hành trình kết thúc và được thành viên đồng ý'**
   String get journeys_edit_membersOnlyHint;
 
   /// No description provided for @journeys_edit_quietLock.
@@ -2912,6 +2936,12 @@ abstract class JourneysL10n {
   /// **'{title} · {days} NGÀY'**
   String journeys_home_squadChip(String title, int days);
 
+  /// No description provided for @journeys_home_squadChipOpen.
+  ///
+  /// In vi, this message translates to:
+  /// **'{title} · KHÔNG GIỚI HẠN'**
+  String journeys_home_squadChipOpen(String title);
+
   /// No description provided for @journeys_home_squadToday.
   ///
   /// In vi, this message translates to:
@@ -2929,6 +2959,12 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'NGÀY {day}'**
   String journeys_home_trophyDay(int day);
+
+  /// No description provided for @journeys_home_trophyOpen.
+  ///
+  /// In vi, this message translates to:
+  /// **'KHÔNG GIỚI HẠN'**
+  String get journeys_home_trophyOpen;
 
   /// No description provided for @journeys_home_filmRoll.
   ///
@@ -3007,6 +3043,12 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'{done}/{total} ĐÃ CHẠY'**
   String journeys_home_flexRan(int done, int total);
+
+  /// No description provided for @journeys_home_flexTrained.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} ĐÃ TẬP'**
+  String journeys_home_flexTrained(int done, int total);
 
   /// No description provided for @journeys_home_minimalMonth.
   ///

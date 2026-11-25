@@ -134,7 +134,7 @@
       }
     }
   },
-  "reminders_alertBodyAt": "{journey}: chuỗi {count} ngày sẽ mất lúc {time} (00:00 theo múi giờ hành trình). Một tấm ảnh là giữ được.",
+  "reminders_alertBodyAt": "{journey}: chuỗi {count} ngày còn mở đến {time} (00:00 theo múi giờ hành trình). Một tấm ảnh nhỏ là đủ.",
   "@reminders_alertBodyAt": {
     "description": "Body of the 21:00 streak alert notification when the device timezone differs from the journey timezone.",
     "placeholders": {

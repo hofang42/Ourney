@@ -136,9 +136,9 @@ class DnaWeightPicker extends StatefulWidget {
     super.key,
   });
 
-  final int weight;
+  final num weight;
   final bool hide;
-  final ValueChanged<int> onWeight;
+  final ValueChanged<double> onWeight;
   final ValueChanged<bool> onHide;
   final VoidCallback onSkip;
 
@@ -147,14 +147,32 @@ class DnaWeightPicker extends StatefulWidget {
 }
 
 class _DnaWeightPickerState extends State<DnaWeightPicker> {
-  late int _lastDetentWeight = widget.weight;
+  late int _lastDetentWeight = widget.weight.round();
 
   @override
   void didUpdateWidget(covariant DnaWeightPicker oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.weight != oldWidget.weight) {
-      _lastDetentWeight = widget.weight;
+    if (widget.weight.round() != oldWidget.weight.round()) {
+      _lastDetentWeight = widget.weight.round();
     }
+  }
+
+  static String _formatWeight(num value, {bool vi = false}) {
+    final tenths = (value * 10).round();
+    if (tenths % 10 == 0) return '${tenths ~/ 10}';
+    final s = (tenths / 10).toStringAsFixed(1);
+    return vi ? s.replaceAll('.', ',') : s;
+  }
+
+  void _stepTenths(int deltaTenths) {
+    final currentTenths = (widget.weight * 10).round();
+    final nextTenths = (currentTenths + deltaTenths).clamp(
+      dnaWeightMin * 10,
+      dnaWeightMax * 10,
+    );
+    if (nextTenths == currentTenths) return;
+    unawaited(UiHaptics.selection());
+    widget.onWeight(nextTenths / 10.0);
   }
 
   void _handleSliderChanged(double v) {
@@ -163,13 +181,16 @@ class _DnaWeightPickerState extends State<DnaWeightPicker> {
       _lastDetentWeight = next;
       unawaited(UiHaptics.selection());
     }
-    widget.onWeight(next);
+    widget.onWeight(next.toDouble());
   }
 
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
     final l10n = JourneysL10n.of(context);
+    final vi = Localizations.localeOf(context).languageCode == 'vi';
+    final decLabel = vi ? '-0,1' : '-0.1';
+    final incLabel = vi ? '+0,1' : '+0.1';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -178,11 +199,31 @@ class _DnaWeightPickerState extends State<DnaWeightPicker> {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
+            UiPressable(
+              key: const ValueKey('dna-weight-dec'),
+              onPressed: widget.weight > dnaWeightMin
+                  ? () => _stepTenths(-1)
+                  : null,
+              semanticLabel: '$decLabel ${l10n.journeys_dna_weight_unit}',
+              excludeChildSemantics: true,
+              borderRadius: BorderRadius.circular(UiRadius.capsule),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: UiSpace.sm,
+                  vertical: UiSpace.xs,
+                ),
+                child: Text(
+                  decLabel,
+                  style: UiText.muted(color: ui.inkMuted),
+                ),
+              ),
+            ),
+            const SizedBox(width: UiSpace.sm),
             Flexible(
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
-                  '${widget.weight}',
+                  _formatWeight(widget.weight, vi: vi),
                   key: const ValueKey('dna-weight-value'),
                   style: UiText.h1(
                     color: ui.ink,
@@ -196,13 +237,35 @@ class _DnaWeightPickerState extends State<DnaWeightPicker> {
               l10n.journeys_dna_weight_unit,
               style: UiText.h2(color: ui.inkMuted, size: 20),
             ),
+            const SizedBox(width: UiSpace.sm),
+            UiPressable(
+              key: const ValueKey('dna-weight-inc'),
+              onPressed: widget.weight < dnaWeightMax
+                  ? () => _stepTenths(1)
+                  : null,
+              semanticLabel: '$incLabel ${l10n.journeys_dna_weight_unit}',
+              excludeChildSemantics: true,
+              borderRadius: BorderRadius.circular(UiRadius.capsule),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: UiSpace.sm,
+                  vertical: UiSpace.xs,
+                ),
+                child: Text(
+                  incLabel,
+                  style: UiText.muted(color: ui.inkMuted),
+                ),
+              ),
+            ),
           ],
         ),
         Semantics(
           label: l10n.journeys_dna_weight_a11y,
           child: Slider(
             key: const ValueKey('dna-weight-slider'),
-            value: widget.weight.toDouble(),
+            value: widget.weight
+                .toDouble()
+                .clamp(dnaWeightMin.toDouble(), dnaWeightMax.toDouble()),
             min: dnaWeightMin.toDouble(),
             max: dnaWeightMax.toDouble(),
             divisions: dnaWeightMax - dnaWeightMin,
@@ -382,10 +445,47 @@ class DnaPlacePicker extends StatelessWidget {
 
   static const _cities = ['place_dalat', 'place_hoian', 'place_phuquoc'];
 
+  static String _foldDiacritics(String input) {
+    var s = input.trim().toLowerCase();
+    const map = <String, String>{
+      'à': 'a', 'á': 'a', 'ả': 'a', 'ã': 'a', 'ạ': 'a',
+      'ă': 'a', 'ằ': 'a', 'ắ': 'a', 'ẳ': 'a', 'ẵ': 'a', 'ặ': 'a',
+      'â': 'a', 'ầ': 'a', 'ấ': 'a', 'ẩ': 'a', 'ẫ': 'a', 'ậ': 'a',
+      'đ': 'd',
+      'è': 'e', 'é': 'e', 'ẻ': 'e', 'ẽ': 'e', 'ẹ': 'e',
+      'ê': 'e', 'ề': 'e', 'ế': 'e', 'ể': 'e', 'ễ': 'e', 'ệ': 'e',
+      'ì': 'i', 'í': 'i', 'ỉ': 'i', 'ĩ': 'i', 'ị': 'i',
+      'ò': 'o', 'ó': 'o', 'ỏ': 'o', 'õ': 'o', 'ọ': 'o',
+      'ô': 'o', 'ồ': 'o', 'ố': 'o', 'ổ': 'o', 'ỗ': 'o', 'ộ': 'o',
+      'ơ': 'o', 'ờ': 'o', 'ớ': 'o', 'ở': 'o', 'ỡ': 'o', 'ợ': 'o',
+      'ù': 'u', 'ú': 'u', 'ủ': 'u', 'ũ': 'u', 'ụ': 'u',
+      'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ử': 'u', 'ữ': 'u', 'ự': 'u',
+      'ỳ': 'y', 'ý': 'y', 'ỷ': 'y', 'ỹ': 'y', 'ỵ': 'y',
+    };
+    map.forEach((k, v) => s = s.replaceAll(k, v));
+    return s;
+  }
+
+  static List<String> _filteredCities(JourneysL10n l10n, String rawQuery) {
+    final trimmed = rawQuery.trim();
+    if (trimmed.isEmpty) return _cities;
+    for (final id in _cities) {
+      if (dnaText(l10n, id) == trimmed) return _cities;
+    }
+    final q = _foldDiacritics(trimmed);
+    return [
+      for (final id in _cities)
+        if (_foldDiacritics(dnaText(l10n, id)).contains(q) ||
+            _foldDiacritics(l10n.journeys_dna_place_country).contains(q))
+          id,
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
     final l10n = JourneysL10n.of(context);
+    final cities = _filteredCities(l10n, place);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -395,11 +495,11 @@ class DnaPlacePicker extends StatelessWidget {
           label: l10n.journeys_dna_place_search,
           hint: l10n.journeys_dna_place_search,
           controller: controller,
-          leading: OurneyIcon(name: 'search', size: 20),
+          leading: OurneyIcon(name: 'map-pin', size: 20),
           onChanged: onChanged,
         ),
-        const SizedBox(height: UiSpace.md),
-        for (final id in _cities)
+        if (cities.isNotEmpty) const SizedBox(height: UiSpace.md),
+        for (final id in cities)
           Builder(
             builder: (context) {
               final name = dnaText(l10n, id);

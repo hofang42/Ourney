@@ -159,6 +159,7 @@ class WidgetJourneyItem {
     required this.heroThumbFile,
     required this.heroThumbBlurred,
     required this.weekStrip,
+    this.isSensitive = false,
   });
 
   final String id;
@@ -184,6 +185,12 @@ class WidgetJourneyItem {
   final bool heroThumbBlurred;
   final List<WidgetWeekDayItem> weekStrip;
 
+  /// True when the journey is a weight-loss or default-hidden-metric journey
+  /// (`WidgetPrivacyPolicy.isSensitiveMetricJourney`), allowing Lock Screen
+  /// widgets pinned to a non-sensitive journey to display its title in smart
+  /// mode while still redacting weight-loss titles (§B.5).
+  final bool isSensitive;
+
   Map<String, Object?> toJson() => {
     'id': id,
     'title': title,
@@ -206,6 +213,7 @@ class WidgetJourneyItem {
     if (reminderAtUtc != null) 'reminderAtUtc': reminderAtUtc,
     if (heroThumbFile != null) 'heroThumbFile': heroThumbFile,
     'heroThumbBlurred': heroThumbBlurred,
+    'isSensitive': isSensitive,
     'weekStrip': [for (final w in weekStrip) w.toJson()],
   };
 }
@@ -312,6 +320,7 @@ class WidgetLiveWindow {
     required this.totalActiveCount,
     required this.windowStartUtc,
     required this.deadlineUtc,
+    this.isSensitive = false,
   });
 
   final String windowKey;
@@ -327,6 +336,7 @@ class WidgetLiveWindow {
   final int totalActiveCount;
   final String windowStartUtc;
   final String deadlineUtc;
+  final bool isSensitive;
 
   Map<String, Object?> toJson() => {
     'windowKey': windowKey,
@@ -342,6 +352,7 @@ class WidgetLiveWindow {
     'totalActiveCount': totalActiveCount,
     'windowStartUtc': windowStartUtc,
     'deadlineUtc': deadlineUtc,
+    'isSensitive': isSensitive,
   };
 }
 
@@ -350,16 +361,20 @@ class WidgetPrivacySnapshot {
   const WidgetPrivacySnapshot({
     required this.photoMode,
     required this.redactLockScreenTitles,
+    this.explicitRedactLockScreenTitles,
     required this.liveActivityEnabled,
   });
 
   final String photoMode;
   final bool redactLockScreenTitles;
+  final bool? explicitRedactLockScreenTitles;
   final bool liveActivityEnabled;
 
   Map<String, Object?> toJson() => {
     'photoMode': photoMode,
     'redactLockScreenTitles': redactLockScreenTitles,
+    if (explicitRedactLockScreenTitles == true)
+      'explicitRedactLockScreenTitles': true,
     'liveActivityEnabled': liveActivityEnabled,
   };
 }
@@ -574,6 +589,7 @@ abstract final class WidgetSnapshotBuilder {
         privacy: WidgetPrivacySnapshot(
           photoMode: photoMode.wireName,
           redactLockScreenTitles: redactTitles,
+          explicitRedactLockScreenTitles: explicitRedactLockScreenTitles,
           liveActivityEnabled: liveActivityEnabled,
         ),
         defaultJourneyId: null,
@@ -792,6 +808,7 @@ abstract final class WidgetSnapshotBuilder {
           heroThumbFile: heroThumbFile,
           heroThumbBlurred: heroThumbBlurred,
           weekStrip: weekStrip,
+          isSensitive: WidgetPrivacyPolicy.isSensitiveMetricJourney(j),
         ),
       );
 
@@ -970,6 +987,7 @@ abstract final class WidgetSnapshotBuilder {
       privacy: WidgetPrivacySnapshot(
         photoMode: photoMode.wireName,
         redactLockScreenTitles: redactTitles,
+        explicitRedactLockScreenTitles: explicitRedactLockScreenTitles,
         liveActivityEnabled: liveActivityEnabled,
       ),
       defaultJourneyId: resolvedDefaultId,

@@ -16,6 +16,7 @@ Journey _journeyFor(String skin) => switch (skin) {
     kind: JourneyKind.group,
     emoji: '💞',
     visibility: JourneyVisibility.group,
+    maxMembers: 2,
   ),
   'flexer' => testJourney(),
   _ => testJourney(templateId: TemplateId.custom, emoji: '✨'),

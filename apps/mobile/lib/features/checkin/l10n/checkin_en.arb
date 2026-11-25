@@ -115,10 +115,13 @@
   "checkin_extraPlaceHint": "Search for a place...",
   "checkin_extraDishLabel": "Today's dish",
   "checkin_extraDishHint": "Leave empty if you like",
+  "checkin_extraMomentLabel": "Today's moment",
+  "checkin_extraMomentHint": "Leave empty if you like",
   "checkin_extraCookLabel": "Who cooked?",
   "checkin_extraYou": "You",
   "checkin_extraPartner": "Partner",
   "checkin_extraHeartsLabel": "How many hearts for this meal?",
+  "checkin_extraHeartsMomentLabel": "How many hearts for today?",
   "checkin_extraHeartsValue": "{count, plural, =1{1 heart} other{{count} hearts}}",
   "@checkin_extraHeartsValue": {
     "placeholders": {

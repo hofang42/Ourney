@@ -14,8 +14,9 @@ Duration? _noRetry(int _, Object _) => null;
 
 /// Group journeys of the caller (Groups tab), from
 /// `JourneyRepository.watchActive` filtered to `kind == group`.
-final groupJourneysProvider = StreamProvider.autoDispose<List<Journey>>(
-  (ref) => ref
+final groupJourneysProvider = StreamProvider.autoDispose<List<Journey>>((ref) {
+  ref.watch(currentUserIdProvider);
+  return ref
       .watch(journeyRepositoryProvider)
       .watchActive()
       .map(
@@ -23,9 +24,8 @@ final groupJourneysProvider = StreamProvider.autoDispose<List<Journey>>(
           for (final j in list)
             if (j.kind == JourneyKind.group) j,
         ],
-      ),
-  retry: _noRetry,
-);
+      );
+}, retry: _noRetry);
 
 /// `group_today` rows (FR-D3).
 final groupTodayProvider = StreamProvider.autoDispose

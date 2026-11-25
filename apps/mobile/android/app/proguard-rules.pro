@@ -33,6 +33,9 @@
 -keep class com.hofang42.ourney.widgets.CheckInWindowReceiver {
     public <init>();
 }
+-keep class com.hofang42.ourney.widgets.OurneyWidgetConfigureActivity {
+    public <init>();
+}
 -keep class * extends androidx.glance.appwidget.GlanceAppWidgetReceiver {
     public <init>();
 }

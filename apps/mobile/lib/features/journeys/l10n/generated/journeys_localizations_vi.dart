@@ -613,6 +613,9 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_ticketTagFlexer => 'Ra khỏi giường. Chạy tiếp.';
 
   @override
+  String get journeys_ticketTagFlexerTrain => 'Ra khỏi giường. Tập tiếp.';
+
+  @override
   String get journeys_ticketPreview => 'Xem trước vé khởi hành';
 
   @override
@@ -1032,13 +1035,13 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_dna_ghost_body =>
-      'Ảnh riêng tư này sẽ làm khung căn dáng ở những ngày tiếp theo.';
+      'Hiện khung bóng mờ trong máy ảnh để ngày nào chụp cũng khớp một góc.';
 
   @override
-  String get journeys_dna_ghost_now => 'Chụp ngay';
+  String get journeys_dna_ghost_now => 'Bật khung căn dáng';
 
   @override
-  String get journeys_dna_ghost_later => 'Để sau vậy.';
+  String get journeys_dna_ghost_later => 'Tắt đi, để bật sau.';
 
   @override
   String get journeys_dna_trophy_label => 'Tên chiếc cúp';
@@ -1047,7 +1050,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_dna_trophy_hint => 'Cúp 7.5';
 
   @override
-  String get journeys_dna_place_search => 'Tìm một nơi...';
+  String get journeys_dna_place_search => 'Nhập điểm đến...';
 
   @override
   String get journeys_dna_place_country => 'Việt Nam';
@@ -1134,6 +1137,17 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_home_introCouple => 'Hôm nay hai đứa nấu gì?';
+
+  @override
+  String get journeys_home_introCoupleSave =>
+      'Hôm nay hai đứa góp thêm được gì?';
+
+  @override
+  String get journeys_home_introCoupleLdr => 'Hôm nay hai đứa gửi gì cho nhau?';
+
+  @override
+  String get journeys_home_introCoupleCustom =>
+      'Hôm nay hai đứa có khoảnh khắc gì cùng nhau?';
 
   @override
   String get journeys_home_offlineQuiet => 'Đang lưu trên máy · sẽ đồng bộ sau';
@@ -1245,7 +1259,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_edit_previewTag => 'XEM TRƯỚC';
 
   @override
-  String get journeys_edit_hudPreview => 'HUD máy ảnh';
+  String get journeys_edit_hudPreview => 'Check-in mỗi ngày';
 
   @override
   String journeys_edit_dayOf(int day, int total) {
@@ -1411,7 +1425,7 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_edit_membersOnlyHint =>
-      'hành trình nhóm không có link công khai';
+      'có thể tạo link công khai khi hành trình kết thúc và được thành viên đồng ý';
 
   @override
   String get journeys_edit_quietLock => 'Riêng tư';
@@ -1604,6 +1618,11 @@ class JourneysL10nVi extends JourneysL10n {
   }
 
   @override
+  String journeys_home_squadChipOpen(String title) {
+    return '$title · KHÔNG GIỚI HẠN';
+  }
+
+  @override
   String journeys_home_squadToday(int done, int total) {
     return '$done/$total HÔM NAY';
   }
@@ -1615,6 +1634,9 @@ class JourneysL10nVi extends JourneysL10n {
   String journeys_home_trophyDay(int day) {
     return 'NGÀY $day';
   }
+
+  @override
+  String get journeys_home_trophyOpen => 'KHÔNG GIỚI HẠN';
 
   @override
   String journeys_home_filmRoll(int frames, int total) {
@@ -1667,6 +1689,11 @@ class JourneysL10nVi extends JourneysL10n {
   @override
   String journeys_home_flexRan(int done, int total) {
     return '$done/$total ĐÃ CHẠY';
+  }
+
+  @override
+  String journeys_home_flexTrained(int done, int total) {
+    return '$done/$total ĐÃ TẬP';
   }
 
   @override

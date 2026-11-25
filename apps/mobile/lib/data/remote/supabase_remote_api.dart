@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:ourney_core/ourney_core.dart'
+    show OurneyErrorCode, OurneyException;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'error_mapping.dart';
@@ -19,26 +21,103 @@ const Duration remoteUploadTimeout = Duration(seconds: 45);
 /// Network timeout for global sign-out before falling back to local sign-out (FS-27).
 const Duration remoteSignOutTimeout = Duration(seconds: 5);
 
+/// Maximum lifetime for reusing an already-verified recovery OTP within the
+/// same password reset/update flow after `updateUser` fails (R-2).
+const Duration verifiedRecoveryTtl = Duration(minutes: 5);
+
 /// [RemoteApi] backed by a real [SupabaseClient]. Kept deliberately thin: all
 /// decisions live in the sync/repository layer, which is tested with a fake.
 class SupabaseRemoteApi implements RemoteApi {
-  SupabaseRemoteApi(this._client, {HttpClient? httpClient})
-    : _http = httpClient ?? HttpClient();
+  SupabaseRemoteApi(
+    this._client, {
+    HttpClient? httpClient,
+    DateTime Function()? now,
+  }) : _http = httpClient ?? HttpClient(),
+       _now = now ?? DateTime.now;
 
   final SupabaseClient _client;
   final HttpClient _http;
+  final DateTime Function() _now;
   String? _termsUserId;
   int? _acceptedTermsVersion;
+  String? _verifiedRecoveryKey;
+  DateTime? _verifiedRecoveryAt;
+  bool _resetInFlight = false;
+  String? _preResetUserId;
+  final StreamController<String?> _resetRelease =
+      StreamController<String?>.broadcast();
+
+  void _clearVerifiedRecovery() {
+    _verifiedRecoveryKey = null;
+    _verifiedRecoveryAt = null;
+  }
+
+  bool _hasValidVerifiedRecovery(String recoveryKey) {
+    final key = _verifiedRecoveryKey;
+    final at = _verifiedRecoveryAt;
+    if (key == null || at == null || key != recoveryKey) return false;
+    if (_now().difference(at) > verifiedRecoveryTtl) {
+      _clearVerifiedRecovery();
+      return false;
+    }
+    return true;
+  }
+
+  void _rememberVerifiedRecovery(String recoveryKey) {
+    _verifiedRecoveryKey = recoveryKey;
+    _verifiedRecoveryAt = _now();
+  }
 
   StorageFileApi _bucket(String path) =>
       _client.storage.from(storageBucketFor(path));
 
   @override
-  String? get currentUserId => _client.auth.currentUser?.id;
+  String? get currentUserId =>
+      _resetInFlight ? _preResetUserId : _client.auth.currentUser?.id;
 
   @override
-  Stream<String?> watchUserId() =>
-      _client.auth.onAuthStateChange.map((s) => s.session?.user.id).distinct();
+  Stream<String?> watchUserId() {
+    late final StreamController<String?> controller;
+    StreamSubscription<AuthState>? authSub;
+    StreamSubscription<String?>? releaseSub;
+    controller = StreamController<String?>(
+      onListen: () {
+        authSub = _client.auth.onAuthStateChange.listen(
+          (s) {
+            if (s.event == AuthChangeEvent.signedOut) {
+              _clearVerifiedRecovery();
+            }
+            if (_resetInFlight) return;
+            if (!controller.isClosed) {
+              controller.add(s.session?.user.id);
+            }
+          },
+          onError: (Object e, StackTrace st) {
+            if (!controller.isClosed) controller.addError(e, st);
+          },
+        );
+        releaseSub = _resetRelease.stream.listen((uid) {
+          if (!controller.isClosed) {
+            controller.add(uid);
+          }
+        });
+      },
+      onCancel: () async {
+        await authSub?.cancel();
+        await releaseSub?.cancel();
+      },
+    );
+    return controller.stream.distinct();
+  }
+
+  void _releaseResetHold({bool emit = false}) {
+    final wasHeld = _resetInFlight;
+    _resetInFlight = false;
+    _preResetUserId = null;
+    if (emit && wasHeld) {
+      _resetRelease.add(_client.auth.currentUser?.id);
+    }
+  }
 
   @override
   String? get signInIdentifier {
@@ -101,6 +180,8 @@ class SupabaseRemoteApi implements RemoteApi {
           type: OtpType.email,
         )
         .timeout(remoteRequestTimeout);
+    _clearVerifiedRecovery();
+    _releaseResetHold(emit: true);
   });
 
   @override
@@ -120,6 +201,8 @@ class SupabaseRemoteApi implements RemoteApi {
               type: OtpType.sms,
             )
             .timeout(remoteRequestTimeout);
+        _clearVerifiedRecovery();
+        _releaseResetHold(emit: true);
       });
 
   @override
@@ -131,6 +214,10 @@ class SupabaseRemoteApi implements RemoteApi {
               password: password,
             )
             .timeout(remoteRequestTimeout);
+        if (res.session != null) {
+          _clearVerifiedRecovery();
+          _releaseResetHold(emit: true);
+        }
         return res.session == null;
       });
 
@@ -144,6 +231,8 @@ class SupabaseRemoteApi implements RemoteApi {
               type: OtpType.signup,
             )
             .timeout(remoteRequestTimeout);
+        _clearVerifiedRecovery();
+        _releaseResetHold(emit: true);
       });
 
   @override
@@ -155,39 +244,158 @@ class SupabaseRemoteApi implements RemoteApi {
               password: password,
             )
             .timeout(remoteRequestTimeout);
+        _clearVerifiedRecovery();
+        _releaseResetHold(emit: true);
       });
 
   @override
-  Future<void> sendPasswordReset(String email) => guardRemote(
-    () => _client.auth
+  Future<void> sendPasswordReset(String email) => guardRemote(() async {
+    _clearVerifiedRecovery();
+    await _client.auth
         .resetPasswordForEmail(email.trim())
-        .timeout(remoteRequestTimeout),
-  );
+        .timeout(remoteRequestTimeout);
+  });
 
   @override
   Future<void> resetPassword(String email, String code, String newPassword) =>
       guardRemote(() async {
         final trimmedEmail = email.trim();
-        final currentEmail = _client.auth.currentUser?.email;
-        if (currentEmail == null ||
-            currentEmail.toLowerCase() != trimmedEmail.toLowerCase()) {
-          await _client.auth
-              .verifyOTP(
-                email: trimmedEmail,
-                token: code.trim(),
-                type: OtpType.recovery,
-              )
-              .timeout(remoteRequestTimeout);
+        final trimmedCode = code.trim();
+        if (!_resetInFlight) {
+          _preResetUserId = _client.auth.currentUser?.id;
+          _resetInFlight = true;
         }
-        await _client.auth
-            .updateUser(UserAttributes(password: newPassword))
-            .timeout(remoteRequestTimeout);
+        final currentEmail = _client.auth.currentUser?.email;
+        final currentUid = _client.auth.currentUser?.id ?? '';
+        final recoveryKey =
+            '$currentUid:${trimmedEmail.toLowerCase()}:$trimmedCode';
+        final needsVerify =
+            currentUid.isEmpty ||
+            !_hasValidVerifiedRecovery(recoveryKey) ||
+            currentEmail == null ||
+            currentEmail.toLowerCase() != trimmedEmail.toLowerCase();
+        if (needsVerify) {
+          try {
+            await _client.auth
+                .verifyOTP(
+                  email: trimmedEmail,
+                  token: trimmedCode,
+                  type: OtpType.recovery,
+                )
+                .timeout(remoteRequestTimeout);
+            await _client.realtime.setAuth(
+              _client.auth.currentSession?.accessToken,
+            );
+          } on Object {
+            if (_verifiedRecoveryKey == null) {
+              _releaseResetHold();
+            }
+            rethrow;
+          }
+          final verifiedUid = _client.auth.currentUser?.id ?? '';
+          _rememberVerifiedRecovery(
+            '$verifiedUid:${trimmedEmail.toLowerCase()}:$trimmedCode',
+          );
+        }
+        try {
+          await _client.auth
+              .updateUser(UserAttributes(password: newPassword))
+              .timeout(remoteRequestTimeout);
+        } on AuthException catch (e) {
+          if (e.code != 'same_password') rethrow;
+        }
+        _clearVerifiedRecovery();
+        await _signOutOthersBestEffort();
+        _releaseResetHold(emit: true);
       });
+
+  @override
+  Future<bool> hasPassword() => guardRemote(() async {
+    if (currentUserId == null) return false;
+    final res = await _client
+        .rpc<Object?>('auth_has_password')
+        .timeout(remoteRequestTimeout);
+    return res == true;
+  });
+
+  @override
+  Future<void> updatePassword(
+    String newPassword, {
+    required String code,
+    bool signOutOthers = false,
+  }) => guardRemote(() async {
+    final email = _client.auth.currentUser?.email?.trim();
+    if (email == null || email.isEmpty) {
+      throw const OurneyException(OurneyErrorCode.invalid);
+    }
+    final trimmedCode = code.trim();
+    if (trimmedCode.isEmpty) {
+      throw const OurneyException(OurneyErrorCode.invalid);
+    }
+    final currentUid = _client.auth.currentUser?.id ?? '';
+    final recoveryKey = '$currentUid:${email.toLowerCase()}:$trimmedCode';
+    if (currentUid.isEmpty || !_hasValidVerifiedRecovery(recoveryKey)) {
+      await _client.auth
+          .verifyOTP(
+            email: email,
+            token: trimmedCode,
+            type: OtpType.recovery,
+          )
+          .timeout(remoteRequestTimeout);
+      await _client.realtime.setAuth(
+        _client.auth.currentSession?.accessToken,
+      );
+      final verifiedUid = _client.auth.currentUser?.id ?? '';
+      _rememberVerifiedRecovery(
+        '$verifiedUid:${email.toLowerCase()}:$trimmedCode',
+      );
+    }
+    await _client.auth
+        .updateUser(UserAttributes(password: newPassword))
+        .timeout(remoteRequestTimeout);
+    _clearVerifiedRecovery();
+    if (signOutOthers) {
+      await _signOutOthersBestEffort();
+    }
+  });
+
+  @override
+  Future<void> cancelPasswordFlow() async {
+    _clearVerifiedRecovery();
+    if (!_resetInFlight) return;
+    final shouldSignOut =
+        _preResetUserId == null && _client.auth.currentSession != null;
+    try {
+      if (shouldSignOut) {
+        try {
+          await _client.auth
+              .signOut(scope: SignOutScope.local)
+              .timeout(remoteSignOutTimeout);
+        } on Object {
+          // Local sign-out only clears the stored session; ignore errors.
+        }
+      }
+    } finally {
+      _releaseResetHold();
+    }
+  }
+
+  Future<void> _signOutOthersBestEffort() async {
+    try {
+      await _client.auth
+          .signOut(scope: SignOutScope.others)
+          .timeout(remoteSignOutTimeout);
+    } on Object {
+      // Best-effort revocation of other devices; keep the active session.
+    }
+  }
 
   @override
   Future<void> signOut({bool global = false}) async {
     _termsUserId = null;
     _acceptedTermsVersion = null;
+    _clearVerifiedRecovery();
+    _releaseResetHold();
     if (global) {
       try {
         await _client.auth

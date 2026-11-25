@@ -292,6 +292,7 @@ export async function handle(req: Request): Promise<Response> {
         duration_days: journey.duration_days,
         metric_name: ownerHides ? null : journey.metric_name,
         metric_unit: ownerHides ? null : journey.metric_unit,
+        layout: journey.layout ?? null,
       }
       : null,
     ...(journey.show_counts ? { like_count: likeCount ?? 0, follow_count: followCount } : {}),

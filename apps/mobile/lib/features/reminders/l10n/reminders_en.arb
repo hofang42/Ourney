@@ -25,7 +25,7 @@
   "reminders_notifBody": "{journey}: snap today's photo.",
   "reminders_alertTitle": "Your streak is about to break",
   "reminders_alertBody": "{journey}: your {count}-day streak ends at midnight. One photo keeps it going.",
-  "reminders_alertBodyAt": "{journey}: your {count}-day streak ends at {time} (journey midnight). One photo keeps it going.",
+  "reminders_alertBodyAt": "{journey}: your {count}-day streak is open until {time} (journey midnight). One photo is enough.",
   "@reminders_alertBodyAt": {
     "placeholders": {
       "journey": {

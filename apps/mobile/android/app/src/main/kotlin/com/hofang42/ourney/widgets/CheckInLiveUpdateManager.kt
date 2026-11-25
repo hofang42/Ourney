@@ -67,7 +67,14 @@ object CheckInLiveUpdateManager {
             return true
         }
 
-        val locale = (args["locale"] as? String) ?: snapshot?.locale ?: "vi"
+        val defaultLocale = if (
+            java.util.Locale.getDefault().language.lowercase(java.util.Locale.ROOT).startsWith("vi")
+        ) {
+            "vi"
+        } else {
+            "en"
+        }
+        val locale = (args["locale"] as? String) ?: snapshot?.locale ?: defaultLocale
         val redactLockScreen = resolveRedactLockScreenTitles(args, snapshot, window)
 
         postOrUpdate(
@@ -83,6 +90,8 @@ object CheckInLiveUpdateManager {
     /**
      * Resolves the Lock Screen title redaction flag from [args], [window], or
      * [snapshot]:
+     * - Sensitive journeys (`isSensitive`, `quiet`, `weightLoss`, `type-weight`)
+     *   are always redacted on the Lock Screen regardless of toggle state.
      * - Reads `redactLockScreenTitles` (spec §4.3/§4.4 name) first.
      * - Also accepts `redactTitleOnLockScreen` for backward compatibility (`[P2-1]`).
      * - Falls back to `snapshot.privacy.redactLockScreenTitles` (or `false`).
@@ -92,6 +101,7 @@ object CheckInLiveUpdateManager {
         snapshot: WidgetSnapshot?,
         window: WidgetLiveWindow? = null,
     ): Boolean {
+        if (isSensitiveLiveWindow(args, snapshot, window)) return true
         if (args != null) {
             (args["redactLockScreenTitles"] as? Boolean)?.let { return it }
             (args["redactTitleOnLockScreen"] as? Boolean)?.let { return it }
@@ -104,6 +114,34 @@ object CheckInLiveUpdateManager {
         }
         window?.redactLockScreenTitles?.let { return it }
         return snapshot?.privacy?.redactLockScreenTitles ?: false
+    }
+
+    private fun isSensitiveLiveWindow(
+        args: Map<*, *>?,
+        snapshot: WidgetSnapshot?,
+        window: WidgetLiveWindow?,
+    ): Boolean {
+        if (window?.isSensitive == true) return true
+        val nestedWindow = args?.get("liveWindow") as? Map<*, *>
+        if ((nestedWindow?.get("isSensitive") as? Boolean) == true) return true
+        if ((args?.get("isSensitive") as? Boolean) == true) return true
+        val skinId = window?.skinId
+            ?: (nestedWindow?.get("skinId") as? String)
+            ?: (args?.get("skinId") as? String)
+        val typeIcon = window?.typeIcon
+            ?: (nestedWindow?.get("typeIcon") as? String)
+            ?: (args?.get("typeIcon") as? String)
+        if (skinId == "quiet" || skinId == "quietTransformer" || skinId == "weightLoss" || typeIcon == "type-weight") {
+            return true
+        }
+        val journeyId = window?.journeyId
+            ?: (nestedWindow?.get("journeyId") as? String)
+            ?: (args?.get("journeyId") as? String)
+        val matched = journeyId?.let { id -> snapshot?.journeys?.firstOrNull { it.id == id } }
+        if (matched != null && (matched.isSensitive || matched.skinId == "quiet" || matched.typeIcon == "type-weight")) {
+            return true
+        }
+        return false
     }
 
     fun syncFromStore(context: Context, nowEpochMs: Long = System.currentTimeMillis()) {
@@ -126,7 +164,7 @@ object CheckInLiveUpdateManager {
             context = context,
             window = window,
             locale = snapshot.locale,
-            redactLockScreenTitles = snapshot.privacy.redactLockScreenTitles,
+            redactLockScreenTitles = resolveRedactLockScreenTitles(null, snapshot, window),
             nowEpochMs = nowEpochMs,
         )
     }

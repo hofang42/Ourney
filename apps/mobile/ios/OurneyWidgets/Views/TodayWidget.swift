@@ -10,17 +10,20 @@ public struct OurneyWidgetEntry: TimelineEntry {
   public let date: Date
   public let snapshot: WidgetSnapshot?
   public let state: WidgetInteractiveState
+  public let pinnedId: String?
   public let isPreview: Bool
 
   public init(
     date: Date,
     snapshot: WidgetSnapshot?,
     state: WidgetInteractiveState = WidgetInteractiveState(),
+    pinnedId: String? = nil,
     isPreview: Bool = false
   ) {
     self.date = date
     self.snapshot = snapshot
     self.state = state
+    self.pinnedId = WidgetSnapshot.normalizedPinnedId(pinnedId)
     self.isPreview = isPreview
   }
 }
@@ -28,56 +31,92 @@ public struct OurneyWidgetEntry: TimelineEntry {
 public struct OurneyTimelineProvider: TimelineProvider {
   public init() {}
 
-  public func placeholder(in context: Context) -> OurneyWidgetEntry {
-    OurneyWidgetEntry(
-      date: Date(),
-      snapshot: WidgetPreviewFixtures.sampleTodaySnapshot,
-      state: WidgetInteractiveState(),
-      isPreview: true
-    )
-  }
-
-  public func getSnapshot(in context: Context, completion: @escaping (OurneyWidgetEntry) -> Void) {
+  public static func buildSnapshotEntry(
+    isPreview: Bool,
+    pinnedId: String? = nil
+  ) -> OurneyWidgetEntry {
     let now = Date()
     let state = WidgetSnapshotStore.loadState()
+    let normalizedPinned = WidgetSnapshot.normalizedPinnedId(pinnedId)
     if let loaded = WidgetSnapshotStore.loadSnapshot(at: now) {
-      completion(OurneyWidgetEntry(date: now, snapshot: loaded, state: state, isPreview: context.isPreview))
-    } else if context.isPreview {
-      completion(
-        OurneyWidgetEntry(
-          date: now,
-          snapshot: WidgetPreviewFixtures.sampleTodaySnapshot,
-          state: state,
-          isPreview: true
-        )
+      return OurneyWidgetEntry(
+        date: now,
+        snapshot: loaded,
+        state: state,
+        pinnedId: normalizedPinned,
+        isPreview: isPreview
+      )
+    } else if isPreview {
+      return OurneyWidgetEntry(
+        date: now,
+        snapshot: WidgetPreviewFixtures.sampleTodaySnapshot,
+        state: state,
+        pinnedId: normalizedPinned,
+        isPreview: true
       )
     } else {
-      completion(OurneyWidgetEntry(date: now, snapshot: nil, state: state, isPreview: false))
+      return OurneyWidgetEntry(
+        date: now,
+        snapshot: nil,
+        state: state,
+        pinnedId: normalizedPinned,
+        isPreview: false
+      )
     }
   }
 
-  public func getTimeline(in context: Context, completion: @escaping (Timeline<OurneyWidgetEntry>) -> Void) {
+  public static func buildTimeline(pinnedId: String? = nil) -> Timeline<OurneyWidgetEntry> {
     let now = Date()
     let state = WidgetSnapshotStore.loadState()
+    let normalizedPinned = WidgetSnapshot.normalizedPinnedId(pinnedId)
     guard let baseSnapshot = WidgetSnapshotStore.loadSnapshot(at: now) else {
-      let emptyEntry = OurneyWidgetEntry(date: now, snapshot: nil, state: state, isPreview: false)
+      let emptyEntry = OurneyWidgetEntry(
+        date: now,
+        snapshot: nil,
+        state: state,
+        pinnedId: normalizedPinned,
+        isPreview: false
+      )
       let nextReload = now.addingTimeInterval(3600)
-      completion(Timeline(entries: [emptyEntry], policy: .after(nextReload)))
-      return
+      return Timeline(entries: [emptyEntry], policy: .after(nextReload))
     }
 
     // Build up to 4 zero-budget scheduled entries (now, 18:00 evening cue, 21:00 streak alert, 00:00 midnight rollover).
     let dates = baseSnapshot.scheduledTimelineDates(from: now)
     let entries: [OurneyWidgetEntry] = dates.map { entryDate in
       let evaluated = baseSnapshot.evaluated(at: entryDate)
-      return OurneyWidgetEntry(date: entryDate, snapshot: evaluated, state: state, isPreview: false)
+      return OurneyWidgetEntry(
+        date: entryDate,
+        snapshot: evaluated,
+        state: state,
+        pinnedId: normalizedPinned,
+        isPreview: false
+      )
     }
 
     let lastDate = dates.last ?? now
     let nextReload = lastDate > now
       ? lastDate.addingTimeInterval(60)
       : now.addingTimeInterval(3600)
-    completion(Timeline(entries: entries, policy: .after(nextReload)))
+    return Timeline(entries: entries, policy: .after(nextReload))
+  }
+
+  public func placeholder(in context: Context) -> OurneyWidgetEntry {
+    OurneyWidgetEntry(
+      date: Date(),
+      snapshot: WidgetPreviewFixtures.sampleTodaySnapshot,
+      state: WidgetInteractiveState(),
+      pinnedId: nil,
+      isPreview: true
+    )
+  }
+
+  public func getSnapshot(in context: Context, completion: @escaping (OurneyWidgetEntry) -> Void) {
+    completion(Self.buildSnapshotEntry(isPreview: context.isPreview))
+  }
+
+  public func getTimeline(in context: Context, completion: @escaping (Timeline<OurneyWidgetEntry>) -> Void) {
+    completion(Self.buildTimeline())
   }
 }
 
@@ -109,9 +148,18 @@ public struct TodayWidgetEntryView: View {
 
   public var body: some View {
     let snapshot = entry.snapshot
-    let locale = snapshot?.locale ?? "vi"
+    let locale = snapshot?.locale ?? ""
     let themeMode = snapshot?.themeMode ?? "system"
-    let featured = snapshot?.selectedTodayJourney(state: entry.state)
+    let cardState = WidgetSnapshot.resolveTodayCardState(
+      snapshot: snapshot,
+      pinnedId: entry.pinnedId,
+      state: entry.state
+    )
+    let featured: WidgetJourneyItem? = {
+      if case .ready(let journey) = cardState { return journey }
+      return nil
+    }()
+    let isPinned = snapshot?.isTodayJourneyPinned(entry.pinnedId) ?? false
     let theme = OurneyWidgetTheme.resolve(
       skinId: featured?.skinId,
       colorVariant: featured?.colorVariant ?? 0,
@@ -120,31 +168,76 @@ public struct TodayWidgetEntryView: View {
     )
 
     let rootDestination: URL = {
-      guard let journey = featured, !(snapshot?.isSignedOutOrEmpty ?? true) else {
-        return OurneyDeepLinks.journeys
+      switch cardState {
+      case .ready(let journey):
+        return journey.checkedInToday
+          ? OurneyDeepLinks.journey(id: journey.id)
+          : OurneyDeepLinks.capture(journeyId: journey.id)
+      case .unsynced, .signedOut:
+        return OurneyDeepLinks.syncJourneys
+      case .noJourneys:
+        return OurneyDeepLinks.newJourney
       }
-      return journey.checkedInToday
-        ? OurneyDeepLinks.journey(id: journey.id)
-        : OurneyDeepLinks.capture(journeyId: journey.id)
     }()
 
     Group {
-      if let snap = snapshot, !snap.isSignedOutOrEmpty, let journey = featured {
-        switch family {
-        case .systemMedium:
-          TodayMediumView(snapshot: snap, journey: journey, entryDate: entry.date, theme: theme)
-        case .systemLarge:
-          TodayLargeView(snapshot: snap, journey: journey, entryDate: entry.date, theme: theme)
-        default:
-          TodaySmallView(snapshot: snap, journey: journey, entryDate: entry.date, theme: theme)
+      switch cardState {
+      case .ready(let journey):
+        if let snap = snapshot {
+          switch family {
+          case .systemMedium:
+            TodayMediumView(
+              snapshot: snap,
+              journey: journey,
+              entryDate: entry.date,
+              isPinned: isPinned,
+              theme: theme
+            )
+          case .systemLarge:
+            TodayLargeView(
+              snapshot: snap,
+              journey: journey,
+              entryDate: entry.date,
+              isPinned: isPinned,
+              theme: theme
+            )
+          default:
+            TodaySmallView(
+              snapshot: snap,
+              journey: journey,
+              entryDate: entry.date,
+              isPinned: isPinned,
+              theme: theme
+            )
+          }
         }
-      } else {
+      case .unsynced:
+        OurneyEmptyWidgetView(
+          iconName: "sparkle",
+          title: WidgetL10n.unsyncedTitle(locale: locale),
+          subtitle: WidgetL10n.unsyncedSubtitle(locale: locale),
+          ctaLabel: WidgetL10n.unsyncedCta(locale: locale),
+          destination: OurneyDeepLinks.syncJourneys,
+          theme: theme,
+          isSmall: family == .systemSmall
+        )
+      case .signedOut:
+        OurneyEmptyWidgetView(
+          iconName: "lock",
+          title: WidgetL10n.signedOutTitle(locale: locale),
+          subtitle: WidgetL10n.signedOutSubtitle(locale: locale),
+          ctaLabel: WidgetL10n.signedOutCta(locale: locale),
+          destination: OurneyDeepLinks.syncJourneys,
+          theme: theme,
+          isSmall: family == .systemSmall
+        )
+      case .noJourneys:
         OurneyEmptyWidgetView(
           iconName: "journeys",
-          title: WidgetL10n.emptyTodayTitle(locale: locale),
-          subtitle: WidgetL10n.emptyTodaySubtitle(locale: locale),
-          ctaLabel: WidgetL10n.openOurney(locale: locale),
-          destination: OurneyDeepLinks.journeys,
+          title: WidgetL10n.noJourneysTitle(locale: locale),
+          subtitle: WidgetL10n.noJourneysSubtitle(locale: locale),
+          ctaLabel: WidgetL10n.noJourneysCta(locale: locale),
+          destination: OurneyDeepLinks.newJourney,
           theme: theme,
           isSmall: family == .systemSmall
         )
@@ -165,6 +258,7 @@ private struct TodaySmallView: View {
   let snapshot: WidgetSnapshot
   let journey: WidgetJourneyItem
   let entryDate: Date
+  let isPinned: Bool
   let theme: OurneyWidgetTheme
 
   var body: some View {
@@ -172,7 +266,7 @@ private struct TodaySmallView: View {
     let phase = journey.phase(at: entryDate)
     let pendingList = snapshot.journeys.filter { !$0.checkedInToday }
     let pendingIndex = (pendingList.firstIndex(where: { $0.id == journey.id }) ?? 0) + 1
-    let showCycleControl = pendingList.count >= 2 && !journey.checkedInToday
+    let showCycleControl = !isPinned && pendingList.count >= 2 && !journey.checkedInToday
     let destination = journey.checkedInToday
       ? OurneyDeepLinks.journey(id: journey.id)
       : OurneyDeepLinks.capture(journeyId: journey.id)
@@ -328,6 +422,7 @@ private struct TodayMediumView: View {
   let snapshot: WidgetSnapshot
   let journey: WidgetJourneyItem
   let entryDate: Date
+  let isPinned: Bool
   let theme: OurneyWidgetTheme
 
   var body: some View {
@@ -352,7 +447,7 @@ private struct TodayMediumView: View {
 
           Spacer(minLength: 2)
 
-          if pendingList.count >= 2 && !journey.checkedInToday {
+          if !isPinned && pendingList.count >= 2 && !journey.checkedInToday {
             TodayCycleJourneyButton(
               currentIndex: pendingIndex,
               totalPending: pendingList.count,
@@ -483,6 +578,7 @@ private struct TodayLargeView: View {
   let snapshot: WidgetSnapshot
   let journey: WidgetJourneyItem
   let entryDate: Date
+  let isPinned: Bool
   let theme: OurneyWidgetTheme
 
   var body: some View {
@@ -511,7 +607,7 @@ private struct TodayLargeView: View {
 
         Spacer()
 
-        if pendingList.count >= 2 && !journey.checkedInToday {
+        if !isPinned && pendingList.count >= 2 && !journey.checkedInToday {
           TodayCycleJourneyButton(
             currentIndex: pendingIndex,
             totalPending: pendingList.count,

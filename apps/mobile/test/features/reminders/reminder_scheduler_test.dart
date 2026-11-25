@@ -3,6 +3,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/locale_override.dart';
+import 'package:ourney/app/overlays/reminder_banner.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/reminders/data/notification_gateway.dart';
 import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
@@ -342,13 +343,45 @@ void main() {
         expect(alerts, hasLength(1));
         expect(
           alerts.single.body,
-          contains('ends at 02:00 (journey midnight)'),
+          contains('is open until 02:00 (journey midnight)'),
         );
       },
     );
   });
 
   group('ReminderLifecycleHook', () {
+    testWidgets(
+      'UX-27: streak banner fired across fireAt sets reminderBannerProvider.deadline in device timezone',
+      (tester) async {
+        final gateway = FakeNotificationGateway(granted: true);
+        final h = await reminderHarness(
+          gateway: gateway,
+          // 09:00 Asia/Tokyo (00:00Z) is already past reminderNow (03:00Z),
+          // so the next planned notification is today's 21:00 ICT streak alert (14:00Z).
+          prefs: reminderOn('j1', '09:00'),
+          locale: const Locale('en'),
+          deviceTimezone: 'Asia/Tokyo',
+        );
+        addTearDown(h.container.dispose);
+        h.checkIns.byJourney['j1'] = [reminderCheckIn('j1', today.addDays(-1))];
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: h.container,
+            child: const ReminderLifecycleHook(child: SizedBox()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.pump(const Duration(hours: 11));
+        await tester.pump();
+
+        final banner = h.container.read(reminderBannerProvider);
+        expect(banner, isNotNull);
+        expect(banner!.kind, ReminderBannerKind.streak);
+        expect(banner.deadline, '02:00');
+      },
+    );
     testWidgets('reschedules on start and on resume, routes taps', (
       tester,
     ) async {

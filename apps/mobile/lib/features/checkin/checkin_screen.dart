@@ -15,6 +15,9 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
 import '../camera/capture_services.dart' show galleryPickerProvider;
+import '../groups/data/groups_providers.dart' show groupTodayProvider;
+import '../journeys/data/journeys_providers.dart'
+    show journeyStartingWeightPrefKey;
 import '../reminders/data/reminder_scheduler.dart';
 import '../reminders/ui/reminder_permission_prompt.dart';
 import '../sharing/data/sharing_providers.dart' show shareStateProvider;
@@ -102,8 +105,12 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
 
   /// The last logged value, shown as a hint (never as text: a stale value
   /// must not be posted by accident), with the locale's decimal separator.
-  String? _lastMetricHint(CheckinL10n l10n, bool vi) {
-    final last = widget.photo?.initialMetricValue;
+  String? _lastMetricHint(CheckinL10n l10n, bool vi, String journeyId) {
+    final last =
+        widget.photo?.initialMetricValue ??
+        ref
+            .read(sharedPreferencesProvider)
+            .getDouble(journeyStartingWeightPrefKey(journeyId));
     if (last == null) return null;
     var text = last == last.roundToDouble()
         ? last.toInt().toString()
@@ -277,7 +284,15 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
       return;
     }
     final skin = personaSkinOf(journey);
+    final sport = journey.dna?['sport'] as String?;
+    final measure = journey.dna?['measure'] as String?;
+    final unit = (journey.metricUnit ?? '').trim().toLowerCase();
+    final isRun =
+        (sport == null || sport == 'run') &&
+        (measure == null || measure == 'km') &&
+        (unit.isEmpty || unit == 'km');
     if (skin == PersonaSkinId.aestheticFlexer &&
+        isRun &&
         (_extras.paceInvalid || _extras.kmInvalid)) {
       _rejectValidation(
         _extras.kmInvalid
@@ -287,7 +302,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
       );
       return;
     }
-    final extras = _extras.extrasFor(skin);
+    final extras = _extras.extrasFor(skin, isRunning: isRun);
     if (extras.validate() != null) {
       _rejectValidation(l10n.checkin_metricInvalid, targetKey: _extrasKey);
       return;
@@ -509,7 +524,16 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
             journey.publicToken!.trim().isNotEmpty) ||
         (shareState?.linkOn ?? false) ||
         (shareState?.viewers.isNotEmpty ?? false);
-    final privacy = journey.kind == JourneyKind.solo
+    final groupMembers =
+        (!ref.watch(appConfigProvider).localOnly &&
+            journey.kind == JourneyKind.group)
+        ? ref.watch(groupTodayProvider(journey.id)).value
+        : null;
+    final isAloneInGroup =
+        journey.kind == JourneyKind.group &&
+        groupMembers != null &&
+        groupMembers.length <= 1;
+    final privacy = (journey.kind == JourneyKind.solo || isAloneInGroup)
         ? isSharedSolo
               ? (UiPrivacy.link, l10n.checkin_privacyShared)
               : (UiPrivacy.private, l10n.checkin_privacyPrivate)
@@ -518,6 +542,13 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
         : (UiPrivacy.squad, l10n.checkin_privacySquad);
     // Per-skin copy of the Figma Post screens (primary label, caption label).
     final skin = personaSkinOf(journey);
+    final sport = journey.dna?['sport'] as String?;
+    final measure = journey.dna?['measure'] as String?;
+    final unit = (journey.metricUnit ?? '').trim().toLowerCase();
+    final isRun =
+        (sport == null || sport == 'run') &&
+        (measure == null || measure == 'km') &&
+        (unit.isEmpty || unit == 'km');
     final postLabel = switch (skin) {
       PersonaSkinId.memoryCollectors => l10n.checkin_postMemory,
       PersonaSkinId.minimalistHabit => l10n.checkin_postMinimal,
@@ -525,7 +556,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
     };
     final captionSemantics = switch (skin) {
       PersonaSkinId.memoryCollectors => l10n.checkin_captionLabelMemory,
-      PersonaSkinId.aestheticFlexer => l10n.checkin_captionLabelFlexer,
+      PersonaSkinId.aestheticFlexer =>
+        isRun ? l10n.checkin_captionLabelFlexer : l10n.checkin_captionLabel,
       _ => l10n.checkin_captionLabel,
     };
     final width = MediaQuery.sizeOf(context).width;
@@ -730,7 +762,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
                 child: UiTextField(
                   fieldKey: const ValueKey('checkin-metric'),
                   label: metricLabel,
-                  hint: _lastMetricHint(l10n, vi),
+                  hint: _lastMetricHint(l10n, vi, journey.id),
                   controller: _metric,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
@@ -762,6 +794,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
                 selfName: journey.coupleSelfName,
                 partnerName: journey.couplePartnerName,
                 onPickPartnerPhoto: _pickPartnerPhoto,
+                ritual: journey.dna?['ritual'] as String?,
+                isRunning: isRun,
               ),
             ),
             if (skin == PersonaSkinId.minimalistHabit) ...[

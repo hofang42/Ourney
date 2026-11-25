@@ -188,13 +188,16 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
   @override
   Widget build(BuildContext context) {
     final v = _view;
-    final skin = personaSkinForTemplate(
-      v.templateId,
-      kind: v.kind,
-      emoji: v.emoji,
-    );
+    final skin =
+        v.layout ??
+        personaSkinForTemplate(
+          v.templateId,
+          kind: v.kind,
+          emoji: v.emoji,
+        );
     return UiSkinScope(
       skinId: uiSkinIdFor(skin),
+      variant: v.color ?? 0,
       child: Builder(builder: (context) => _body(context, skin)),
     );
   }

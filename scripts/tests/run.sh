@@ -232,8 +232,9 @@ contains "$OUT" "==> Applying Auth config (OTP code emails, site_url https://our
   contains "$OUT" "==> SMTP_* not set: leaving Auth SMTP settings untouched"
 check "deploy without SMTP: prints the Auth config, PostgREST config, and untouched-SMTP lines" $? "$OUT"
 jq -e '.mailer_otp_length == 6 and .mailer_otp_exp == 3600 and .mailer_autoconfirm == true
+  and .security_update_password_require_reauthentication == true
   and .site_url == "https://ourney.tech"' "$BODY.1" > /dev/null
-check "Auth config body: 6-digit/3600 s OTP, autoconfirm true, default site_url" $? "$(head -c 300 "$BODY.1" 2> /dev/null)"
+check "Auth config body: 6-digit/3600 s OTP, autoconfirm true, secure password change true, default site_url" $? "$(head -c 300 "$BODY.1" 2> /dev/null)"
 jq -e '.db_schema == "public,graphql_public,admin"' "$BODY.2" > /dev/null
 check "PostgREST config body: exposes public, graphql_public, and admin schemas" $? "$(cat "$BODY.2" 2> /dev/null)"
 jq -e 'has("uri_allow_list") | not' "$BODY.1" > /dev/null
@@ -249,9 +250,10 @@ jq -e --rawfile m "$ROOT/supabase/templates/magic_link.html" --rawfile c "$ROOT/
 check "Auth config body: both templates carry {{ .Token }} and no ConfirmationURL" $? "template mismatch"
 jq -e '.mailer_subjects_magic_link == "Mã đăng nhập Ourney / Your Ourney sign-in code"
   and .mailer_subjects_confirmation == "Mã xác nhận Ourney / Your Ourney confirmation code"
+  and .mailer_subjects_recovery == "Mã đặt mật khẩu Ourney / Your Ourney password code"
   and .sms_otp_length == 6
   and .sms_template == "Ourney: ma xac nhan cua ban la {{ .Code }}. Khong chia se ma nay."' "$BODY.1" > /dev/null
-check "Auth config body: subjects and SMS template come from config.toml" $? "$(jq -c '[.mailer_subjects_magic_link,.mailer_subjects_confirmation,.sms_otp_length,.sms_template]' "$BODY.1" 2> /dev/null)"
+check "Auth config body: subjects and SMS template come from config.toml" $? "$(jq -c '[.mailer_subjects_magic_link,.mailer_subjects_confirmation,.mailer_subjects_recovery,.sms_otp_length,.sms_template]' "$BODY.1" 2> /dev/null)"
 AUTH_SITE_URL="https://example.org/app/" run bash "$DEPLOY"
 jq -e '.site_url == "https://example.org/app/" and (has("uri_allow_list") | not)' "$BODY.1" > /dev/null
 check "AUTH_SITE_URL overrides site_url only" $? "rc=$RC $(jq -c '[.site_url,.uri_allow_list]' "$BODY.1" 2> /dev/null)"
@@ -374,7 +376,7 @@ SUPABASE_API_URL="http://evil.example.com" run bash "$DEPLOY"
 check "Auth config: plain-http remote API URL is rejected even without SMTP" $? "rc=$RC $OUT"
 
 # Email OTP templates (static) ---------------------------------------------------------------------
-for t in magic_link confirmation; do
+for t in magic_link confirmation recovery; do
   f="$ROOT/supabase/templates/$t.html"
   grep -qF '{{ .Token }}' "$f" && ! grep -qiE 'ConfirmationURL|href|\{\{ *\.(SiteURL|TokenHash|RedirectTo)' "$f"
   check "template $t.html shows {{ .Token }} and has no link" $? "$f"

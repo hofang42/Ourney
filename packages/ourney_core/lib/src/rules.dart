@@ -5,12 +5,14 @@ const int maxGroupMembers = 10;
 /// A couple journey is a group of exactly two.
 const int coupleMembers = 2;
 
-/// `max_members` of a new journey: 1 solo, 2 for a couple (both names set,
-/// blank names count as unset like `create_journey`), else [maxGroupMembers].
+/// `max_members` of a new journey: 1 solo, 2 for a couple (both names set
+/// or explicit `coupleRituals` layout), else [maxGroupMembers].
 int maxMembersForDraft(JourneyDraft d) {
   if (d.kind == JourneyKind.solo) return 1;
   final self = d.coupleSelfName?.trim() ?? '';
-  return self.isNotEmpty ? coupleMembers : maxGroupMembers;
+  return self.isNotEmpty || d.layout == PersonaSkinId.coupleRituals
+      ? coupleMembers
+      : maxGroupMembers;
 }
 
 /// iOS keeps at most 64 pending local notifications per app.

@@ -158,7 +158,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reminderBanner_daily_couple => 'You two, it\'s time.';
 
   @override
-  String get reminderBanner_daily_flexer => 'TIME. GO RUN.';
+  String get reminderBanner_daily_flexer => 'TIME. GO TRAIN.';
 
   @override
   String reminderBanner_daily_minimal(int day) {

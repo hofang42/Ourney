@@ -6,8 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/account_reset.dart';
 import 'package:ourney/app/overlays/reminder_banner.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/features/auth/auth_providers.dart';
 import 'package:ourney/features/feedback/data/feedback_providers.dart';
 import 'package:ourney/features/journeys/data/create_progress.dart';
+import 'package:ourney/features/journeys/data/journeys_providers.dart'
+    show journeyGhostGuidePrefKey, journeyStartingWeightPrefKey;
 import 'package:ourney/features/onboarding/onboarding_providers.dart';
 import 'package:ourney/features/profile/settings_providers.dart';
 import 'package:ourney/features/reminders/data/notification_gateway.dart';
@@ -55,12 +58,16 @@ void main() {
       ),
       FeedbackPrefs.cacheFor('user-a', mineOnly: false): '[{"id":"req-1"}]',
       FeedbackPrefs.cacheFor('user-a', mineOnly: true): '[{"id":"req-2"}]',
+      AuthMethodPrefs.hasPasswordKeyFor('user-a'): true,
       ActiveJourneyId.prefsKey: journeyId,
       CreateProgressPrefs.key: 3,
       ReminderPrefs.journey(journeyId): '{"on":true,"time":"20:00"}',
+      journeyStartingWeightPrefKey(journeyId): 68.4,
+      journeyGhostGuidePrefKey(journeyId): true,
       ReminderPrefs.streakAlerts: false,
       ReminderPrefs.promptOffered: true,
       // Device settings survive.
+      AuthMethodPrefs.lastMethodKey: 'password',
       ThemeModeController.prefsKey: 'dark',
       OnboardingComplete.prefsKey: true,
       ReminderPrefs.permissionAsked: true,
@@ -136,12 +143,30 @@ void main() {
       prefs.containsKey(FeedbackPrefs.cacheFor('user-a', mineOnly: true)),
       isFalse,
     );
+    expect(
+      prefs.containsKey(AuthMethodPrefs.hasPasswordKeyFor('user-a')),
+      isFalse,
+    );
+    expect(container.read(hasPasswordProvider), isFalse);
+    expect(
+      prefs.getString(AuthMethodPrefs.lastMethodKey),
+      'password',
+      reason: 'device-scoped remembered sign-in method survives sign-out',
+    );
     expect(container.read(activeJourneyIdProvider), isNull);
     expect(container.read(createProgressProvider), isNull);
     expect(container.read(reminderSettingsProvider), isEmpty);
     expect(container.read(streakAlertsEnabledProvider), isTrue);
     expect(container.read(reminderBannerProvider), isNull);
     expect(prefs.containsKey(ReminderPrefs.promptOffered), isFalse);
+    expect(
+      prefs.containsKey(journeyStartingWeightPrefKey(journeyId)),
+      isFalse,
+    );
+    expect(
+      prefs.containsKey(journeyGhostGuidePrefKey(journeyId)),
+      isFalse,
+    );
     expect(gateway.scheduled, isEmpty, reason: 'old reminders cancelled');
 
     expect(prefs.getString(ThemeModeController.prefsKey), 'dark');

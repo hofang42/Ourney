@@ -132,14 +132,14 @@ class AuthL10nVi extends AuthL10n {
   String get auth_useCode => 'Dùng mã thay thế';
 
   @override
-  String get auth_forgot => 'Quên mật khẩu?';
+  String get auth_forgot => 'Quên hoặc chưa đặt mật khẩu?';
 
   @override
-  String get auth_resetTitle => 'đặt lại mật khẩu.';
+  String get auth_resetTitle => 'đặt mật khẩu mới.';
 
   @override
   String get auth_resetSubtitle =>
-      'Nhập email, Ourney gửi mã 6 số để đặt mật khẩu mới.';
+      'Nhập email, Ourney gửi mã 6 số để bạn đặt mật khẩu.';
 
   @override
   String get auth_resetConfirm => 'Đặt mật khẩu';
@@ -149,7 +149,10 @@ class AuthL10nVi extends AuthL10n {
 
   @override
   String get auth_errorWrongPassword =>
-      'Sai mật khẩu. Thử lại hoặc đăng nhập bằng mã.';
+      'Mật khẩu chưa đúng, hoặc tài khoản này chưa đặt mật khẩu.';
+
+  @override
+  String get auth_sendCodeForEmail => 'Gửi mã đăng nhập cho email này';
 
   @override
   String get auth_errorSendFailed => 'Chưa gửi được mã. Thử lại sau ít phút.';

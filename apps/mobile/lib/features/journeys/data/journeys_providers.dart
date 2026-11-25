@@ -24,6 +24,26 @@ const String lastJourneyPrefsKey = 'camera.lastJourneyId';
 /// [lastJourneyPrefsKey]).
 const String captureJourneyParam = 'journeyId';
 
+/// Per-journey starting weight (kg) chosen during the weight-loss onboarding
+/// wizard. Kept in local preferences so it stays private to this device
+/// (`0012_journey_edit.sql`: `journeys.dna` is readable by every member).
+const String journeyStartingWeightPrefPrefix = 'journeys.startingWeight.';
+
+String journeyStartingWeightPrefKey(String journeyId) =>
+    '$journeyStartingWeightPrefPrefix$journeyId';
+
+/// Per-journey preference for the camera's day-1 ghost alignment guide.
+const String journeyGhostGuidePrefPrefix = 'camera.ghostGuide.';
+
+String journeyGhostGuidePrefKey(String journeyId) =>
+    '$journeyGhostGuidePrefPrefix$journeyId';
+
+/// True when [key] is a per-journey local preference (starting weight or
+/// ghost alignment guide) that must be wiped on sign-out / account reset.
+bool isPerJourneyAccountPrefKey(String key) =>
+    key.startsWith(journeyStartingWeightPrefPrefix) ||
+    key.startsWith(journeyGhostGuidePrefPrefix);
+
 /// Repository streams must not retry on their own: the repositories already
 /// handle offline/sync, and retry timers would leak into widget tests.
 Duration? _noRetry(int _, Object _) => null;
@@ -139,6 +159,7 @@ Journey settleJourney(Ref ref, Journey j, DateTime now) {
 /// repository still lists). The database stream is subscribed once; the clock
 /// only re-maps its last value.
 final journeysListProvider = StreamProvider.autoDispose<List<Journey>>((ref) {
+  ref.watch(currentUserIdProvider);
   return mapWithNow(
     ref,
     ref.watch(journeyRepositoryProvider).watchActive(),
@@ -147,17 +168,19 @@ final journeysListProvider = StreamProvider.autoDispose<List<Journey>>((ref) {
 }, retry: _noRetry);
 
 /// Journeys the caller archived on this device (Hub shelf "Archived").
-final archivedJourneysProvider = StreamProvider.autoDispose<List<Journey>>(
-  (ref) => ref.watch(journeyRepositoryProvider).watchArchived(),
-  retry: _noRetry,
-);
+final archivedJourneysProvider = StreamProvider.autoDispose<List<Journey>>((
+  ref,
+) {
+  ref.watch(currentUserIdProvider);
+  return ref.watch(journeyRepositoryProvider).watchArchived();
+}, retry: _noRetry);
 
 /// Ids of the journeys the caller pinned (per-user, also local-only). The
 /// list provider already orders pinned journeys first.
-final pinnedJourneyIdsProvider = StreamProvider.autoDispose<Set<String>>(
-  (ref) => ref.watch(journeyRepositoryProvider).watchPinnedJourneyIds(),
-  retry: _noRetry,
-);
+final pinnedJourneyIdsProvider = StreamProvider.autoDispose<Set<String>>((ref) {
+  ref.watch(currentUserIdProvider);
+  return ref.watch(journeyRepositoryProvider).watchPinnedJourneyIds();
+}, retry: _noRetry);
 
 final journeyByIdProvider = StreamProvider.autoDispose.family<Journey?, String>(
   (ref, id) => mapWithNow(
@@ -169,10 +192,10 @@ final journeyByIdProvider = StreamProvider.autoDispose.family<Journey?, String>(
 );
 
 final myMembershipProvider = StreamProvider.autoDispose
-    .family<Membership?, String>(
-      (ref, id) => ref.watch(journeyRepositoryProvider).watchMyMembership(id),
-      retry: _noRetry,
-    );
+    .family<Membership?, String>((ref, id) {
+      ref.watch(currentUserIdProvider);
+      return ref.watch(journeyRepositoryProvider).watchMyMembership(id);
+    }, retry: _noRetry);
 
 /// The caller's own check-ins in a journey. Local-only mode has no user id;
 /// then the membership's user id is used (or every check-in, which in

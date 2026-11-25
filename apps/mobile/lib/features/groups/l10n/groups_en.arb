@@ -294,6 +294,26 @@
     }
   },
   "groups_flexerPending": "NOT YET",
+  "groups_flexerTrainedTitle": "{done}/{total} DONE",
+  "@groups_flexerTrainedTitle": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_flexerTrainedDone": "Done · {time}",
+  "@groups_flexerTrainedDone": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_flexerTrainedPending": "NOT YET",
   "groups_minimalTitle": "{done}/{total} DONE",
   "@groups_minimalTitle": {
     "placeholders": {

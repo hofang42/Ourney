@@ -521,6 +521,18 @@ abstract class CheckinL10n {
   /// Post screen per-skin input.
   ///
   /// In vi, this message translates to:
+  /// **'Khoảnh khắc hôm nay'**
+  String get checkin_extraMomentLabel;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Để trống cũng được'**
+  String get checkin_extraMomentHint;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
   /// **'Ai nấu?'**
   String get checkin_extraCookLabel;
 
@@ -541,6 +553,12 @@ abstract class CheckinL10n {
   /// In vi, this message translates to:
   /// **'Bữa này mấy tim?'**
   String get checkin_extraHeartsLabel;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay mấy tim?'**
+  String get checkin_extraHeartsMomentLabel;
 
   /// No description provided for @checkin_extraHeartsValue.
   ///

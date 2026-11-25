@@ -8,10 +8,10 @@ import SwiftUI
 public enum WidgetL10n {
   public static func isEnglish(_ locale: String?) -> Bool {
     if let raw = locale?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty {
-      return raw.lowercased().hasPrefix("en")
+      return !raw.lowercased().hasPrefix("vi")
     }
-    let preferred = Locale.preferredLanguages.first ?? "vi"
-    return preferred.lowercased().hasPrefix("en")
+    let preferred = Locale.preferredLanguages.first ?? "en"
+    return !preferred.lowercased().hasPrefix("vi")
   }
 
   public static func tr(_ key: String) -> LocalizedStringKey {
@@ -109,7 +109,62 @@ public enum WidgetL10n {
     isEnglish(locale) ? "View squad" : "Xem nhóm"
   }
 
-  // MARK: - Empty States (Including Free Apple ID Sideload Fallback — O2)
+  // MARK: - Empty States (Including Unsynced, SignedOut, NoJourneys, SoloOnly — §A.3 & Rank 5)
+
+  public static func unsyncedTitle(locale: String) -> String {
+    isEnglish(locale) ? "Tap to sync your journeys" : "Chạm để đồng bộ hành trình"
+  }
+
+  public static func unsyncedSubtitle(locale: String) -> String {
+    isEnglish(locale)
+      ? "Open Ourney once to load your active journeys."
+      : "Mở Ourney 1 lần để tải dữ liệu lên widget."
+  }
+
+  public static func unsyncedCta(locale: String) -> String {
+    isEnglish(locale) ? "Sync now" : "Đồng bộ ngay"
+  }
+
+  public static func unsyncedLockScreenStatus(locale: String) -> String {
+    isEnglish(locale) ? "Tap to sync" : "Chạm để đồng bộ"
+  }
+
+  public static func signedOutTitle(locale: String) -> String {
+    isEnglish(locale) ? "Sign in to Ourney" : "Đăng nhập Ourney"
+  }
+
+  public static func signedOutSubtitle(locale: String) -> String {
+    isEnglish(locale)
+      ? "Sign in to view your streaks & check-ins."
+      : "Đăng nhập để xem chuỗi ngày & tiến độ."
+  }
+
+  public static func signedOutCta(locale: String) -> String {
+    isEnglish(locale) ? "Sign in" : "Đăng nhập"
+  }
+
+  public static func noJourneysTitle(locale: String) -> String {
+    isEnglish(locale) ? "Start your first journey" : "Bắt đầu hành trình đầu tiên"
+  }
+
+  public static func noJourneysSubtitle(locale: String) -> String {
+    isEnglish(locale)
+      ? "One photo a day to build your story."
+      : "Mỗi ngày một tấm ảnh lưu giữ kỷ niệm."
+  }
+
+  public static func noJourneysCta(locale: String) -> String {
+    isEnglish(locale) ? "Create journey" : "Tạo hành trình"
+  }
+
+  public static func soloOnlySquadSubtitle(soloCount: Int, locale: String) -> String {
+    let safeCount = max(soloCount, 1)
+    if isEnglish(locale) {
+      let noun = safeCount == 1 ? "1 solo journey" : "\(safeCount) solo journeys"
+      return "You have \(noun) — start or join a Squad, or use the Today widget."
+    }
+    return "Bạn có \(safeCount) hành trình cá nhân — tạo nhóm mới hoặc dùng widget Hôm nay."
+  }
 
   public static func emptyTodayTitle(locale: String) -> String {
     isEnglish(locale) ? "Ready for Day 1?" : "Bắt đầu hành trình mới"
@@ -135,10 +190,69 @@ public enum WidgetL10n {
     isEnglish(locale) ? "Open Ourney" : "Mở Ourney"
   }
 
+  // MARK: - Configurable Widget Entity Picker Copy (§B.2, §B.4)
+
+  public static func autoJourneyOptionTitle(locale: String) -> String {
+    isEnglish(locale) ? "Automatic (Recommended)" : "Tự động (Đề xuất)"
+  }
+
+  public static func autoJourneyOptionSubtitle(locale: String) -> String {
+    isEnglish(locale)
+      ? "Auto: Next pending today or featured streak"
+      : "Tự động: hành trình cần chụp hôm nay"
+  }
+
+  public static func autoSquadOptionTitle(locale: String) -> String {
+    isEnglish(locale) ? "Automatic (Recommended)" : "Tự động (Đề xuất)"
+  }
+
+  public static func autoSquadOptionSubtitle(locale: String) -> String {
+    isEnglish(locale)
+      ? "Auto: Active squad or couple today"
+      : "Tự động: nhóm cần chụp hôm nay"
+  }
+
+  public static func journeyEntitySubtitle(
+    dayNumber: Int,
+    totalDays: Int?,
+    streak: Int,
+    locale: String
+  ) -> String {
+    let en = isEnglish(locale)
+    let dayText: String
+    if let total = totalDays, total > 0 {
+      dayText = en ? "Day \(dayNumber)/\(total)" : "Ngày \(dayNumber)/\(total)"
+    } else {
+      dayText = en ? "Day \(dayNumber)" : "Ngày \(dayNumber)"
+    }
+    let streakText = en ? "\(streak)d" : "Chuỗi \(streak) ngày"
+    return "\(dayText) · \(streakText)"
+  }
+
+  public static func squadEntitySubtitle(
+    doneCount: Int,
+    memberCount: Int,
+    dayNumber: Int,
+    locale: String
+  ) -> String {
+    let en = isEnglish(locale)
+    let total = max(memberCount, doneCount)
+    if en {
+      return "Day \(dayNumber) · \(doneCount)/\(total) today"
+    }
+    return "Ngày \(dayNumber) · \(doneCount)/\(total) hôm nay"
+  }
+
+  public static func archivedEntityFallbackSubtitle(locale: String) -> String {
+    isEnglish(locale)
+      ? "Falls back to Automatic when a pinned journey ends"
+      : "Tự động chuyển sang hành trình đang hoạt động"
+  }
+
   // MARK: - Lock Screen & Live Activity Copy
 
   public static func lockScreenRedactedTitle(locale: String) -> String {
-    isEnglish(locale) ? "Ourney Journey" : "Hành trình Ourney"
+    "Ourney"
   }
 
   public static func lockScreenRemaining(pending: Int, locale: String) -> String {

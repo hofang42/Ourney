@@ -379,29 +379,34 @@ void main() {
     });
 
     testWidgets(
-      'couple: names are stored in their own fields, not in the title',
+      'couple: names are stored in their own fields, not in the title, and WhoStep is skipped (UX-04)',
       (tester) async {
         final h = await _open(tester);
-        await _pick(tester, 'template-couple');
+        await _tap(tester, 'template-couple');
+        await _tap(tester, 'dna-choice-ritual-cook');
         await _tap(tester, 'create-next');
-        expect(
-          tester.widget<CreateChoiceCard>(_key('journey-kind-couple')).selected,
-          isTrue,
-        );
-        await tester.enterText(_key('journey-couple-left'), 'An');
-        await tester.enterText(_key('journey-couple-right'), 'Bình');
+        await tester.enterText(_key('dna-name-left'), 'An');
+        await tester.enterText(_key('dna-name-right'), 'Bình');
         await tester.pumpAndSettle();
         await _tap(tester, 'create-next');
+        await _tap(tester, 'dna-choice-side-right');
+        await _tap(tester, 'create-next');
+        // Step 2 detail form; Next skips WhoStep (step 3) directly to Rhythm (step 4).
+        await _tap(tester, 'create-next');
+        expect(_key('journey-couple-left'), findsNothing);
+        expect(_stepLabel(tester), 'Step 4/5');
         await _tap(tester, 'create-next');
         final ticket = tester.widget<DepartureTicket>(
           find.byType(DepartureTicket),
         );
-        expect(ticket.leftName, 'An');
-        expect(ticket.rightName, 'Bình');
+        // side: 'right' puts self ('An') on the right and partner ('Bình') on the left.
+        expect(ticket.leftName, 'Bình');
+        expect(ticket.rightName, 'An');
         await _tap(tester, 'journey-create');
         final draft = h.journeys.created.single;
         expect(draft.coupleSelfName, 'An');
         expect(draft.couplePartnerName, 'Bình');
+        expect(draft.dna?['side'], 'right');
         expect(draft.title, isNot(contains('&')));
         expect(draft.emoji, '💞');
       },
@@ -595,11 +600,6 @@ void main() {
           expect(tester.element(_key('journeys-create-flow')).ui.isDark, dark);
           await _pick(tester, 'template-couple');
           expect(tester.takeException(), isNull);
-          await _tap(tester, 'create-next');
-          expect(tester.takeException(), isNull);
-          await tester.enterText(_key('journey-couple-left'), 'An');
-          await tester.enterText(_key('journey-couple-right'), 'Bình');
-          await tester.pumpAndSettle();
           for (var i = 0; i < 2; i++) {
             await _tap(tester, 'create-next');
             expect(tester.takeException(), isNull);
@@ -871,6 +871,66 @@ void _dnaGroup() {
         await _tap(tester, 'journey-create');
         expect(h.journeys.created.single.kind, JourneyKind.group);
         expect(invites.calls, ['send:${h.journeys.journeys.last.id}']);
+      },
+    );
+
+    testWidgets(
+      'weight loss: 0.1 kg precision and ghost guide preference are persisted on device (UX-02)',
+      (tester) async {
+        final h = await _open(tester);
+        await _tap(tester, 'template-weight_loss');
+        await _tap(tester, 'dna-choice-goal-lose');
+        await _tap(tester, 'create-next');
+        expect(find.text('70'), findsOneWidget);
+        await _tap(tester, 'dna-weight-dec');
+        expect(find.text('69.9'), findsOneWidget);
+        await _tap(tester, 'create-next');
+        // Tapping "Keep it off for now." sets ghost guide preference to false.
+        await _tap(tester, 'dna-ghost-later');
+        await finish(tester);
+        final prefs = h.container.read(sharedPreferencesProvider);
+        expect(
+          prefs.getDouble(journeyStartingWeightPrefKey('new-1')),
+          closeTo(69.9, 0.01),
+        );
+        expect(prefs.getBool(journeyGhostGuidePrefKey('new-1')), isFalse);
+      },
+    );
+
+    testWidgets(
+      'weight loss: skipping starting weight does not persist a default 70 kg (UX-02)',
+      (tester) async {
+        final h = await _open(tester);
+        await _tap(tester, 'template-weight_loss');
+        await _tap(tester, 'dna-choice-goal-lose');
+        await _tap(tester, 'create-next');
+        await _tap(tester, 'dna-weight-skip');
+        // Tapping primary CTA on ghost page enables the ghost guide.
+        await _tap(tester, 'create-next');
+        await finish(tester);
+        final prefs = h.container.read(sharedPreferencesProvider);
+        expect(prefs.getDouble(journeyStartingWeightPrefKey('new-1')), isNull);
+        expect(prefs.getBool(journeyGhostGuidePrefKey('new-1')), isTrue);
+      },
+    );
+
+    testWidgets(
+      'travel: typing a custom destination filters non-matching preset cities (UX-23)',
+      (tester) async {
+        await _open(tester);
+        await _tap(tester, 'template-travel');
+        expect(_key('dna-place_dalat'), findsOneWidget);
+        expect(_key('dna-place_hoian'), findsOneWidget);
+        expect(_key('dna-place_phuquoc'), findsOneWidget);
+        await tester.enterText(_key('dna-place-field'), 'Da');
+        await tester.pumpAndSettle();
+        expect(_key('dna-place_dalat'), findsOneWidget);
+        expect(_key('dna-place_hoian'), findsNothing);
+        await tester.enterText(_key('dna-place-field'), 'Tokyo');
+        await tester.pumpAndSettle();
+        expect(_key('dna-place_dalat'), findsNothing);
+        expect(_key('dna-place_hoian'), findsNothing);
+        expect(_key('dna-place_phuquoc'), findsNothing);
       },
     );
   });

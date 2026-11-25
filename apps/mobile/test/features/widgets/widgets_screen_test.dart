@@ -1,11 +1,16 @@
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, debugDefaultTargetPlatformOverride;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/locale_override.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/features/groups/data/groups_providers.dart'
+    show groupCheckInsProvider, groupTodayProvider;
 import 'package:ourney/features/widgets/data/widget_bridge_gateway.dart';
 import 'package:ourney/features/widgets/data/widget_sync_controller.dart';
 import 'package:ourney/features/widgets/domain/widget_privacy.dart';
+import 'package:ourney/ui/components/ourney_icons.dart' show OurneyIcon;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
@@ -194,6 +199,235 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('widgets.'), findsOneWidget);
       _expectNoRenderOverflowsOrTruncations(tester);
+    },
+  );
+
+  testWidgets(
+    'UX-26: Day 1 solo journey shows real 0-day streak (no fake 6-day green '
+    'strip), and Squad preview shows localized sample when no group journey exists '
+    'or real members when a group journey exists',
+    (tester) async {
+      final now = DateTime.now();
+      final today = LocalDate(now.year, now.month, now.day);
+      final fakeBridge = FakeWidgetBridgeGateway();
+      final soloJourneys = FakeJourneyRepository(
+        journeys: [
+          testJourney(
+            id: 'j-solo-day1',
+            title: 'Solo Reading Day 1',
+            kind: JourneyKind.solo,
+            startDate: today,
+            durationDays: 30,
+          ),
+        ],
+      );
+
+      final c = await pumpOurneyApp(
+        tester,
+        overrides: [
+          journeyRepositoryProvider.overrideWithValue(soloJourneys),
+          widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
+        ],
+      );
+
+      await c.read(localeOverrideProvider.notifier).set(const Locale('en'));
+      await goTo(tester, c, AppRoutes.widgets);
+
+      // 1. Today preview for a real Day 1 solo journey with 0 check-ins:
+      //    no sample badge, streak is '0', and 0 check icons in the 7-day strip.
+      expect(byKey('widgets-preview-sample-badge'), findsNothing);
+      expect(
+        find.descendant(
+          of: byKey('widgets-preview-today-surface'),
+          matching: find.text('0'),
+        ),
+        findsOneWidget,
+      );
+      final todayChecks = tester
+          .widgetList<OurneyIcon>(
+            find.descendant(
+              of: byKey('widgets-preview-today-surface'),
+              matching: find.byType(OurneyIcon),
+            ),
+          )
+          .where((icon) => icon.name == 'check');
+      expect(
+        todayChecks,
+        isEmpty,
+        reason: 'Day 1 journey with 0 check-ins must not render 6 fake checkmarks',
+      );
+
+      // 2. Streak preview for the real Day 1 solo journey: shows 0-day streak.
+      await tester.tap(byKey('widgets-preview-tab-streak'));
+      await tester.pumpAndSettle();
+      expect(byKey('widgets-preview-sample-badge'), findsNothing);
+      expect(find.text('0-day streak'), findsOneWidget);
+
+      // 3. Squad preview when the user only has a Solo journey:
+      //    must NOT overlay the Solo journey's title onto fake squad members;
+      //    must show the sample badge, sample title, and localized 'You' (not 'Bạn').
+      await tester.tap(byKey('widgets-preview-tab-squad'));
+      await tester.pumpAndSettle();
+      expect(byKey('widgets-preview-sample-badge'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: byKey('widgets-preview-squad-surface'),
+          matching: find.text('30-Day IELTS Study'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: byKey('widgets-preview-squad-surface'),
+          matching: find.text('Solo Reading Day 1'),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: byKey('widgets-preview-squad-surface'),
+          matching: find.text('You'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: byKey('widgets-preview-squad-surface'),
+          matching: find.text('Bạn'),
+        ),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'UX-26: Squad preview displays real group journey members and counts when '
+    'an active group journey exists',
+    (tester) async {
+      final now = DateTime.now();
+      final today = LocalDate(now.year, now.month, now.day);
+      final fakeBridge = FakeWidgetBridgeGateway();
+      final groupJourney = testJourney(
+        id: 'j-group-1',
+        title: 'Morning Coding Squad',
+        kind: JourneyKind.group,
+        startDate: today,
+        durationDays: 30,
+      );
+      final journeys = FakeJourneyRepository(journeys: [groupJourney]);
+      final realMembers = [
+        MemberToday(
+          userId: 'u-1',
+          displayName: 'Alice',
+          role: MemberRole.owner,
+          currentStreak: 4,
+          todayCheckIn: CheckIn(
+            id: 'c-alice',
+            journeyId: 'j-group-1',
+            userId: 'u-1',
+            localDate: today,
+            capturedAt: DateTime.utc(today.year, today.month, today.day, 8),
+            photoPath: 'checkins/j-group-1/u-1/c.jpg',
+            thumbPath: 'checkins/j-group-1/u-1/c_t.jpg',
+          ),
+        ),
+        const MemberToday(
+          userId: 'u-2',
+          displayName: 'Bob',
+          role: MemberRole.member,
+          currentStreak: 2,
+        ),
+      ];
+
+      final c = await pumpOurneyApp(
+        tester,
+        config: testBackendConfig,
+        auth: RecordingAuthRepository(userId: 'u-1'),
+        overrides: [
+          profileRepositoryProvider.overrideWithValue(
+            FakeProfileRepository(aliceProfile),
+          ),
+          journeyRepositoryProvider.overrideWithValue(journeys),
+          widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
+          groupTodayProvider('j-group-1').overrideWith(
+            (ref) => Stream.value(realMembers),
+          ),
+          groupCheckInsProvider('j-group-1').overrideWith(
+            (ref) => Stream.value(const <CheckIn>[]),
+          ),
+        ],
+      );
+
+      await c.read(localeOverrideProvider.notifier).set(const Locale('en'));
+      await goTo(tester, c, AppRoutes.widgets);
+      await tester.tap(byKey('widgets-preview-tab-squad'));
+      await tester.pumpAndSettle();
+
+      expect(byKey('widgets-preview-sample-badge'), findsNothing);
+      expect(
+        find.descendant(
+          of: byKey('widgets-preview-squad-surface'),
+          matching: find.text('Morning Coding Squad'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('1/2 checked in today'), findsOneWidget);
+      expect(find.text('Alice'), findsOneWidget);
+      expect(find.text('Bob'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'UX-40: WidgetsScreen uses platform-correct terminology on Android vs iOS',
+    (tester) async {
+      try {
+        // 1. Android: shows Live Updates & status-bar countdown, no Apple terms.
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+        final c = await pumpOurneyApp(tester);
+        await c.read(localeOverrideProvider.notifier).set(const Locale('en'));
+        await goTo(tester, c, AppRoutes.widgets);
+
+        expect(
+          find.text('Live Updates & status-bar countdown'),
+          findsOneWidget,
+        );
+        expect(
+          find.text(
+            'On the Lock Screen, live updates show "Ourney" instead of specific journey names.',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.text('1. Touch and hold your Home Screen'),
+          findsOneWidget,
+        );
+        expect(find.textContaining('Dynamic Island'), findsNothing);
+        expect(find.textContaining('Live Activity'), findsNothing);
+        expect(find.textContaining('Live Activities'), findsNothing);
+        expect(find.textContaining('Lock Screen widgets'), findsNothing);
+
+        // 2. iOS: shows Live Activity & Dynamic Island, no Android launcher terms.
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        await c.read(localeOverrideProvider.notifier).set(const Locale('vi'));
+        await tester.pumpAndSettle();
+        await c.read(localeOverrideProvider.notifier).set(const Locale('en'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Live Activity & check-in window countdown'),
+          findsOneWidget,
+        );
+        expect(
+          find.text(
+            'On the Lock Screen, widgets and Live Activities show "Ourney" instead of specific journey names.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.textContaining('Dynamic Island'), findsOneWidget);
+        expect(find.textContaining('launcher'), findsNothing);
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
     },
   );
 }

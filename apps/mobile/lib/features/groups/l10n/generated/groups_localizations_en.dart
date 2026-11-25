@@ -538,6 +538,19 @@ class GroupsL10nEn extends GroupsL10n {
   String get groups_flexerPending => 'NOT YET';
 
   @override
+  String groups_flexerTrainedTitle(int done, int total) {
+    return '$done/$total DONE';
+  }
+
+  @override
+  String groups_flexerTrainedDone(String time) {
+    return 'Done · $time';
+  }
+
+  @override
+  String get groups_flexerTrainedPending => 'NOT YET';
+
+  @override
   String groups_minimalTitle(int done, int total) {
     return '$done/$total DONE';
   }

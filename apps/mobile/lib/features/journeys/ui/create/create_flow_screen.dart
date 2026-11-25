@@ -98,6 +98,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   /// Step-2 "DNA" question page; equal to the question count = the form.
   int _dnaPage = 0;
   final Map<String, Object> _dna = {};
+  bool _weightSkipped = false;
   CreateTypeOption? _option;
   JourneyForm? _form;
   CreateWho _who = CreateWho.solo;
@@ -205,6 +206,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       _start = null;
       _dnaPage = 0;
       _dna.clear();
+      _weightSkipped = false;
       _trophy.clear();
       _place.clear();
       _habit.clear();
@@ -240,7 +242,6 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       personaSkinForTemplate(
         form.template.id,
         kind: form.kind,
-        emoji: form.emoji,
       ),
     );
   }
@@ -311,7 +312,8 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     }
     setState(() {
       _direction = 1;
-      _step = (_step + 1).clamp(0, _steps - 1);
+      final next = (_step == 1 && (_option?.isCouple ?? false)) ? 3 : _step + 1;
+      _step = next.clamp(0, _steps - 1);
     });
   }
 
@@ -327,7 +329,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     } else {
       setState(() {
         _direction = -1;
-        _step -= 1;
+        _step = (_step == 3 && (_option?.isCouple ?? false)) ? 1 : _step - 1;
       });
     }
   }
@@ -425,6 +427,19 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       );
       // The journey exists: the saved draft must not resurrect it (U8).
       unawaited(progress.clear());
+      final prefs = ref.read(sharedPreferencesProvider);
+      if (!_weightSkipped && _dna['weight'] is num) {
+        await prefs.setDouble(
+          journeyStartingWeightPrefKey(journey.id),
+          (_dna['weight'] as num).toDouble(),
+        );
+      }
+      if (_dna['ghostRequested'] is bool) {
+        await prefs.setBool(
+          journeyGhostGuidePrefKey(journey.id),
+          _dna['ghostRequested']! as bool,
+        );
+      }
       final invite = _inviteHandle?.trim();
       if (invite != null &&
           invite.isNotEmpty &&
@@ -622,6 +637,8 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                                       onHideWeightChanged: (v) =>
                                           _update((f) => f.hideMetric = v),
                                       onAdvanceDna: _advanceDna,
+                                      onSkipWeight: _skipWeight,
+                                      onGhostLater: _skipGhost,
                                       onApplyDates: _applyDates,
                                       today: _todayDate(_form!),
                                     )
@@ -669,6 +686,16 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                               nameLeftController: _nameLeft,
                               nameRightController: _nameRight,
                               inviteHandle: _inviteHandle,
+                              selfOnRight: _dna['side'] == 'right',
+                              isRunning:
+                                  (_dna['sport'] == null ||
+                                      _dna['sport'] == 'run') &&
+                                  (_dna['measure'] == null ||
+                                      _dna['measure'] == 'km') &&
+                                  (!_form!.trackMetric ||
+                                      _form!.metricUnit.trim().isEmpty ||
+                                      _form!.metricUnit.trim().toLowerCase() ==
+                                          'km'),
                               onChangeVariant: () {
                                 unawaited(UiHaptics.selection());
                                 setState(() => _variant = (_variant + 1) % 3);
@@ -834,12 +861,32 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
 
   // ---- Step 2: DNA questions (V2 `CreateStepTwo`) -------------------------
 
-  void _setDna(String key, Object value) => setState(() => _dna[key] = value);
+  void _setDna(String key, Object value) => setState(() {
+    if (key == 'weight') _weightSkipped = false;
+    _dna[key] = value;
+  });
+
+  void _skipWeight() {
+    setState(() {
+      _weightSkipped = true;
+      _dna.remove('weight');
+      _direction = 1;
+      _dnaPage += 1;
+    });
+  }
+
+  void _skipGhost() {
+    setState(() {
+      _dna['ghostRequested'] = false;
+      _direction = 1;
+      _dnaPage += 1;
+    });
+  }
 
   void _advanceDna() {
     final q = _questions[_dnaPage];
-    if (q.kind == DnaKind.weight) {
-      _dna.putIfAbsent('weight', () => dnaWeightDefault);
+    if (q.kind == DnaKind.weight && !_weightSkipped) {
+      _dna.putIfAbsent('weight', () => dnaWeightDefault.toDouble());
     }
     if (q.kind == DnaKind.ghost) _dna['ghostRequested'] = true;
     setState(() {

@@ -320,7 +320,7 @@
   "@import_previewLabel": {
     "description": "Retell a past journey flow."
   },
-  "import_previewHud": "Camera HUD",
+  "import_previewHud": "Daily check-in",
   "@import_previewHud": {
     "description": "Retell a past journey flow."
   },

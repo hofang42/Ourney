@@ -80,6 +80,27 @@ abstract interface class AuthRepository {
   Future<void> sendPasswordReset(String email);
   Future<void> resetPassword(String email, String code, String newPassword);
 
+  /// Whether the signed-in account has a password set (`rpc auth_has_password`).
+  /// False when signed out or in local-only mode.
+  Future<bool> hasPassword();
+
+  /// Verifies the 6-digit recovery [code] sent by [sendPasswordReset] to the
+  /// signed-in account's email (reusing the verified session when [code] was
+  /// already verified in the current flow) and sets or updates the account's
+  /// password to [newPassword]. When [signOutOthers] is true, revokes other
+  /// devices' sessions (`SignOutScope.others`) best-effort while keeping this
+  /// device signed in.
+  Future<void> updatePassword(
+    String newPassword, {
+    required String code,
+    bool signOutOthers = false,
+  });
+
+  /// Clears any in-memory verified recovery-code state from an abandoned
+  /// password reset or in-app password setup/change flow, and ends any
+  /// half-completed unauthenticated recovery session locally. Never throws.
+  Future<void> cancelPasswordFlow();
+
   Future<void> signOut();
 
   /// Deletes the account and all media server-side (Edge Function

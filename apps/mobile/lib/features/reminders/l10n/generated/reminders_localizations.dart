@@ -251,7 +251,7 @@ abstract class RemindersL10n {
   /// Body of the 21:00 streak alert notification when the device timezone differs from the journey timezone.
   ///
   /// In vi, this message translates to:
-  /// **'{journey}: chuỗi {count} ngày sẽ mất lúc {time} (00:00 theo múi giờ hành trình). Một tấm ảnh là giữ được.'**
+  /// **'{journey}: chuỗi {count} ngày còn mở đến {time} (00:00 theo múi giờ hành trình). Một tấm ảnh nhỏ là đủ.'**
   String reminders_alertBodyAt(String journey, int count, String time);
 
   /// Android notification channel name (shown in system settings).

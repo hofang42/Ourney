@@ -28,9 +28,16 @@ public struct StreakWidgetEntryView: View {
 
   public var body: some View {
     let snapshot = entry.snapshot
-    let locale = snapshot?.locale ?? "vi"
+    let locale = snapshot?.locale ?? ""
     let themeMode = snapshot?.themeMode ?? "system"
-    let journey = snapshot?.selectedStreakJourney()
+    let cardState = WidgetSnapshot.resolveStreakCardState(
+      snapshot: snapshot,
+      pinnedId: entry.pinnedId
+    )
+    let journey: WidgetJourneyItem? = {
+      if case .ready(let item) = cardState { return item }
+      return nil
+    }()
     let theme = OurneyWidgetTheme.resolve(
       skinId: journey?.skinId,
       colorVariant: journey?.colorVariant ?? 0,
@@ -39,24 +46,51 @@ public struct StreakWidgetEntryView: View {
     )
 
     let destination: URL = {
-      guard let item = journey, !(snapshot?.isSignedOutOrEmpty ?? true) else {
-        return OurneyDeepLinks.journeys
+      switch cardState {
+      case .ready(let item):
+        return item.checkedInToday
+          ? OurneyDeepLinks.journey(id: item.id)
+          : OurneyDeepLinks.capture(journeyId: item.id)
+      case .unsynced, .signedOut:
+        return OurneyDeepLinks.syncJourneys
+      case .noJourneys:
+        return OurneyDeepLinks.newJourney
       }
-      return item.checkedInToday
-        ? OurneyDeepLinks.journey(id: item.id)
-        : OurneyDeepLinks.capture(journeyId: item.id)
     }()
 
     Group {
-      if let snap = snapshot, !snap.isSignedOutOrEmpty, let item = journey {
-        StreakSmallCardView(snapshot: snap, journey: item, entryDate: entry.date, theme: theme)
-      } else {
+      switch cardState {
+      case .ready(let item):
+        if let snap = snapshot {
+          StreakSmallCardView(snapshot: snap, journey: item, entryDate: entry.date, theme: theme)
+        }
+      case .unsynced:
         OurneyEmptyWidgetView(
-          iconName: "flame",
-          title: WidgetL10n.emptyTodayTitle(locale: locale),
-          subtitle: WidgetL10n.emptyTodaySubtitle(locale: locale),
-          ctaLabel: WidgetL10n.openOurney(locale: locale),
-          destination: OurneyDeepLinks.journeys,
+          iconName: "sparkle",
+          title: WidgetL10n.unsyncedTitle(locale: locale),
+          subtitle: WidgetL10n.unsyncedSubtitle(locale: locale),
+          ctaLabel: WidgetL10n.unsyncedCta(locale: locale),
+          destination: OurneyDeepLinks.syncJourneys,
+          theme: theme,
+          isSmall: true
+        )
+      case .signedOut:
+        OurneyEmptyWidgetView(
+          iconName: "lock",
+          title: WidgetL10n.signedOutTitle(locale: locale),
+          subtitle: WidgetL10n.signedOutSubtitle(locale: locale),
+          ctaLabel: WidgetL10n.signedOutCta(locale: locale),
+          destination: OurneyDeepLinks.syncJourneys,
+          theme: theme,
+          isSmall: true
+        )
+      case .noJourneys:
+        OurneyEmptyWidgetView(
+          iconName: "journeys",
+          title: WidgetL10n.noJourneysTitle(locale: locale),
+          subtitle: WidgetL10n.noJourneysSubtitle(locale: locale),
+          ctaLabel: WidgetL10n.noJourneysCta(locale: locale),
+          destination: OurneyDeepLinks.newJourney,
           theme: theme,
           isSmall: true
         )

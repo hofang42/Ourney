@@ -182,6 +182,12 @@ class SyncEngine {
           p.cast<String, dynamic>(),
         );
         await _applyJourneyIfSession(row, epoch, user);
+      case OutboxKind.renameCouple:
+        final row = await remote.rpc(
+          'rename_couple',
+          p.cast<String, dynamic>(),
+        );
+        await _applyJourneyIfSession(row, epoch, user);
       case OutboxKind.updateMembership:
         await remote.update(
           'memberships',
@@ -293,7 +299,8 @@ class SyncEngine {
   static bool _hasPendingJourneyWrite(Set<String> pending, String id) =>
       pending.contains(journeyKey(id)) ||
       pending.contains('${journeyKey(id)}:edit') ||
-      pending.contains('${journeyKey(id)}:extras');
+      pending.contains('${journeyKey(id)}:extras') ||
+      pending.contains('${journeyKey(id)}:couple');
 
   Future<SyncResult> _pullOnce() async {
     final me = remote.currentUserId;
@@ -556,6 +563,7 @@ class SyncEngine {
       journeyKey(journeyId),
       '${journeyKey(journeyId)}:extras',
       '${journeyKey(journeyId)}:edit',
+      '${journeyKey(journeyId)}:couple',
       membershipKey(journeyId),
       for (final id in ids) ...[checkInKey(id), reactionKey(id)],
     ];

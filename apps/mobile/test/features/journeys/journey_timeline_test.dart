@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/journeys/domain/journey_progress.dart';
+import 'package:ourney/features/journeys/domain/timeline_window.dart';
 import 'package:ourney/features/journeys/l10n/generated/journeys_localizations.dart';
 import 'package:ourney/features/journeys/ui/journey_style.dart';
 import 'package:ourney/features/journeys/ui/widgets/journey_timeline.dart';
@@ -41,6 +42,10 @@ Widget _host(
   required double scale,
   required ValueChanged<TimelineDay> onTap,
   List<TimelineDay>? days,
+  TimelineSummary? summary,
+  bool? rangeShort,
+  double? startingWeight,
+  bool isOpenEnded = false,
   String? selfName,
   String? partnerName,
   bool showOfflineStamps = false,
@@ -65,6 +70,10 @@ Widget _host(
                 child: JourneyTimeline(
                   skinId: skin,
                   days: days ?? _days(),
+                  summary: summary,
+                  rangeShort: rangeShort,
+                  startingWeight: startingWeight,
+                  isOpenEnded: isOpenEnded,
                   selfName: selfName,
                   partnerName: partnerName,
                   showOfflineStamps: showOfflineStamps,
@@ -215,13 +224,80 @@ void main() {
     final hold = find.byKey(const ValueKey('quiet-hold'));
     await tester.ensureVisible(hold);
     final g = await tester.startGesture(tester.getCenter(hold));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('Viewing'), findsOneWidget);
+    expect(find.text('••,•'), findsNothing);
     await g.up();
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('Hold to view'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'quiet open-ended Day 1 is not badged Finish and 30D pace fallback does not show baseline kg (UX-20, UX-05)',
+    (tester) async {
+      final j = testJourney();
+      final day1 = [
+        TimelineDay(
+          date: const LocalDate(2026, 10, 10),
+          dayNumber: 1,
+          isToday: false,
+          state: DayState.checkedIn,
+          checkIn: testCheckIn(j.id, const LocalDate(2026, 10, 10)),
+        ),
+      ];
+      await tester.pumpWidget(
+        _host(
+          'quiet',
+          brightness: Brightness.light,
+          scale: 1,
+          onTap: (_) {},
+          days: day1,
+          isOpenEnded: true,
+        ),
+      );
+      expect(find.text('Finish'), findsNothing);
+
+      const summary = TimelineSummary(
+        curve: [70.0, 69.0],
+        curve30: [3.0, 5.0],
+        metricCount: 2,
+        metric30Count: 0,
+        metricFirst: 70.0,
+        metricLast: 69.0,
+        pace: [1.0, 5.0],
+        done: 5,
+        frames: 5,
+        totalDays: 40,
+        currentDay: 40,
+        isOpenEnded: true,
+      );
+      await tester.pumpWidget(
+        _host(
+          'quiet',
+          brightness: Brightness.light,
+          scale: 1,
+          onTap: (_) {},
+          days: day1,
+          summary: summary,
+          rangeShort: true,
+          startingWeight: 71.5,
+          isOpenEnded: true,
+        ),
+      );
+      expect(find.byKey(const ValueKey('quiet-range-fallback')), findsOneWidget);
+      final hold = find.byKey(const ValueKey('quiet-hold'));
+      await tester.ensureVisible(hold);
+      final g = await tester.startGesture(tester.getCenter(hold));
+      await tester.pumpAndSettle();
+      expect(find.text('71.5 kg'), findsNothing);
+      expect(find.text('70.0 kg'), findsNothing);
+      expect(find.text('3'), findsOneWidget);
+      expect(find.text('5'), findsOneWidget);
+      await g.up();
+      await tester.pumpAndSettle();
+    },
+  );
 
   testWidgets('memory ties knots on the thread and labels the today slot', (
     tester,
