@@ -5,10 +5,24 @@ import WidgetKit
 struct OurneyWidgetsBundle: WidgetBundle {
   @WidgetBundleBuilder
   var body: some Widget {
+    #if canImport(AppIntents)
+    if #available(iOSApplicationExtension 17.0, iOS 17.0, *) {
+      TodayConfigurableWidget()
+      StreakConfigurableWidget()
+      SquadConfigurableWidget()
+      LockScreenConfigurableWidget()
+    } else {
+      TodayWidget()
+      StreakWidget()
+      SquadWidget()
+      LockScreenWidget()
+    }
+    #else
     TodayWidget()
     StreakWidget()
     SquadWidget()
     LockScreenWidget()
+    #endif
     #if canImport(ActivityKit)
     if #available(iOSApplicationExtension 16.2, iOS 16.2, *) {
       CheckInLiveActivity()

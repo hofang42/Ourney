@@ -54,20 +54,36 @@ public final class OurneyWidgetBridge {
   public func currentCapabilities() -> [String: Any] {
     let appGroupAvailable = WidgetSnapshotStore.sharedRootDirectory() != nil
     var liveActivityAvailable = false
+    var configurableWidgets = false
     #if canImport(ActivityKit)
     if #available(iOS 16.2, *) {
       liveActivityAvailable = ActivityAuthorizationInfo().areActivitiesEnabled
     }
     #endif
+    if #available(iOS 17.0, *) {
+      configurableWidgets = true
+    }
     return [
       "widgets": true,
+      "configurableWidgets": configurableWidgets,
       "liveActivity": liveActivityAvailable,
       "promotedLiveUpdates": false,
       "appGroup": appGroupAvailable,
+      "appGroupAvailable": appGroupAvailable,
     ]
   }
 
   // MARK: - syncSnapshot
+
+  public struct SnapshotWriteOutcome: Equatable {
+    public let succeeded: Bool
+    public let didChange: Bool
+
+    public init(succeeded: Bool, didChange: Bool) {
+      self.succeeded = succeeded
+      self.didChange = didChange
+    }
+  }
 
   private func handleSyncSnapshot(_ rawArgs: Any?, result: @escaping FlutterResult) {
     guard let args = rawArgs as? [String: Any] else {
@@ -97,26 +113,41 @@ public final class OurneyWidgetBridge {
         DispatchQueue.main.async { result(false) }
         return
       }
-      let didUpdate = self.writeSnapshotAndThumbs(
+      let outcome = self.writeSnapshotAndThumbsOutcome(
         snapshotData: validSnapshotData,
         thumbSpecs: thumbSpecs
       )
       DispatchQueue.main.async {
-        if didUpdate {
+        if outcome.succeeded && outcome.didChange {
           WidgetCenter.shared.reloadAllTimelines()
         }
-        result(true)
+        result(outcome.succeeded)
       }
     }
   }
 
   /// Writes thumbnails and `snapshot_v1.json` atomically. Returns `true` if WidgetKit timelines
-  /// should be reloaded.
+  /// should be reloaded (`didChange`).
   public func writeSnapshotAndThumbs(
     snapshotData: Data,
     thumbSpecs: [[String: Any]],
     overrideRootDirectory: URL? = nil
   ) -> Bool {
+    writeSnapshotAndThumbsOutcome(
+      snapshotData: snapshotData,
+      thumbSpecs: thumbSpecs,
+      overrideRootDirectory: overrideRootDirectory
+    ).didChange
+  }
+
+  /// Writes thumbnails and `snapshot_v1.json` atomically, distinguishing disk I/O success
+  /// (`succeeded`) from content mutation (`didChange`) so `syncSnapshot` reports `false` to Dart
+  /// on write failure (Rank 4).
+  public func writeSnapshotAndThumbsOutcome(
+    snapshotData: Data,
+    thumbSpecs: [[String: Any]],
+    overrideRootDirectory: URL? = nil
+  ) -> SnapshotWriteOutcome {
     let rootDir: URL
     if let overrideRoot = overrideRootDirectory {
       rootDir = overrideRoot
@@ -129,7 +160,7 @@ public final class OurneyWidgetBridge {
       }
       rootDir = fallbackRoot
     } else {
-      return false
+      return SnapshotWriteOutcome(succeeded: false, didChange: false)
     }
 
     let fm = FileManager.default
@@ -139,7 +170,7 @@ public final class OurneyWidgetBridge {
       try WidgetSnapshotStore.ensureDirectoryPrepared(rootDir, fileManager: fm)
       try WidgetSnapshotStore.ensureDirectoryPrepared(thumbsDir, fileManager: fm)
     } catch {
-      return false
+      return SnapshotWriteOutcome(succeeded: false, didChange: false)
     }
 
     let decodedSnapshot = try? JSONDecoder().decode(WidgetSnapshot.self, from: snapshotData)
@@ -214,7 +245,7 @@ public final class OurneyWidgetBridge {
         values.isExcludedFromBackup = true
         try? mutableURL.setResourceValues(values)
       } catch {
-        return false
+        return SnapshotWriteOutcome(succeeded: false, didChange: false)
       }
     }
 
@@ -224,7 +255,7 @@ public final class OurneyWidgetBridge {
       endAllLiveActivitiesImmediate()
     }
 
-    return snapshotChanged || thumbsChanged
+    return SnapshotWriteOutcome(succeeded: true, didChange: snapshotChanged || thumbsChanged)
   }
 
   private static func cleanThumbFileName(_ raw: String?) -> String? {
