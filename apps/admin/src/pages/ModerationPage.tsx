@@ -1,14 +1,24 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   adminApi,
   handleRpcError,
+  type AdminIdentity,
   type ModerationItemDetail,
   type ModerationQueueRow,
   type ModerationQueueSummary,
   type RevealedMediaObject,
 } from '../lib/adminRpc'
-import { useI18n } from '../lib/i18n'
+import {
+  fmtDateTime,
+  formatAuditReason,
+  formatModerationAction,
+  formatModerationKind,
+  formatModerationReason,
+  formatModerationStatus,
+  formatTargetType,
+  useI18n,
+} from '../lib/i18n'
 import { OIcon } from '../ui/Icon'
 import { AccessibleModal, PaginationBar } from '../ui/Modal'
 
@@ -20,27 +30,30 @@ export function formatSlaBadge(
 ): { text: string; tone: 'badge-danger' | 'badge-warn' | 'badge-success' } {
   if (row.status !== 'open') {
     return {
-      text: t('Đã xử lý', 'Handled'),
+      text:
+        row.status === 'dismissed'
+          ? t('Đã bác bỏ', 'Dismissed')
+          : t('Đã xử lý', 'Handled'),
       tone: 'badge-success',
     }
   }
   if (row.hours_remaining < 0) {
     const over = Math.abs(row.hours_remaining).toFixed(1)
     return {
-      text: `OVERDUE +${over}h`,
+      text: t(`Quá hạn +${over}g`, `OVERDUE +${over}h`),
       tone: 'badge-danger',
     }
   }
   const hrs = Math.floor(row.hours_remaining)
   const mins = Math.round((row.hours_remaining - hrs) * 60)
   return {
-    text: `${hrs}h ${mins}m left`,
+    text: t(`Còn ${hrs}g ${mins}p`, `${hrs}h ${mins}m left`),
     tone: row.hours_remaining < 4 ? 'badge-warn' : 'badge-success',
   }
 }
 
-export function ModerationPage() {
-  const { t } = useI18n()
+export function ModerationPage({ admin }: { admin?: AdminIdentity } = {}) {
+  const { lang, t } = useI18n()
   const [searchParams] = useSearchParams()
   const [statusFilter, setStatusFilter] = useState(
     searchParams.get('status') || 'open',
@@ -58,6 +71,7 @@ export function ModerationPage() {
     [],
   )
   const [unblurred, setUnblurred] = useState(false)
+  const [reopened, setReopened] = useState(false)
   const [loading, setLoading] = useState(true)
   const [revealing, setRevealing] = useState(false)
   const [bannerMsg, setBannerMsg] = useState<string | null>(null)
@@ -94,7 +108,7 @@ export function ModerationPage() {
         setDetail(null)
       }
     } catch (err) {
-      const msg = await handleRpcError(err, 'list_moderation_queue')
+      const msg = await handleRpcError(err, 'list_moderation_queue', lang)
       setErrorMsg(msg)
     } finally {
       setLoading(false)
@@ -114,16 +128,18 @@ export function ModerationPage() {
     }
     setRevealedObjects([])
     setUnblurred(false)
+    setReopened(false)
     void (async () => {
       try {
         const d = await adminApi.getModerationItem(selectedId)
         setDetail(d)
       } catch (err) {
-        const msg = await handleRpcError(err, 'get_moderation_item')
+        const msg = await handleRpcError(err, 'get_moderation_item', lang)
         setErrorMsg(msg)
         setDetail(null)
       }
     })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId])
 
   const handleRevealMedia = async () => {
@@ -144,7 +160,7 @@ export function ModerationPage() {
         ),
       )
     } catch (err) {
-      const msg = await handleRpcError(err, 'reveal_reported_media')
+      const msg = await handleRpcError(err, 'reveal_reported_media', lang)
       setErrorMsg(msg)
     } finally {
       setRevealing(false)
@@ -156,24 +172,25 @@ export function ModerationPage() {
     setSubmitting(true)
     setErrorMsg(null)
     try {
-      const note =
-        resolutionNote.trim() || `Action ${modalAction} executed by operator`
+      const note = resolutionNote.trim() || null
       if (modalAction === 'quarantine') {
         await adminApi.quarantineModerationTarget(selectedId, note)
       } else {
         await adminApi.resolveModeration(selectedId, modalAction, note)
       }
+      const actionLabel = formatModerationAction(modalAction, lang)
       setBannerMsg(
         t(
-          `Đã thực thi hành động kiểm duyệt: ${modalAction}`,
-          `Executed moderation action: ${modalAction}`,
+          `Đã thực thi quyết định kiểm duyệt: ${actionLabel}`,
+          `Executed moderation decision: ${actionLabel}`,
         ),
       )
       setModalAction(null)
       setResolutionNote('')
+      setReopened(false)
       await loadQueue(offset)
     } catch (err) {
-      const msg = await handleRpcError(err, 'resolve_moderation')
+      const msg = await handleRpcError(err, 'resolve_moderation', lang)
       setErrorMsg(msg)
     } finally {
       setSubmitting(false)
@@ -187,7 +204,9 @@ export function ModerationPage() {
       ? 'checkin'
       : detail?.target_message_id
         ? 'message'
-        : 'user')
+        : detail?.target_feature_request_id
+          ? 'feature_request'
+          : 'user')
 
   const detailHasMedia =
     detailContent?.target_type === 'checkin'
@@ -205,11 +224,143 @@ export function ModerationPage() {
       ? detailContent.caption
       : detailContent?.target_type === 'message'
         ? detailContent.body
-        : detail?.note ?? null
+        : detailContent?.target_type === 'feature_request'
+          ? detailContent.caption ||
+            [detailContent.title, detailContent.body]
+              .filter(Boolean)
+              .join('\n\n') ||
+            detail?.note ||
+            null
+          : (detail?.note ?? null)
 
   const canQuarantine = Boolean(
-    detail && (detail.target_checkin_id || detail.target_message_id),
+    detail &&
+      (detail.target_checkin_id ||
+        detail.target_message_id ||
+        detail.target_feature_request_id ||
+        detailTargetType === 'feature_request'),
   )
+
+  const selectedQueueRow = rows.find((r) => r.id === detail?.id)
+  const isResolved = Boolean(detail && detail.status !== 'open')
+  const isAlreadyActioned = detail?.status === 'actioned'
+  const isAlreadyDismissed = detail?.status === 'dismissed'
+  const isUserOnlyTarget = detailTargetType === 'user'
+  const isContentRemoved = Boolean(
+    (detailContent &&
+      'deleted_at' in detailContent &&
+      Boolean(detailContent.deleted_at)) ||
+      (detailContent?.target_type === 'feature_request' &&
+        Boolean(
+          detailContent.deleted ||
+            (isAlreadyActioned &&
+              (detailContent.hidden || detailContent.moderated_at)),
+        )),
+  )
+  const isContentQuarantined = Boolean(
+    (detailContent &&
+      'moderated_at' in detailContent &&
+      Boolean(detailContent.moderated_at)) ||
+      (detailContent?.target_type === 'feature_request' &&
+        Boolean(detailContent.hidden)) ||
+      selectedQueueRow?.auto_quarantined,
+  )
+  const isTargetUserBanned = Boolean(detail?.target_user?.is_banned)
+  const isMissingTargetUser = !detail?.target_user_id
+  const isSelfTargetUser = Boolean(
+    admin && detail?.target_user_id && detail.target_user_id === admin.user_id,
+  )
+
+  const postReopenDismissDisabledReason = isAlreadyActioned
+    ? t(
+        'Không thể bác bỏ báo cáo đã thực thi xử phạt.',
+        'Cannot dismiss a report that has already been actioned.',
+      )
+    : isAlreadyDismissed
+      ? t(
+          'Báo cáo này đã ở trạng thái bác bỏ.',
+          'This report has already been dismissed.',
+        )
+      : undefined
+
+  const postReopenQuarantineDisabledReason = isResolved
+    ? t(
+        'Không thể tạm ẩn báo cáo đã đóng.',
+        'Cannot quarantine an already resolved report.',
+      )
+    : isContentRemoved
+      ? t(
+          'Nội dung này đã bị gỡ bỏ trước đó.',
+          'This content has already been removed.',
+        )
+      : isContentQuarantined
+        ? t(
+            'Nội dung này đang ở trạng thái tạm ẩn.',
+            'This content is already quarantined.',
+          )
+        : undefined
+
+  const postReopenRemoveDisabledReason = isUserOnlyTarget
+    ? t(
+        'Báo cáo tài khoản người dùng không có nội dung riêng lẻ để gỡ bỏ.',
+        'User-only reports have no individual content item to remove.',
+      )
+    : isContentRemoved
+      ? t(
+          'Nội dung này đã bị gỡ bỏ trước đó.',
+          'This content has already been removed.',
+        )
+      : undefined
+
+  const postReopenBanDisabledReason = isMissingTargetUser
+    ? t(
+        'Không xác định được tài khoản tác giả (có thể đã bị xóa).',
+        'Target user account is unavailable (may have already been deleted).',
+      )
+    : isSelfTargetUser
+      ? t(
+          'Bạn không thể tự khóa tài khoản của chính mình.',
+          'You cannot ban your own account.',
+        )
+      : isTargetUserBanned && isAlreadyActioned
+        ? t(
+            'Tài khoản người dùng này đã bị khóa.',
+            'This user account is already banned.',
+          )
+        : undefined
+
+  const canReopenReview = Boolean(
+    isResolved &&
+      (!postReopenDismissDisabledReason ||
+        (canQuarantine && !postReopenQuarantineDisabledReason) ||
+        !postReopenRemoveDisabledReason ||
+        !postReopenBanDisabledReason),
+  )
+
+  const isLockedResolved = isResolved && canReopenReview && !reopened
+
+  const resolvedLockTooltip = t(
+    'Báo cáo này đã được đóng. Bấm "Mở lại đánh giá" nếu cần thay đổi quyết định.',
+    'This report has already been resolved. Click "Reopen Review" to change the decision.',
+  )
+
+  const dismissDisabledReason = isLockedResolved
+    ? resolvedLockTooltip
+    : postReopenDismissDisabledReason
+
+  const quarantineDisabledReason = isLockedResolved
+    ? resolvedLockTooltip
+    : postReopenQuarantineDisabledReason
+
+  const removeContentDisabledReason = isUserOnlyTarget
+    ? postReopenRemoveDisabledReason
+    : isLockedResolved
+      ? resolvedLockTooltip
+      : postReopenRemoveDisabledReason
+
+  const banUserDisabledReason = isLockedResolved
+    ? resolvedLockTooltip
+    : postReopenBanDisabledReason
 
   const formatUserHandle = (
     username: string | null | undefined,
@@ -251,25 +402,26 @@ export function ModerationPage() {
         </div>
         <div className="kpi-card">
           <span className="kpi-label">
-            {t('Quá hạn (> 24h)', 'Overdue (> 24h)')}
+            {t('Quá hạn (> 24 giờ)', 'Overdue (> 24h)')}
           </span>
           <div className="kpi-value">{summary?.overdue_count ?? 0}</div>
         </div>
         <div className="kpi-card">
           <span className="kpi-label">
-            {t('Sắp đến hạn (< 4h)', 'Due < 4h')}
+            {t('Sắp đến hạn (< 4 giờ)', 'Due < 4h')}
           </span>
           <div className="kpi-value">{summary?.due_soon_count ?? 0}</div>
         </div>
         <div className="kpi-card">
           <span className="kpi-label">
-            {t('Đã tạm ẩn (Quarantined)', 'Auto-Quarantined')}
+            {t('Đã tạm ẩn tự động', 'Auto-Quarantined')}
           </span>
           <div className="kpi-value">{summary?.quarantined_count ?? 0}</div>
           <div className="kpi-sub">
             <span>
-              {t('Thời gian xử lý trung vị 30d:', 'Median handle 30d:')}{' '}
-              {Number(summary?.median_handle_hours_30d ?? 0).toFixed(2)}h
+              {t('Thời gian xử lý trung vị 30 ngày:', 'Median handle 30d:')}{' '}
+              {Number(summary?.median_handle_hours_30d ?? 0).toFixed(2)}
+              {t('g', 'h')}
             </span>
           </div>
         </div>
@@ -294,17 +446,11 @@ export function ModerationPage() {
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
-          <option value="open">{t('Đang mở (Open)', 'Open')}</option>
-          <option value="overdue">{t('Quá hạn (Overdue)', 'Overdue')}</option>
-          <option value="quarantined">
-            {t('Đang tạm ẩn (Quarantined)', 'Quarantined')}
-          </option>
-          <option value="actioned">
-            {t('Đã xử phạt (Actioned)', 'Actioned')}
-          </option>
-          <option value="dismissed">
-            {t('Đã bác bỏ (Dismissed)', 'Dismissed')}
-          </option>
+          <option value="open">{t('Đang mở', 'Open')}</option>
+          <option value="overdue">{t('Quá hạn', 'Overdue')}</option>
+          <option value="quarantined">{t('Đang tạm ẩn', 'Quarantined')}</option>
+          <option value="actioned">{t('Đã xử phạt', 'Actioned')}</option>
+          <option value="dismissed">{t('Đã bác bỏ', 'Dismissed')}</option>
           <option value="all">{t('Tất cả', 'All')}</option>
         </select>
 
@@ -315,8 +461,8 @@ export function ModerationPage() {
           onChange={(e) => setKindFilter(e.target.value)}
         >
           <option value="all">{t('Tất cả loại', 'All kinds')}</option>
-          <option value="report">{t('Báo cáo (Report)', 'Report')}</option>
-          <option value="block">{t('Chặn (Block signal)', 'Block')}</option>
+          <option value="report">{t('Báo cáo vi phạm', 'Report')}</option>
+          <option value="block">{t('Tín hiệu chặn', 'Block')}</option>
         </select>
 
         <select
@@ -326,11 +472,17 @@ export function ModerationPage() {
           onChange={(e) => setReasonFilter(e.target.value)}
         >
           <option value="all">{t('Mọi lý do', 'All reasons')}</option>
-          <option value="nudity">Nudity / NSFW</option>
-          <option value="self_harm">Self Harm</option>
-          <option value="harassment">Harassment</option>
-          <option value="spam">Spam</option>
-          <option value="other">Other</option>
+          <option value="nudity">
+            {formatModerationReason('nudity', lang)}
+          </option>
+          <option value="self_harm">
+            {formatModerationReason('self_harm', lang)}
+          </option>
+          <option value="harassment">
+            {formatModerationReason('harassment', lang)}
+          </option>
+          <option value="spam">{formatModerationReason('spam', lang)}</option>
+          <option value="other">{formatModerationReason('other', lang)}</option>
         </select>
       </div>
 
@@ -359,9 +511,6 @@ export function ModerationPage() {
                 ) : (
                   rows.map((r) => {
                     const sla = formatSlaBadge(r, t)
-                    const reasonLabel =
-                      r.reason ??
-                      (r.kind === 'block' ? 'user_block' : 'unspecified')
                     const isSelected = selectedId === r.id
                     return (
                       <tr
@@ -386,11 +535,12 @@ export function ModerationPage() {
                         </td>
                         <td>
                           <div style={{ fontWeight: 700 }}>
-                            {r.kind.toUpperCase()} · {reasonLabel}
+                            {formatModerationKind(r.kind, lang)} ·{' '}
+                            {formatModerationReason(r.reason, lang, r.kind)}
                           </div>
                           {r.auto_quarantined && (
                             <span className="badge badge-purple">
-                              Quarantined
+                              {t('Đã tạm ẩn', 'Quarantined')}
                             </span>
                           )}
                         </td>
@@ -404,7 +554,8 @@ export function ModerationPage() {
                           <div
                             style={{ fontSize: '0.78rem', color: 'var(--muted)' }}
                           >
-                            {r.target_type} · {r.target_prior_actions}{' '}
+                            {formatTargetType(r.target_type, lang)} ·{' '}
+                            {r.target_prior_actions}{' '}
                             {t('lần vi phạm trước', 'prior actions')} ·{' '}
                             {t('bị chặn bởi', 'blocked by')}{' '}
                             {r.target_blocked_by_count}
@@ -437,8 +588,8 @@ export function ModerationPage() {
           {!detail ? (
             <p className="page-subtitle">
               {t(
-                'Chọn một mục bên trái để kiểm tra chi tiết (mọi thao tác mở xem đều ghi nhật ký moderation.view_item).',
-                'Select an item on the left to inspect (opening logs moderation.view_item).',
+                'Chọn một mục bên trái để kiểm tra chi tiết (mọi thao tác mở xem đều được ghi vào nhật ký kiểm toán).',
+                'Select an item on the left to inspect (every inspection is recorded in the audit log).',
               )}
             </p>
           ) : (
@@ -450,7 +601,7 @@ export function ModerationPage() {
                       detail.target_user?.username,
                       detail.target_user?.user_id ?? detail.target_user_id,
                     )}{' '}
-                    ({detailTargetType})
+                    ({formatTargetType(detailTargetType, lang)})
                   </h3>
                   <p className="kpi-label">
                     {t('Số lần bị xử lý trước đó:', 'Prior actioned reports:')}{' '}
@@ -460,8 +611,7 @@ export function ModerationPage() {
                   </p>
                 </div>
                 <span className="badge badge-warn">
-                  {detail.reason ??
-                    (detail.kind === 'block' ? 'user_block' : 'unspecified')}
+                  {formatModerationReason(detail.reason, lang, detail.kind)}
                 </span>
               </div>
 
@@ -504,8 +654,8 @@ export function ModerationPage() {
                         />
                         <span>
                           {unblurred
-                            ? t('Làm mờ lại (Blur)', 'Blur Image')
-                            : t('Bỏ làm mờ (Unblur)', 'Unblur Image')}
+                            ? t('Làm mờ lại', 'Blur Image')
+                            : t('Bỏ làm mờ', 'Unblur Image')}
                         </span>
                       </button>
                     )}
@@ -521,7 +671,7 @@ export function ModerationPage() {
                     >
                       <p style={{ fontSize: '0.84rem', color: 'var(--muted)' }}>
                         {t(
-                          'Bấm nút bên dưới để cấp quyền truy cập tạm thời 5 phút và ghi vào private.admin_audit.',
+                          'Bấm nút bên dưới để cấp quyền truy cập tạm thời 5 phút và ghi vào nhật ký kiểm toán.',
                           'Click below to mint an audited 5-minute scoped storage grant.',
                         )}
                       </p>
@@ -544,7 +694,7 @@ export function ModerationPage() {
                     </div>
                   ) : (
                     <div className="revealed-media-grid">
-                      {revealedObjects.map((obj) => (
+                      {revealedObjects.map((obj, idx) => (
                         <div
                           key={`${obj.bucket}:${obj.path}`}
                           className="revealed-image-frame"
@@ -552,7 +702,10 @@ export function ModerationPage() {
                           {obj.signed_url && (
                             <img
                               src={obj.signed_url}
-                              alt={`Reported media ${obj.path}`}
+                              alt={t(
+                                `Ảnh báo cáo #${idx + 1}`,
+                                `Reported media #${idx + 1}`,
+                              )}
                               className={unblurred ? '' : 'blurred'}
                             />
                           )}
@@ -578,7 +731,13 @@ export function ModerationPage() {
                           rep.reporter_username,
                           rep.reporter_id,
                         )}{' '}
-                        · {rep.reason ?? 'report'}
+                        · {formatModerationReason(rep.reason, lang, 'report')} ·{' '}
+                        <span
+                          className="tabular"
+                          style={{ color: 'var(--muted)', fontWeight: 400 }}
+                        >
+                          {fmtDateTime(rep.created_at, lang)}
+                        </span>
                       </div>
                       {rep.note && (
                         <div style={{ fontSize: '0.84rem', marginTop: 4 }}>
@@ -589,6 +748,63 @@ export function ModerationPage() {
                   ))}
                 </div>
               </div>
+
+              {isResolved && (
+                <div
+                  className="card-subtle"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <div style={{ fontSize: '0.84rem' }}>
+                    <strong>
+                      {t('Trạng thái hiện tại:', 'Current resolution:')}{' '}
+                      {formatModerationStatus(detail.status, lang)}
+                    </strong>
+                    {detail.handled_at && (
+                      <span className="tabular" style={{ marginLeft: 8 }}>
+                        ({fmtDateTime(detail.handled_at, lang)})
+                      </span>
+                    )}
+                    {detail.resolution_note && (
+                      <div style={{ color: 'var(--muted)', marginTop: 2 }}>
+                        {formatAuditReason(detail.resolution_note, lang)}
+                      </div>
+                    )}
+                  </div>
+                  {canReopenReview && !reopened ? (
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => setReopened(true)}
+                    >
+                      <OIcon name="refresh" size={16} />
+                      <span>
+                        {t('Mở lại đánh giá', 'Reopen Review')}
+                      </span>
+                    </button>
+                  ) : !canReopenReview ? (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>
+                      {t(
+                        'Đã hoàn tất xử lý tối đa cho mục này.',
+                        'All available actions have already been applied.',
+                      )}{' '}
+                      {detail.target_user_id && (
+                        <Link
+                          to={`/users/${encodeURIComponent(detail.target_user_id)}`}
+                          style={{ fontWeight: 700, textDecoration: 'underline' }}
+                        >
+                          {t('Quản lý tài khoản', 'Manage user account')}
+                        </Link>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              )}
 
               <div
                 style={{
@@ -602,45 +818,53 @@ export function ModerationPage() {
                 <button
                   type="button"
                   className="btn btn-success"
+                  disabled={Boolean(dismissDisabledReason)}
+                  title={dismissDisabledReason}
                   onClick={() => setModalAction('dismiss')}
                 >
                   <OIcon name="check" size={18} />
-                  <span>{t('Bác bỏ báo cáo (Dismiss)', 'Dismiss Report')}</span>
+                  <span>{t('Bác bỏ báo cáo', 'Dismiss Report')}</span>
                 </button>
 
                 {canQuarantine && (
                   <button
                     type="button"
                     className="btn btn-warn"
+                    disabled={Boolean(quarantineDisabledReason)}
+                    title={quarantineDisabledReason}
                     onClick={() => setModalAction('quarantine')}
                   >
                     <OIcon name="eye-off" size={18} />
                     <span>
-                      {t('Tạm ẩn điều tra (Quarantine)', 'Quarantine Target')}
+                      {t('Tạm ẩn điều tra', 'Quarantine Target')}
                     </span>
                   </button>
                 )}
 
                 <button
                   type="button"
-                  className="btn btn-primary"
+                  className="btn btn-danger"
+                  disabled={Boolean(removeContentDisabledReason)}
+                  title={removeContentDisabledReason}
                   onClick={() => setModalAction('remove_content')}
                 >
                   <OIcon name="trash" size={18} />
                   <span>
-                    {t('Gỡ bỏ nội dung (Remove Content)', 'Remove Content')}
+                    {t('Gỡ bỏ nội dung', 'Remove Content')}
                   </span>
                 </button>
 
                 <button
                   type="button"
                   className="btn btn-danger"
+                  disabled={Boolean(banUserDisabledReason)}
+                  title={banUserDisabledReason}
                   onClick={() => setModalAction('ban_user')}
                 >
                   <OIcon name="ban" size={18} />
                   <span>
                     {t(
-                      'Khóa tài khoản & Xóa UGC (Ban User)',
+                      'Khóa tài khoản & Xóa nội dung',
                       'Ban User & Wipe Content',
                     )}
                   </span>
@@ -653,22 +877,35 @@ export function ModerationPage() {
 
       {modalAction && (
         <AccessibleModal
-          title={`${t('Xác nhận quyết định kiểm duyệt', 'Confirm Moderation Action')}: ${modalAction}`}
-          onClose={() => setModalAction(null)}
+          title={`${t('Xác nhận quyết định kiểm duyệt', 'Confirm Moderation Action')}: ${formatModerationAction(modalAction, lang)}`}
+          onClose={() => {
+            setModalAction(null)
+            setResolutionNote('')
+          }}
         >
           <h3>
             {t('Xác nhận quyết định kiểm duyệt', 'Confirm Moderation Action')}:{' '}
-            {modalAction}
+            {formatModerationAction(modalAction, lang)}
           </h3>
           <p className="page-subtitle">
-            {t(
-              'Quyết định này sẽ được ghi bất biến vào private.admin_audit kèm theo ghi chú giải trình.',
-              'This decision is immutably recorded in private.admin_audit with your resolution note.',
-            )}
+            {modalAction === 'ban_user'
+              ? t(
+                  'CẢNH BÁO NGHIÊM TRỌNG: Thao tác này sẽ khóa tài khoản người dùng VÀ xóa vĩnh viễn toàn bộ ảnh check-in, tin nhắn, đề xuất tính năng, liên kết công khai và tệp phương tiện của họ. Quyết định sẽ được ghi bất biến vào nhật ký kiểm toán.',
+                  'DESTRUCTIVE ACTION WARNING: This permanently suspends the user account AND wipes all of their check-ins, messages, feature requests, public links, and media files. This decision is immutably recorded in the audit log.',
+                )
+              : modalAction === 'remove_content'
+                ? t(
+                    'Nội dung bị báo cáo và các tệp phương tiện đính kèm sẽ bị gỡ bỏ vĩnh viễn. Quyết định sẽ được lưu bất biến vào nhật ký kiểm toán.',
+                    'The reported content and any attached media files will be permanently removed. This decision is immutably recorded in the audit log.',
+                  )
+                : t(
+                    'Quyết định này sẽ được lưu bất biến vào nhật ký kiểm toán kèm theo ghi chú giải trình.',
+                    'This decision is immutably recorded in the audit log with your resolution note.',
+                  )}
           </p>
           <label className="field-group">
             <span className="field-label">
-              {t('Ghi chú giải trình (Resolution Note)', 'Resolution Note')}
+              {t('Ghi chú giải trình', 'Resolution Note')}
             </span>
             <textarea
               className="textarea"
@@ -690,13 +927,22 @@ export function ModerationPage() {
             <button
               type="button"
               className="btn"
-              onClick={() => setModalAction(null)}
+              onClick={() => {
+                setModalAction(null)
+                setResolutionNote('')
+              }}
             >
               {t('Hủy', 'Cancel')}
             </button>
             <button
               type="button"
-              className="btn btn-primary"
+              className={
+                modalAction === 'remove_content' || modalAction === 'ban_user'
+                  ? 'btn btn-danger'
+                  : modalAction === 'quarantine'
+                    ? 'btn btn-warn'
+                    : 'btn btn-primary'
+              }
               onClick={() => void handleConfirmResolution()}
               disabled={submitting}
             >

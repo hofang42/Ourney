@@ -1,8 +1,17 @@
 import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { adminApi } from './lib/adminRpc'
-import { I18nProvider } from './lib/i18n'
+import { I18nProvider, useI18n } from './lib/i18n'
 import { AdminAuthGuard, AdminShell } from './ui/Shell'
+
+function SessionLoadingFallback() {
+  const { t } = useI18n()
+  return (
+    <div className="card" role="status">
+      <span>{t('Đang tải phiên làm việc...', 'Loading session...')}</span>
+    </div>
+  )
+}
 
 const OverviewPage = lazy(() =>
   import('./pages/OverviewPage').then((m) => ({ default: m.OverviewPage })),
@@ -45,16 +54,13 @@ export function AppRoutes() {
             await refreshAdmin()
           }}
         >
-          <Suspense
-            fallback={
-              <div className="card" role="status">
-                <span>Loading...</span>
-              </div>
-            }
-          >
+          <Suspense fallback={<SessionLoadingFallback />}>
             <Routes>
               <Route path="/" element={<OverviewPage />} />
-              <Route path="/moderation" element={<ModerationPage />} />
+              <Route
+                path="/moderation"
+                element={<ModerationPage admin={admin} />}
+              />
               <Route path="/words" element={<WordsPage />} />
               <Route
                 path="/feature-requests"

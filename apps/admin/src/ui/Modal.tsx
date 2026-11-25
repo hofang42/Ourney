@@ -1,9 +1,11 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { useI18n } from '../lib/i18n'
 import { OIcon } from './Icon'
 
 const FOCUSABLE_SELECTOR =
   'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
+
+const openModalStack: symbol[] = []
 
 export function AccessibleModal({
   title,
@@ -16,13 +18,15 @@ export function AccessibleModal({
   variant?: 'modal' | 'drawer'
   children: ReactNode
 }) {
-  const titleId = useId()
   const containerRef = useRef<HTMLDivElement | null>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
 
   useEffect(() => {
+    const instanceId = Symbol('AccessibleModal')
+    openModalStack.push(instanceId)
+
     previousFocusRef.current =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
@@ -37,8 +41,12 @@ export function AccessibleModal({
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (openModalStack[openModalStack.length - 1] !== instanceId) {
+        return
+      }
       if (e.key === 'Escape') {
         e.preventDefault()
+        e.stopImmediatePropagation()
         onCloseRef.current()
         return
       }
@@ -65,6 +73,10 @@ export function AccessibleModal({
     document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
+      const idx = openModalStack.lastIndexOf(instanceId)
+      if (idx !== -1) {
+        openModalStack.splice(idx, 1)
+      }
       if (
         previousFocusRef.current &&
         document.body.contains(previousFocusRef.current)
@@ -79,7 +91,7 @@ export function AccessibleModal({
       className={variant === 'drawer' ? 'drawer-scrim' : 'modal-scrim'}
       role="dialog"
       aria-modal="true"
-      aria-labelledby={titleId}
+      aria-label={title}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose()
@@ -91,9 +103,6 @@ export function AccessibleModal({
         tabIndex={-1}
         className={variant === 'drawer' ? 'drawer-panel' : 'modal-card'}
       >
-        <h3 id={titleId} className="sr-only">
-          {title}
-        </h3>
         {children}
       </div>
     </div>
