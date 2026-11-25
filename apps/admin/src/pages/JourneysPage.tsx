@@ -67,9 +67,7 @@ export function JourneysPage() {
   const handleConfirmRevoke = async () => {
     if (!revokeTarget) return
     const trimmed = revokeReason.trim()
-    const effectiveReason =
-      trimmed.length > 0 ? trimmed : 'Revoked abused public link'
-    if (effectiveReason.length < 3) {
+    if (trimmed.length < 3) {
       setErrorMsg(
         t(
           'Lý do thu hồi phải có ít nhất 3 ký tự.',
@@ -80,7 +78,7 @@ export function JourneysPage() {
     }
     setErrorMsg(null)
     try {
-      await adminApi.revokeJourneyPublicLink(revokeTarget.id, effectiveReason)
+      await adminApi.revokeJourneyPublicLink(revokeTarget.id, trimmed)
       setBannerMsg(
         t(
           `Đã thu hồi liên kết công khai của hành trình ${revokeTarget.id}`,
@@ -164,7 +162,8 @@ export function JourneysPage() {
               )}
             </span>
             <div className="kpi-value">
-              {stats.public_links_count} ({stats.total_public_views} views)
+              {stats.public_links_count} ({stats.total_public_views}{' '}
+              {t('lượt xem', 'views')})
             </div>
           </div>
         </div>
@@ -365,7 +364,10 @@ export function JourneysPage() {
             'Thu hồi liên kết công khai',
             'Revoke Public Journey Link',
           )}
-          onClose={() => setRevokeTarget(null)}
+          onClose={() => {
+            setRevokeTarget(null)
+            setRevokeReason('')
+          }}
         >
           <h3>
             {t('Thu hồi liên kết công khai', 'Revoke Public Journey Link')}
@@ -394,13 +396,17 @@ export function JourneysPage() {
             <button
               type="button"
               className="btn"
-              onClick={() => setRevokeTarget(null)}
+              onClick={() => {
+                setRevokeTarget(null)
+                setRevokeReason('')
+              }}
             >
               {t('Hủy', 'Cancel')}
             </button>
             <button
               type="button"
               className="btn btn-danger"
+              disabled={revokeReason.trim().length < 3}
               onClick={() => void handleConfirmRevoke()}
             >
               {t('Xác nhận thu hồi', 'Confirm Revoke')}

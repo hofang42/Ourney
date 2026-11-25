@@ -308,9 +308,7 @@ export function FeatureRequestsPage() {
         p_category: editCategory,
         p_admin_reply: replyVal,
         p_hidden: editHidden,
-        p_reason:
-          editReason.trim() ||
-          `Updated status=${editStatus}, category=${editCategory}, hidden=${String(editHidden)}`,
+        p_reason: editReason.trim() || null,
       })
       setBannerMsg(
         t(
@@ -453,7 +451,11 @@ export function FeatureRequestsPage() {
 
   const candidateSource = mergePool.length > 0 ? mergePool : rows
   const mergeCandidates = candidateSource.filter(
-    (r) => r.id !== detail?.id && !r.duplicate_of,
+    (r) =>
+      r.id !== detail?.id &&
+      !r.duplicate_of &&
+      !r.hidden &&
+      r.status !== 'declined',
   )
   const selectedCandidate = mergeCandidates.find((r) => r.id === mergeTargetId)
 
@@ -989,8 +991,11 @@ export function FeatureRequestsPage() {
                       key={child.id}
                       style={{ fontSize: '0.84rem', marginTop: 4 }}
                     >
-                      <strong>{child.title}</strong> (@
-                      {child.author_username || 'member'})
+                      <strong>{child.title}</strong> (
+                      {child.author_username
+                        ? `@${child.author_username}`
+                        : t('Thành viên Ourney', 'Ourney member')}
+                      )
                     </div>
                   ))}
                 </div>
@@ -1176,7 +1181,12 @@ export function FeatureRequestsPage() {
             'Gộp đề xuất trùng lặp vào đề xuất gốc',
             'Merge Duplicate into Canonical Request',
           )}
-          onClose={() => setMergeModalOpen(false)}
+          onClose={() => {
+            setMergeModalOpen(false)
+            setMergeTargetId('')
+            setMergeReason('')
+            setMergeSearch('')
+          }}
         >
           <h3>
             {t(
@@ -1275,7 +1285,12 @@ export function FeatureRequestsPage() {
             <button
               type="button"
               className="btn"
-              onClick={() => setMergeModalOpen(false)}
+              onClick={() => {
+                setMergeModalOpen(false)
+                setMergeTargetId('')
+                setMergeReason('')
+                setMergeSearch('')
+              }}
             >
               {t('Hủy', 'Cancel')}
             </button>

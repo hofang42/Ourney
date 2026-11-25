@@ -69,8 +69,30 @@ describe('UsersPage & Moderation State Gating (UX-28)', () => {
       screen.getByText(/does NOT delete the user profile/i),
     ).toBeInTheDocument()
 
+    // Check severe abuse checkbox, then press Escape: only Ban modal closes, drawer stays open, and wipeUgc resets on reopen
     await user.click(screen.getByRole('checkbox'))
-    await user.click(screen.getByRole('button', { name: /Confirm Ban/i }))
+    expect(screen.getByRole('checkbox')).toBeChecked()
+    await user.keyboard('{Escape}')
+    expect(
+      screen.queryByRole('dialog', { name: /Ban \/ Suspend User Account/i }),
+    ).toBeNull()
+    expect(
+      screen.getByRole('dialog', { name: /User detail drawer/i }),
+    ).toBeInTheDocument()
+
+    // Reopen Ban modal -> wipeUgc was reset to unchecked, and Confirm Ban is disabled until reason >= 3 chars
+    await user.click(banBtn)
+    expect(screen.getByRole('checkbox')).not.toBeChecked()
+    const confirmBanBtn = screen.getByRole('button', { name: /Confirm Ban/i })
+    expect(confirmBanBtn).toBeDisabled()
+
+    await user.type(
+      screen.getByPlaceholderText(/Enter violation reason/i),
+      'Violated community safety rules',
+    )
+    await user.click(screen.getByRole('checkbox'))
+    expect(confirmBanBtn).not.toBeDisabled()
+    await user.click(confirmBanBtn)
     expect(banSpy).toHaveBeenCalledWith({
       p_user: 'usr-10',
       p_reason: 'Violated community safety rules',
@@ -102,6 +124,11 @@ describe('UsersPage & Moderation State Gating (UX-28)', () => {
     expect(confirmBtn).toBeDisabled()
 
     await user.type(screen.getByPlaceholderText('@linh_ielts'), '@linh_ielts')
+    expect(confirmBtn).toBeDisabled()
+    await user.type(
+      screen.getByPlaceholderText(/Enter verified erasure reason/i),
+      'Verified user deletion request',
+    )
     expect(confirmBtn).not.toBeDisabled()
     await user.click(confirmBtn)
 
@@ -122,7 +149,7 @@ describe('UsersPage & Moderation State Gating (UX-28)', () => {
       banned_until: '2099-01-01T00:00:00Z',
     })
 
-    render(
+    const secondRender = render(
       <MemoryRouter initialEntries={['/users/usr-10']}>
         <I18nProvider initialLang="en">
           <Routes>
@@ -149,5 +176,40 @@ describe('UsersPage & Moderation State Gating (UX-28)', () => {
     expect(
       screen.queryByRole('button', { name: /Delete Account on Request/i }),
     ).toBeNull()
+
+    secondRender.unmount()
+
+    // Self-action gating: when viewing own admin account (detail.id === admin.user_id), Ban, Unban, Revoke, and Delete are all disabled
+    vi.spyOn(adminApi, 'getUserDetail').mockResolvedValueOnce({
+      ...SQL_FIXTURE_USER_DETAIL,
+      id: SQL_FIXTURE_OWNER.user_id,
+      email: SQL_FIXTURE_OWNER.email,
+      username: SQL_FIXTURE_OWNER.username,
+    })
+
+    render(
+      <MemoryRouter initialEntries={[`/users/${SQL_FIXTURE_OWNER.user_id}`]}>
+        <I18nProvider initialLang="en">
+          <Routes>
+            <Route
+              path="/users/:id"
+              element={<UsersPage admin={SQL_FIXTURE_OWNER} />}
+            />
+          </Routes>
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /Ban \/ Suspend User/i }),
+      ).toBeDisabled()
+      expect(
+        screen.getByRole('button', { name: /Revoke Sessions/i }),
+      ).toBeDisabled()
+      expect(
+        screen.getByRole('button', { name: /Delete Account on Request/i }),
+      ).toBeDisabled()
+    })
   })
 })

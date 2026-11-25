@@ -162,6 +162,7 @@ export function AdminAuthGuard({
         ),
       )
     } catch (err) {
+      console.debug('[OurneyAdmin Auth Error] signInWithOtp', err)
       setErrorMsg(formatAdminError(err, lang))
     } finally {
       setSubmitting(false)
@@ -178,6 +179,7 @@ export function AdminAuthGuard({
       setOtp('')
       await verifyAdminSession()
     } catch (err) {
+      console.debug('[OurneyAdmin Auth Error] verifyOtp', err)
       setErrorMsg(formatAdminError(err, lang))
     } finally {
       setSubmitting(false)

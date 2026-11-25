@@ -2,17 +2,20 @@ import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { adminApi, handleRpcError } from '../lib/adminRpc'
+import { adminApi, handleRpcError, supabase } from '../lib/adminRpc'
 import {
   fmtDateShort,
   fmtDateTime,
   formatAdminError,
+  formatAdminRole,
   formatAuditAction,
   formatFeatureRequestCategory,
   formatFeatureRequestStatus,
   formatJourneyKind,
+  formatJourneyStatus,
   formatJourneyVisibility,
   formatModerationReason,
+  formatModerationStatus,
   formatPlatformLabel,
   formatTargetType,
   formatUserStatus,
@@ -108,6 +111,11 @@ describe('AdminAuthGuard, Central Error Mapper (UX-10), and Localization Helpers
         viMatch: /Không thể xác thực mã OTP/i,
         enMatch: /Could not verify the OTP code/i,
       },
+      {
+        err: new Error('resend_429: {"name":"rate_limit_exceeded"}'),
+        viMatch: /giới hạn tần suất/i,
+        enMatch: /Rate limit exceeded/i,
+      },
     ]
 
     for (const c of cases) {
@@ -161,7 +169,69 @@ describe('AdminAuthGuard, Central Error Mapper (UX-10), and Localization Helpers
     const formattedVi = fmtDateTime('2026-11-24T06:15:00Z', 'vi')
     expect(formattedVi).not.toContain('2026-11-24T06:15:00Z')
     expect(formattedVi).toContain('2026')
+    expect(formattedVi).toContain('13:15')
+    expect(formattedVi).toContain('(GMT+7)')
     expect(fmtDateShort('2026-10-21', 'vi')).toBe('21/10/2026')
+
+    // Unknown enum values render neutral "Không rõ (<raw>)" / "Unknown (<raw>)" labels, never a wrong known value
+    expect(formatUserStatus('mystery_state', 'vi')).toBe(
+      'Không rõ (mystery_state)',
+    )
+    expect(formatUserStatus('mystery_state', 'en')).toBe(
+      'Unknown (mystery_state)',
+    )
+    expect(formatJourneyVisibility('unlisted_v3', 'vi')).toBe(
+      'Không rõ (unlisted_v3)',
+    )
+    expect(formatJourneyStatus('paused_v2', 'vi')).toBe('Không rõ (paused_v2)')
+    expect(formatFeatureRequestStatus('backlog_v2', 'vi')).toBe(
+      'Không rõ (backlog_v2)',
+    )
+    expect(formatModerationStatus('escalated', 'en')).toBe(
+      'Unknown (escalated)',
+    )
+    expect(formatAdminRole('super_root', 'vi')).toBe('Không rõ (super_root)')
+  })
+
+  it('extracts Edge Function status and JSON error code from FunctionsHttpError context in invokeAdminAction', async () => {
+    const httpError = Object.assign(
+      new Error('Edge Function returned a non-2xx status code'),
+      {
+        name: 'FunctionsHttpError',
+        context: new Response(JSON.stringify({ error: 'cannot_delete_self' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      },
+    )
+    const invokeMock = vi.fn().mockResolvedValueOnce({
+      data: null,
+      error: httpError,
+    })
+    vi.spyOn(supabase, 'functions', 'get').mockReturnValue({
+      invoke: invokeMock,
+    } as unknown as typeof supabase.functions)
+
+    let caught: unknown = null
+    try {
+      await adminApi.invokeAdminAction({
+        action: 'delete_user',
+        user_id: '00000000-0000-0000-0000-000000000001',
+        reason: 'Self delete test',
+      })
+    } catch (err) {
+      caught = err
+    }
+
+    expect(caught).toBeTruthy()
+    expect((caught as { status?: number }).status).toBe(400)
+    expect((caught as { code?: string }).code).toBe('cannot_delete_self')
+    expect(formatAdminError(caught, 'vi')).toMatch(
+      /không thể tự xóa tài khoản quản trị viên của chính mình/i,
+    )
+    expect(formatAdminError(caught, 'en')).toMatch(
+      /cannot delete your own admin account/i,
+    )
   })
 
   it('completes 6-digit OTP login flow, clears OTP on Back button, and renders protected content', async () => {

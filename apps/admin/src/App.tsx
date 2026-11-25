@@ -57,7 +57,10 @@ export function AppRoutes() {
           <Suspense fallback={<SessionLoadingFallback />}>
             <Routes>
               <Route path="/" element={<OverviewPage />} />
-              <Route path="/moderation" element={<ModerationPage />} />
+              <Route
+                path="/moderation"
+                element={<ModerationPage admin={admin} />}
+              />
               <Route path="/words" element={<WordsPage />} />
               <Route
                 path="/feature-requests"

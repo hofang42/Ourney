@@ -17,6 +17,7 @@ import {
   fmtDateTime,
   formatAdminError,
   formatPlatformLabel,
+  formatTechnicalDiagnostic,
   formatWaitlistSource,
   formatWordLang,
   useI18n,
@@ -42,8 +43,11 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
   const [total, setTotal] = useState(0)
   const [rows, setRows] = useState<WaitlistRow[]>([])
   const [statusMsg, setStatusMsg] = useState<string | null>(null)
+  const [warnMsg, setWarnMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [failedRows, setFailedRows] = useState<Record<string, string>>({})
+  const [resendingId, setResendingId] = useState<string | null>(null)
+  const [bulkRetrying, setBulkRetrying] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<WaitlistRow | null>(null)
   const [deleteReason, setDeleteReason] = useState('')
 
@@ -105,7 +109,10 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
   }
 
   const handleResendRow = async (id: string) => {
+    if (resendingId || bulkRetrying) return
+    setResendingId(id)
     setErrorMsg(null)
+    setWarnMsg(null)
     setStatusMsg(null)
     try {
       const res = await adminApi.invokeAdminAction<WaitlistResendResponse>({
@@ -127,10 +134,11 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
 
       if (failed > 0 || sent === 0) {
         const rawErr = errs[0]?.error || 'resend_failed'
+        console.debug('[OurneyAdmin Resend Error]', id, rawErr)
         const mappedReason = formatAdminError(rawErr, lang)
         setFailedRows((prev) => ({
           ...prev,
-          [id]: mappedReason,
+          [id]: rawErr,
         }))
         setErrorMsg(
           t(
@@ -154,13 +162,24 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
       await loadData(offset)
     } catch (err) {
       const msg = await handleRpcError(err, 'waitlist_resend', lang)
-      setFailedRows((prev) => ({ ...prev, [id]: msg }))
+      const rawText =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'string'
+            ? err
+            : msg
+      setFailedRows((prev) => ({ ...prev, [id]: rawText }))
       setErrorMsg(msg)
+    } finally {
+      setResendingId(null)
     }
   }
 
   const handleBulkRetryFailed = async () => {
+    if (bulkRetrying || resendingId) return
+    setBulkRetrying(true)
     setErrorMsg(null)
+    setWarnMsg(null)
     setStatusMsg(null)
     try {
       const res = await adminApi.invokeAdminAction<WaitlistResendResponse>({
@@ -181,13 +200,16 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
       const errs = Array.isArray(res?.errors) ? res.errors : []
 
       const nextFailed: Record<string, string> = {}
+      const distinctReasons = new Set<string>()
       for (const item of errs) {
         if (item && item.id) {
-          nextFailed[item.id] = formatAdminError(
-            item.error || 'resend_failed',
-            lang,
-          )
+          const rawItemErr = item.error || 'resend_failed'
+          nextFailed[item.id] = rawItemErr
+          distinctReasons.add(formatAdminError(rawItemErr, lang))
         }
+      }
+      if (errs.length > 0) {
+        console.debug('[OurneyAdmin Bulk Resend Errors]', errs)
       }
       setFailedRows(nextFailed)
 
@@ -196,12 +218,22 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
           errs[0]?.error || 'resend_failed',
           lang,
         )
-        setErrorMsg(
-          t(
-            `Gửi lại hàng loạt có lỗi: Đã gửi ${sent}, lỗi ${failed}. Lý do: ${firstReason}`,
-            `Bulk retry finished with errors: Sent ${sent}, failed ${failed}. Reason: ${firstReason}`,
-          ),
+        const multiSuffix =
+          distinctReasons.size > 1
+            ? t(
+                ' (Xem lý do chi tiết từng dòng trong bảng bên dưới).',
+                ' (See per-row reasons in the table below).',
+              )
+            : ''
+        const message = t(
+          `Gửi lại hàng loạt có lỗi: Đã gửi ${sent}, lỗi ${failed}. Lý do: ${firstReason}${multiSuffix}`,
+          `Bulk retry finished with errors: Sent ${sent}, failed ${failed}. Reason: ${firstReason}${multiSuffix}`,
         )
+        if (sent > 0) {
+          setWarnMsg(message)
+        } else {
+          setErrorMsg(message)
+        }
       } else if (hasCounts && sent === 0) {
         setStatusMsg(
           t(
@@ -221,6 +253,8 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
     } catch (err) {
       const msg = await handleRpcError(err, 'waitlist_resend_failed', lang)
       setErrorMsg(msg)
+    } finally {
+      setBulkRetrying(false)
     }
   }
 
@@ -266,6 +300,7 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
           <button
             type="button"
             className="btn btn-warn"
+            disabled={bulkRetrying || resendingId !== null}
             onClick={() => void handleBulkRetryFailed()}
           >
             <OIcon name="refresh" size={18} />
@@ -290,6 +325,12 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
       {errorMsg && (
         <div className="status-banner error" role="alert">
           <span>{errorMsg}</span>
+        </div>
+      )}
+
+      {warnMsg && (
+        <div className="status-banner warn" role="alert">
+          <span>{warnMsg}</span>
         </div>
       )}
 
@@ -447,11 +488,15 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
           <tbody>
             {rows.map((r) => {
               const isRowHighlightedFailed = Boolean(failedRows[r.id])
-              const rowErrorText =
-                failedRows[r.id] ||
-                (r.confirmation_error
-                  ? formatAdminError(r.confirmation_error, lang)
-                  : null)
+              const rawRowError =
+                failedRows[r.id] || r.confirmation_error || null
+              const rowErrorText = rawRowError
+                ? formatAdminError(rawRowError, lang)
+                : null
+              const rowTechDiagnostic =
+                admin.role === 'owner' && rawRowError
+                  ? formatTechnicalDiagnostic(rawRowError)
+                  : null
               const isSent =
                 !rowErrorText &&
                 (r.mail_status === 'sent' ||
@@ -482,9 +527,25 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
                   <td>{formatWaitlistSource(r.source, lang)}</td>
                   <td>
                     {rowErrorText ? (
-                      <span className="badge badge-danger">
-                        {t('Gửi lỗi', 'Failed')}: {rowErrorText}
-                      </span>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 4,
+                        }}
+                      >
+                        <span className="badge badge-danger">
+                          {t('Gửi lỗi', 'Failed')}: {rowErrorText}
+                        </span>
+                        {rowTechDiagnostic && (
+                          <details style={{ fontSize: '0.75rem' }}>
+                            <summary style={{ cursor: 'pointer' }}>
+                              {t('Chi tiết kỹ thuật', 'Technical details')}
+                            </summary>
+                            <code>{rowTechDiagnostic}</code>
+                          </details>
+                        )}
+                      </div>
                     ) : isSent ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         <span className="badge badge-success">
@@ -520,6 +581,7 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
                         <button
                           type="button"
                           className="btn"
+                          disabled={resendingId === r.id || bulkRetrying}
                           aria-label={`${t('Gửi lại', 'Resend')} ${r.email}`}
                           onClick={() => void handleResendRow(r.id)}
                         >
@@ -563,7 +625,10 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
             'Xác nhận xóa khỏi Danh sách chờ',
             'Confirm Waitlist Deletion',
           )}
-          onClose={() => setDeleteTarget(null)}
+          onClose={() => {
+            setDeleteTarget(null)
+            setDeleteReason('')
+          }}
         >
           <h3>
             {t('Xác nhận xóa khỏi Danh sách chờ', 'Confirm Waitlist Deletion')}
@@ -594,7 +659,10 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn"
-              onClick={() => setDeleteTarget(null)}
+              onClick={() => {
+                setDeleteTarget(null)
+                setDeleteReason('')
+              }}
             >
               {t('Hủy', 'Cancel')}
             </button>

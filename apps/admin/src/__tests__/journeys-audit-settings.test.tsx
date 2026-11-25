@@ -104,6 +104,18 @@ describe('JourneysPage, AuditPage, and SettingsPage', () => {
     expect(listSpy).toHaveBeenLastCalledWith(
       expect.objectContaining({ p_before_id: 1041 }),
     )
+
+    listSpy.mockResolvedValueOnce({
+      items: [SQL_FIXTURE_AUDIT_LIST.items[1]],
+      next_before_id: null,
+    })
+    await user.selectOptions(
+      screen.getByLabelText(/Filter audit log by action prefix/i),
+      'moderation.',
+    )
+    expect(listSpy).toHaveBeenLastCalledWith(
+      expect.objectContaining({ p_action_prefix: 'moderation.' }),
+    )
   })
 
   it('renders SettingsPage with SQL system_health (moderation_notifications & sample_errors), ops triggers, and admin removal confirmation modal', async () => {
@@ -161,5 +173,57 @@ describe('JourneysPage, AuditPage, and SettingsPage', () => {
       SQL_FIXTURE_MODERATOR.user_id,
       'Removed from Settings page',
     )
+  })
+
+  it('renders JourneysPage, AuditPage, and SettingsPage cleanly in default Vietnamese (initialLang="vi") without leftover English copy or raw sentinel IDs', async () => {
+    vi.spyOn(adminApi, 'journeyStats').mockResolvedValue(
+      SQL_FIXTURE_JOURNEY_STATS,
+    )
+    vi.spyOn(adminApi, 'listJourneys').mockResolvedValue(
+      SQL_FIXTURE_JOURNEYS_LIST,
+    )
+    vi.spyOn(adminApi, 'listAuditLog').mockResolvedValue({
+      items: [
+        {
+          ...SQL_FIXTURE_AUDIT_LIST.items[0],
+          action: 'system.run_storage_sweep',
+          target_type: 'system',
+          target_id: 'pending_storage_purge',
+          reason: null,
+          meta: { claimed: 3, removed: 3 },
+        },
+      ],
+      next_before_id: null,
+    })
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <I18nProvider initialLang="vi">
+          <JourneysPage />
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('47 (3890 lượt xem)')).toBeInTheDocument()
+    })
+    unmount()
+
+    render(
+      <MemoryRouter>
+        <I18nProvider initialLang="vi">
+          <AuditPage />
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Hàng đợi dọn dẹp lưu trữ'),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(/Đã nhận: 3 · Đã xóa tệp: 3/i),
+      ).toBeInTheDocument()
+    })
   })
 })

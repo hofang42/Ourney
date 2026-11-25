@@ -155,6 +155,7 @@ export interface ModerationQueueRow {
   target_display_name: string | null
   target_checkin_id: string | null
   target_message_id: string | null
+  target_feature_request_id?: string | null
   auto_quarantined: boolean
   has_reported_media: boolean
   distinct_open_reporters: number
@@ -195,6 +196,19 @@ export type ModerationReportedContent =
       has_media: boolean
     }
   | {
+      target_type: 'feature_request'
+      feature_request_id: string
+      title?: string | null
+      body?: string | null
+      caption?: string | null
+      category?: string | null
+      status?: string | null
+      hidden?: boolean | null
+      moderated_at?: string | null
+      created_at?: string | null
+      deleted?: boolean | null
+    }
+  | {
       target_type: 'user'
       user_id: string | null
     }
@@ -217,6 +231,7 @@ export interface ModerationItemDetail {
   target_user_id: string | null
   target_checkin_id: string | null
   target_message_id: string | null
+  target_feature_request_id?: string | null
   target_user: {
     user_id: string
     username: string | null
@@ -1032,7 +1047,7 @@ export const adminApi = {
 
   async quarantineModerationTarget(
     p_queue_id: string,
-    p_note: string,
+    p_note: string | null,
   ): Promise<void> {
     await callAdminRpc('quarantine_moderation_target', {
       p_queue_id,
@@ -1043,7 +1058,7 @@ export const adminApi = {
   async resolveModeration(
     p_queue_id: string,
     p_action: 'dismiss' | 'remove_content' | 'action' | 'ban_user',
-    p_note: string,
+    p_note: string | null,
   ): Promise<void> {
     await callAdminRpc('resolve_moderation', {
       p_queue_id,
@@ -1195,7 +1210,7 @@ export const adminApi = {
     p_category: FeatureRequestCategory
     p_admin_reply: string | null
     p_hidden: boolean
-    p_reason: string
+    p_reason: string | null
   }): Promise<void> {
     await callAdminRpc('update_feature_request', {
       p_id: params.p_id,
@@ -1527,8 +1542,81 @@ export const adminApi = {
       body: payload,
     })
     if (error) {
-      await verifySessionAfterError(error, 'admin-action')
-      throw error
+      let status: number | undefined =
+        typeof (error as { status?: unknown }).status === 'number'
+          ? ((error as { status?: number }).status ?? undefined)
+          : undefined
+      let code: string | undefined =
+        typeof (error as { code?: unknown }).code === 'string'
+          ? ((error as { code?: string }).code ?? undefined)
+          : undefined
+      const ctx = (
+        error as {
+          context?: {
+            status?: unknown
+            clone?: () => { json?: () => Promise<unknown>; text?: () => Promise<string> }
+            json?: () => Promise<unknown>
+            text?: () => Promise<string>
+          }
+        }
+      ).context
+      if (ctx && typeof ctx === 'object') {
+        if (typeof ctx.status === 'number') {
+          status = ctx.status
+        }
+        try {
+          const reader = typeof ctx.clone === 'function' ? ctx.clone() : ctx
+          if (typeof reader.json === 'function') {
+            const parsed = (await reader.json()) as {
+              error?: unknown
+              code?: unknown
+              message?: unknown
+            } | null
+            const extracted =
+              typeof parsed?.error === 'string'
+                ? parsed.error
+                : typeof parsed?.code === 'string'
+                  ? parsed.code
+                  : typeof parsed?.message === 'string'
+                    ? parsed.message
+                    : undefined
+            if (extracted) {
+              code = extracted
+            }
+          } else if (typeof reader.text === 'function') {
+            const rawText = (await reader.text()).trim()
+            if (rawText) {
+              try {
+                const parsed = JSON.parse(rawText) as {
+                  error?: unknown
+                  code?: unknown
+                }
+                const extracted =
+                  typeof parsed?.error === 'string'
+                    ? parsed.error
+                    : typeof parsed?.code === 'string'
+                      ? parsed.code
+                      : rawText
+                code = extracted
+              } catch {
+                code = rawText
+              }
+            }
+          }
+        } catch {
+          // Ignore body parse errors on already-consumed or empty responses
+        }
+      }
+      const enriched = Object.assign(
+        new Error(code || (error instanceof Error ? error.message : String(error))),
+        {
+          status,
+          code,
+          cause: error,
+        },
+      )
+      await verifySessionAfterError(enriched, 'admin-action')
+      throw enriched
     }
     return data as T
   },

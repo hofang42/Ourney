@@ -126,7 +126,7 @@ describe('FeatureRequestsPage', () => {
       p_admin_reply:
         'Đội ngũ Ourney đang thiết kế Widget Lock Screen cho bản iOS 1.1 vào tháng tới.',
       p_hidden: false,
-      p_reason: 'Updated status=planned, category=squad, hidden=false',
+      p_reason: null,
     })
 
     // UX-28: Hide Request requires confirmation modal and does NOT commit unsaved status draft

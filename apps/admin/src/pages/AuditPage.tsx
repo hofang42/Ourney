@@ -7,10 +7,33 @@ import {
 import {
   fmtDateTime,
   formatAuditAction,
+  formatAuditMetaSummary,
+  formatAuditReason,
+  formatAuditTargetId,
   formatTargetType,
   useI18n,
 } from '../lib/i18n'
 import { OIcon } from '../ui/Icon'
+
+const AUDIT_ACTION_GROUPS: Array<{
+  prefix: string
+  vi: string
+  en: string
+}> = [
+  { prefix: '', vi: 'Mọi nhóm hành động', en: 'All action groups' },
+  { prefix: 'moderation.', vi: 'Kiểm duyệt (24h SLA)', en: 'Moderation' },
+  { prefix: 'users.', vi: 'Người dùng & Tài khoản', en: 'Users & Accounts' },
+  {
+    prefix: 'feature_requests.',
+    vi: 'Đề xuất tính năng',
+    en: 'Feature Requests',
+  },
+  { prefix: 'words.', vi: 'Từ khóa chặn lọc', en: 'Content Filter Words' },
+  { prefix: 'waitlist.', vi: 'Danh sách chờ Beta', en: 'Waitlist' },
+  { prefix: 'journeys.', vi: 'Hành trình & Liên kết', en: 'Journeys' },
+  { prefix: 'admins.', vi: 'Đội ngũ Quản trị viên', en: 'Admin Team' },
+  { prefix: 'system.', vi: 'Hệ thống & Lưu trữ', en: 'System Operations' },
+]
 
 const AUDIT_TARGET_TYPES = [
   'moderation_queue',
@@ -92,20 +115,21 @@ export function AuditPage() {
       )}
 
       <div className="filter-bar">
-        <input
-          type="search"
-          className="input search-input"
+        <select
+          className="select"
           aria-label={t(
             'Lọc theo nhóm hành động kiểm toán',
             'Filter audit log by action prefix',
           )}
-          placeholder={t(
-            'Tìm theo nhóm hành động (kiểm duyệt, người dùng, đề xuất)...',
-            'Filter by action group (moderation, users, feature requests)...',
-          )}
           value={actionPrefix}
           onChange={(e) => setActionPrefix(e.target.value)}
-        />
+        >
+          {AUDIT_ACTION_GROUPS.map((g) => (
+            <option key={g.prefix || 'all'} value={g.prefix}>
+              {lang === 'vi' ? g.vi : g.en}
+            </option>
+          ))}
+        </select>
 
         <select
           aria-label={t('Loại đối tượng', 'Target type')}
@@ -164,20 +188,42 @@ export function AuditPage() {
                   <span className="badge">
                     {formatTargetType(r.target_type, lang)}
                   </span>{' '}
-                  <span style={{ fontSize: '0.8rem' }}>{r.target_id}</span>
+                  <span style={{ fontSize: '0.8rem' }}>
+                    {formatAuditTargetId(r.target_id, lang)}
+                  </span>
                 </td>
                 <td>
-                  <div>{r.reason || '—'}</div>
-                  <code
-                    style={{
-                      display: 'block',
-                      fontSize: '0.75rem',
-                      color: 'var(--muted)',
-                      marginTop: 4,
-                    }}
-                  >
-                    {JSON.stringify(r.meta)}
-                  </code>
+                  <div>{formatAuditReason(r.reason, lang)}</div>
+                  {formatAuditMetaSummary(r.meta, lang) && (
+                    <div
+                      style={{
+                        fontSize: '0.78rem',
+                        color: 'var(--soft)',
+                        marginTop: 2,
+                      }}
+                    >
+                      {formatAuditMetaSummary(r.meta, lang)}
+                    </div>
+                  )}
+                  {r.meta && Object.keys(r.meta).length > 0 && (
+                    <details style={{ marginTop: 4, fontSize: '0.75rem' }}>
+                      <summary
+                        style={{ cursor: 'pointer', color: 'var(--muted)' }}
+                      >
+                        {t('Chi tiết kỹ thuật', 'Technical details')}
+                      </summary>
+                      <code
+                        style={{
+                          display: 'block',
+                          fontSize: '0.75rem',
+                          color: 'var(--muted)',
+                          marginTop: 2,
+                        }}
+                      >
+                        {JSON.stringify(r.meta)}
+                      </code>
+                    </details>
+                  )}
                 </td>
                 <td>
                   <button

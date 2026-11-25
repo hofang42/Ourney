@@ -354,7 +354,8 @@ export function OverviewPage() {
                   +{kpis.users.new_today} {t('hôm nay', 'today')}
                 </span>
                 <span>
-                  +{kpis.users.new_7d} (7d) / {kpis.users.total_auth} Auth
+                  +{kpis.users.new_7d} ({t('7 ngày', '7d')}) /{' '}
+                  {kpis.users.total_auth} {t('tài khoản', 'Auth')}
                 </span>
               </div>
             </div>
@@ -369,7 +370,7 @@ export function OverviewPage() {
               <div className="kpi-value">{kpis.waitlist.total}</div>
               <div className="kpi-sub">
                 <span className="badge badge-warn">
-                  +{kpis.waitlist.new_7d} (7d)
+                  +{kpis.waitlist.new_7d} ({t('7 ngày', '7d')})
                 </span>
                 <span>
                   {kpis.waitlist.converted_pct.toFixed(1)}%{' '}
@@ -389,7 +390,8 @@ export function OverviewPage() {
               </div>
               <div className="kpi-sub">
                 <span className="badge badge-primary">
-                  Stickiness {kpis.engagement.stickiness_pct.toFixed(1)}%
+                  {t('Độ gắn kết', 'Stickiness')}{' '}
+                  {kpis.engagement.stickiness_pct.toFixed(1)}%
                 </span>
               </div>
             </div>
@@ -438,7 +440,8 @@ export function OverviewPage() {
               <div className="kpi-value">{kpis.moderation.open_reports}</div>
               <div className="kpi-sub">
                 <span className="badge badge-success">
-                  24h SLA: {kpis.moderation.sla_compliance_pct_30d}%
+                  {t('SLA 24h', '24h SLA')}:{' '}
+                  {kpis.moderation.sla_compliance_pct_30d}%
                 </span>
                 <span>
                   {kpis.moderation.open_blocks}{' '}
@@ -468,7 +471,7 @@ export function OverviewPage() {
                     to={`/feature-requests?id=${encodeURIComponent(topVotedFirst.id)}`}
                     style={{ fontWeight: 700, textDecoration: 'underline' }}
                   >
-                    Top #1 ({topVotedFirst.vote_count} votes)
+                    Top #1 ({topVotedFirst.vote_count} {t('phiếu', 'votes')})
                   </Link>
                 )}
               </div>

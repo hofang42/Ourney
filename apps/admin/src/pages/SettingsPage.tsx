@@ -6,7 +6,7 @@ import {
   type AdminRole,
   type SystemHealth,
 } from '../lib/adminRpc'
-import { formatAdminRole, useI18n } from '../lib/i18n'
+import { formatAdminError, formatAdminRole, useI18n } from '../lib/i18n'
 import { OIcon } from '../ui/Icon'
 import { AccessibleModal } from '../ui/Modal'
 
@@ -235,7 +235,15 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
                       {err.bucket}/{err.path_prefix}
                     </strong>{' '}
                     ({err.attempts} {t('lần thử', 'attempts')}):{' '}
-                    {err.last_error}
+                    {formatAdminError(err.last_error, lang)}
+                    <details style={{ marginTop: 2, fontSize: '0.75rem' }}>
+                      <summary
+                        style={{ cursor: 'pointer', color: 'var(--muted)' }}
+                      >
+                        {t('Chi tiết kỹ thuật', 'Technical details')}
+                      </summary>
+                      <code>{err.last_error}</code>
+                    </details>
                   </div>
                 ))}
               </div>
@@ -386,7 +394,7 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Email & Username</th>
+                <th>{t('Email & Tên người dùng', 'Email & Username')}</th>
                 <th>{t('Vai trò', 'Role')}</th>
                 <th>{t('Ghi chú', 'Note')}</th>
                 <th>{t('Thao tác', 'Actions')}</th>
@@ -437,7 +445,10 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
             'Xác nhận gỡ quyền quản trị viên',
             'Confirm Admin Removal',
           )}
-          onClose={() => setRemoveTarget(null)}
+          onClose={() => {
+            setRemoveTarget(null)
+            setRemoveReason('')
+          }}
         >
           <h3>
             {t('Xác nhận gỡ quyền quản trị viên', 'Confirm Admin Removal')}
@@ -468,7 +479,10 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn"
-              onClick={() => setRemoveTarget(null)}
+              onClick={() => {
+                setRemoveTarget(null)
+                setRemoveReason('')
+              }}
             >
               {t('Hủy', 'Cancel')}
             </button>

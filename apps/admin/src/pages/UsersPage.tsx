@@ -10,6 +10,7 @@ import {
 import {
   fmtDateTime,
   formatAuditAction,
+  formatAuditReason,
   formatModerationKind,
   formatModerationReason,
   formatModerationStatus,
@@ -86,6 +87,17 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
   }, [search, statusFilter, sortBy])
 
   useEffect(() => {
+    setBanModalOpen(false)
+    setBanReason('')
+    setWipeUgc(false)
+    setUnbanModalOpen(false)
+    setUnbanReason('')
+    setRevokeModalOpen(false)
+    setRevokeReason('')
+    setDeleteModalOpen(false)
+    setDeleteConfirmInput('')
+    setDeleteReason('')
+    setDeleteTicketRef('')
     if (!drawerUserId) {
       setDetail(null)
       return
@@ -106,11 +118,7 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
   const handleConfirmBan = async () => {
     if (!detail) return
     const trimmedReason = banReason.trim()
-    const effectiveReason =
-      trimmedReason.length > 0
-        ? trimmedReason
-        : 'Violated community safety rules'
-    if (effectiveReason.length < 3) {
+    if (trimmedReason.length < 3) {
       setErrorMsg(
         t(
           'Lý do khóa tài khoản phải có ít nhất 3 ký tự.',
@@ -123,7 +131,7 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
     try {
       await adminApi.banUser({
         p_user: detail.id,
-        p_reason: effectiveReason,
+        p_reason: trimmedReason,
         p_wipe_ugc: wipeUgc,
       })
       setBanModalOpen(false)
@@ -204,11 +212,7 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
     if (!detail) return
     if (deleteConfirmInput.trim() !== expectedConfirmToken) return
     const trimmedReason = deleteReason.trim()
-    const effectiveReason =
-      trimmedReason.length > 0
-        ? trimmedReason
-        : 'Verified user deletion request'
-    if (effectiveReason.length < 3) {
+    if (trimmedReason.length < 3) {
       setErrorMsg(
         t(
           'Lý do xóa tài khoản phải có ít nhất 3 ký tự.',
@@ -222,7 +226,7 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
       await adminApi.invokeAdminAction({
         action: 'delete_user',
         user_id: detail.id,
-        reason: effectiveReason,
+        reason: trimmedReason,
         ticket_ref: deleteTicketRef.trim() || undefined,
       })
       setDeleteModalOpen(false)
@@ -243,6 +247,7 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
     }
   }
 
+  const isSelfUser = Boolean(detail && detail.id === admin.user_id)
   const isSoftDeleted = Boolean(
     detail && (detail.status === 'soft_deleted' || detail.deleted_at),
   )
@@ -253,34 +258,56 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
         Boolean(detail.banned_until)),
   )
 
-  const banDisabledReason = isSoftDeleted
+  const banDisabledReason = isSelfUser
     ? t(
-        'Tài khoản đã bị xóa mềm, không thể khóa.',
-        'Account is soft-deleted and cannot be banned.',
+        'Bạn không thể tự khóa tài khoản quản trị viên của chính mình.',
+        'You cannot ban your own admin account.',
       )
-    : isBanned
+    : isSoftDeleted
       ? t(
-          'Tài khoản này đang bị khóa.',
-          'This user account is already banned.',
+          'Tài khoản đã bị xóa mềm, không thể khóa.',
+          'Account is soft-deleted and cannot be banned.',
+        )
+      : isBanned
+        ? t(
+            'Tài khoản này đang bị khóa.',
+            'This user account is already banned.',
+          )
+        : undefined
+
+  const unbanDisabledReason = isSelfUser
+    ? t(
+        'Bạn không thể tự mở khóa tài khoản của chính mình.',
+        'You cannot unban your own account.',
+      )
+    : isSoftDeleted
+      ? t(
+          'Tài khoản đã bị xóa mềm, không thể mở khóa.',
+          'Account is soft-deleted and cannot be unbanned.',
+        )
+      : !isBanned
+        ? t(
+            'Tài khoản này đang hoạt động bình thường, không bị khóa.',
+            'This user account is not currently banned.',
+          )
+        : undefined
+
+  const revokeDisabledReason = isSelfUser
+    ? t(
+        'Không thể thu hồi phiên của chính bạn tại đây. Hãy dùng nút Đăng xuất.',
+        'Cannot revoke your own active session here. Use Sign Out instead.',
+      )
+    : isSoftDeleted
+      ? t(
+          'Tài khoản đã bị xóa mềm, không còn phiên đăng nhập hoạt động.',
+          'Account is soft-deleted and has no active sessions.',
         )
       : undefined
 
-  const unbanDisabledReason = isSoftDeleted
+  const deleteDisabledReason = isSelfUser
     ? t(
-        'Tài khoản đã bị xóa mềm, không thể mở khóa.',
-        'Account is soft-deleted and cannot be unbanned.',
-      )
-    : !isBanned
-      ? t(
-          'Tài khoản này đang hoạt động bình thường, không bị khóa.',
-          'This user account is not currently banned.',
-        )
-      : undefined
-
-  const revokeDisabledReason = isSoftDeleted
-    ? t(
-        'Tài khoản đã bị xóa mềm, không còn phiên đăng nhập hoạt động.',
-        'Account is soft-deleted and has no active sessions.',
+        'Bạn không thể tự xóa tài khoản quản trị viên của chính mình.',
+        'You cannot delete your own admin account.',
       )
     : undefined
 
@@ -596,6 +623,8 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
               <button
                 type="button"
                 className="btn btn-danger"
+                disabled={Boolean(deleteDisabledReason)}
+                title={deleteDisabledReason}
                 onClick={() => setDeleteModalOpen(true)}
               >
                 <OIcon name="trash" size={18} />
@@ -637,7 +666,9 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
                     style={{ fontSize: '0.78rem', color: 'var(--muted)' }}
                   >
                     {fmtDateTime(rep.created_at, lang)}
-                    {rep.resolution_note ? ` — ${rep.resolution_note}` : ''}
+                    {rep.resolution_note
+                      ? ` — ${formatAuditReason(rep.resolution_note, lang)}`
+                      : ''}
                   </div>
                 </div>
               ))
@@ -666,7 +697,9 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
                 >
                   {aud.admin_email || t('Hệ thống', 'System')} ·{' '}
                   {fmtDateTime(aud.created_at, lang)}
-                  {aud.reason ? ` — ${aud.reason}` : ''}
+                  {aud.reason
+                    ? ` — ${formatAuditReason(aud.reason, lang)}`
+                    : ''}
                 </div>
               </div>
             ))}
@@ -677,7 +710,11 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
       {banModalOpen && detail && (
         <AccessibleModal
           title={t('Khóa tài khoản người dùng', 'Ban / Suspend User Account')}
-          onClose={() => setBanModalOpen(false)}
+          onClose={() => {
+            setBanModalOpen(false)
+            setBanReason('')
+            setWipeUgc(false)
+          }}
         >
           <h3>
             {t('Khóa tài khoản người dùng', 'Ban / Suspend User Account')}
@@ -744,13 +781,18 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn"
-              onClick={() => setBanModalOpen(false)}
+              onClick={() => {
+                setBanModalOpen(false)
+                setBanReason('')
+                setWipeUgc(false)
+              }}
             >
               {t('Hủy', 'Cancel')}
             </button>
             <button
               type="button"
               className="btn btn-danger"
+              disabled={banReason.trim().length < 3}
               onClick={() => void handleConfirmBan()}
             >
               {t('Xác nhận khóa', 'Confirm Ban')}
@@ -762,7 +804,10 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
       {unbanModalOpen && detail && (
         <AccessibleModal
           title={t('Mở khóa tài khoản', 'Unban User Account')}
-          onClose={() => setUnbanModalOpen(false)}
+          onClose={() => {
+            setUnbanModalOpen(false)
+            setUnbanReason('')
+          }}
         >
           <h3>{t('Mở khóa tài khoản', 'Unban User Account')}</h3>
           <label className="field-group">
@@ -780,7 +825,10 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn"
-              onClick={() => setUnbanModalOpen(false)}
+              onClick={() => {
+                setUnbanModalOpen(false)
+                setUnbanReason('')
+              }}
             >
               {t('Hủy', 'Cancel')}
             </button>
@@ -861,7 +909,12 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             'Xóa vĩnh viễn tài khoản theo yêu cầu (GDPR / Nghị định 13)',
             'Delete Account on Request (GDPR / Decree 13)',
           )}
-          onClose={() => setDeleteModalOpen(false)}
+          onClose={() => {
+            setDeleteModalOpen(false)
+            setDeleteConfirmInput('')
+            setDeleteReason('')
+            setDeleteTicketRef('')
+          }}
         >
           <h3>
             {t(
@@ -916,6 +969,10 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
               maxLength={500}
               value={deleteReason}
               onChange={(e) => setDeleteReason(e.target.value)}
+              placeholder={t(
+                'Nhập lý do xóa theo yêu cầu...',
+                'Enter verified erasure reason...',
+              )}
             />
           </label>
 
@@ -923,14 +980,22 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn"
-              onClick={() => setDeleteModalOpen(false)}
+              onClick={() => {
+                setDeleteModalOpen(false)
+                setDeleteConfirmInput('')
+                setDeleteReason('')
+                setDeleteTicketRef('')
+              }}
             >
               {t('Hủy', 'Cancel')}
             </button>
             <button
               type="button"
               className="btn btn-danger"
-              disabled={deleteConfirmInput.trim() !== expectedConfirmToken}
+              disabled={
+                deleteConfirmInput.trim() !== expectedConfirmToken ||
+                deleteReason.trim().length < 3
+              }
               onClick={() => void handleConfirmDeleteAccount()}
             >
               {t('Xóa vĩnh viễn tài khoản', 'Execute Account Erasure')}

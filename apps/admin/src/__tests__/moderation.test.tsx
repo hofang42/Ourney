@@ -153,4 +153,95 @@ describe('ModerationPage & Action Gating (UX-28)', () => {
       screen.getByRole('button', { name: /Ban User & Wipe Content/i }),
     ).not.toBeDisabled()
   })
+
+  it('supports feature_request moderation targets (title + body excerpt, Quarantine Target button) and hides dead-end Reopen Review when report is already fully actioned (ban_user + content removed)', async () => {
+    const quarantineSpy = vi
+      .spyOn(adminApi, 'quarantineModerationTarget')
+      .mockResolvedValue()
+
+    vi.spyOn(adminApi, 'getModerationItem').mockResolvedValueOnce({
+      ...SQL_FIXTURE_MODERATION_DETAIL,
+      id: 'mq-fr-1',
+      target_checkin_id: null,
+      target_message_id: null,
+      target_feature_request_id: 'fr-101',
+      reported_content: {
+        target_type: 'feature_request',
+        feature_request_id: 'fr-101',
+        title: 'Reported Feature Title',
+        body: 'Reported feature request body text',
+        caption: 'Reported Feature Title\n\nReported feature request body text',
+        category: 'squad',
+        status: 'new',
+        hidden: false,
+        moderated_at: null,
+      },
+    })
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <I18nProvider initialLang="en">
+          <ModerationPage />
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Reported Feature Title/i),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(/Reported feature request body text/i),
+      ).toBeInTheDocument()
+    })
+
+    const quarantineBtn = screen.getByRole('button', {
+      name: /Quarantine Target/i,
+    })
+    expect(quarantineBtn).not.toBeDisabled()
+
+    const user = userEvent.setup()
+    await user.click(quarantineBtn)
+    await user.click(screen.getByRole('button', { name: /Confirm Action/i }))
+    expect(quarantineSpy).toHaveBeenCalledWith('mq-01', null)
+
+    unmount()
+
+    // Terminal state: status = 'actioned', content removed (deleted_at set), and target_user.is_banned = true
+    vi.spyOn(adminApi, 'getModerationItem').mockResolvedValueOnce({
+      ...SQL_FIXTURE_MODERATION_DETAIL,
+      status: 'actioned',
+      handled_at: '2026-11-24T08:00:00Z',
+      resolution_note: 'Action ban_user executed by operator',
+      target_user: {
+        ...SQL_FIXTURE_MODERATION_DETAIL.target_user!,
+        is_banned: true,
+      },
+      reported_content: {
+        ...(SQL_FIXTURE_MODERATION_DETAIL.reported_content as Extract<
+          typeof SQL_FIXTURE_MODERATION_DETAIL.reported_content,
+          { target_type: 'checkin' }
+        >),
+        deleted_at: '2026-11-24T08:00:00Z',
+        moderated_at: '2026-11-24T08:00:00Z',
+      },
+    })
+
+    render(
+      <MemoryRouter>
+        <I18nProvider initialLang="en">
+          <ModerationPage />
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/All available actions have already been applied/i),
+      ).toBeInTheDocument()
+    })
+    expect(
+      screen.queryByRole('button', { name: /Reopen Review/i }),
+    ).toBeNull()
+  })
 })

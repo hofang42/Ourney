@@ -209,7 +209,7 @@ export function formatAdminError(
 
   if (
     status === 429 ||
-    /\b(rate_limited|rate limit|429|too many requests|over_email_send_rate_limit)\b/i.test(
+    /(?:^|\b|_)(rate_limited|rate_limit_exceeded|rate limit|429|too many requests|over_email_send_rate_limit)(?:\b|_|$)/i.test(
       combined,
     )
   ) {
@@ -220,7 +220,7 @@ export function formatAdminError(
     )
   }
 
-  if (/\bcannot_remove_last_owner\b/i.test(combined)) {
+  if (/(?:^|\b|_)cannot_remove_last_owner(?:\b|_|$)/i.test(combined)) {
     return pick(
       lang,
       'Không thể gỡ hoặc hạ quyền Chủ sở hữu cuối cùng của hệ thống.',
@@ -228,7 +228,7 @@ export function formatAdminError(
     )
   }
 
-  if (/\bcannot_delete_self\b/i.test(combined)) {
+  if (/(?:^|\b|_)cannot_delete_self(?:\b|_|$)/i.test(combined)) {
     return pick(
       lang,
       'Bạn không thể tự xóa tài khoản quản trị viên của chính mình.',
@@ -236,7 +236,7 @@ export function formatAdminError(
     )
   }
 
-  if (/\bno_reported_media\b/i.test(combined)) {
+  if (/(?:^|\b|_)no_reported_media(?:\b|_|$)/i.test(combined)) {
     return pick(
       lang,
       'Mục báo cáo này không có tệp hình ảnh hoặc phương tiện đính kèm.',
@@ -244,7 +244,7 @@ export function formatAdminError(
     )
   }
 
-  if (/\blinks_not_allowed\b/i.test(combined)) {
+  if (/(?:^|\b|_)links_not_allowed(?:\b|_|$)/i.test(combined)) {
     return pick(
       lang,
       'Nội dung không được chứa đường dẫn hoặc liên kết web.',
@@ -252,7 +252,7 @@ export function formatAdminError(
     )
   }
 
-  if (/\b(content_policy|objectionable)\b/i.test(combined)) {
+  if (/(?:^|\b|_)(content_policy|objectionable)(?:\b|_|$)/i.test(combined)) {
     return pick(
       lang,
       'Nội dung chứa từ ngữ vi phạm bộ lọc an toàn cộng đồng. Vui lòng kiểm tra lại.',
@@ -260,7 +260,7 @@ export function formatAdminError(
     )
   }
 
-  if (/\bimmutable_column\b/i.test(combined)) {
+  if (/(?:^|\b|_)immutable_column(?:\b|_|$)/i.test(combined)) {
     return pick(
       lang,
       'Không thể thay đổi trường dữ liệu được bảo vệ.',
@@ -269,7 +269,9 @@ export function formatAdminError(
   }
 
   if (
-    /\b(mail_not_configured|RESEND_API_KEY|WAITLIST_FROM)\b/i.test(combined)
+    /(?:^|\b|_)(mail_not_configured|RESEND_API_KEY|WAITLIST_FROM)(?:\b|_|$)/i.test(
+      combined,
+    )
   ) {
     return pick(
       lang,
@@ -278,7 +280,7 @@ export function formatAdminError(
     )
   }
 
-  if (/\bresend_\d+|resend_failed\b/i.test(combined)) {
+  if (/(?:^|\b|_)(resend_\d+|resend_failed)(?:\b|_|$)/i.test(combined)) {
     return pick(
       lang,
       'Nhà cung cấp dịch vụ email từ chối hoặc tạm thời không phản hồi. Vui lòng thử lại sau.',
@@ -286,7 +288,10 @@ export function formatAdminError(
     )
   }
 
-  if (/\b(not_found|user_not_found)\b/i.test(combined) || status === 404) {
+  if (
+    /(?:^|\b|_)(not_found|user_not_found)(?:\b|_|$)/i.test(combined) ||
+    status === 404
+  ) {
     return pick(
       lang,
       'Không tìm thấy mục dữ liệu yêu cầu (có thể đã bị xóa trước đó).',
@@ -318,7 +323,7 @@ export function formatAdminError(
     )
   }
 
-  if (/\b(delete_failed|lookup_failed)\b/i.test(combined)) {
+  if (/(?:^|\b|_)(delete_failed|lookup_failed)(?:\b|_|$)/i.test(combined)) {
     return pick(
       lang,
       'Không thể hoàn tất thao tác xử lý tài khoản trên máy chủ. Vui lòng thử lại.',
@@ -326,7 +331,7 @@ export function formatAdminError(
     )
   }
 
-  if (status === 413 || /\bpayload_too_large\b/i.test(combined)) {
+  if (status === 413 || /(?:^|\b|_)payload_too_large(?:\b|_|$)/i.test(combined)) {
     return pick(
       lang,
       'Dữ liệu gửi lên vượt quá dung lượng tối đa cho phép.',
@@ -334,7 +339,10 @@ export function formatAdminError(
     )
   }
 
-  if (code === '23505' || /\b(23505|duplicate key|already exists)\b/i.test(combined)) {
+  if (
+    code === '23505' ||
+    /\b(23505|duplicate key|already exists)\b/i.test(combined)
+  ) {
     return pick(
       lang,
       'Dữ liệu này đã tồn tại trong hệ thống.',
@@ -347,7 +355,7 @@ export function formatAdminError(
     code === '23514' ||
     code === '22P02' ||
     status === 400 ||
-    /\b(invalid|invalid_body|invalid_action|violates check constraint|23514|22P02)\b/i.test(
+    /(?:^|\b|_)(invalid|invalid_body|invalid_action|violates check constraint|23514|22P02)(?:\b|_|$)/i.test(
       combined,
     )
   ) {
@@ -381,27 +389,74 @@ export function formatAdminError(
   )
 }
 
+export function formatTechnicalDiagnostic(
+  err: unknown,
+): string | null {
+  const raw =
+    typeof err === 'string'
+      ? err
+      : err instanceof Error
+        ? err.message
+        : err && typeof err === 'object'
+          ? String(
+              (err as { message?: unknown; error?: unknown; code?: unknown })
+                .message ??
+                (err as { error?: unknown }).error ??
+                (err as { code?: unknown }).code ??
+                '',
+            )
+          : ''
+  const cleaned = raw
+    .replace(/\b(42501|PGRST\d+|28000|P0001|23514|23505|22P02|42883|42P01)\b/gi, '')
+    .replace(/\b(private|admin|public)\.[a-z0-9_]+/gi, '[db_object]')
+    .replace(/\b(RESEND_API_KEY|WAITLIST_FROM|WAITLIST_REPLY_TO)\b/gi, '[env_config]')
+    .trim()
+  return cleaned || null
+}
+
+function formatUnknownEnum(
+  raw: string | null | undefined,
+  lang: Lang,
+): string {
+  const trimmed = (raw ?? '').trim()
+  if (!trimmed) {
+    return pick(lang, 'Không rõ', 'Unknown')
+  }
+  return pick(lang, `Không rõ (${trimmed})`, `Unknown (${trimmed})`)
+}
+
 export function fmtDateTime(
   iso: string | null | undefined,
   lang: Lang = getCurrentLang(),
+  timeZone = 'Asia/Ho_Chi_Minh',
 ): string {
   if (!iso) return '—'
   const trimmed = iso.trim()
   if (!trimmed) return '—'
   const d = new Date(trimmed)
   if (Number.isNaN(d.getTime())) return trimmed
+  const tzLabel =
+    timeZone === 'Asia/Ho_Chi_Minh'
+      ? 'GMT+7'
+      : timeZone === 'UTC'
+        ? 'UTC'
+        : timeZone
   try {
-    return new Intl.DateTimeFormat(lang === 'vi' ? 'vi-VN' : 'en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-      timeZone: 'UTC',
-    }).format(d)
+    const formatted = new Intl.DateTimeFormat(
+      lang === 'vi' ? 'vi-VN' : 'en-US',
+      {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone,
+      },
+    ).format(d)
+    return `${formatted} (${tzLabel})`
   } catch {
-    return trimmed.replace('T', ' ').replace(/\.\d+Z$/, ' UTC')
+    return `${trimmed.replace('T', ' ').replace(/\.\d+Z$/, '')} (${tzLabel})`
   }
 }
 
@@ -423,13 +478,13 @@ export function formatModerationKind(
   kind: string | null | undefined,
   lang: Lang = getCurrentLang(),
 ): string {
-  switch (kind?.toLowerCase()) {
+  switch (kind?.toLowerCase().trim()) {
     case 'report':
       return pick(lang, 'Báo cáo', 'Report')
     case 'block':
       return pick(lang, 'Chặn người dùng', 'Block Signal')
     default:
-      return pick(lang, 'Tín hiệu', 'Signal')
+      return formatUnknownEnum(kind, lang)
   }
 }
 
@@ -462,7 +517,7 @@ export function formatModerationReason(
     case 'unspecified':
       return pick(lang, 'Báo cáo vi phạm', 'Reported Violation')
     default:
-      return pick(lang, 'Lý do khác', 'Other')
+      return formatUnknownEnum(reason, lang)
   }
 }
 
@@ -470,7 +525,7 @@ export function formatModerationStatus(
   status: string | null | undefined,
   lang: Lang = getCurrentLang(),
 ): string {
-  switch (status?.toLowerCase()) {
+  switch (status?.toLowerCase().trim()) {
     case 'open':
       return pick(lang, 'Đang mở', 'Open')
     case 'overdue':
@@ -482,7 +537,7 @@ export function formatModerationStatus(
     case 'dismissed':
       return pick(lang, 'Đã bác bỏ', 'Dismissed')
     default:
-      return pick(lang, 'Không xác định', 'Unknown')
+      return formatUnknownEnum(status, lang)
   }
 }
 
@@ -490,7 +545,7 @@ export function formatModerationAction(
   action: string | null | undefined,
   lang: Lang = getCurrentLang(),
 ): string {
-  switch (action?.toLowerCase()) {
+  switch (action?.toLowerCase().trim()) {
     case 'dismiss':
       return pick(lang, 'Bác bỏ báo cáo', 'Dismiss Report')
     case 'quarantine':
@@ -502,7 +557,7 @@ export function formatModerationAction(
     case 'action':
       return pick(lang, 'Thực thi xử phạt', 'Take Action')
     default:
-      return pick(lang, 'Quyết định kiểm duyệt', 'Moderation Action')
+      return formatUnknownEnum(action, lang)
   }
 }
 
@@ -510,7 +565,7 @@ export function formatTargetType(
   targetType: string | null | undefined,
   lang: Lang = getCurrentLang(),
 ): string {
-  switch (targetType?.toLowerCase()) {
+  switch (targetType?.toLowerCase().trim()) {
     case 'checkin':
       return pick(lang, 'Ảnh check-in', 'Check-in')
     case 'message':
@@ -532,7 +587,7 @@ export function formatTargetType(
     case 'system':
       return pick(lang, 'Hệ thống', 'System')
     default:
-      return pick(lang, 'Đối tượng khác', 'Other Target')
+      return formatUnknownEnum(targetType, lang)
   }
 }
 
@@ -540,7 +595,7 @@ export function formatWordLang(
   wordLang: string | null | undefined,
   lang: Lang = getCurrentLang(),
 ): string {
-  switch (wordLang?.toLowerCase()) {
+  switch (wordLang?.toLowerCase().trim()) {
     case 'vi':
       return pick(lang, 'Tiếng Việt (VI)', 'Vietnamese (VI)')
     case 'en':
@@ -548,7 +603,7 @@ export function formatWordLang(
     case 'any':
       return pick(lang, 'Mọi ngôn ngữ', 'Any language')
     default:
-      return pick(lang, 'Mọi ngôn ngữ', 'Any language')
+      return formatUnknownEnum(wordLang, lang)
   }
 }
 
@@ -556,7 +611,7 @@ export function formatWordMatchMode(
   mode: string | null | undefined,
   lang: Lang = getCurrentLang(),
 ): string {
-  switch (mode?.toLowerCase()) {
+  switch (mode?.toLowerCase().trim()) {
     case 'diacritic_word':
       return pick(lang, 'Từ có dấu chính xác', 'Exact Diacritic Word')
     case 'word':
@@ -564,7 +619,7 @@ export function formatWordMatchMode(
     case 'substring':
       return pick(lang, 'Chuỗi ký tự con', 'Substring')
     default:
-      return pick(lang, 'Từ nguyên vẹn', 'Whole Word')
+      return formatUnknownEnum(mode, lang)
   }
 }
 
@@ -572,7 +627,7 @@ export function formatWordCategory(
   category: string | null | undefined,
   lang: Lang = getCurrentLang(),
 ): string {
-  switch (category?.toLowerCase()) {
+  switch (category?.toLowerCase().trim()) {
     case 'profanity':
       return pick(lang, 'Ngôn từ thô tục', 'Profanity')
     case 'slur':
@@ -586,7 +641,7 @@ export function formatWordCategory(
     case 'csae':
       return pick(lang, 'An toàn trẻ em (CSAE)', 'Child Safety (CSAE)')
     default:
-      return pick(lang, 'Vi phạm khác', 'Other Violation')
+      return formatUnknownEnum(category, lang)
   }
 }
 
@@ -594,7 +649,7 @@ export function formatFeatureRequestStatus(
   status: string | null | undefined,
   lang: Lang = getCurrentLang(),
 ): string {
-  switch (status?.toLowerCase()) {
+  switch (status?.toLowerCase().trim()) {
     case 'new':
       return pick(lang, 'Mới gửi', 'New')
     case 'under_review':
@@ -608,7 +663,7 @@ export function formatFeatureRequestStatus(
     case 'declined':
       return pick(lang, 'Chưa phù hợp', 'Declined')
     default:
-      return pick(lang, 'Mới gửi', 'New')
+      return formatUnknownEnum(status, lang)
   }
 }
 
@@ -616,7 +671,7 @@ export function formatFeatureRequestCategory(
   category: string | null | undefined,
   lang: Lang = getCurrentLang(),
 ): string {
-  switch (category?.toLowerCase()) {
+  switch (category?.toLowerCase().trim()) {
     case 'camera':
       return pick(lang, 'Máy ảnh', 'Camera')
     case 'journeys':
@@ -628,8 +683,9 @@ export function formatFeatureRequestCategory(
     case 'design':
       return pick(lang, 'Giao diện', 'Design')
     case 'other':
-    default:
       return pick(lang, 'Khác', 'Other')
+    default:
+      return formatUnknownEnum(category, lang)
   }
 }
 
@@ -637,7 +693,7 @@ export function formatUserStatus(
   status: string | null | undefined,
   lang: Lang = getCurrentLang(),
 ): string {
-  switch (status?.toLowerCase()) {
+  switch (status?.toLowerCase().trim()) {
     case 'active':
       return pick(lang, 'Đang hoạt động', 'Active')
     case 'incomplete_onboarding':
@@ -647,7 +703,7 @@ export function formatUserStatus(
     case 'soft_deleted':
       return pick(lang, 'Đã xóa mềm', 'Soft Deleted')
     default:
-      return pick(lang, 'Đang hoạt động', 'Active')
+      return formatUnknownEnum(status, lang)
   }
 }
 
@@ -655,7 +711,7 @@ export function formatJourneyKind(
   kind: string | null | undefined,
   lang: Lang = getCurrentLang(),
 ): string {
-  switch (kind?.toLowerCase()) {
+  switch (kind?.toLowerCase().trim()) {
     case 'solo':
       return pick(lang, 'Cá nhân', 'Solo')
     case 'group':
@@ -663,7 +719,7 @@ export function formatJourneyKind(
     case 'couple':
       return pick(lang, 'Cặp đôi', 'Couple')
     default:
-      return pick(lang, 'Cá nhân', 'Solo')
+      return formatUnknownEnum(kind, lang)
   }
 }
 
@@ -671,20 +727,27 @@ export function formatJourneyTemplate(
   template: string | null | undefined,
   lang: Lang = getCurrentLang(),
 ): string {
-  switch (template?.toLowerCase()) {
+  switch (template?.toLowerCase().trim()) {
     case 'weight_loss':
+    case 'quiet_transformer':
       return pick(lang, 'Giảm cân', 'Weight Loss')
     case 'english_daily':
+    case 'accountability_squad':
       return pick(lang, 'Học mỗi ngày', 'Daily Study')
     case 'travel':
+    case 'memory_collectors':
       return pick(lang, 'Chuyến đi', 'Travel')
     case 'couple':
+    case 'couple_rituals':
       return pick(lang, 'Cặp đôi', 'Couple')
     case 'workout_30':
+    case 'aesthetic_flexer':
       return pick(lang, 'Tập luyện 30 ngày', 'Workout 30')
     case 'custom':
-    default:
+    case 'minimalist_habit':
       return pick(lang, 'Thói quen tối giản', 'Custom Habit')
+    default:
+      return formatUnknownEnum(template, lang)
   }
 }
 
@@ -692,7 +755,7 @@ export function formatJourneyStatus(
   status: string | null | undefined,
   lang: Lang = getCurrentLang(),
 ): string {
-  switch (status?.toLowerCase()) {
+  switch (status?.toLowerCase().trim()) {
     case 'active':
       return pick(lang, 'Đang diễn ra', 'Active')
     case 'ended':
@@ -700,7 +763,7 @@ export function formatJourneyStatus(
     case 'archived':
       return pick(lang, 'Đã lưu trữ', 'Archived')
     default:
-      return pick(lang, 'Đang diễn ra', 'Active')
+      return formatUnknownEnum(status, lang)
   }
 }
 
@@ -708,7 +771,7 @@ export function formatJourneyVisibility(
   vis: string | null | undefined,
   lang: Lang = getCurrentLang(),
 ): string {
-  switch (vis?.toLowerCase()) {
+  switch (vis?.toLowerCase().trim()) {
     case 'private':
       return pick(lang, 'Riêng tư', 'Private')
     case 'group':
@@ -716,7 +779,7 @@ export function formatJourneyVisibility(
     case 'link':
       return pick(lang, 'Liên kết công khai', 'Public Link')
     default:
-      return pick(lang, 'Riêng tư', 'Private')
+      return formatUnknownEnum(vis, lang)
   }
 }
 
@@ -724,12 +787,13 @@ export function formatAdminRole(
   role: string | null | undefined,
   lang: Lang = getCurrentLang(),
 ): string {
-  switch (role?.toLowerCase()) {
+  switch (role?.toLowerCase().trim()) {
     case 'owner':
       return pick(lang, 'Chủ sở hữu (Owner)', 'Owner')
     case 'moderator':
-    default:
       return pick(lang, 'Kiểm duyệt viên', 'Moderator')
+    default:
+      return formatUnknownEnum(role, lang)
   }
 }
 
@@ -817,6 +881,167 @@ export function formatAuditAction(
     case 'system.trigger_moderation_notify':
       return pick(lang, 'Gửi cảnh báo kiểm duyệt', 'Trigger Moderation Digest')
     default:
-      return pick(lang, 'Thao tác quản trị', 'Admin Action')
+      return formatUnknownEnum(action, lang)
   }
+}
+
+export function formatAuditTargetId(
+  targetId: string | null | undefined,
+  lang: Lang = getCurrentLang(),
+): string {
+  const trimmed = (targetId ?? '').trim()
+  if (!trimmed) return '—'
+  switch (trimmed.toLowerCase()) {
+    case 'pending_storage_purge':
+      return pick(lang, 'Hàng đợi dọn dẹp lưu trữ', 'Storage Purge Queue')
+    case 'moderation_queue':
+      return pick(lang, 'Hàng đợi kiểm duyệt', 'Moderation Queue')
+    case 'bulk_failed':
+      return pick(lang, 'Nhóm email gửi lỗi', 'Failed Emails Batch')
+    default:
+      return trimmed
+  }
+}
+
+export function formatAuditReason(
+  reason: string | null | undefined,
+  lang: Lang = getCurrentLang(),
+): string {
+  const trimmed = (reason ?? '').trim()
+  if (!trimmed) return '—'
+  const modMatch = /^Action\s+([a-z_]+)\s+executed by operator$/i.exec(trimmed)
+  if (modMatch) {
+    const act = formatModerationAction(modMatch[1], lang)
+    return pick(
+      lang,
+      `Đã thực thi: ${act}`,
+      `Executed moderation decision: ${act}`,
+    )
+  }
+  const frMatch =
+    /^Updated status=([a-z_]+),\s*category=([a-z_]+),\s*hidden=(true|false)$/i.exec(
+      trimmed,
+    )
+  if (frMatch) {
+    const st = formatFeatureRequestStatus(frMatch[1], lang)
+    const cat = formatFeatureRequestCategory(frMatch[2], lang)
+    const hid =
+      frMatch[3].toLowerCase() === 'true'
+        ? pick(lang, 'Đã ẩn', 'Hidden')
+        : pick(lang, 'Hiển thị', 'Visible')
+    return pick(
+      lang,
+      `Cập nhật trạng thái: ${st}, danh mục: ${cat} (${hid})`,
+      `Updated status: ${st}, category: ${cat} (${hid})`,
+    )
+  }
+  return trimmed
+}
+
+export function formatAuditMetaSummary(
+  meta: Record<string, unknown> | null | undefined,
+  lang: Lang = getCurrentLang(),
+): string {
+  if (!meta || typeof meta !== 'object') return ''
+  const parts: string[] = []
+  for (const [k, v] of Object.entries(meta)) {
+    if (v === null || v === undefined || v === '') continue
+    switch (k) {
+      case 'status':
+      case 'new_status':
+        parts.push(
+          `${pick(lang, 'Trạng thái', 'Status')}: ${formatFeatureRequestStatus(String(v), lang)}`,
+        )
+        break
+      case 'old_status':
+        parts.push(
+          `${pick(lang, 'Trạng thái cũ', 'Prev Status')}: ${formatFeatureRequestStatus(String(v), lang)}`,
+        )
+        break
+      case 'category':
+      case 'new_category':
+        parts.push(
+          `${pick(lang, 'Danh mục', 'Category')}: ${formatFeatureRequestCategory(String(v), lang)}`,
+        )
+        break
+      case 'action':
+        parts.push(
+          `${pick(lang, 'Quyết định', 'Action')}: ${formatModerationAction(String(v), lang)}`,
+        )
+        break
+      case 'kind':
+        parts.push(
+          `${pick(lang, 'Loại', 'Kind')}: ${formatModerationKind(String(v), lang)}`,
+        )
+        break
+      case 'role':
+      case 'removed_role':
+        parts.push(
+          `${pick(lang, 'Vai trò', 'Role')}: ${formatAdminRole(String(v), lang)}`,
+        )
+        break
+      case 'match_mode':
+        parts.push(
+          `${pick(lang, 'Chế độ khớp', 'Match Mode')}: ${formatWordMatchMode(String(v), lang)}`,
+        )
+        break
+      case 'lang':
+        parts.push(
+          `${pick(lang, 'Ngôn ngữ', 'Language')}: ${formatWordLang(String(v), lang)}`,
+        )
+        break
+      case 'wipe_ugc':
+        parts.push(
+          v
+            ? pick(lang, 'Xóa toàn bộ nội dung', 'Wiped UGC')
+            : pick(lang, 'Khóa có thể hoàn tác', 'Reversible Ban'),
+        )
+        break
+      case 'ttl_seconds':
+        parts.push(`${pick(lang, 'Thời hạn', 'TTL')}: ${String(v)}s`)
+        break
+      case 'expires_at':
+        parts.push(
+          `${pick(lang, 'Hết hạn', 'Expires')}: ${fmtDateTime(String(v), lang)}`,
+        )
+        break
+      case 'attempted':
+        parts.push(`${pick(lang, 'Đã thử', 'Attempted')}: ${String(v)}`)
+        break
+      case 'sent':
+        parts.push(`${pick(lang, 'Đã gửi', 'Sent')}: ${String(v)}`)
+        break
+      case 'failed':
+        parts.push(`${pick(lang, 'Lỗi', 'Failed')}: ${String(v)}`)
+        break
+      case 'claimed':
+        parts.push(`${pick(lang, 'Đã nhận', 'Claimed')}: ${String(v)}`)
+        break
+      case 'removed':
+      case 'removed_objects':
+        parts.push(`${pick(lang, 'Đã xóa tệp', 'Removed')}: ${String(v)}`)
+        break
+      case 'notified':
+      case 'notified_users':
+        parts.push(`${pick(lang, 'Đã thông báo', 'Notified')}: ${String(v)}`)
+        break
+      case 'revoked_sessions':
+        parts.push(
+          `${pick(lang, 'Phiên đã thu hồi', 'Revoked Sessions')}: ${String(v)}`,
+        )
+        break
+      case 'transferred_votes':
+        parts.push(
+          `${pick(lang, 'Phiếu chuyển giao', 'Transferred Votes')}: ${String(v)}`,
+        )
+        break
+      case 'target_vote_count':
+      case 'vote_count':
+        parts.push(`${pick(lang, 'Tổng phiếu', 'Votes')}: ${String(v)}`)
+        break
+      default:
+        break
+    }
+  }
+  return parts.join(' · ')
 }

@@ -169,4 +169,82 @@ describe('WaitlistPage, Per-Row Resend Feedback (UX-11), and CSV Protection', ()
       }),
     ).toBeNull()
   })
+
+  it('handles partial bulk retry failure (sent: 1, failed: 1) by showing warning banner, highlighting only the failed row, and re-translating failedRows when language changes', async () => {
+    vi.spyOn(adminApi, 'listWaitlist').mockResolvedValue({
+      total: 2,
+      items: [
+        {
+          id: 'wl-a',
+          email: 'ok.retry@example.com',
+          lang: 'vi',
+          platforms: ['ios'],
+          source: 'landing',
+          created_at: '2026-11-24T05:00:00Z',
+          confirmation_sent_at: null,
+          confirmation_error: 'resend_503: temporary outage',
+          mail_status: 'failed',
+          registered_in_app: false,
+        },
+        {
+          id: 'wl-b',
+          email: 'still.failing@example.com',
+          lang: 'vi',
+          platforms: ['android'],
+          source: 'landing',
+          created_at: '2026-11-24T05:01:00Z',
+          confirmation_sent_at: null,
+          confirmation_error: 'resend_429: {"name":"rate_limit_exceeded"}',
+          mail_status: 'failed',
+          registered_in_app: false,
+        },
+      ],
+    })
+
+    vi.spyOn(adminApi, 'invokeAdminAction').mockResolvedValueOnce({
+      ok: true,
+      attempted: 2,
+      sent: 1,
+      failed: 1,
+      errors: [
+        {
+          id: 'wl-b',
+          error: 'resend_429: {"name":"rate_limit_exceeded"}',
+        },
+      ],
+    })
+
+    render(
+      <MemoryRouter>
+        <I18nProvider initialLang="vi">
+          <WaitlistPage admin={SQL_FIXTURE_OWNER} />
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('ok.retry@example.com')).toBeInTheDocument()
+      expect(screen.getByText('still.failing@example.com')).toBeInTheDocument()
+    })
+
+    const user = userEvent.setup()
+    await user.click(
+      screen.getByRole('button', { name: /Gửi lại hàng loạt email lỗi/i }),
+    )
+
+    await waitFor(() => {
+      const warnBanner = screen.getByRole('alert')
+      expect(warnBanner).toHaveClass('warn')
+      expect(warnBanner).toHaveTextContent(/Đã gửi 1, lỗi 1/i)
+      expect(warnBanner).toHaveTextContent(/giới hạn tần suất/i)
+    })
+
+    const sentRow = screen.getByText('ok.retry@example.com').closest('tr')
+    const failedRow = screen
+      .getByText('still.failing@example.com')
+      .closest('tr')
+    expect(sentRow).not.toHaveClass('failed-row')
+    expect(failedRow).toHaveClass('failed-row')
+    expect(failedRow).toHaveTextContent(/Chi tiết kỹ thuật/i)
+  })
 })
