@@ -20,6 +20,10 @@ class WidgetsL10nVi extends WidgetsL10n {
       'Đặt chuỗi ngày, mục tiêu hôm nay và tiến độ nhóm ngay trên Màn hình chính hoặc Màn hình khóa. Số cân nặng (kg) và mục tiêu riêng tư không bao giờ xuất hiện trên tiện ích.';
 
   @override
+  String get widgets_appGroupUnavailable =>
+      'Bản cài này chưa cho widget đọc dữ liệu. Widget sẽ hoạt động ở bản TestFlight/App Store hoặc khi cài qua AltStore/SideStore.';
+
+  @override
   String get widgets_secPreview => 'xem trước tiện ích';
 
   @override

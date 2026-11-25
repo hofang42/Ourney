@@ -111,6 +111,16 @@ public enum WidgetL10n {
     isEnglish(locale) ? "Tap to sync your journeys" : "Chạm để đồng bộ hành trình"
   }
 
+  public static func appGroupUnavailableTitle(locale: String) -> String {
+    isEnglish(locale) ? "Widget data unavailable" : "Tiện ích chưa có dữ liệu"
+  }
+
+  public static func appGroupUnavailableSubtitle(locale: String) -> String {
+    isEnglish(locale)
+      ? "This install can’t share data with widgets."
+      : "Bản cài này chưa cho widget đọc dữ liệu."
+  }
+
   public static func unsyncedSubtitle(locale: String) -> String {
     isEnglish(locale)
       ? "Open Ourney once to load your active journeys."

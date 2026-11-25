@@ -20,6 +20,10 @@ class WidgetsL10nEn extends WidgetsL10n {
       'Keep your streak, today\'s check-in, and your squad on your Home Screen or Lock Screen. Weight (kg) and private goals never appear on widgets.';
 
   @override
+  String get widgets_appGroupUnavailable =>
+      'This install can’t share data with widgets. Widgets will work with the TestFlight or App Store version, or when installed through AltStore or SideStore.';
+
+  @override
   String get widgets_secPreview => 'widget preview';
 
   @override
