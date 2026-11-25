@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Offline tests for scripts/supabase, scripts/github and scripts/release (no bats needed).
 # External commands (supabase, curl, gh) are replaced by stubs placed first on PATH, so nothing
-# here talks to the network. Needs: bash, git, jq.   Run: bash scripts/tests/run.sh
+# here talks to the network. Needs: bash, git, jq, Node.js 20+. Run: bash scripts/tests/run.sh
 #
 # `check "name" $? ...` deliberately reads the status of the assertion on the line above.
 # shellcheck disable=SC2319
@@ -62,6 +62,12 @@ EOF
 cat > "$BIN/curl" << 'EOF'
 #!/usr/bin/env bash
 echo "curl $*" >> "$STUB_LOG"
+if [[ " $* " == *' --head '* ]]; then
+  printf '%s' "${STUB_APK_STATUS:-200}"
+  [ "${STUB_APK_STATUS:-200}" = 200 ]
+  exit $?
+fi
+url="${!#}"
 while [ "$#" -gt 0 ]; do
   if [ "$1" = "--config" ]; then cat "$2" > "$STUB_CONFIG"; fi
   shift
@@ -72,6 +78,10 @@ cp "$STUB_BODY" "$STUB_BODY.$n"
 if [ -n "${STUB_CURL_FAIL:-}" ] && [ "$n" -ge "$STUB_CURL_FAIL" ]; then
   echo '{"message":"x","smtp_pass":"leak"}'
   exit 22
+fi
+if [[ "$url" == */rest/v1/rpc/admin_service_publish_release ]]; then
+  printf 200
+  exit 0
 fi
 echo '{}'
 EOF
@@ -128,6 +138,7 @@ run() {
 DEPLOY="$ROOT/scripts/supabase/deploy-hosted.sh"
 INVITE="$ROOT/scripts/github/invite-members.sh"
 PREFLIGHT="$ROOT/scripts/release/preflight.sh"
+PUBLISHER="$ROOT/scripts/release/publish-manifest.sh"
 
 clean_env() {
   unset SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF SUPABASE_DB_PASSWORD \
@@ -457,12 +468,26 @@ git init -q -b main "$WORK"
 git -C "$WORK" config user.email "test@example.com"
 git -C "$WORK" config user.name "Test"
 git -C "$WORK" config commit.gpgsign false
-mkdir -p "$WORK/apps/mobile"
-printf 'name: ourney\nversion: 0.1.0+3\n' > "$WORK/apps/mobile/pubspec.yaml"
+mkdir -p "$WORK/apps/mobile" "$WORK/supabase/migrations"
+printf 'name: ourney\nversion: 0.0.9+2\n' > "$WORK/apps/mobile/pubspec.yaml"
 git -C "$WORK" add -A
-git -C "$WORK" commit -q -m "init"
+git -C "$WORK" commit -q -m "Previous release"
+git -C "$WORK" tag -a v0.0.9 -m "Ourney v0.0.9"
+
+printf 'name: ourney\nversion: 0.1.0+3\n' > "$WORK/apps/mobile/pubspec.yaml"
+cat > "$WORK/apps/mobile/release-meta.json" << 'EOF'
+{
+  "min_supported": {"android": "0.0.9", "ios": "0.0.9"},
+  "recommended": {"android": "0.1.0", "ios": "0.1.0"},
+  "force_on_major": true,
+  "notes": {"vi": ["Ghi chú bản phát hành"], "en": ["Release note"]}
+}
+EOF
+printf '%s\n' '-- Additive migration' > "$WORK/supabase/migrations/0001_additive.sql"
+git -C "$WORK" add -A
+git -C "$WORK" commit -q -m "Next release"
 git -C "$WORK" remote add origin "$ORIGIN"
-git -C "$WORK" push -q origin main
+git -C "$WORK" push -q origin main v0.0.9
 HEAD_SHA="$(git -C "$WORK" rev-parse HEAD)"
 
 in_work() { (cd "$WORK" && "$@"); }
@@ -471,14 +496,49 @@ export STUB_CI_JSON="[{\"conclusion\":\"success\",\"headSha\":\"$HEAD_SHA\"}]"
 run in_work bash "$PREFLIGHT" v0.1.0
 [ "$RC" -eq 0 ] && contains "$OUT" "Preflight passed" && contains "$OUT" "git tag -a v0.1.0" && contains "$OUT" "git push origin v0.1.0"
 check "all checks pass and the commands are printed" $? "rc=$RC out=$OUT"
-[ -z "$(git -C "$WORK" tag)" ] && [ -z "$(git -C "$ORIGIN" tag)" ]
+contains "$OUT" "supabase/migrations/0001_additive.sql"
+check "preflight lists new migrations without a minimum" $? "$OUT"
+[ "$(git -C "$WORK" tag)" = v0.0.9 ] && [ "$(git -C "$ORIGIN" tag)" = v0.0.9 ]
 check "preflight never creates a tag" $?
 contains "$(cat "$LOG")" "gh run list --branch main --workflow CI --limit 1 --json"
 check "CI status is read with gh run list" $?
 
+run in_work node "$ROOT/scripts/release/metadata.mjs" lint
+[ "$RC" -eq 0 ] && contains "$OUT" 'release metadata and pubspec version 0.1.0+3'
+check "PR metadata lint reads the pubspec without a release tag" $? "rc=$RC out=$OUT"
+
+jq '.recommended.ios = "0.2.0"' "$WORK/apps/mobile/release-meta.json" > "$TMP/ahead.json"
+cp "$TMP/ahead.json" "$WORK/apps/mobile/release-meta.json"
+run in_work node "$ROOT/scripts/release/metadata.mjs" lint
+[ "$RC" -eq 1 ] && contains "$OUT" 'ios must have min_supported <= recommended <= release version'
+check "PR metadata lint rejects a recommendation ahead of pubspec" $? "rc=$RC out=$OUT"
+run in_work bash "$PREFLIGHT" v0.1.0
+[ "$RC" -eq 1 ] && contains "$OUT" 'ios must have min_supported <= recommended <= release version'
+check "release preflight rejects a recommendation ahead of pubspec" $? "rc=$RC out=$OUT"
+git -C "$WORK" show HEAD:apps/mobile/release-meta.json > "$WORK/apps/mobile/release-meta.json"
+
 run in_work bash "$PREFLIGHT" v0.2.0
 [ "$RC" -eq 1 ] && contains "$OUT" "pubspec version name is '0.1.0', expected '0.2.0'"
 check "fails when pubspec version differs from the tag" $? "rc=$RC out=$OUT"
+
+printf 'name: ourney\nversion: 0.1.0+2\n' > "$WORK/apps/mobile/pubspec.yaml"
+run in_work bash "$PREFLIGHT" v0.1.0
+[ "$RC" -eq 1 ] && contains "$OUT" "+buildNumber 2 must be greater than 2 from v0.0.9"
+check "fails when build number has not increased since the previous tag" $? "rc=$RC out=$OUT"
+git -C "$WORK" show HEAD:apps/mobile/pubspec.yaml > "$WORK/apps/mobile/pubspec.yaml"
+
+printf '%s\n' '-- @min_client_version: 0.1.0' > "$WORK/supabase/migrations/0002_requires_client.sql"
+run in_work bash "$PREFLIGHT" v0.1.0
+[ "$RC" -eq 1 ] && contains "$OUT" "@min_client_version 0.1.0 exceeds min_supported.android (0.0.9)"
+check "fails when a migration requires a higher minimum" $? "rc=$RC out=$OUT"
+rm -f "$WORK/supabase/migrations/0002_requires_client.sql"
+
+jq '.notes.en = ["Release note \ud83d\ude80"]' "$WORK/apps/mobile/release-meta.json" > "$TMP/emoji.json"
+cp "$TMP/emoji.json" "$WORK/apps/mobile/release-meta.json"
+run in_work bash "$PREFLIGHT" v0.1.0
+[ "$RC" -eq 1 ] && contains "$OUT" "notes.en must not contain emoji"
+check "fails when release notes contain emoji" $? "rc=$RC out=$OUT"
+git -C "$WORK" show HEAD:apps/mobile/release-meta.json > "$WORK/apps/mobile/release-meta.json"
 
 touch "$WORK/untracked.txt"
 run in_work bash "$PREFLIGHT" v0.1.0
@@ -514,6 +574,33 @@ git -C "$WORK" commit -q --allow-empty -m "local only"
 run in_work bash "$PREFLIGHT" v0.1.0
 [ "$RC" -eq 1 ] && contains "$OUT" "differs from origin/main"
 check "fails when main is ahead of origin" $? "rc=$RC out=$OUT"
+
+# publish-manifest.sh -----------------------------------------------------------------------------
+echo "publish-manifest.sh"
+mkdir -p "$WORK/scripts/release"
+cp "$PUBLISHER" "$ROOT/scripts/release/metadata.mjs" "$WORK/scripts/release/"
+publish_fixture() { bash "$WORK/scripts/release/publish-manifest.sh" v0.1.0; }
+
+SUPABASE_SERVICE_ROLE_KEY='' run publish_fixture
+[ "$RC" -eq 0 ] && contains "$OUT" "SUPABASE_SERVICE_ROLE_KEY not set" && [ ! -s "$LOG" ]
+check "skips policy publication without a service role key" $? "rc=$RC out=$OUT"
+
+export SUPABASE_URL=https://supabase.example SUPABASE_SERVICE_ROLE_KEY=test-role-key
+STUB_APK_STATUS=404 run publish_fixture
+[ "$RC" -eq 1 ] && contains "$OUT" "Public APK for v0.1.0 is unavailable" &&
+  ! contains "$(cat "$LOG")" "admin_service_publish_release"
+check "does not call the RPC if the tagged public APK is unavailable" $? "rc=$RC out=$OUT"
+
+run publish_fixture
+[ "$RC" -eq 0 ] && contains "$OUT" "Published Android update policy" &&
+  jq -e '.p_platform == "android" and .p_latest == "0.1.0" and .p_latest_build == 3
+    and .p_min_supported == "0.0.9" and .p_recommended == "0.1.0" and .p_force_on_major
+    and .p_download_url == "https://github.com/hofang42/ourney-releases/releases/download/v0.1.0/Ourney.apk"
+    and .p_notes_vi == ["Ghi chú bản phát hành"] and .p_notes_en == ["Release note"]' "$BODY" > /dev/null
+check "publishes matching Android metadata for the tagged public APK" $? "rc=$RC out=$OUT"
+! contains "$(cat "$LOG")" "$SUPABASE_SERVICE_ROLE_KEY" &&
+  contains "$(cat "$CONFIG")" "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY"
+check "passes the credential through curl config instead of command arguments" $?
 
 echo
 echo "passed: $PASS, failed: $FAILED"

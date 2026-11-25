@@ -10,6 +10,8 @@
 - [ ] Việc chưa xong chuyển sang milestone bản kế tiếp (vd. v0.1.1).
 - [ ] [ADR 0002](../adr/0002-support-email-and-legal-text.md) đã chốt hoặc đã ghi rõ trong release notes là dùng bản nháp; secret `SUPPORT_EMAIL` đã đặt nếu có email thật.
 - [ ] (Nếu có bản hosted) `SUPABASE_URL` / `SUPABASE_ANON_KEY` đã đặt, xem [hosted-supabase.md](hosted-supabase.md).
+- [ ] Android public mirror cần `PUBLIC_RELEASE_TOKEN` có quyền ghi vào `hofang42/ourney-releases`.
+- [ ] Để tự cập nhật chính sách phiên bản Android, tạo GitHub Environment `release` và giới hạn deployment cho tag `v*` trước khi thêm secret `SUPABASE_SERVICE_ROLE_KEY` (khóa `service_role` của project trong `SUPABASE_URL`). Giữ khóa trong environment này. Workflow báo và bỏ qua bước cập nhật chính sách nếu thiếu khóa.
 
 ### T-2 đến T-1: bug bash
 - [ ] Cả nhóm chạy luồng chính trên máy thật (iPhone: @thydynh03, Android: @lken1514), ghi lỗi thành issue có label `area:*` và mức độ.
@@ -17,21 +19,25 @@
 - [ ] CI trên `main` xanh (3 job bắt buộc + job `repo tooling`).
 
 ### Ngày release
-1. [ ] Tăng version trong `apps/mobile/pubspec.yaml`: `version: X.Y.Z+N` (phần trước dấu `+` **phải khớp tag**, `N` là build number tăng dần). Làm qua PR `chore/release-vX.Y.Z`, review, squash merge vào `main`.
-2. [ ] Chờ CI trên `main` (commit vừa merge) xanh.
-3. [ ] Trên máy admin, `git checkout main && git pull --ff-only`, rồi chạy preflight (chỉ đọc, cần `gh auth login`):
+1. [ ] Trong PR `chore/release-vX.Y.Z`, tăng `version: X.Y.Z+N` trong `apps/mobile/pubspec.yaml` và cập nhật `apps/mobile/release-meta.json`. Phần `X.Y.Z` phải khớp tag và `N` phải lớn hơn build của tag trước. Với mỗi platform, đặt `min_supported` ≤ `recommended` ≤ `X.Y.Z`, giữ `min_supported` nếu bản cũ vẫn tương thích, và điền 1–4 ghi chú mỗi ngôn ngữ VI/EN bằng văn bản, không emoji.
+2. [ ] Chờ CI trên `main` (commit vừa merge) xanh. Áp dụng migration `0030_app_version_policy.sql` lên Supabase hosted trước lần đầu xuất bản chính sách phiên bản.
+3. [ ] Trên máy admin, `git checkout main && git pull --ff-only`, rồi chạy preflight (cần Node.js 20+ và `gh auth login`):
    ```bash
    bash scripts/release/preflight.sh vX.Y.Z
    ```
-   Preflight kiểm tra: định dạng tag, version trong pubspec, cây làm việc sạch, đang ở `main` và bằng `origin/main`, lần chạy CI mới nhất trên `main` thành công và đúng commit này, tag chưa tồn tại. Nó **không** tạo tag, chỉ in lệnh.
+   Preflight kiểm tra định dạng tag, version và build trong pubspec, ghi chú VI/EN, version tối thiểu từ các migration, cây làm việc sạch, `main` đúng với `origin/main`, CI thành công trên commit hiện tại và tag chưa tồn tại. Nếu mọi kiểm tra đều qua, preflight in lệnh tạo tag.
 4. [ ] Admin tạo tag theo lệnh preflight in ra:
    ```bash
    git tag -a vX.Y.Z -m "Ourney vX.Y.Z"
    git push origin vX.Y.Z
    ```
-5. [ ] Xác nhận cả hai workflow chạy xong (*Actions*: **iOS (unsigned IPA)** và **Android (APK)** cho tag đó) và trang *Releases → vX.Y.Z* có **cả hai** file: `Ourney-unsigned.ipa` và `Ourney.apk`. Nếu một workflow lỗi: sửa trên `main`, rồi *Re-run* workflow đó (không đổi tag trừ khi bắt buộc; nếu phải xoá/tạo lại tag thì chỉ admin làm).
+5. [ ] Xác nhận cả hai workflow chạy xong (*Actions*: **iOS (unsigned IPA)** và **Android (APK)** cho tag đó) và trang *Releases → vX.Y.Z* có **cả hai** file (`Ourney-unsigned.ipa` và `Ourney.apk`). Job **Publish Android update policy** chạy sau khi upload mirror thành công và kiểm tra APK tại URL public của đúng tag trước khi cập nhật chính sách. Nếu một workflow lỗi, xem log rồi *Re-run* workflow đó.
 6. [ ] Đọc lại release notes tự sinh (nhóm theo label `feat` / `fix` / `area:*`; PR không có label rơi vào "Khác"). Sửa tay phần mở đầu: điều đã biết lỗi, bản thảo pháp lý (ADR 0002), cách cài (mục 2). Đánh dấu *pre-release* nếu đây là bản dogfood.
 7. [ ] Báo nhóm, bắt đầu dogfood 14 ngày (mục tiêu SRS §8: D14 ≥ 40%).
+
+### Migration thay đổi tương thích
+
+Thêm `-- @min_client_version: X.Y.Z` đầu migration khi migration cần client từ phiên bản đó. Preflight yêu cầu `min_supported` của Android và iOS đạt mọi mức đã khai báo. Xác nhận các migration mới chưa khai báo mức tối thiểu vẫn tương thích với client cũ khi preflight liệt kê chúng.
 
 ## 2. Hướng dẫn cài (dán vào release notes)
 
@@ -54,5 +60,6 @@ File `.ipa` **chưa ký**: iPhone không cài trực tiếp được, cần ký 
 |---|---|
 | Preflight báo `CI run is for <sha khác>` | CI cho commit mới nhất chưa chạy xong hoặc chưa chạy; chờ rồi chạy lại preflight |
 | Release thiếu IPA hoặc APK | Workflow tương ứng lỗi: xem log, sửa, *Re-run* |
+| Android policy chưa được cập nhật | Kiểm tra APK ở public mirror đúng tag, secret `PUBLIC_RELEASE_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY` trong environment `release` và migration `0030` trên hosted. Nếu mirror đã thành công và chỉ job **Publish Android update policy** lỗi, chạy lại job đó. |
 | Push tag bị từ chối | Chỉ admin được tạo tag `v*`; kiểm tra quyền |
 | Lỡ push tag sai | Chỉ admin xoá: `git push origin :refs/tags/vX.Y.Z`, xoá Release trên GitHub, tạo lại tag đúng commit |

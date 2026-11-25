@@ -162,15 +162,17 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> syncWhenProfileReady() async {
     final sync = ctx.sync;
     final me = remote.currentUserId;
-    if (sync == null || me == null) return;
+    if (sync == null || sync.isPaused || me == null) return;
     try {
       await sync.ensureOwner(me);
       var row = await (ctx.db.select(
         ctx.db.profiles,
       )..where((t) => t.id.equals(me))).getSingleOrNull();
+      if (sync.isPaused || remote.currentUserId != me) return;
       if (row == null) {
         final rows = await remote.select('profiles', eq: {'id': me});
         for (final r in rows) {
+          if (sync.isPaused || remote.currentUserId != me) return;
           await ctx.store.applyProfile(r);
         }
         row = await (ctx.db.select(

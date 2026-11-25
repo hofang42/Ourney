@@ -50,6 +50,7 @@ bool isTransient(OurneyErrorCode code) => switch (code) {
   OurneyErrorCode.unknown ||
   OurneyErrorCode.internal ||
   OurneyErrorCode.unauthenticated ||
+  OurneyErrorCode.clientOutdated ||
   OurneyErrorCode.serverOutdated ||
   OurneyErrorCode.rateLimited ||
   OurneyErrorCode.storageListingFailed ||
@@ -139,7 +140,13 @@ class Outbox {
   bool _again = false;
   bool _forceAgain = false;
   bool _disposed = false;
+  bool _paused = false;
   int _abortEpoch = 0;
+
+  void setPaused(bool paused) {
+    _paused = paused;
+    if (paused) abortCurrentPass();
+  }
 
   /// Cancels any running pass after its current step so a session wipe
   /// (`signOut`, `deleteAccount`) does not wait for the whole queue or write
@@ -264,7 +271,7 @@ class Outbox {
   /// Processes due items. [force] ignores backoff (connectivity regained,
   /// app resumed). Concurrent calls coalesce into one extra pass.
   Future<void> flush({bool force = false}) {
-    if (_disposed) return Future.value();
+    if (_disposed || _paused) return Future.value();
     if (_exclusive > 0) {
       // Held by [exclusive]: run (and complete) once it is over.
       _blockedForce = _blockedForce || force;
@@ -317,12 +324,12 @@ class Outbox {
       _forceAgain = false;
       forceNow = false;
       await _pass(forced);
-    } while (_again && !_disposed);
+    } while (_again && !_disposed && !_paused);
   }
 
   Future<void> _pass(bool force) async {
     final epoch = _abortEpoch;
-    while (!_disposed && _abortEpoch == epoch) {
+    while (!_disposed && !_paused && _abortEpoch == epoch) {
       final head =
           await (_db.select(_db.uploadQueue)
                 ..where((t) => t.dead.equals(false))
@@ -357,12 +364,13 @@ class Outbox {
           continue;
         }
         final attempts = head.attempts + 1;
-        // Waiting for the network, a fresh sign-in or a server migration
-        // (serverOutdated) never kills an item: dead items get re-pulled
+        // Waiting for connectivity, sign-in or a client/server update
+        // never kills an item: dead items get re-pulled
         // over and can lose unsynced photos.
         final waiting =
             error.error == OurneyErrorCode.offline ||
             error.error == OurneyErrorCode.unauthenticated ||
+            error.error == OurneyErrorCode.clientOutdated ||
             error.error == OurneyErrorCode.serverOutdated;
         if (!waiting && attempts >= maxAttempts) {
           await _markDead(head, error.toString());
@@ -396,12 +404,12 @@ class Outbox {
     )..where((t) => t.id.equals(row.id))).write(
       UploadQueueCompanion(dead: const Value(true), lastError: Value(reason)),
     );
-    onDead?.call(row);
+    if (!_paused) onDead?.call(row);
   }
 
   void _schedule(Duration delay) {
     _retry?.cancel();
-    if (_disposed) return;
+    if (_disposed || _paused) return;
     _retry = _timer(delay, () {
       _retry = null;
       unawaited(flush());

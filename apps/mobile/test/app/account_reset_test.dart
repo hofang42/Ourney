@@ -17,6 +17,7 @@ import 'package:ourney/features/reminders/data/notification_gateway.dart';
 import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
 import 'package:ourney/features/reminders/data/reminder_settings.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
+import 'package:ourney/features/update/data/update_prefs.dart';
 import 'package:ourney_core/ourney_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -73,6 +74,14 @@ void main() {
       ReminderPrefs.permissionAsked: true,
     });
     final gateway = FakeNotificationGateway(granted: true);
+    final updates = UpdatePrefs(prefs);
+    final version = SemVer.tryParse('1.1.0')!;
+    final installed = SemVer.tryParse('1.0.0')!;
+    await updates.saveSnooze(
+      UpdateSnooze(version: version, count: 1, until: reminderNow),
+    );
+    await updates.skipVersion(version);
+    await updates.recordInstalledVersion(installed);
     gateway.scheduled[kReminderIdBase] = NotificationRequest(
       id: kReminderIdBase,
       fireAt: reminderNow.add(const Duration(hours: 10)),
@@ -171,6 +180,10 @@ void main() {
     expect(prefs.getString(ThemeModeController.prefsKey), 'dark');
     expect(prefs.getBool(OnboardingComplete.prefsKey), isTrue);
     expect(prefs.getBool(ReminderPrefs.permissionAsked), isTrue);
+    expect(updates.snooze?.version, version);
+    expect(updates.snooze?.count, 1);
+    expect(updates.skippedVersion, version);
+    expect(updates.lastSeenInstalledVersion, installed);
   });
 
   ProviderContainer containerFor(
