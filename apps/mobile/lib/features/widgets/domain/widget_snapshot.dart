@@ -320,6 +320,7 @@ class WidgetLiveWindow {
     required this.totalActiveCount,
     required this.windowStartUtc,
     required this.deadlineUtc,
+    this.isSensitive = false,
   });
 
   final String windowKey;
@@ -335,6 +336,7 @@ class WidgetLiveWindow {
   final int totalActiveCount;
   final String windowStartUtc;
   final String deadlineUtc;
+  final bool isSensitive;
 
   Map<String, Object?> toJson() => {
     'windowKey': windowKey,
@@ -350,6 +352,7 @@ class WidgetLiveWindow {
     'totalActiveCount': totalActiveCount,
     'windowStartUtc': windowStartUtc,
     'deadlineUtc': deadlineUtc,
+    'isSensitive': isSensitive,
   };
 }
 

@@ -247,7 +247,7 @@ class ImportL10nVi extends ImportL10n {
   String get import_previewLabel => 'XEM TRƯỚC';
 
   @override
-  String get import_previewHud => 'Màn hình chụp';
+  String get import_previewHud => 'Check-in mỗi ngày';
 
   @override
   String get import_continueTitle => 'Vẫn đang tiếp tục?';

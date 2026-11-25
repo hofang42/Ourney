@@ -1066,7 +1066,7 @@ void main() {
       'DnaWeightPicker emits UiHaptics.selection() on each integer-kg detent crossing without duplicate fires',
       (tester) async {
         final haptics = _recordHaptics();
-        var currentWeight = 70;
+        num currentWeight = 70;
 
         await tester.pumpWidget(
           _host(

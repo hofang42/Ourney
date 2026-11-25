@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../data/data_context.dart';
 import '../../../data/db/app_database.dart';
+import '../../../data/local_store.dart';
+import '../../../data/sync/outbox.dart';
 
 /// [GroupInviteAdminRepository] over the RPCs of migration 0010. Couple
 /// renames also work in local-only mode (plain local write).
@@ -54,25 +58,57 @@ class DataGroupInviteAdminRepository implements GroupInviteAdminRepository {
         if (validateCoupleNames(a, b) != null || a.isEmpty) {
           throw const OurneyException(OurneyErrorCode.invalid);
         }
-        final remote = ctx.remote;
-        if (remote == null) {
-          await (ctx.db.update(
-            ctx.db.journeys,
-          )..where((t) => t.id.equals(journeyId))).write(
-            JourneysCompanion(
-              coupleSelfName: Value(a),
-              couplePartnerName: Value(b),
-            ),
-          );
-          return;
+        final local = await (ctx.db.select(
+          ctx.db.journeys,
+        )..where((t) => t.id.equals(journeyId))).getSingleOrNull();
+        if (local != null && local.status != JourneyStatus.active.wireName) {
+          throw const OurneyException(OurneyErrorCode.ended);
         }
-        final row = await remote.rpc('rename_couple', {
+        final group = local?.kind == JourneyKind.group.wireName;
+        final params = {
           'p_journey': journeyId,
           'p_self': a,
           'p_partner': b,
-        });
-        if (row is Map) {
-          await ctx.store.applyJourney(row.cast<String, dynamic>());
+        };
+        final remote = ctx.remote;
+        final outbox = ctx.outbox;
+        if (remote != null) {
+          await outbox?.flush(force: true);
+          final blocked =
+              !group &&
+              outbox != null &&
+              (await outbox.pendingRows()).any(
+                (r) => r.entityKey.contains(journeyId),
+              );
+          try {
+            if (blocked) throw const OurneyException(OurneyErrorCode.offline);
+            final row = await remote.rpc('rename_couple', params);
+            if (row is Map) {
+              await ctx.store.applyJourney(row.cast<String, dynamic>());
+            }
+            return;
+          } on OurneyException catch (e) {
+            if (e.error != OurneyErrorCode.offline || group) rethrow;
+          }
+        } else if (group) {
+          throw const GroupException.of(
+            OurneyErrorCode.offline,
+            'local-only mode',
+          );
+        }
+        await (ctx.db.update(
+          ctx.db.journeys,
+        )..where((t) => t.id.equals(journeyId))).write(
+          JourneysCompanion(
+            coupleSelfName: Value(a),
+            couplePartnerName: Value(b),
+          ),
+        );
+        if (outbox != null) {
+          final key = '${journeyKey(journeyId)}:couple';
+          await outbox.cancel(key, kind: OutboxKind.renameCouple);
+          await outbox.enqueue(OutboxKind.renameCouple, key, params);
+          unawaited(outbox.flush());
         }
       });
 }

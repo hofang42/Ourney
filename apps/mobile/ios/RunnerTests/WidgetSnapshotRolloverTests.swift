@@ -462,7 +462,8 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
       )
     )
 
-    // (c) Verify canonical redactLockScreenTitles precedence over legacy redactTitleOnLockScreen.
+    // (c) Verify canonical redactLockScreenTitles precedence over legacy redactTitleOnLockScreen
+    //     and fail-closed default when payload keys and cachedSnapshot are absent.
     XCTAssertTrue(
       OurneyWidgetBridge.resolveRedactLockScreenTitles(
         topDict: [
@@ -492,6 +493,86 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
         topDict: ["redactTitleOnLockScreen": true]
       )
     )
+    XCTAssertTrue(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [:],
+        cachedSnapshot: nil
+      )
+    )
+    // Sensitive journeys are ALWAYS redacted on Lock Screen Live Activity even when
+    // the user toggle is OFF (`redactLockScreenTitles: false`), while non-sensitive
+    // journeys with the toggle OFF return `false`.
+    XCTAssertTrue(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [
+          "redactLockScreenTitles": false,
+          "skinId": "quiet",
+          "typeIcon": "type-weight",
+        ]
+      )
+    )
+    XCTAssertTrue(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [
+          "redactLockScreenTitles": false,
+          "isSensitive": true,
+          "skinId": "minimal",
+          "typeIcon": "type-custom",
+        ]
+      )
+    )
+    let sensitiveCachedSnap = WidgetSnapshot(
+      authState: "ready",
+      locale: "vi",
+      privacy: WidgetPrivacySettings(
+        photoMode: "smart",
+        redactLockScreenTitles: false
+      ),
+      journeys: [
+        WidgetJourneyItem(
+          id: "solo-weight",
+          title: "Giảm cân 60 ngày",
+          skinId: "minimal",
+          typeIcon: "type-custom",
+          isSensitive: true
+        ),
+        WidgetJourneyItem(
+          id: "solo-study",
+          title: "Tự học IELTS",
+          skinId: "squad",
+          typeIcon: "type-study",
+          isSensitive: false
+        ),
+      ],
+      squads: []
+    )
+    XCTAssertTrue(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [
+          "redactLockScreenTitles": false,
+          "journeyId": "solo-weight",
+        ],
+        cachedSnapshot: sensitiveCachedSnap
+      )
+    )
+    XCTAssertFalse(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [
+          "redactLockScreenTitles": false,
+          "skinId": "squad",
+          "typeIcon": "type-study",
+        ]
+      )
+    )
+    XCTAssertFalse(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [
+          "redactLockScreenTitles": false,
+          "journeyId": "solo-study",
+        ],
+        cachedSnapshot: sensitiveCachedSnap
+      )
+    )
 
     // (d) Verify Lock Screen redacted title matches UI promise ("Ourney") and non-VI locales default to English.
     XCTAssertEqual(WidgetL10n.lockScreenRedactedTitle(locale: "vi"), "Ourney")
@@ -503,5 +584,300 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
     XCTAssertEqual(WidgetPreviewFixtures.sampleTodaySnapshot(locale: "en").journeys.first?.title, "30-Day IELTS Study")
     XCTAssertEqual(WidgetPreviewFixtures.sampleTodaySnapshot(locale: "vi").locale, "vi")
     XCTAssertEqual(WidgetPreviewFixtures.sampleTodaySnapshot(locale: "vi").journeys.first?.title, "Tự học IELTS 30 ngày")
+  }
+
+  func testConfigurableWidgetEntityQueryAndSelectionFallback() throws {
+    let tempRoot = FileManager.default.temporaryDirectory
+      .appendingPathComponent("ourney_widget_entity_tests_\(UUID().uuidString)", isDirectory: true)
+    defer {
+      try? FileManager.default.removeItem(at: tempRoot)
+    }
+
+    let now = try XCTUnwrap(WidgetDateParser.parseISO8601("2026-11-24T10:00:00.000Z"))
+
+    // 1. Before snapshot_v1.json exists (Unsynced): suggestedEntities still returns ["auto"]
+    //    and defaultResult returns "auto" ("Tự động (Đề xuất)" in VI / "Automatic (Recommended)" in EN).
+    let unsyncedJourneysVi = WidgetSnapshotStore.suggestedJourneyEntityOptions(
+      at: now,
+      rootDirectory: tempRoot,
+      fallbackLocale: "vi"
+    )
+    XCTAssertEqual(unsyncedJourneysVi.map(\.id), ["auto"])
+    XCTAssertEqual(unsyncedJourneysVi.first?.title, "Tự động (Đề xuất)")
+    XCTAssertEqual(
+      WidgetSnapshotStore.defaultJourneyEntityOption(
+        at: now,
+        rootDirectory: tempRoot,
+        fallbackLocale: "en"
+      ).title,
+      "Automatic (Recommended)"
+    )
+
+    // 2. Write sample snapshot_v1.json and verify suggestedJourneyEntityOptions & suggestedSquadEntityOptions.
+    let bridge = OurneyWidgetBridge()
+    let data = try XCTUnwrap(sampleJson.data(using: .utf8))
+    XCTAssertTrue(
+      bridge.writeSnapshotAndThumbs(
+        snapshotData: data,
+        thumbSpecs: [],
+        overrideRootDirectory: tempRoot
+      )
+    )
+
+    let journeyOptions = WidgetSnapshotStore.suggestedJourneyEntityOptions(
+      at: now,
+      rootDirectory: tempRoot
+    )
+    XCTAssertEqual(journeyOptions.map(\.id), ["auto", "6f8c9a10-ielts", "8a10b220-run"])
+    XCTAssertEqual(journeyOptions[1].title, "Tự học IELTS 30 ngày")
+    XCTAssertEqual(journeyOptions[1].subtitle, "Ngày 15/30 · Chuỗi 14 ngày")
+    XCTAssertEqual(journeyOptions[2].title, "Chạy bộ sáng 5km")
+    XCTAssertEqual(journeyOptions[2].subtitle, "Ngày 21/30 · Chuỗi 21 ngày")
+
+    let squadOptions = WidgetSnapshotStore.suggestedSquadEntityOptions(
+      at: now,
+      rootDirectory: tempRoot
+    )
+    XCTAssertEqual(squadOptions.map(\.id), ["auto", "6f8c9a10-ielts"])
+    XCTAssertEqual(squadOptions[1].title, "Tự học IELTS 30 ngày")
+    XCTAssertEqual(squadOptions[1].subtitle, "Ngày 15 · 1/2 hôm nay")
+
+    // 3. Entity lookup by IDs resolves "auto", active IDs, and returns a graceful fallback option
+    //    for archived/deleted IDs so WidgetKit never shows a broken parameter row.
+    let resolvedJourneys = WidgetSnapshotStore.journeyEntityOptions(
+      for: ["auto", "8a10b220-run", "archived-journey-999"],
+      at: now,
+      rootDirectory: tempRoot
+    )
+    XCTAssertEqual(resolvedJourneys.count, 3)
+    XCTAssertEqual(resolvedJourneys[0].id, "auto")
+    XCTAssertEqual(resolvedJourneys[1].id, "8a10b220-run")
+    XCTAssertEqual(resolvedJourneys[1].title, "Chạy bộ sáng 5km")
+    XCTAssertEqual(resolvedJourneys[2].id, "archived-journey-999")
+    XCTAssertEqual(resolvedJourneys[2].title, "Tự động (Đề xuất)")
+
+    let resolvedSquads = WidgetSnapshotStore.squadEntityOptions(
+      for: ["auto", "6f8c9a10-ielts", "deleted-squad-999"],
+      at: now,
+      rootDirectory: tempRoot
+    )
+    XCTAssertEqual(resolvedSquads.count, 3)
+    XCTAssertEqual(resolvedSquads[0].id, "auto")
+    XCTAssertEqual(resolvedSquads[1].id, "6f8c9a10-ielts")
+    XCTAssertEqual(resolvedSquads[2].id, "deleted-squad-999")
+    XCTAssertEqual(resolvedSquads[2].title, "Tự động (Đề xuất)")
+
+    // 4. Pinned selection overrides "auto" on Today, Streak, Squad, and Lock Screen,
+    //    and falls back to "auto" when pinnedId is nil, "auto", or archived/deleted.
+    let loaded = try XCTUnwrap(
+      WidgetSnapshotStore.loadSnapshot(at: now, rootDirectory: tempRoot)
+    )
+    // In "auto" mode on Today, pending journey "6f8c9a10-ielts" is selected over completed "8a10b220-run".
+    XCTAssertEqual(loaded.selectedTodayJourney(pinnedId: nil)?.id, "6f8c9a10-ielts")
+    XCTAssertEqual(loaded.selectedTodayJourney(pinnedId: "auto")?.id, "6f8c9a10-ielts")
+    XCTAssertFalse(loaded.isTodayJourneyPinned(nil))
+    XCTAssertFalse(loaded.isTodayJourneyPinned("auto"))
+
+    // Pinning completed journey "8a10b220-run" selects it directly and marks it pinned (hiding cycle pill).
+    XCTAssertEqual(loaded.selectedTodayJourney(pinnedId: "8a10b220-run")?.id, "8a10b220-run")
+    XCTAssertTrue(loaded.isTodayJourneyPinned("8a10b220-run"))
+
+    // Archived/deleted pinnedId falls back to "auto" ("6f8c9a10-ielts") and unmarks isTodayJourneyPinned.
+    XCTAssertEqual(loaded.selectedTodayJourney(pinnedId: "archived-journey-999")?.id, "6f8c9a10-ielts")
+    XCTAssertFalse(loaded.isTodayJourneyPinned("archived-journey-999"))
+
+    // Streak widget: defaultJourneyId is "6f8c9a10-ielts" in "auto", pinning "8a10b220-run" selects it,
+    // and archived ID falls back to "auto".
+    XCTAssertEqual(loaded.selectedStreakJourney(preferredId: "auto")?.id, "6f8c9a10-ielts")
+    XCTAssertEqual(loaded.selectedStreakJourney(preferredId: "8a10b220-run")?.id, "8a10b220-run")
+    XCTAssertEqual(loaded.selectedStreakJourney(preferredId: "archived-journey-999")?.id, "6f8c9a10-ielts")
+
+    // Squad widget: pinning valid squad or falling back from deleted squad ID to "auto".
+    XCTAssertEqual(loaded.selectedSquad(preferredId: "6f8c9a10-ielts")?.journeyId, "6f8c9a10-ielts")
+    XCTAssertEqual(loaded.selectedSquad(preferredId: "deleted-squad-999")?.journeyId, "6f8c9a10-ielts")
+
+    // 5. Legacy snapshot payload omitting "journeys" and "squads" decodes cleanly with empty arrays.
+    let legacyJsonWithoutLists = """
+    {
+      "schemaVersion": 1,
+      "generatedAtUtc": "2026-11-24T10:00:00.000Z",
+      "authState": "ready",
+      "locale": "vi"
+    }
+    """
+    let legacyDecoded = try JSONDecoder().decode(
+      WidgetSnapshot.self,
+      from: try XCTUnwrap(legacyJsonWithoutLists.data(using: .utf8))
+    )
+    XCTAssertTrue(legacyDecoded.journeys.isEmpty)
+    XCTAssertTrue(legacyDecoded.squads.isEmpty)
+  }
+
+  func testFourStateCardResolutionAndSoloOnlySquadAndLockScreenSensitivity() throws {
+    // 1. Unsynced (snapshot == nil)
+    XCTAssertEqual(WidgetSnapshot.resolveTodayCardState(snapshot: nil), .unsynced)
+    XCTAssertEqual(WidgetSnapshot.resolveStreakCardState(snapshot: nil), .unsynced)
+    XCTAssertEqual(WidgetSnapshot.resolveSquadCardState(snapshot: nil), .unsynced)
+    XCTAssertEqual(OurneyDeepLinks.syncJourneys.absoluteString, "ourney://journeys?syncWidgets=1")
+    XCTAssertEqual(OurneyDeepLinks.newJourney.absoluteString, "ourney://journeys/new")
+
+    // 2. SignedOut (authState == "signedOut")
+    let signedOutSnap = WidgetSnapshot(authState: "signedOut")
+    XCTAssertEqual(WidgetSnapshot.resolveTodayCardState(snapshot: signedOutSnap), .signedOut)
+    XCTAssertEqual(WidgetSnapshot.resolveStreakCardState(snapshot: signedOutSnap), .signedOut)
+    XCTAssertEqual(WidgetSnapshot.resolveSquadCardState(snapshot: signedOutSnap), .signedOut)
+
+    // 3. NoJourneys / NoSquads (signed in, 0 journeys)
+    let emptyAccountSnap = WidgetSnapshot(authState: "ready", journeys: [], squads: [])
+    XCTAssertEqual(WidgetSnapshot.resolveTodayCardState(snapshot: emptyAccountSnap), .noJourneys)
+    XCTAssertEqual(WidgetSnapshot.resolveStreakCardState(snapshot: emptyAccountSnap), .noJourneys)
+    XCTAssertEqual(WidgetSnapshot.resolveSquadCardState(snapshot: emptyAccountSnap), .noSquads)
+
+    // 4. SoloOnly on Squad widget (signed in, 2 solo journeys, 0 squads)
+    let soloWeight = WidgetJourneyItem(
+      id: "solo-weight",
+      title: "Giảm cân 60 ngày",
+      kind: "solo",
+      skinId: "quiet",
+      typeIcon: "type-weight",
+      isSensitive: true
+    )
+    let soloStudy = WidgetJourneyItem(
+      id: "solo-study",
+      title: "Học tiếng Anh",
+      kind: "solo",
+      skinId: "squad",
+      typeIcon: "type-study",
+      isSensitive: false
+    )
+    let soloOnlySnap = WidgetSnapshot(
+      authState: "ready",
+      locale: "vi",
+      privacy: WidgetPrivacySettings(
+        photoMode: "smart",
+        redactLockScreenTitles: true
+      ),
+      journeys: [soloWeight, soloStudy],
+      squads: []
+    )
+    XCTAssertEqual(
+      WidgetSnapshot.resolveSquadCardState(snapshot: soloOnlySnap),
+      .soloOnly(soloCount: 2)
+    )
+    XCTAssertEqual(
+      WidgetL10n.soloOnlySquadSubtitle(soloCount: 2, locale: "vi"),
+      "Bạn có 2 hành trình cá nhân — tạo nhóm mới hoặc dùng widget Hôm nay."
+    )
+    XCTAssertEqual(
+      WidgetL10n.soloOnlySquadSubtitle(soloCount: 1, locale: "en"),
+      "You have 1 solo journey — start or join a Squad, or use the Today widget."
+    )
+
+    // 5. Fail-closed Lock Screen title redaction (§B.5):
+    //    (a) When `redactLockScreenTitles == true` and `explicitRedactLockScreenTitles == nil`
+    //        (current Dart `snapshot_v1.json` wire format), ALL journeys redact to `"Ourney"`
+    //        so the user's "Hide journey titles on Lock Screen" toggle is always respected.
+    XCTAssertTrue(soloOnlySnap.shouldRedactLockScreenTitle(for: soloWeight))
+    XCTAssertTrue(soloOnlySnap.shouldRedactLockScreenTitle(for: soloStudy))
+    XCTAssertTrue(soloOnlySnap.shouldRedactLockScreenTitle(for: nil))
+
+    //    (b) When `redactLockScreenTitles == false` and `explicitRedactLockScreenTitles == nil`,
+    //        sensitive journeys (`isEffectiveSensitiveJourney`: `isSensitive`, `quiet`, `type-weight`)
+    //        still fail-closed to `"Ourney"`, while non-sensitive journeys display their title.
+    let implicitWeightWithoutFlag = WidgetJourneyItem(
+      id: "legacy-weight",
+      title: "Giảm cân 30 ngày",
+      kind: "solo",
+      skinId: "quiet",
+      typeIcon: "type-weight",
+      isSensitive: false
+    )
+    let unredactedToggleSnap = WidgetSnapshot(
+      authState: "ready",
+      locale: "vi",
+      privacy: WidgetPrivacySettings(
+        photoMode: "smart",
+        redactLockScreenTitles: false
+      ),
+      journeys: [soloWeight, implicitWeightWithoutFlag, soloStudy],
+      squads: []
+    )
+    XCTAssertTrue(unredactedToggleSnap.shouldRedactLockScreenTitle(for: soloWeight))
+    XCTAssertTrue(unredactedToggleSnap.shouldRedactLockScreenTitle(for: implicitWeightWithoutFlag))
+    XCTAssertFalse(unredactedToggleSnap.shouldRedactLockScreenTitle(for: soloStudy))
+
+    //    (c) When `privacy` or `redactLockScreenTitles` is omitted in JSON, `WidgetPrivacySettings`
+    //        defaults `redactLockScreenTitles` to `true` (fail-closed).
+    let omittedPrivacyJson = """
+    {
+      "schemaVersion": 1,
+      "generatedAtUtc": "2026-11-24T10:00:00.000Z",
+      "authState": "ready",
+      "locale": "vi",
+      "journeys": [
+        {
+          "id": "quiet-1",
+          "title": "Giảm cân",
+          "skinId": "quiet",
+          "typeIcon": "type-weight"
+        }
+      ]
+    }
+    """
+    let omittedPrivacySnap = try JSONDecoder().decode(
+      WidgetSnapshot.self,
+      from: try XCTUnwrap(omittedPrivacyJson.data(using: .utf8))
+    )
+    XCTAssertTrue(omittedPrivacySnap.privacy.redactLockScreenTitles)
+    XCTAssertTrue(omittedPrivacySnap.shouldRedactLockScreenTitle(for: omittedPrivacySnap.journeys.first))
+    XCTAssertTrue(omittedPrivacySnap.shouldRedactLockScreenTitle(for: soloStudy))
+
+    //    (d) Explicit `explicitRedactLockScreenTitles` override (`true` or `false`) is honored when present.
+    let forcedRedactSnap = WidgetSnapshot(
+      authState: "ready",
+      locale: "vi",
+      privacy: WidgetPrivacySettings(
+        photoMode: "smart",
+        redactLockScreenTitles: false,
+        explicitRedactLockScreenTitles: true
+      ),
+      journeys: [soloWeight, soloStudy],
+      squads: []
+    )
+    XCTAssertTrue(forcedRedactSnap.shouldRedactLockScreenTitle(for: soloStudy))
+
+    let explicitOptOutSnap = WidgetSnapshot(
+      authState: "ready",
+      locale: "vi",
+      privacy: WidgetPrivacySettings(
+        photoMode: "smart",
+        redactLockScreenTitles: true,
+        explicitRedactLockScreenTitles: false
+      ),
+      journeys: [soloWeight, soloStudy],
+      squads: []
+    )
+    XCTAssertTrue(explicitOptOutSnap.shouldRedactLockScreenTitle(for: soloWeight))
+    XCTAssertFalse(explicitOptOutSnap.shouldRedactLockScreenTitle(for: soloStudy))
+
+    // 6. Bridge write outcome & capabilities
+    let bridge = OurneyWidgetBridge()
+    let caps = bridge.currentCapabilities()
+    XCTAssertNotNil(caps["appGroupAvailable"] as? Bool)
+    XCTAssertEqual(caps["appGroup"] as? Bool, caps["appGroupAvailable"] as? Bool)
+
+    let blockingFileURL = FileManager.default.temporaryDirectory
+      .appendingPathComponent("ourney_blocking_file_\(UUID().uuidString)")
+    defer {
+      try? FileManager.default.removeItem(at: blockingFileURL)
+    }
+    try Data("x".utf8).write(to: blockingFileURL)
+    let failedOutcome = bridge.writeSnapshotAndThumbsOutcome(
+      snapshotData: try XCTUnwrap(sampleJson.data(using: .utf8)),
+      thumbSpecs: [],
+      overrideRootDirectory: blockingFileURL.appendingPathComponent("nested", isDirectory: true)
+    )
+    XCTAssertFalse(failedOutcome.succeeded)
+    XCTAssertFalse(failedOutcome.didChange)
   }
 }

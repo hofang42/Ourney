@@ -4,18 +4,14 @@ import 'package:ourney_core/ourney_core.dart';
 /// layout override (`journeys.layout`, edit screen "Giao dien") when set,
 /// otherwise the one derived from the template.
 PersonaSkinId personaSkinOf(Journey journey) =>
-    journey.layout ??
-    personaSkinForTemplate(
-      journey.templateId,
-      kind: journey.kind,
-      maxMembers: journey.maxMembers,
-      emoji: journey.emoji,
-    );
+    journey.layout ?? defaultSkinOf(journey);
 
 /// The skin [journey] would have without a layout override.
-PersonaSkinId defaultSkinOf(Journey journey) => personaSkinForTemplate(
-  journey.templateId,
-  kind: journey.kind,
-  maxMembers: journey.maxMembers,
-  emoji: journey.emoji,
-);
+PersonaSkinId defaultSkinOf(Journey journey) =>
+    journey.coupleSelfName != null
+    ? PersonaSkinId.coupleRituals
+    : personaSkinForTemplate(
+        journey.templateId,
+        kind: journey.kind,
+        maxMembers: journey.maxMembers,
+      );

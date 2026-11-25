@@ -956,6 +956,24 @@ abstract class GroupsL10n {
   /// **'CHƯA CHẠY'**
   String get groups_flexerPending;
 
+  /// No description provided for @groups_flexerTrainedTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} ĐÃ TẬP'**
+  String groups_flexerTrainedTitle(int done, int total);
+
+  /// No description provided for @groups_flexerTrainedDone.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã tập · {time}'**
+  String groups_flexerTrainedDone(String time);
+
+  /// No description provided for @groups_flexerTrainedPending.
+  ///
+  /// In vi, this message translates to:
+  /// **'CHƯA TẬP'**
+  String get groups_flexerTrainedPending;
+
   /// No description provided for @groups_minimalTitle.
   ///
   /// In vi, this message translates to:

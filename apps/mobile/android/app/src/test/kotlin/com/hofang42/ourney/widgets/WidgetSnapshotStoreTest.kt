@@ -522,6 +522,26 @@ class WidgetSnapshotStoreTest {
                 snapshot = snapshot,
             ),
         )
+        assertTrue(
+            "Sensitive journey must always redact on Lock Screen even when redactLockScreenTitles is false",
+            CheckInLiveUpdateManager.resolveRedactLockScreenTitles(
+                mapOf(
+                    "redactLockScreenTitles" to false,
+                    "isSensitive" to true,
+                ),
+                snapshot = snapshot,
+            ),
+        )
+        assertTrue(
+            "Implicitly sensitive weight journey must always redact on Lock Screen even when redactLockScreenTitles is false",
+            CheckInLiveUpdateManager.resolveRedactLockScreenTitles(
+                mapOf(
+                    "redactLockScreenTitles" to false,
+                    "journeyId" to "explicit-nulls-2",
+                ),
+                snapshot = snapshot,
+            ),
+        )
     }
 
     @Test

@@ -70,11 +70,12 @@ class _FollowBody extends StatelessWidget {
     final l10n = SharingL10n.of(context);
     final ui = context.ui;
     final style = uiStyleForSkin(
-      personaSkinForTemplate(
-        frame.templateId,
-        kind: frame.kind,
-        emoji: frame.emoji,
-      ),
+      frame.layout ??
+          personaSkinForTemplate(
+            frame.templateId,
+            kind: frame.kind,
+            emoji: frame.emoji,
+          ),
     );
     final styleName = journeyStyleName(context, style);
     final dark = ui.brightness == Brightness.dark;

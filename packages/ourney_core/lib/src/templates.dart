@@ -109,9 +109,8 @@ PersonaSkinId personaSkinForTemplate(
   String? emoji,
 }) {
   if (id == TemplateId.custom &&
-      (emoji == '💞' ||
-          emoji == '❤️' ||
-          (kind == JourneyKind.group && maxMembers == 2))) {
+      kind == JourneyKind.group &&
+      maxMembers == 2) {
     return PersonaSkinId.coupleRituals;
   }
   return templateFor(id).personaSkinId;

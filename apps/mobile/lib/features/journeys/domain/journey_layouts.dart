@@ -14,7 +14,10 @@ List<PersonaSkinId> availableLayoutsFor(
       journey.templateId == TemplateId.weightLoss ||
           unit == 'kg' ||
           metric.contains('weight'),
-    PersonaSkinId.coupleRituals => journey.coupleSelfName != null,
+    PersonaSkinId.coupleRituals =>
+      journey.coupleSelfName != null ||
+      (journey.kind == JourneyKind.group && journey.maxMembers == 2) ||
+      journey.layout == PersonaSkinId.coupleRituals,
     PersonaSkinId.accountabilitySquad => journey.kind == JourneyKind.group,
     PersonaSkinId.aestheticFlexer =>
       journey.templateId == TemplateId.workout30 ||

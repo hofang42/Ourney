@@ -714,6 +714,7 @@ data class WidgetLiveWindow(
     val deadlineUtc: String,
     val celebrateAndDismiss: Boolean = false,
     val redactLockScreenTitles: Boolean? = null,
+    val isSensitive: Boolean = false,
 ) {
     fun isActiveAt(nowEpochMs: Long, state: WidgetMutableState): Boolean {
         if (state.dismissedWindowKey == windowKey) return false
@@ -752,6 +753,7 @@ data class WidgetLiveWindow(
                 deadlineUtc = deadlineUtc,
                 celebrateAndDismiss = celebrate,
                 redactLockScreenTitles = redactLockScreen,
+                isSensitive = obj.optBooleanCompat("isSensitive", false),
             )
         }
 
@@ -788,6 +790,7 @@ data class WidgetLiveWindow(
                 celebrateAndDismiss = (map["celebrateAndDismiss"] as? Boolean) ?: false,
                 redactLockScreenTitles = (map["redactLockScreenTitles"] as? Boolean)
                     ?: (map["redactTitleOnLockScreen"] as? Boolean),
+                isSensitive = (map["isSensitive"] as? Boolean) ?: false,
             )
         }
     }

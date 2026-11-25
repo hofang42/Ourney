@@ -252,7 +252,7 @@ class ImportL10nEn extends ImportL10n {
   String get import_previewLabel => 'PREVIEW';
 
   @override
-  String get import_previewHud => 'Camera HUD';
+  String get import_previewHud => 'Daily check-in';
 
   @override
   String get import_continueTitle => 'Still going?';

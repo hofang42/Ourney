@@ -150,7 +150,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get reminderBanner_daily_couple => 'Hai đứa ơi, đến giờ rồi.';
 
   @override
-  String get reminderBanner_daily_flexer => 'ĐẾN GIỜ. CHẠY ĐI.';
+  String get reminderBanner_daily_flexer => 'ĐẾN GIỜ. TẬP ĐI.';
 
   @override
   String reminderBanner_daily_minimal(int day) {

@@ -76,7 +76,7 @@ class DepartureTicket extends StatefulWidget {
     'squad': 'Điểm danh mỗi ngày, cả hội cùng lên!',
     'memory': 'Mang về thật nhiều khung hình.',
     'couple': 'Mỗi ngày một nửa, ghép lại thành một.',
-    'flexer': 'Ra khỏi giường. Chạy tiếp.',
+    'flexer': 'Ra khỏi giường. Tập tiếp.',
     'minimal': '',
   };
 
