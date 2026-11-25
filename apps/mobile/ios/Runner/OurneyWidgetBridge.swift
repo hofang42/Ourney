@@ -339,10 +339,13 @@ public final class OurneyWidgetBridge {
     }
 
     let cachedSnapshot = WidgetSnapshotStore.loadSnapshot(at: now)
+    let defaultLocale = (Locale.preferredLanguages.first ?? "en")
+      .lowercased()
+      .hasPrefix("vi") ? "vi" : "en"
     let locale = (topDict["locale"] as? String)
       ?? (windowDict["locale"] as? String)
       ?? cachedSnapshot?.locale
-      ?? "vi"
+      ?? defaultLocale
     let redactTitle = Self.resolveRedactLockScreenTitles(
       topDict: topDict,
       windowDict: windowDict,

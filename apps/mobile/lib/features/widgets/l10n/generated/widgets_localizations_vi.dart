@@ -35,6 +35,12 @@ class WidgetsL10nVi extends WidgetsL10n {
   String get widgets_previewSampleTitle => 'Tự học IELTS 30 ngày';
 
   @override
+  String get widgets_previewSampleBadge => 'Xem trước mẫu';
+
+  @override
+  String get widgets_previewYou => 'Bạn';
+
+  @override
   String widgets_previewDayOf(int day, int total) {
     return 'Ngày $day/$total';
   }
@@ -56,7 +62,7 @@ class WidgetsL10nVi extends WidgetsL10n {
   String get widgets_previewDoneBadge => 'Đã chụp hôm nay';
 
   @override
-  String get widgets_previewAtRiskBadge => 'Sắp đứt chuỗi · trước 24:00';
+  String get widgets_previewAtRiskBadge => 'Sắp đứt chuỗi · trước nửa đêm';
 
   @override
   String get widgets_previewPendingBadge => 'Chưa chụp hôm nay';
@@ -116,7 +122,11 @@ class WidgetsL10nVi extends WidgetsL10n {
 
   @override
   String get widgets_redactTitlesSub =>
-      'Khi máy đang khóa, tiện ích khóa và Live Activity chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.';
+      'Trên Màn hình khóa, tiện ích khóa và Live Activity chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.';
+
+  @override
+  String get widgets_redactTitlesSubAndroid =>
+      'Trên Màn hình khóa, thông báo đếm ngược chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.';
 
   @override
   String get widgets_secLiveActivity => 'đếm ngược cuối ngày';
@@ -126,8 +136,16 @@ class WidgetsL10nVi extends WidgetsL10n {
       'Live Activity & đếm ngược khung giờ chụp';
 
   @override
+  String get widgets_liveActivityLabelAndroid =>
+      'Cập nhật trực tiếp & đếm ngược thanh trạng thái';
+
+  @override
   String get widgets_liveActivitySub =>
       'Hiện đồng hồ đếm ngược trên Dynamic Island / Màn hình khóa từ 30 phút trước giờ nhắc (hoặc từ 18:00 khi chuỗi sắp đứt) và tự tắt ngay khi bạn chụp xong.';
+
+  @override
+  String get widgets_liveActivitySubAndroid =>
+      'Hiện đồng hồ đếm ngược trên thanh trạng thái và Màn hình khóa từ 30 phút trước giờ nhắc (hoặc từ 18:00 khi chuỗi sắp đứt) và tự tắt ngay khi bạn chụp xong.';
 
   @override
   String get widgets_secDefaultJourney => 'hành trình ưu tiên trên tiện ích';
@@ -146,6 +164,9 @@ class WidgetsL10nVi extends WidgetsL10n {
   @override
   String get widgets_setupStep1Title =>
       '1. Chạm và giữ Màn hình chính hoặc Màn hình khóa';
+
+  @override
+  String get widgets_setupStep1TitleAndroid => '1. Chạm và giữ Màn hình chính';
 
   @override
   String get widgets_setupStep1Body =>

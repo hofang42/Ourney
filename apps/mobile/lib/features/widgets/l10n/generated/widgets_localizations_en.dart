@@ -35,6 +35,12 @@ class WidgetsL10nEn extends WidgetsL10n {
   String get widgets_previewSampleTitle => '30-Day IELTS Study';
 
   @override
+  String get widgets_previewSampleBadge => 'Sample preview';
+
+  @override
+  String get widgets_previewYou => 'You';
+
+  @override
   String widgets_previewDayOf(int day, int total) {
     return 'Day $day/$total';
   }
@@ -56,7 +62,7 @@ class WidgetsL10nEn extends WidgetsL10n {
   String get widgets_previewDoneBadge => 'Checked in today';
 
   @override
-  String get widgets_previewAtRiskBadge => 'Streak at risk · before 24:00';
+  String get widgets_previewAtRiskBadge => 'Streak at risk · before midnight';
 
   @override
   String get widgets_previewPendingBadge => 'Not checked in yet';
@@ -108,14 +114,18 @@ class WidgetsL10nEn extends WidgetsL10n {
 
   @override
   String get widgets_photoModeClearNote =>
-      'Shows crisp check-in photos on your unlocked Home Screen. Lock Screen widgets still never show photos or weight (kg).';
+      'Shows crisp check-in photos on your unlocked Home Screen. Your Lock Screen still never shows photos or weight (kg).';
 
   @override
   String get widgets_redactTitlesLabel => 'Hide journey titles on Lock Screen';
 
   @override
   String get widgets_redactTitlesSub =>
-      'While your phone is locked, Lock Screen widgets and Live Activities show \"Ourney\" instead of specific journey names.';
+      'On the Lock Screen, widgets and Live Activities show \"Ourney\" instead of specific journey names.';
+
+  @override
+  String get widgets_redactTitlesSubAndroid =>
+      'On the Lock Screen, live updates show \"Ourney\" instead of specific journey names.';
 
   @override
   String get widgets_secLiveActivity => 'evening countdown';
@@ -125,8 +135,16 @@ class WidgetsL10nEn extends WidgetsL10n {
       'Live Activity & check-in window countdown';
 
   @override
+  String get widgets_liveActivityLabelAndroid =>
+      'Live Updates & status-bar countdown';
+
+  @override
   String get widgets_liveActivitySub =>
       'Shows a live countdown on Dynamic Island / Lock Screen starting 30 minutes before your reminder (or 18:00 when a streak is at risk) and clears as soon as you post.';
+
+  @override
+  String get widgets_liveActivitySubAndroid =>
+      'Shows an ongoing countdown on your status bar and Lock Screen starting 30 minutes before your reminder (or 18:00 when a streak is at risk) and clears as soon as you post.';
 
   @override
   String get widgets_secDefaultJourney => 'featured widget journey';
@@ -145,6 +163,10 @@ class WidgetsL10nEn extends WidgetsL10n {
   @override
   String get widgets_setupStep1Title =>
       '1. Touch and hold your Home Screen or Lock Screen';
+
+  @override
+  String get widgets_setupStep1TitleAndroid =>
+      '1. Touch and hold your Home Screen';
 
   @override
   String get widgets_setupStep1Body =>

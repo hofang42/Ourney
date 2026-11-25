@@ -37,7 +37,7 @@ public struct LockScreenWidgetEntryView: View {
 
   public var body: some View {
     let snapshot = entry.snapshot
-    let locale = snapshot?.locale ?? "vi"
+    let locale = snapshot?.locale ?? ""
     let featured = snapshot?.selectedTodayJourney(state: entry.state)
     let bestStreak = max(snapshot?.totals.bestActiveStreak ?? 0, featured?.currentStreak ?? 0)
     let pendingCount = snapshot?.totals.pendingTodayCount ?? 0
@@ -127,7 +127,10 @@ private struct LockScreenRectangularView: View {
   let locale: String
 
   var body: some View {
-    let title = journey?.title ?? WidgetL10n.lockScreenRedactedTitle(locale: locale)
+    let rawTitle = journey?.title.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    let title = (redactTitle || rawTitle.isEmpty)
+      ? WidgetL10n.lockScreenRedactedTitle(locale: locale)
+      : rawTitle
     let days = journey?.weekStrip ?? []
 
     VStack(alignment: .leading, spacing: 3) {
@@ -141,7 +144,6 @@ private struct LockScreenRectangularView: View {
         Text(title)
           .font(OurneyWidgetFont.body(11.5, bold: true))
           .lineLimit(1)
-          .privacySensitive(redactTitle)
       }
 
       // 7-day mini chain bar

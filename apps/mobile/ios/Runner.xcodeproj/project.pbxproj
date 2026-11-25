@@ -48,6 +48,7 @@
 		7D0B003B2F10000100000001 /* BricolageGrotesque-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7D0B00172F10000100000001 /* BricolageGrotesque-Variable.ttf */; };
 		7D0B004B2F10000100000001 /* WidgetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B000E2F10000100000001 /* WidgetIntents.swift */; };
 		7D0B004C2F10000100000001 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D0B001B2F10000100000001 /* AppIntents.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
+		7D0B004D2F10000100000001 /* WidgetL10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00082F10000100000001 /* WidgetL10n.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -495,6 +496,7 @@
 				7D0B00212F10000100000001 /* OurneyCheckInAttributes.swift in Sources */,
 				7D0B00222F10000100000001 /* WidgetSnapshot.swift in Sources */,
 				7D0B004B2F10000100000001 /* WidgetIntents.swift in Sources */,
+				7D0B004D2F10000100000001 /* WidgetL10n.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1239,121 +1239,141 @@ public enum WidgetSnapshotStore {
 
 /// Sample preview fixtures for WidgetKit gallery & SwiftUI `#Preview` blocks.
 public enum WidgetPreviewFixtures {
-  public static let sampleTodaySnapshot = WidgetSnapshot(
-    schemaVersion: 1,
-    generatedAtUtc: "2026-11-24T11:55:00.000Z",
-    authState: "ready",
-    locale: "vi",
-    themeMode: "system",
-    privacy: WidgetPrivacySettings(
-      photoMode: "smart",
-      redactLockScreenTitles: false,
-      liveActivityEnabled: true
-    ),
-    defaultJourneyId: "preview-ielts",
-    totals: WidgetTotals(
-      activeCount: 3,
-      completedTodayCount: 1,
-      pendingTodayCount: 2,
-      atRiskCount: 1,
-      bestActiveStreak: 21
-    ),
-    journeys: [
-      WidgetJourneyItem(
-        id: "preview-ielts",
-        title: "Tự học IELTS 30 ngày",
-        kind: "group",
-        skinId: "squad",
-        colorVariant: 0,
-        typeIcon: "type-study",
-        timezone: "Asia/Ho_Chi_Minh",
-        utcOffsetMinutes: 420,
-        pinned: true,
-        dayNumber: 15,
-        totalDays: 30,
-        currentStreak: 14,
-        bestStreak: 14,
-        checkedInToday: false,
-        atRisk: true,
-        eveningCueAtUtc: "2026-11-24T11:00:00.000Z",
-        streakAlertAtUtc: "2026-11-24T14:00:00.000Z",
-        midnightRolloverUtc: "2026-11-24T17:00:00.000Z",
-        weekStrip: [
-          WidgetWeekDay(date: "2026-11-18", day: 18, label: "T4", state: "done"),
-          WidgetWeekDay(date: "2026-11-19", day: 19, label: "T5", state: "done"),
-          WidgetWeekDay(date: "2026-11-20", day: 20, label: "T6", state: "done"),
-          WidgetWeekDay(date: "2026-11-21", day: 21, label: "T7", state: "done"),
-          WidgetWeekDay(date: "2026-11-22", day: 22, label: "CN", state: "done"),
-          WidgetWeekDay(date: "2026-11-23", day: 23, label: "T2", state: "done"),
-          WidgetWeekDay(date: "2026-11-24", day: 24, label: "HN", state: "today"),
-        ]
+  public static var sampleTodaySnapshot: WidgetSnapshot {
+    sampleTodaySnapshot(locale: nil)
+  }
+
+  public static func sampleTodaySnapshot(locale: String?) -> WidgetSnapshot {
+    let resolvedRaw = (locale?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap {
+      $0.isEmpty ? nil : $0
+    } ?? (Locale.preferredLanguages.first ?? "en")
+    let isVi = resolvedRaw.lowercased().hasPrefix("vi")
+    let resolvedLocale = isVi ? "vi" : "en"
+    let ieltsTitle = isVi ? "Tự học IELTS 30 ngày" : "30-Day IELTS Study"
+    let runTitle = isVi ? "Chạy bộ sáng 5km" : "Morning 5K Run"
+    let cleanEatTitle = isVi ? "Ăn sạch 30 ngày" : "30-Day Clean Eating"
+    let youName = isVi ? "Bạn" : "You"
+    let youInitial = isVi ? "B" : "Y"
+    let labels = isVi
+      ? ["T4", "T5", "T6", "T7", "CN", "T2", "HN"]
+      : ["W", "T", "F", "S", "S", "M", "TD"]
+
+    return WidgetSnapshot(
+      schemaVersion: 1,
+      generatedAtUtc: "2026-11-24T11:55:00.000Z",
+      authState: "ready",
+      locale: resolvedLocale,
+      themeMode: "system",
+      privacy: WidgetPrivacySettings(
+        photoMode: "smart",
+        redactLockScreenTitles: false,
+        liveActivityEnabled: true
       ),
-      WidgetJourneyItem(
-        id: "preview-run",
-        title: "Chạy bộ sáng 5km",
-        kind: "solo",
-        skinId: "flexer",
-        colorVariant: 0,
-        typeIcon: "type-workout",
-        timezone: "Asia/Ho_Chi_Minh",
-        utcOffsetMinutes: 420,
-        pinned: false,
-        dayNumber: 21,
-        totalDays: 30,
-        currentStreak: 21,
-        bestStreak: 21,
-        checkedInToday: true,
-        atRisk: false,
-        weekStrip: [
-          WidgetWeekDay(date: "2026-11-18", day: 18, label: "T4", state: "done"),
-          WidgetWeekDay(date: "2026-11-19", day: 19, label: "T5", state: "done"),
-          WidgetWeekDay(date: "2026-11-20", day: 20, label: "T6", state: "done"),
-          WidgetWeekDay(date: "2026-11-21", day: 21, label: "T7", state: "done"),
-          WidgetWeekDay(date: "2026-11-22", day: 22, label: "CN", state: "done"),
-          WidgetWeekDay(date: "2026-11-23", day: 23, label: "T2", state: "done"),
-          WidgetWeekDay(date: "2026-11-24", day: 24, label: "HN", state: "done"),
-        ]
+      defaultJourneyId: "preview-ielts",
+      totals: WidgetTotals(
+        activeCount: 3,
+        completedTodayCount: 1,
+        pendingTodayCount: 2,
+        atRiskCount: 1,
+        bestActiveStreak: 21
       ),
-      WidgetJourneyItem(
-        id: "preview-quiet",
-        title: "Ăn sạch 30 ngày",
-        kind: "solo",
-        skinId: "quiet",
-        colorVariant: 0,
-        typeIcon: "type-weight",
-        timezone: "Asia/Ho_Chi_Minh",
-        utcOffsetMinutes: 420,
-        pinned: false,
-        dayNumber: 9,
-        totalDays: 30,
-        currentStreak: 8,
-        bestStreak: 12,
-        checkedInToday: false,
-        atRisk: false
-      ),
-    ],
-    squads: [
-      WidgetSquadItem(
-        journeyId: "preview-ielts",
-        title: "Tự học IELTS 30 ngày",
-        skinId: "squad",
-        colorVariant: 0,
-        typeIcon: "type-study",
-        isCouple: false,
-        dayNumber: 15,
-        totalDays: 30,
-        doneCount: 3,
-        memberCount: 5,
-        meCheckedInToday: false,
-        midnightRolloverUtc: "2026-11-24T17:00:00.000Z",
-        members: [
-          WidgetSquadMember(displayName: "Minh", initial: "M", avatarColorIndex: 3, isMe: false, checkedInToday: true, streak: 14),
-          WidgetSquadMember(displayName: "Linh", initial: "L", avatarColorIndex: 0, isMe: false, checkedInToday: true, streak: 15),
-          WidgetSquadMember(displayName: "Khánh", initial: "K", avatarColorIndex: 1, isMe: false, checkedInToday: true, streak: 9),
-          WidgetSquadMember(displayName: "Bạn", initial: "B", avatarColorIndex: 4, isMe: true, checkedInToday: false, streak: 14),
-          WidgetSquadMember(displayName: "An", initial: "A", avatarColorIndex: 2, isMe: false, checkedInToday: false, streak: 6),
-        ]
-      ),
-    ]
-  )
+      journeys: [
+        WidgetJourneyItem(
+          id: "preview-ielts",
+          title: ieltsTitle,
+          kind: "group",
+          skinId: "squad",
+          colorVariant: 0,
+          typeIcon: "type-study",
+          timezone: "Asia/Ho_Chi_Minh",
+          utcOffsetMinutes: 420,
+          pinned: true,
+          dayNumber: 15,
+          totalDays: 30,
+          currentStreak: 14,
+          bestStreak: 14,
+          checkedInToday: false,
+          atRisk: true,
+          eveningCueAtUtc: "2026-11-24T11:00:00.000Z",
+          streakAlertAtUtc: "2026-11-24T14:00:00.000Z",
+          midnightRolloverUtc: "2026-11-24T17:00:00.000Z",
+          weekStrip: [
+            WidgetWeekDay(date: "2026-11-18", day: 18, label: labels[0], state: "done"),
+            WidgetWeekDay(date: "2026-11-19", day: 19, label: labels[1], state: "done"),
+            WidgetWeekDay(date: "2026-11-20", day: 20, label: labels[2], state: "done"),
+            WidgetWeekDay(date: "2026-11-21", day: 21, label: labels[3], state: "done"),
+            WidgetWeekDay(date: "2026-11-22", day: 22, label: labels[4], state: "done"),
+            WidgetWeekDay(date: "2026-11-23", day: 23, label: labels[5], state: "done"),
+            WidgetWeekDay(date: "2026-11-24", day: 24, label: labels[6], state: "today"),
+          ]
+        ),
+        WidgetJourneyItem(
+          id: "preview-run",
+          title: runTitle,
+          kind: "solo",
+          skinId: "flexer",
+          colorVariant: 0,
+          typeIcon: "type-workout",
+          timezone: "Asia/Ho_Chi_Minh",
+          utcOffsetMinutes: 420,
+          pinned: false,
+          dayNumber: 21,
+          totalDays: 30,
+          currentStreak: 21,
+          bestStreak: 21,
+          checkedInToday: true,
+          atRisk: false,
+          weekStrip: [
+            WidgetWeekDay(date: "2026-11-18", day: 18, label: labels[0], state: "done"),
+            WidgetWeekDay(date: "2026-11-19", day: 19, label: labels[1], state: "done"),
+            WidgetWeekDay(date: "2026-11-20", day: 20, label: labels[2], state: "done"),
+            WidgetWeekDay(date: "2026-11-21", day: 21, label: labels[3], state: "done"),
+            WidgetWeekDay(date: "2026-11-22", day: 22, label: labels[4], state: "done"),
+            WidgetWeekDay(date: "2026-11-23", day: 23, label: labels[5], state: "done"),
+            WidgetWeekDay(date: "2026-11-24", day: 24, label: labels[6], state: "done"),
+          ]
+        ),
+        WidgetJourneyItem(
+          id: "preview-quiet",
+          title: cleanEatTitle,
+          kind: "solo",
+          skinId: "quiet",
+          colorVariant: 0,
+          typeIcon: "type-weight",
+          timezone: "Asia/Ho_Chi_Minh",
+          utcOffsetMinutes: 420,
+          pinned: false,
+          dayNumber: 9,
+          totalDays: 30,
+          currentStreak: 8,
+          bestStreak: 12,
+          checkedInToday: false,
+          atRisk: false
+        ),
+      ],
+      squads: [
+        WidgetSquadItem(
+          journeyId: "preview-ielts",
+          title: ieltsTitle,
+          skinId: "squad",
+          colorVariant: 0,
+          typeIcon: "type-study",
+          isCouple: false,
+          dayNumber: 15,
+          totalDays: 30,
+          doneCount: 3,
+          memberCount: 5,
+          meCheckedInToday: false,
+          midnightRolloverUtc: "2026-11-24T17:00:00.000Z",
+          members: [
+            WidgetSquadMember(displayName: "Minh", initial: "M", avatarColorIndex: 3, isMe: false, checkedInToday: true, streak: 14),
+            WidgetSquadMember(displayName: "Linh", initial: "L", avatarColorIndex: 0, isMe: false, checkedInToday: true, streak: 15),
+            WidgetSquadMember(displayName: "Khánh", initial: "K", avatarColorIndex: 1, isMe: false, checkedInToday: true, streak: 9),
+            WidgetSquadMember(displayName: youName, initial: youInitial, avatarColorIndex: 4, isMe: true, checkedInToday: false, streak: 14),
+            WidgetSquadMember(displayName: "An", initial: "A", avatarColorIndex: 2, isMe: false, checkedInToday: false, streak: 6),
+          ]
+        ),
+      ]
+    )
+  }
 }
