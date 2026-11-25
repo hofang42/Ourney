@@ -49,7 +49,7 @@ void main() {
       ),
       SafetyPrefs.eulaAccepted: true,
       SafetyPrefs.termsVersionFor('user-a'): kTermsVersion,
-      SafetyPrefs.blockedNames: jsonEncode({'u9': 'Blocked'}),
+      SafetyPrefs.legacyBlockedNames: jsonEncode({'u9': 'Blocked'}),
       FeedbackPrefs.draftFor('user-a'): jsonEncode(
         const FeedbackComposeDraft(
           title: 'Secret draft idea',
@@ -102,7 +102,6 @@ void main() {
 
     expect(container.read(onboardingQuizProvider), isNotNull);
     expect(container.read(eulaAcceptedProvider), isTrue);
-    expect(container.read(blockedNamesProvider), isNotEmpty);
     expect(container.read(feedbackDraftProvider)?.title, 'Secret draft idea');
     expect(container.read(streakAlertsEnabledProvider), isFalse);
     container.read(hiddenCheckInIdsProvider.notifier).hide('c1');
@@ -126,7 +125,7 @@ void main() {
 
     expect(container.read(onboardingQuizProvider), isNull);
     expect(container.read(eulaAcceptedProvider), isFalse);
-    expect(container.read(blockedNamesProvider), isEmpty);
+    expect(prefs.containsKey(SafetyPrefs.legacyBlockedNames), isFalse);
     expect(container.read(hiddenCheckInIdsProvider), isEmpty);
     expect(container.read(hiddenFeatureRequestIdsProvider), isEmpty);
     expect(container.read(feedbackDraftProvider), isNull);

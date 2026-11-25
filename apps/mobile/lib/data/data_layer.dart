@@ -145,7 +145,7 @@ class DataLayer {
   StreamSubscription<String?>? _authSub;
 
   late final ProfileRepository profiles = DataProfileRepository(ctx);
-  late final JourneyRepository journeys = DataJourneyRepository(ctx);
+  late final journeys = DataJourneyRepository(ctx);
   late final CheckInRepository checkIns = DataCheckInRepository(ctx);
   late final GroupRepository groups = DataGroupRepository(ctx);
   late final SafetyRepository safety = DataSafetyRepository(

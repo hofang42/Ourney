@@ -496,6 +496,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           }
         }
       }
+      await reconcileHiddenWeight(container);
       if (!mounted) return;
       // The quiz turned a reminder on: offer the OS permission now, or the
       // scheduler has nothing it may post (bug #7).

@@ -61,9 +61,13 @@ class SyncEngine {
   int _runEpoch = 0;
   String? _runUser;
   final _changes = StreamController<void>.broadcast();
+  final _completedPulls = StreamController<void>.broadcast();
 
   /// Fires after server data was applied locally (pull, outbox success).
   Stream<void> get changes => _changes.stream;
+
+  /// Fires when the full pull has applied the server's journeys and memberships.
+  Stream<void> get completedPulls => _completedPulls.stream;
 
   void notifyChanged() {
     if (!_changes.isClosed) _changes.add(null);
@@ -189,17 +193,22 @@ class SyncEngine {
         );
         await _applyJourneyIfSession(row, epoch, user);
       case OutboxKind.updateMembership:
+        final values = {
+          if (p.containsKey('hide_metric')) 'hide_metric': p['hide_metric'],
+          if (p.containsKey('blur_media')) 'blur_media': p['blur_media'],
+          if (p.containsKey('hide_extras')) 'hide_extras': p['hide_extras'],
+          if (p.containsKey('pinned')) 'pinned': p['pinned'],
+        };
         await remote.update(
           'memberships',
-          {
-            if (p.containsKey('hide_metric')) 'hide_metric': p['hide_metric'],
-            if (p.containsKey('blur_media')) 'blur_media': p['blur_media'],
-            if (p.containsKey('hide_extras')) 'hide_extras': p['hide_extras'],
-            if (p.containsKey('pinned')) 'pinned': p['pinned'],
-          },
+          values,
           match: {
             'journey_id': p['journey_id'] as String,
             'user_id': p['user_id'] as String,
+            // A legacy repair can only tell whether the bit was set on this
+            // device. Avoid touching updated_at if it already reached server.
+            if (values.length == 1 && values['hide_metric'] == true)
+              'hide_metric': false,
           },
         );
     }
@@ -364,6 +373,7 @@ class SyncEngine {
       );
       await _pullTable('profiles', store.applyProfile, eq: {'id': me});
       notifyChanged();
+      if (!_completedPulls.isClosed) _completedPulls.add(null);
       return const SyncOk();
     } on _SessionChanged {
       return const SyncFailed('session changed');
@@ -696,6 +706,7 @@ class SyncEngine {
 
   void dispose() {
     unawaited(_changes.close());
+    unawaited(_completedPulls.close());
   }
 }
 

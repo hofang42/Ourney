@@ -5,15 +5,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/router.dart';
+import 'package:ourney/features/camera/capture_services.dart'
+    show appSettingsOpenerProvider;
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
+import 'package:ourney/features/profile/settings_providers.dart';
 import 'package:ourney/features/share_card/data/share_card_exporter.dart';
 import 'package:ourney/features/share_card/data/share_card_providers.dart';
 import 'package:ourney/features/share_card/domain/share_card_content.dart';
-import 'package:ourney/features/social/data/social_providers.dart';
+import 'package:ourney/features/social/data/social_providers.dart'
+    show defaultSharePositionOrigin;
 import 'package:ourney/ui/ui.dart' show UiButton;
 import 'package:ourney_core/ourney_core.dart';
 
+import '../checkin/fakes.dart' show FakeSettingsOpener;
 import '../share_card/share_card_fakes.dart'
     show FakeExporter, FakeSaver, FakeSharer;
 import 'journeys_fakes.dart';
@@ -121,8 +126,10 @@ void main() {
         tester,
         journey: testJourney(
           status: JourneyStatus.ended,
-          templateId: TemplateId.weightLoss,
-        ),
+          templateId: TemplateId.custom,
+          metricName: 'Weight',
+          metricUnit: 'kg',
+        ).copyWith(layout: PersonaSkinId.quietTransformer),
       );
       for (var i = 0; i < 4; i++) {
         await tester.tapAt(const Offset(380, 500));
@@ -260,6 +267,7 @@ void main() {
         final exporter = FakeExporter();
         final sharer = FakeSharer();
         final saver = _GatedSaver();
+        final settings = FakeSettingsOpener();
         final token = 'pub${'0' * 37}';
         final base = testJourney(
           status: JourneyStatus.ended,
@@ -294,6 +302,7 @@ void main() {
             shareCardExporterProvider.overrideWithValue(exporter),
             shareCardSharerProvider.overrideWithValue(sharer),
             shareCardSaverProvider.overrideWithValue(saver),
+            appSettingsOpenerProvider.overrideWithValue(settings),
           ],
         );
         await tester.tap(_key('wrapped-segment-2'));
@@ -348,6 +357,18 @@ void main() {
         );
         expect(saver.saved, hasLength(1));
         expect(find.text('Card saved.'), findsOneWidget);
+
+        saver.error = const ShareCardSaveException(
+          code: 'PERMISSION_DENIED',
+          message: 'denied',
+        );
+        await tester.tap(_key('wrapped-share'));
+        await tester.pumpAndSettle();
+        await tester.tap(_key('wrapped-share-save'));
+        await tester.pumpAndSettle();
+        await tester.tap(_key('ui-toast-action'));
+        await tester.pumpAndSettle();
+        expect(settings.opened, 1);
 
         // A failing export shows a toast instead of an unhandled async error.
         exporter.error = const OurneyException(OurneyErrorCode.unknown);
@@ -417,6 +438,94 @@ void main() {
         await tester.pumpAndSettle();
       },
     );
+
+    for (final (globalHide, membershipHide, localHide) in [
+      (false, false, false),
+      (false, true, false),
+      (true, false, false),
+      (true, true, false),
+      (false, null, false),
+      (false, false, true),
+    ]) {
+      testWidgets('Wrapped caption and PNG with global hide $globalHide, '
+          'membership hide $membershipHide, and local hide $localHide', (
+        tester,
+      ) async {
+        final j = testJourney(
+          status: JourneyStatus.ended,
+          templateId: TemplateId.custom,
+          metricName: 'Reading',
+          metricUnit: 'kg',
+        ).copyWith(layout: PersonaSkinId.quietTransformer);
+        final exporter = FakeExporter();
+        final sharer = FakeSharer();
+        final saver = FakeSaver();
+        final pendingMembership = StreamController<Membership?>.broadcast();
+        addTearDown(pendingMembership.close);
+        final h = await pumpJourneys(
+          tester,
+          locale: const Locale('en'),
+          location: JourneysPaths.wrapped(j.id),
+          journeys: FakeJourneyRepository(
+            journeys: [j],
+            memberships: {
+              if (membershipHide != null)
+                j.id: testMembership(j, hideMetric: membershipHide),
+            },
+          ),
+          checkIns: FakeCheckInRepository([
+            testCheckIn(j.id, const LocalDate(2026, 10, 10), metricValue: 81.2),
+            testCheckIn(j.id, const LocalDate(2026, 10, 11), metricValue: 78.4),
+          ]),
+          extraOverrides: [
+            shareCardExporterProvider.overrideWithValue(exporter),
+            shareCardSharerProvider.overrideWithValue(sharer),
+            shareCardSaverProvider.overrideWithValue(saver),
+            if (membershipHide == null)
+              myMembershipProvider(j.id)
+                  .overrideWith((ref) => pendingMembership.stream),
+          ],
+        );
+        await tester.runAsync(
+          () => h.container
+              .read(hideWeightOnShareProvider.notifier)
+              .set(globalHide),
+        );
+        await tester.tap(_key('wrapped-segment-4'));
+        await tester.pumpAndSettle();
+        if (!localHide) {
+          await tester.tap(_key('wrapped-hide-kg'));
+          await tester.pumpAndSettle();
+        }
+        final showWeights =
+            !globalHide && membershipHide == false && !localHide;
+        final boundary = find.descendant(
+          of: _key('wrapped-card-story'),
+          matching: find.byWidgetPredicate(
+            (w) => w is RepaintBoundary && w.key is GlobalKey,
+          ),
+        );
+        expect(boundary, findsOneWidget);
+        expect(
+          find.descendant(of: boundary, matching: _key('wrapped-weights')),
+          showWeights ? findsOneWidget : findsNothing,
+        );
+        await tester.ensureVisible(_key('wrapped-share'));
+        await tester.tap(_key('wrapped-share'));
+        await tester.pumpAndSettle();
+        await tester.tap(_key('wrapped-share-now'));
+        await tester.pumpAndSettle();
+        for (final value in ['81.2', '78.4']) {
+          expect(sharer.shared.single.text!.contains(value), showWeights);
+        }
+        await tester.tap(_key('wrapped-share'));
+        await tester.pumpAndSettle();
+        await tester.tap(_key('wrapped-share-save'));
+        await tester.pumpAndSettle();
+        expect(exporter.exports, hasLength(2));
+        expect(saver.saved.single.path, sharer.shared.single.path);
+      });
+    }
 
     for (final skin in [
       TemplateId.weightLoss,

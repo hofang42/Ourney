@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/data/data_layer.dart';
 import 'package:ourney/data/db/app_database.dart';
+import 'package:ourney/data/remote/error_mapping.dart';
 import 'package:ourney/data/remote/remote_api.dart';
 import 'package:ourney/data/remote/supabase_remote_api.dart';
 import 'package:ourney/data/sync/sync_engine.dart';
@@ -692,6 +693,12 @@ void main() {
   });
 
   test('profile: update first, insert when missing', () async {
+    remote.rpcHandlers['check_username_available'] =
+        (p) => p['p_username'] != 'taken_user';
+    expect(await layer.profiles.isUsernameAvailable('  LINH  '), isTrue);
+    expect(await layer.profiles.isUsernameAvailable('TAKEN_USER'), isFalse);
+    expect(await layer.profiles.isUsernameAvailable('ab'), isFalse);
+
     remote.updateResult = [];
     await layer.profiles.upsertMe(username: 'linh', displayName: 'Linh');
     expect(remote.callsOf('insert').single.args, {
@@ -703,6 +710,46 @@ void main() {
     await layer.profiles.setAvatar([1]);
     final me0 = await layer.profiles.watchMe().first;
     expect(remote.uploaded.keys.single, me0!.avatarPath);
+  });
+
+  test('username availability requires a boolean RPC response', () async {
+    for (final payload in [
+      null,
+      'true',
+      {'available': true},
+    ]) {
+      remote.rpcHandlers['check_username_available'] = (_) => payload;
+      await expectLater(
+        layer.profiles.isUsernameAvailable('linh'),
+        throwsA(
+          isA<OurneyException>().having(
+            (e) => e.error,
+            'error',
+            OurneyErrorCode.unknown,
+          ),
+        ),
+      );
+    }
+    remote.failOnce.add(offline);
+    await expectLater(
+      layer.profiles.isUsernameAvailable('linh'),
+      throwsA(same(offline)),
+    );
+  });
+
+  test('username availability skips the RPC without a session', () async {
+    remote.userId = null;
+    await expectLater(
+      layer.profiles.isUsernameAvailable('linh'),
+      throwsA(
+        isA<OurneyException>().having(
+          (e) => e.error,
+          'error',
+          OurneyErrorCode.unauthenticated,
+        ),
+      ),
+    );
+    expect(remote.callsOf('rpc'), isEmpty);
   });
 
   test(
@@ -806,21 +853,19 @@ void main() {
     );
   });
 
-  test('taken username (23505) surfaces as invalid', () async {
-    remote.updateResult = [];
-    remote.failOnce.addAll([
-      OurneyException(
-        OurneyErrorCode.fromServer(
+  test('a username unique violation surfaces as a username conflict', () async {
+    remote.failOnce.add(
+      mapRemoteError(
+        const PostgrestException(
           message: 'duplicate key value violates unique constraint "profiles_username_key"',
-          sqlstate: '23505',
+          code: '23505',
         ),
       ),
-    ]);
-    // First failure hits the update call.
+    );
     await expectLater(
       layer.profiles.upsertMe(username: 'taken', displayName: 'X'),
       throwsA(
-        isA<OurneyException>().having(
+        isA<ProfileUsernameTakenException>().having(
           (e) => e.error,
           'error',
           OurneyErrorCode.invalid,
@@ -828,6 +873,29 @@ void main() {
       ),
     );
     expect(await db.select(db.profiles).get(), isEmpty);
+  });
+
+  test('other profile constraint violations retain their error', () async {
+    for (final failure in [
+      const PostgrestException(
+        message:
+            'duplicate key value violates unique constraint "profiles_pkey"',
+        code: '23505',
+      ),
+      const PostgrestException(
+        message:
+            'new row violates check constraint "profiles_display_name_check"',
+        code: '23514',
+      ),
+      const PostgrestException(message: 'content_policy', code: '23514'),
+    ]) {
+      final mapped = mapRemoteError(failure);
+      remote.failOnce.add(mapped);
+      await expectLater(
+        layer.profiles.upsertMe(username: 'valid', displayName: 'X'),
+        throwsA(same(mapped)),
+      );
+    }
   });
 
   test(

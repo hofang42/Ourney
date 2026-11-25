@@ -4,7 +4,7 @@
 --        6 F friend of D and E, 7 S second stranger, 8 H late group joiner.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(101);
+select plan(104);
 
 create schema tests;
 grant usage on schema tests to authenticated;
@@ -136,6 +136,25 @@ select ok(not ((:'view_c'::json)->>'can_reply')::boolean and ((:'view_c'::json)-
   'stranger: no reply, can add owner, can react (allow_public_reactions)');
 select is(tests.photo_ids(:'view_c'::json), array[tests.c(1)], 'stranger never gets hidden photos');
 select is((:'view_c'::json)->'photos'->0->>'like_count', '0', 'per-photo like_count is 0 without show_counts');
+
+-- The app reconciles existing memberships by writing the same column below.
+-- Neither the friend grant nor the already issued public token is changed.
+do $$ begin perform tests.as_user(tests.u(1)); end $$;
+update public.memberships set hide_metric = true
+where journey_id = tests.j(1) and user_id = auth.uid();
+do $$ begin perform tests.as_user(tests.u(2)); end $$;
+select is(public.shared_journey(tests.j(1))->'photos'->0->>'metric_value',
+  null::text, 'existing friend grant hides the reconciled metric');
+do $$ begin perform tests.as_user(tests.u(3)); end $$;
+select is(public.public_journey_by_token(:'tok')->'photos'->0->>'metric_value',
+  null::text, 'existing public token hides the reconciled metric');
+select is(tests.photo_ids(public.public_journey_by_token(:'tok')), array[tests.c(1)],
+  'the public link stays usable after reconciliation');
+do $$ begin perform tests.as_user(tests.u(1)); end $$;
+update public.memberships set hide_metric = false
+where journey_id = tests.j(1) and user_id = auth.uid();
+do $$ begin perform tests.as_user(tests.u(3)); end $$;
+
 select is((select count(*)::int from storage.objects where name = tests.photo(tests.j(1), tests.u(1), tests.c(1))), 1,
   'signed-in stranger reads photos of a public journey');
 select lives_ok($$ select tests.react(tests.c(1)) $$, 'stranger reacts (allow_public_reactions)');

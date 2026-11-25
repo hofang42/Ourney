@@ -17,6 +17,7 @@ import '../safety/data/safety_providers.dart' show eulaAcceptedProvider;
 import 'avatar_picker.dart';
 import 'l10n/generated/profile_localizations.dart';
 import 'profile_providers.dart';
+import 'username_availability.dart';
 import 'widgets/profile_face_avatar.dart';
 import 'widgets/sign_out_flow.dart';
 
@@ -30,9 +31,8 @@ import 'widgets/sign_out_flow.dart';
 ///
 /// Saving calls `ProfileRepository.upsertMe` and, if a photo was picked,
 /// `ProfileRepository.setAvatar` (JPEG bytes). The username format is checked
-/// locally with ourney_core's `validateUsername`; uniqueness is the server's
-/// job: `upsertMe` failing with [OurneyErrorCode.invalid] after local
-/// validation passed means "taken".
+/// locally with ourney_core's `validateUsername`. A username may be claimed
+/// between the availability check and the server write.
 class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({this.from, super.key});
 
@@ -42,7 +42,7 @@ class ProfileSetupScreen extends ConsumerStatefulWidget {
   ConsumerState<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
 }
 
-enum _FormError { save, offline, avatar }
+enum _FormError { save, contentPolicy, offline, avatar }
 
 class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   final _username = TextEditingController();
@@ -51,8 +51,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   bool _saving = false;
   bool _submitted = false;
   bool _edited = false;
-  bool _usernameTaken = false;
-  String? _takenUsername;
+  final _usernameAvailability = UsernameAvailabilityCheck();
   _FormError? _error;
 
   @override
@@ -70,23 +69,27 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   @override
   void dispose() {
+    _usernameAvailability.cancel();
     _username.dispose();
     _displayName.dispose();
     super.dispose();
   }
 
-  String? _usernameError(ProfileL10n l10n) {
-    final value = _username.text;
-    if (_usernameTaken && value == _takenUsername) {
-      return l10n.profile_usernameTaken;
-    }
-    if (!_submitted && value.isEmpty) return null;
-    return switch (validateUsername(value)) {
-      UsernameError.tooShort => l10n.profile_usernameTooShort(usernameMin),
-      UsernameError.tooLong => l10n.profile_usernameTooLong(usernameMax),
-      UsernameError.invalidChars => l10n.profile_usernameInvalidChars,
-      null => null,
-    };
+  String? _usernameError(ProfileL10n l10n) => _usernameAvailability.errorFor(
+    l10n,
+    _username.text,
+    submitted: _submitted,
+  );
+
+  void _onUsernameChanged(String value) {
+    _usernameAvailability.onChanged(
+      value,
+      currentUsername: ref.read(myProfileProvider).asData?.value?.username,
+      lookup: (candidate) =>
+          ref.read(profileRepositoryProvider).isUsernameAvailable(candidate),
+      onResult: () => setState(() {}),
+    );
+    setState(() => _edited = true);
   }
 
   String? _displayNameError(ProfileL10n l10n) {
@@ -141,6 +144,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     final l10n = ProfileL10n.of(context);
     setState(() {
       _submitted = true;
@@ -158,6 +162,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         initial.username != username ||
         initial.displayName != displayName;
 
+    _usernameAvailability.cancel();
     setState(() => _saving = true);
     try {
       if (profileChanged) {
@@ -170,11 +175,17 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        switch (e.error) {
-          case OurneyErrorCode.invalid:
-            _usernameTaken = true;
-            _takenUsername = username;
-          case OurneyErrorCode.offline:
+        switch (e) {
+          case ProfileUsernameTakenException():
+            _usernameAvailability.status = UsernameAvailability.taken;
+          case OurneyException(error: OurneyErrorCode.contentPolicy):
+            if (initial?.displayName == displayName) {
+              _usernameAvailability.status = UsernameAvailability.unavailable;
+            } else {
+              _usernameAvailability.status = UsernameAvailability.unconfirmed;
+              _error = _FormError.contentPolicy;
+            }
+          case OurneyException(error: OurneyErrorCode.offline):
             _error = _FormError.offline;
           default:
             _error = _FormError.save;
@@ -275,12 +286,16 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     };
     final hasAvatar = _picked != null;
     final usernameError = _usernameError(l10n);
-    final usernameOk =
-        _username.text.isNotEmpty &&
-        validateUsername(_username.text) == null &&
-        !(_usernameTaken && _username.text == _takenUsername);
+    final usernameOk = _username.text.isNotEmpty && usernameError == null;
+    final usernameAvailable =
+        usernameOk &&
+        _usernameAvailability.isAvailable(
+          _username.text,
+          currentUsername: profileState.asData?.value?.username,
+        );
     final errorText = switch (_error) {
       _FormError.save => l10n.profile_saveError,
+      _FormError.contentPolicy => l10n.profile_saveContentPolicy,
       _FormError.offline => l10n.profile_offlineError,
       _FormError.avatar => l10n.profile_avatarError,
       null => null,
@@ -407,20 +422,20 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               autofillHints: const [AutofillHints.newUsername],
               inputFormatters: [
                 _LowerCaseFormatter(),
-                LengthLimitingTextInputFormatter(usernameMax + 5),
+                LengthLimitingTextInputFormatter(usernameMax),
               ],
               helper: l10n.profile_usernameHelper,
               invalid: usernameError != null,
-              onChanged: (_) => setState(() => _edited = true),
+              onChanged: _onUsernameChanged,
               onSubmitted: (_) => _saving ? null : _save(),
             ),
-            // `.username-status`: error or "Dùng được".
+            // `.username-status`: error or "Dùng được" (only once verified).
             if (usernameError != null)
               UiFlowError(
                 key: const ValueKey('profile-username-status'),
                 message: usernameError,
               )
-            else if (usernameOk)
+            else if (usernameAvailable)
               UiFlowError(
                 key: const ValueKey('profile-username-status'),
                 message: l10n.profile_usernameAvailable,

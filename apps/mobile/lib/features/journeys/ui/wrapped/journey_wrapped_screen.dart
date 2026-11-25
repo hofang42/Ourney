@@ -12,6 +12,8 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../personas/persona_contract.dart';
 import '../../../../ui/ui.dart';
 import '../../../camera/capture_services.dart' show appSettingsOpenerProvider;
+import '../../../profile/settings_providers.dart'
+    show hideWeightOnShareProvider;
 import '../../../share_card/data/share_card_exporter.dart'
     show shareCardBaseName;
 import '../../../share_card/data/share_card_providers.dart'
@@ -21,7 +23,7 @@ import '../../../share_card/data/share_card_providers.dart'
         shareCardSaverProvider,
         shareCardSharerProvider;
 import '../../../share_card/domain/share_card_content.dart'
-    show ShareCardFormat, activePublicToken;
+    show ShareCardFormat, activePublicToken, shareMetricHidden;
 import '../../data/journeys_providers.dart';
 import '../../domain/journey_progress.dart';
 import '../../domain/wrapped_story.dart';
@@ -602,12 +604,36 @@ class _SummaryState extends ConsumerState<_Summary> {
     return box.localToGlobal(Offset.zero) & box.size;
   }
 
+  bool _hideExportKg(AsyncValue<Membership?> membership, bool hideWeight) =>
+      membership.isLoading ||
+      membership.hasError ||
+      membership.value == null ||
+      shareMetricHidden(
+        journey,
+        membership.value,
+        forceHideMetric: hideKg,
+        hideWeight: hideWeight,
+      );
+
   @override
   Widget build(BuildContext context) {
     final l10n = JourneysL10n.of(context);
     final ui = context.ui;
     final quiet = skin == PersonaSkinId.quietTransformer;
-    final hasWeights = _Summary._weights(stats) != null;
+    final weights = quiet ? _Summary._weights(stats) : null;
+    final membershipProvider = myMembershipProvider(journey.id);
+    // The preview's boundary is also the source for shared and saved PNGs.
+    final exportWeights =
+        weights != null &&
+            !_hideExportKg(
+              ref.watch(membershipProvider),
+              ref.watch(hideWeightOnShareProvider),
+            )
+        ? weights
+        : null;
+    final format = ratio == _Ratio.story
+        ? ShareCardFormat.story
+        : ShareCardFormat.feed;
     // U4: carry the format and privacy choices over to the card editor. The
     // photo blur is not handed over: the quiet card always blurs its portrait.
     void openShare() => context.push(
@@ -621,26 +647,27 @@ class _SummaryState extends ConsumerState<_Summary> {
     Future<void> shareNow(bool hideWordmark) async {
       final exporter = ref.read(shareCardExporterProvider);
       final sharer = ref.read(shareCardSharerProvider);
-      final format = ratio == _Ratio.story
-          ? ShareCardFormat.story
-          : ShareCardFormat.feed;
-      final text = wrappedShareText(
-        l10n,
-        journey,
-        skin,
-        stats,
-        hideKg: hideKg,
-        hideBrand: hideWordmark,
-      );
       try {
         if (hideWordmark != hideBrand) {
           onHideBrand(hideWordmark);
         }
         await WidgetsBinding.instance.endOfFrame;
+        if (!context.mounted) return;
         final boundary =
             _boundaryKey.currentContext?.findRenderObject()
                 as RenderRepaintBoundary?;
         if (boundary == null) throw StateError('wrapped card not laid out');
+        final text = wrappedShareText(
+          l10n,
+          journey,
+          skin,
+          stats,
+          hideKg: _hideExportKg(
+            ref.read(membershipProvider),
+            ref.read(hideWeightOnShareProvider),
+          ),
+          hideBrand: hideWordmark,
+        );
         final file = await exporter.export(
           boundary,
           format,
@@ -662,9 +689,6 @@ class _SummaryState extends ConsumerState<_Summary> {
     Future<void> saveCard(bool hideWordmark) async {
       final exporter = ref.read(shareCardExporterProvider);
       final saver = ref.read(shareCardSaverProvider);
-      final format = ratio == _Ratio.story
-          ? ShareCardFormat.story
-          : ShareCardFormat.feed;
       try {
         if (hideWordmark != hideBrand) {
           onHideBrand(hideWordmark);
@@ -706,10 +730,6 @@ class _SummaryState extends ConsumerState<_Summary> {
         }
       }
     }
-
-    final format = ratio == _Ratio.story
-        ? ShareCardFormat.story
-        : ShareCardFormat.feed;
 
     return SingleChildScrollView(
       key: const ValueKey('wrapped-summary'),
@@ -802,9 +822,9 @@ class _SummaryState extends ConsumerState<_Summary> {
                                   size: 20,
                                 ).copyWith(height: 1.35),
                               ),
-                              if (quiet && !hideKg && hasWeights)
+                              if (exportWeights != null)
                                 Text(
-                                  _Summary._weights(stats)!,
+                                  exportWeights,
                                   key: const ValueKey('wrapped-weights'),
                                   style: UiText.muted(
                                     color: ui.ink,
@@ -833,7 +853,7 @@ class _SummaryState extends ConsumerState<_Summary> {
               spacing: UiSpace.sm,
               runSpacing: UiSpace.sm,
               children: [
-                if (hasWeights)
+                if (weights != null)
                   UiChip(
                     key: const ValueKey('wrapped-hide-kg'),
                     label:

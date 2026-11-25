@@ -150,33 +150,32 @@ void main() {
       expect(_allDays, findsNWidgets(7));
     });
 
-    testWidgets('tapping a day opens the photo viewer; hidden metric', (
-      tester,
-    ) async {
-      final j = testJourney(
-        templateId: TemplateId.weightLoss,
-        metricName: 'Weight',
-        metricUnit: 'kg',
-        hideMetricDefault: true,
-      );
-      final h = await _pumpDetail(
-        tester,
-        journey: j,
-        membership: testMembership(j, hideMetric: true),
-      );
-      await _tap(tester, _day(const LocalDate(2026, 10, 15)));
-      expect(
-        h.location,
-        JourneysPaths.day('j1', const LocalDate(2026, 10, 15)),
-      );
-      expect(_key('journey-day-viewer'), findsOneWidget);
-      expect(find.text('weighed'), findsOneWidget);
-      expect(find.text('Hidden'), findsOneWidget);
-      expect(find.textContaining('71.5'), findsNothing);
-
-      await _tap(tester, _key('journey-day-reveal'));
-      expect(find.text('71.5 kg'), findsOneWidget);
-    });
+    testWidgets(
+      'tapping a day opens the photo viewer and always shows own metric (UX-25)',
+      (tester) async {
+        final j = testJourney(
+          templateId: TemplateId.weightLoss,
+          metricName: 'Weight',
+          metricUnit: 'kg',
+          hideMetricDefault: true,
+        );
+        final h = await _pumpDetail(
+          tester,
+          journey: j,
+          membership: testMembership(j, hideMetric: true),
+        );
+        await _tap(tester, _day(const LocalDate(2026, 10, 15)));
+        expect(
+          h.location,
+          JourneysPaths.day('j1', const LocalDate(2026, 10, 15)),
+        );
+        expect(_key('journey-day-viewer'), findsOneWidget);
+        expect(find.text('weighed'), findsOneWidget);
+        expect(find.text('71.5 kg'), findsOneWidget);
+        expect(find.text('Hidden'), findsNothing);
+        expect(_key('journey-day-reveal'), findsNothing);
+      },
+    );
 
     testWidgets('day viewer pages through every photo of the day (B-B6)', (
       tester,

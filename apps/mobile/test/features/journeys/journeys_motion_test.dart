@@ -523,27 +523,11 @@ void main() {
           expect(find.text('Morning weigh-in'), findsOneWidget);
           expect(haptics, contains('HapticFeedbackType.selectionClick'));
 
-          // Hidden metric reveal crossfades over 140ms + selection haptic
-          // with start-edge alignment inside AnimatedSwitcher (P2-1 AlignmentDirectional.centerStart).
-          haptics.clear();
-          final metricSwitcher = find.descendant(
-            of: _key('journey-day-metric'),
-            matching: find.byType(AnimatedSwitcher),
-          );
-          await tester.tap(_key('journey-day-reveal'));
-          await tester.pump();
-          await tester.pump(const Duration(milliseconds: 70));
+          // UX-25: caller's own metric is always shown directly in DayViewerScreen.
+          expect(_key('journey-day-metric'), findsOneWidget);
           expect(_key('journey-day-metric-shown'), findsOneWidget);
-          final midMetricOffsetInSwitcher =
-              tester.getTopLeft(_key('journey-day-metric-shown')).dx -
-              tester.getTopLeft(metricSwitcher).dx;
-          expect(midMetricOffsetInSwitcher, closeTo(0.0, 0.5));
-          expect(haptics, contains('HapticFeedbackType.selectionClick'));
-          await tester.pumpAndSettle();
-          final settledMetricOffsetInSwitcher =
-              tester.getTopLeft(_key('journey-day-metric-shown')).dx -
-              tester.getTopLeft(metricSwitcher).dx;
-          expect(settledMetricOffsetInSwitcher, closeTo(0.0, 0.5));
+          expect(find.text('62 kg'), findsOneWidget);
+          expect(_key('journey-day-reveal'), findsNothing);
 
           // 4a. Interactive vertical drag below threshold (|dy| = 70 <= 110dp):
           final dragSurface = _key('journey-day-drag-surface');

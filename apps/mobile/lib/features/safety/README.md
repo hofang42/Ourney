@@ -31,9 +31,8 @@ final blocked  = await confirmBlock(context, userId: m.userId, name: m.displayNa
 ```
 
 All need only a `BuildContext` under the app `ProviderScope`; they show their
-own snack bars and never throw. Pass the display name: the contract streams
-only blocked ids, so the name is remembered on this device
-(`safety.blockedNames`) for the blocked list.
+own snack bars and never throw. Pass the display name for the confirmation.
+The blocked list uses the identity snapshot authorized by the server.
 
 ## Providers (`data/safety_providers.dart`)
 
