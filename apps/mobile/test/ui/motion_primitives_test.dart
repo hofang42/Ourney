@@ -801,8 +801,9 @@ void main() {
         await tester.pump();
 
         // Sample across the 200ms transition: 40ms (20%), 70ms (35%), 100ms (50% midpoint), 150ms (75%)
-        for (final deltaMs in [40, 30, 30, 50]) {
-          await tester.pump(Duration(milliseconds: deltaMs));
+        final dirSamples = <int>[40, 30, 30, 50];
+        for (var i = 0; i < dirSamples.length; i++) {
+          await tester.pump(Duration(milliseconds: dirSamples[i]));
           final a1 = effectiveOpacityOf(find.text('Dir Title 1'));
           final a2 = effectiveOpacityOf(find.text('Dir Title 2'));
           expect(
@@ -811,6 +812,13 @@ void main() {
             reason:
                 'UiDirectionalSwitcher overlap: Title 1 ($a1) and Title 2 ($a2) both > 0.05',
           );
+          if (i == 0) {
+            expect(a1, greaterThan(0.1));
+            expect(a2, 0.0);
+          } else if (i == 2) {
+            expect(a1, 0.0);
+            expect(a2, greaterThan(0.2));
+          }
         }
 
         // At t = 150ms (75%), AnimatedSize has already shrunk well below 140dp toward 60dp
@@ -944,6 +952,321 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('RM Fade A'), findsOneWidget);
         expect(tester.binding.transientCallbackCount, 0);
+      },
+    );
+
+    testWidgets(
+      'F1 re-entrancy: rapid mid-transition switches (A -> B -> A and A -> B -> C at t=50% and t=80%, plus unkeyed swaps) never flash, snap to 0, teleport dx, overlap, or leak pointer hits to outgoing children',
+      (tester) async {
+        double effectiveOpacityOf(Finder target) {
+          if (target.evaluate().isEmpty) return 0.0;
+          var alpha = 1.0;
+          for (final fade in tester.widgetList<FadeTransition>(
+            find.ancestor(of: target, matching: find.byType(FadeTransition)),
+          )) {
+            alpha *= fade.opacity.value;
+          }
+          return alpha;
+        }
+
+        var step = 'A';
+        var dir = 1;
+        final tappedSteps = <String>[];
+        late StateSetter setHost;
+
+        await tester.pumpWidget(
+          _host(
+            StatefulBuilder(
+              builder: (context, setState) {
+                setHost = setState;
+                return UiDirectionalSwitcher(
+                  step: step,
+                  direction: dir,
+                  duration: const Duration(milliseconds: 200),
+                  slideOffset: 18.0,
+                  child: GestureDetector(
+                    key: ValueKey('reentrant-$step'),
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => tappedSteps.add(step),
+                    child: SizedBox(
+                      width: 220,
+                      height: 60,
+                      child: Text('Item $step'),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+
+        // 1. Interrupt A -> B at t = 50% (100ms of 200ms) with B -> A (direction: -1).
+        setHost(() {
+          step = 'B';
+          dir = 1;
+        });
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100)); // t = 50%
+
+        final bOpacityBefore = effectiveOpacityOf(find.text('Item B'));
+        final bDxBefore = tester.getTopLeft(find.text('Item B')).dx;
+        expect(bOpacityBefore, greaterThan(0.5));
+
+        // Trigger B -> A while A1 is still in _outgoingEntries and B is at ~58% opacity.
+        setHost(() {
+          step = 'A';
+          dir = -1;
+        });
+        await tester.pump();
+
+        // At +0ms and +1ms: B must NOT snap to 0.0 or teleport horizontally.
+        expect(
+          effectiveOpacityOf(find.text('Item B')),
+          closeTo(bOpacityBefore, 0.001),
+        );
+        expect(
+          tester.getTopLeft(find.text('Item B')).dx,
+          closeTo(bDxBefore, 0.001),
+        );
+
+        await tester.pump(const Duration(milliseconds: 1));
+        final bOpacityAt1ms = effectiveOpacityOf(find.text('Item B'));
+        final bDxAt1ms = tester.getTopLeft(find.text('Item B')).dx;
+        expect(bOpacityAt1ms, greaterThan(0.5));
+        expect((bDxAt1ms - bDxBefore).abs(), lessThan(1.5));
+
+        // Incoming A2 is at 0.0 opacity while outgoing A1 is also at 0.0 opacity.
+        for (final aText in tester.widgetList<Text>(find.text('Item A'))) {
+          expect(effectiveOpacityOf(find.byWidget(aText)), 0.0);
+        }
+
+        // Both outgoing A1 and outgoing B must have IgnorePointer (tapping hits only incoming A2).
+        final bIgnoreAncestors = tester
+            .widgetList<IgnorePointer>(
+              find.ancestor(
+                of: find.text('Item B'),
+                matching: find.byType(IgnorePointer),
+              ),
+            )
+            .where((w) => w.ignoring);
+        expect(bIgnoreAncestors, isNotEmpty);
+
+        // At +40ms (20% after reversal): B is still smoothly fading (> 0.05), A is still 0.0.
+        await tester.pump(const Duration(milliseconds: 39));
+        expect(effectiveOpacityOf(find.text('Item B')), greaterThan(0.05));
+        for (final aText in tester.widgetList<Text>(find.text('Item A'))) {
+          expect(effectiveOpacityOf(find.byWidget(aText)), 0.0);
+        }
+
+        // At +100ms (50% after reversal): B has reached 0.0 and incoming A2 is visible (> 0.2).
+        await tester.pump(const Duration(milliseconds: 60));
+        expect(effectiveOpacityOf(find.text('Item B')), 0.0);
+        expect(effectiveOpacityOf(find.text('Item A').last), greaterThan(0.2));
+
+        await tester.pumpAndSettle();
+        expect(find.text('Item B'), findsNothing);
+        expect(find.text('Item A'), findsOneWidget);
+        expect(effectiveOpacityOf(find.text('Item A')), 1.0);
+
+        // 2. Interrupt A -> B at t = 80% (160ms of 200ms, v0 = 0.80 > 0.65) with B -> C:
+        // verifies no single-frame 78% opacity drop and no 14dp dx teleport.
+        setHost(() {
+          step = 'B';
+          dir = 1;
+        });
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 160)); // t = 80%
+
+        final b80Opacity = effectiveOpacityOf(find.text('Item B'));
+        final b80Dx = tester.getTopLeft(find.text('Item B')).dx;
+        expect(b80Opacity, greaterThan(0.9));
+
+        setHost(() {
+          step = 'C';
+          dir = 1;
+        });
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1));
+        final b80After1msOpacity = effectiveOpacityOf(find.text('Item B'));
+        final b80After1msDx = tester.getTopLeft(find.text('Item B')).dx;
+        expect(b80After1msOpacity, greaterThan(0.85));
+        expect((b80After1msDx - b80Dx).abs(), lessThan(1.5));
+        expect(effectiveOpacityOf(find.text('Item C')), 0.0);
+
+        await tester.pumpAndSettle();
+        expect(find.text('Item C'), findsOneWidget);
+
+        // 3. Unkeyed swap (step == null, child.key == null) on UiFadeThroughSwitcher
+        // with different runtimeTypes still classifies outgoing vs incoming accurately.
+        var showSkeleton = true;
+        late StateSetter setUnkeyedHost;
+        await tester.pumpWidget(
+          _host(
+            StatefulBuilder(
+              builder: (context, setState) {
+                setUnkeyedHost = setState;
+                return UiFadeThroughSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: showSkeleton
+                      ? const SizedBox(
+                          width: 200,
+                          height: 60,
+                          child: Text('Unkeyed Skeleton'),
+                        )
+                      : const Padding(
+                          padding: EdgeInsets.zero,
+                          child: Text('Unkeyed Content'),
+                        ),
+                );
+              },
+            ),
+          ),
+        );
+
+        setUnkeyedHost(() => showSkeleton = false);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 40)); // 20%
+        expect(
+          effectiveOpacityOf(find.text('Unkeyed Skeleton')),
+          greaterThan(0.1),
+        );
+        expect(effectiveOpacityOf(find.text('Unkeyed Content')), 0.0);
+        expect(
+          tester
+              .widgetList<IgnorePointer>(
+                find.ancestor(
+                  of: find.text('Unkeyed Skeleton'),
+                  matching: find.byType(IgnorePointer),
+                ),
+              )
+              .where((w) => w.ignoring),
+          isNotEmpty,
+        );
+
+        await tester.pump(const Duration(milliseconds: 60)); // 50%
+        expect(effectiveOpacityOf(find.text('Unkeyed Skeleton')), 0.0);
+        expect(
+          effectiveOpacityOf(find.text('Unkeyed Content')),
+          greaterThan(0.2),
+        );
+        await tester.pumpAndSettle();
+      },
+    );
+
+    testWidgets(
+      'F2 & F3: shrinking switchers clip outgoing content above sibling widgets below (normal & Reduce Motion) and switch Semantics atomically to incoming child at t=0',
+      (tester) async {
+        final semanticsHandle = tester.ensureSemantics();
+
+        var step = 'tall';
+        var disableAnimations = false;
+        late StateSetter setHost;
+
+        await tester.pumpWidget(
+          StatefulBuilder(
+            builder: (context, setState) {
+              setHost = setState;
+              return _host(
+                disableAnimations: disableAnimations,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    UiFadeThroughSwitcher(
+                      step: step,
+                      duration: const Duration(milliseconds: 200),
+                      animateSize: true,
+                      child: SizedBox(
+                        key: ValueKey('shrink-$step'),
+                        width: 220,
+                        height: step == 'tall' ? 140 : 60,
+                        child: Semantics(
+                          container: true,
+                          header: true,
+                          child: Text('Header $step'),
+                        ),
+                      ),
+                    ),
+                    const Text('Below Sibling'),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+
+        double belowRelativeToSwitcher() =>
+            tester.getTopLeft(find.text('Below Sibling')).dy -
+            tester.getTopLeft(find.byType(UiFadeThroughSwitcher)).dy;
+
+        expect(find.bySemanticsLabel('Header tall'), findsOneWidget);
+        expect(belowRelativeToSwitcher(), closeTo(140.0, 0.1));
+
+        // 1. Normal motion shrink (140dp -> 60dp):
+        setHost(() => step = 'short');
+        await tester.pump();
+
+        // At t = 0ms: outgoing 'Header tall' is already excluded from Semantics,
+        // and incoming 'Header short' is present in Semantics even while opacity == 0.0.
+        expect(find.bySemanticsLabel('Header tall'), findsNothing);
+        expect(find.bySemanticsLabel('Header short'), findsOneWidget);
+
+        // At t = 40ms (20%): outgoing tall box is still fading out, and a ClipRectLayer
+        // clips the switcher strictly at or above 'Below Sibling' top edge.
+        await tester.pump(const Duration(milliseconds: 40));
+        expect(find.bySemanticsLabel('Header tall'), findsNothing);
+        expect(find.bySemanticsLabel('Header short'), findsOneWidget);
+
+        final belowRelNormal = belowRelativeToSwitcher();
+        expect(belowRelNormal, lessThan(140.0));
+        expect(belowRelNormal, greaterThan(60.0));
+        final belowTopNormal = tester.getTopLeft(find.text('Below Sibling')).dy;
+
+        final activeClipsNormal = tester.layers
+            .whereType<ClipRectLayer>()
+            .where(
+              (l) =>
+                  l.clipRect != null &&
+                  (l.clipRect!.bottom - belowTopNormal).abs() < 1.0,
+            );
+        expect(activeClipsNormal, isNotEmpty);
+
+        // At t = 70ms (35% crossover where both visual opacities == 0.0):
+        // incoming 'Header short' stays in the Semantics tree with zero dropout.
+        await tester.pump(const Duration(milliseconds: 30));
+        expect(find.bySemanticsLabel('Header tall'), findsNothing);
+        expect(find.bySemanticsLabel('Header short'), findsOneWidget);
+
+        await tester.pumpAndSettle();
+        expect(belowRelativeToSwitcher(), closeTo(60.0, 0.1));
+
+        // 2. Reduce Motion shrink (140dp -> 60dp with disableAnimations: true):
+        setHost(() {
+          disableAnimations = true;
+          step = 'tall';
+        });
+        await tester.pumpAndSettle();
+        expect(belowRelativeToSwitcher(), closeTo(140.0, 0.1));
+
+        setHost(() => step = 'short');
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 30)); // 20% of 150ms reducedFade
+
+        expect(belowRelativeToSwitcher(), closeTo(60.0, 0.1));
+        final belowTopReduced = tester.getTopLeft(find.text('Below Sibling')).dy;
+        final activeClipsReduced = tester.layers
+            .whereType<ClipRectLayer>()
+            .where(
+              (l) =>
+                  l.clipRect != null &&
+                  (l.clipRect!.bottom - belowTopReduced).abs() < 1.0,
+            );
+        expect(activeClipsReduced, isNotEmpty);
+        expect(find.bySemanticsLabel('Header tall'), findsNothing);
+        expect(find.bySemanticsLabel('Header short'), findsOneWidget);
+
+        await tester.pumpAndSettle();
+        semanticsHandle.dispose();
       },
     );
   });

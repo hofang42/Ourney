@@ -341,7 +341,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                         ),
                         duration: UiMotion.of(
                           context,
-                          const Duration(milliseconds: 240),
+                          UiMotion.medium,
                         ),
                         curve: UiCurves.easeInOutStrong,
                         builder: (context, aspectRatio, child) => AspectRatio(
@@ -349,7 +349,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                           child: child,
                         ),
                         child: UiFadeThroughSwitcher(
-                          duration: const Duration(milliseconds: 240),
+                          duration: UiMotion.medium,
                           scaleBegin: 0.96,
                           instantOnReduceMotion: true,
                           alignment: Alignment.center,

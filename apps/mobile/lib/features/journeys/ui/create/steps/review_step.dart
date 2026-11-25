@@ -88,6 +88,7 @@ class CreateReviewStep extends StatelessWidget {
             label: l10n.journeys_ticketPreview,
             child: UiFadeThroughSwitcher(
               duration: UiMotion.sheetEnter,
+              scaleBegin: 1.0,
               animateSize: true,
               alignment: Alignment.topCenter,
               child: DepartureTicket(

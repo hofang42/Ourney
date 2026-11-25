@@ -161,7 +161,7 @@ class _QuietTimelineState extends State<QuietTimeline> {
                 children: [
                   Flexible(
                     child: UiFadeThroughSwitcher(
-                      duration: const Duration(milliseconds: 140),
+                      duration: UiMotion.fast,
                       scaleBegin: 1.0,
                       instantOnReduceMotion: true,
                       alignment: AlignmentDirectional.centerStart,
@@ -178,7 +178,7 @@ class _QuietTimelineState extends State<QuietTimeline> {
                   ),
                   Flexible(
                     child: UiFadeThroughSwitcher(
-                      duration: const Duration(milliseconds: 140),
+                      duration: UiMotion.fast,
                       scaleBegin: 1.0,
                       instantOnReduceMotion: true,
                       alignment: AlignmentDirectional.centerEnd,

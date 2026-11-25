@@ -516,7 +516,7 @@ class _MetricRow extends StatelessWidget {
             ),
           ),
         UiFadeThroughSwitcher(
-          duration: const Duration(milliseconds: 140),
+          duration: UiMotion.fast,
           scaleBegin: 1.0,
           instantOnReduceMotion: true,
           alignment: AlignmentDirectional.centerStart,

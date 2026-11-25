@@ -134,7 +134,9 @@ class _GroupsListScreenState extends ConsumerState<GroupsListScreen> {
     if (groups.hasValue) {
       final list = groups.value!;
       todayState = KeyedSubtree(
-        key: const ValueKey('squad-state-content'),
+        key: ValueKey(
+          list.isEmpty ? 'squad-state-empty' : 'squad-state-content',
+        ),
         child: list.isEmpty
             ? _EmptySquad(onEnterCode: _openJoin)
             : _buildStaggeredStrip(context, list),

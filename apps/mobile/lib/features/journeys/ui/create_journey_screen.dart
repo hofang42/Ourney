@@ -319,6 +319,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
         label: l10n.journeys_ticketPreview,
         child: UiFadeThroughSwitcher(
           duration: UiMotion.theme,
+          scaleBegin: 1.0,
           animateSize: true,
           alignment: Alignment.topCenter,
           child: DepartureTicket(
