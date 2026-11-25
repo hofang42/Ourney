@@ -4,14 +4,13 @@ import WidgetKit
 @main
 enum OurneyWidgetsLauncher {
   @MainActor static func main() {
+    WidgetDiagnostics.recordProcessLaunch()
     #if canImport(AppIntents)
     if #available(iOSApplicationExtension 17.0, iOS 17.0, *) {
-      WidgetDiagnostics.record("extension launch configuration=appIntent")
       OurneyConfigurableWidgetsBundle.main()
       return
     }
     #endif
-    WidgetDiagnostics.record("extension launch configuration=static")
     OurneyLegacyWidgetsBundle.main()
   }
 }
@@ -26,6 +25,7 @@ struct OurneyConfigurableWidgetsBundle: WidgetBundle {
     SquadConfigurableWidget()
     LockScreenConfigurableWidget()
     TodayBasicWidget()
+    HelloWidget()
     #if canImport(ActivityKit)
     CheckInLiveActivity()
     #endif
@@ -40,6 +40,7 @@ struct OurneyLegacyWidgetsBundle: WidgetBundle {
     StreakWidget()
     SquadWidget()
     LockScreenWidget()
+    HelloWidget()
     #if canImport(ActivityKit)
     if #available(iOSApplicationExtension 16.2, iOS 16.2, *) {
       CheckInLiveActivity()

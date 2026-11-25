@@ -2,7 +2,7 @@ import Foundation
 import OSLog
 
 /// The extension writes fixed event names and the resolved App Group identifier.
-/// Runner reads the atomic file. The extension queues writes off the provider path.
+/// Runner reads the atomic file. Callback entry and launch writes finish before returning.
 enum WidgetDiagnostics {
   private static let fileName = "widget-diagnostics.log"
   private static let capacity = 48
@@ -32,6 +32,31 @@ enum WidgetDiagnostics {
     writer.async {
       append(event, at: timestamp, rootDirectory: WidgetSnapshotStore.sharedRootDirectory())
     }
+  }
+
+  static func traceSynchronously<T>(_ operation: String, _ body: () -> T) -> T {
+    recordSynchronously("\(operation) enter")
+    defer { record("\(operation) exit") }
+    return body()
+  }
+
+  static func recordSynchronously(
+    _ event: String,
+    rootDirectory: () -> URL? = { WidgetSnapshotStore.sharedRootDirectory() }
+  ) {
+    logger.notice("\(event, privacy: .public)")
+    let timestamp = Date()
+    writer.sync {
+      append(event, at: timestamp, rootDirectory: rootDirectory())
+    }
+  }
+
+  static func recordProcessLaunch() {
+    let bundle = Bundle.main
+    let bundleID = bundle.bundleIdentifier ?? "nil"
+    let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
+    let isExtension = bundle.bundleURL.pathExtension == "appex"
+    recordSynchronously("process launch bundleID=\(bundleID) os=\(osVersion) isExtension=\(isExtension)")
   }
 
   static func append(_ event: String, at timestamp: Date = Date(), rootDirectory: URL?) {

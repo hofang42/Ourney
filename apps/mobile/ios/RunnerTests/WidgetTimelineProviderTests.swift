@@ -33,7 +33,7 @@ final class WidgetTimelineProviderTests: XCTestCase {
     let delivered = expectation(description: "AppIntent preview")
     let task = Task.detached {
       let provider = OurneyAppIntentTimelineProvider<TestWidgetConfigurationIntent>(kind: OurneyWidgetKind.today)
-      let entry = await provider.snapshot(for: TestWidgetConfigurationIntent(), isPreview: true)
+      let entry = provider.snapshot(for: TestWidgetConfigurationIntent(), isPreview: true)
       XCTAssertTrue(entry.isPreview)
       XCTAssertNotNil(entry.snapshot)
       XCTAssertNil(entry.pinnedId)
@@ -49,12 +49,23 @@ final class WidgetTimelineProviderTests: XCTestCase {
     let task = Task.detached {
       let provider = OurneyAppIntentTimelineProvider<TestWidgetConfigurationIntent>(kind: OurneyWidgetKind.today)
       let intent = TestWidgetConfigurationIntent()
-      let timeline = await provider.timeline(for: intent)
+      let timeline = provider.timeline(for: intent)
       XCTAssertEqual(timeline.entries.first?.pinnedId, intent.pinnedEntityId)
       delivered.fulfill()
     }
     defer { task.cancel() }
     wait(for: [delivered], timeout: 5)
+  }
+
+  func testSynchronousDiagnosticIsReadableWhenWriteReturns() {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    WidgetDiagnostics.recordSynchronously("test snapshot enter", rootDirectory: { root })
+
+    let recent = WidgetDiagnostics.recentLines(rootDirectory: root)
+    XCTAssertEqual(recent.count, 1)
+    XCTAssertTrue(recent.first?.hasSuffix("test snapshot enter") == true)
   }
 
   func testDiagnosticsBoundStorageAndReturnLatestTwentyLines() throws {

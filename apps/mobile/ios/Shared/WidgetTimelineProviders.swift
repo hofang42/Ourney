@@ -41,67 +41,63 @@ public struct OurneyTimelineProvider: TimelineProvider {
   }
 
   static func buildSnapshotEntry(isPreview: Bool, pinnedId: String?, operation: String) -> OurneyWidgetEntry {
-    WidgetDiagnostics.trace(operation) {
-      let now = Date()
-      if isPreview { return previewEntry(at: now) }
+    let now = Date()
+    if isPreview { return previewEntry(at: now) }
 
-      let sharedRoot = WidgetSnapshotStore.sharedRootDirectory()
-      guard let sharedRoot,
-            let loaded = WidgetSnapshotStore.loadSnapshot(at: now, rootDirectory: sharedRoot, onError: {
-              WidgetDiagnostics.record("\(operation) error \($0)")
-            }) else {
-        return OurneyWidgetEntry(
-          date: now,
-          snapshot: nil,
-          pinnedId: pinnedId,
-          appGroupAvailable: sharedRoot != nil
-        )
-      }
+    let sharedRoot = WidgetSnapshotStore.sharedRootDirectory()
+    guard let sharedRoot,
+          let loaded = WidgetSnapshotStore.loadSnapshot(at: now, rootDirectory: sharedRoot, onError: {
+            WidgetDiagnostics.record("\(operation) error \($0)")
+          }) else {
       return OurneyWidgetEntry(
         date: now,
-        snapshot: loaded,
-        state: WidgetSnapshotStore.loadState(rootDirectory: sharedRoot),
-        pinnedId: pinnedId
+        snapshot: nil,
+        pinnedId: pinnedId,
+        appGroupAvailable: sharedRoot != nil
       )
     }
+    return OurneyWidgetEntry(
+      date: now,
+      snapshot: loaded,
+      state: WidgetSnapshotStore.loadState(rootDirectory: sharedRoot),
+      pinnedId: pinnedId
+    )
   }
 
   static func buildTimeline(pinnedId: String?, operation: String) -> Timeline<OurneyWidgetEntry> {
-    WidgetDiagnostics.trace(operation) {
-      let now = Date()
-      let sharedRoot = WidgetSnapshotStore.sharedRootDirectory()
-      guard let sharedRoot,
-            let baseSnapshot = WidgetSnapshotStore.loadSnapshot(at: now, rootDirectory: sharedRoot, onError: {
-              WidgetDiagnostics.record("\(operation) error \($0)")
-            }) else {
-        let emptyEntry = OurneyWidgetEntry(
-          date: now,
-          snapshot: nil,
-          pinnedId: pinnedId,
-          appGroupAvailable: sharedRoot != nil
-        )
-        let nextReload = now.addingTimeInterval(3600)
-        return Timeline(entries: [emptyEntry], policy: .after(nextReload))
-      }
-      let state = WidgetSnapshotStore.loadState(rootDirectory: sharedRoot)
-
-      // Entries cover now, the evening cue, the streak alert, and midnight rollover.
-      let dates = baseSnapshot.scheduledTimelineDates(from: now)
-      let entries = dates.map { entryDate in
-        OurneyWidgetEntry(
-          date: entryDate,
-          snapshot: baseSnapshot.evaluated(at: entryDate),
-          state: state,
-          pinnedId: pinnedId
-        )
-      }
-
-      let lastDate = dates.last ?? now
-      let nextReload = lastDate > now
-        ? lastDate.addingTimeInterval(60)
-        : now.addingTimeInterval(3600)
-      return Timeline(entries: entries, policy: .after(nextReload))
+    let now = Date()
+    let sharedRoot = WidgetSnapshotStore.sharedRootDirectory()
+    guard let sharedRoot,
+          let baseSnapshot = WidgetSnapshotStore.loadSnapshot(at: now, rootDirectory: sharedRoot, onError: {
+            WidgetDiagnostics.record("\(operation) error \($0)")
+          }) else {
+      let emptyEntry = OurneyWidgetEntry(
+        date: now,
+        snapshot: nil,
+        pinnedId: pinnedId,
+        appGroupAvailable: sharedRoot != nil
+      )
+      let nextReload = now.addingTimeInterval(3600)
+      return Timeline(entries: [emptyEntry], policy: .after(nextReload))
     }
+    let state = WidgetSnapshotStore.loadState(rootDirectory: sharedRoot)
+
+    // Entries cover now, the evening cue, the streak alert, and midnight rollover.
+    let dates = baseSnapshot.scheduledTimelineDates(from: now)
+    let entries = dates.map { entryDate in
+      OurneyWidgetEntry(
+        date: entryDate,
+        snapshot: baseSnapshot.evaluated(at: entryDate),
+        state: state,
+        pinnedId: pinnedId
+      )
+    }
+
+    let lastDate = dates.last ?? now
+    let nextReload = lastDate > now
+      ? lastDate.addingTimeInterval(60)
+      : now.addingTimeInterval(3600)
+    return Timeline(entries: entries, policy: .after(nextReload))
   }
 
   public func placeholder(in context: Context) -> OurneyWidgetEntry {
@@ -119,11 +115,19 @@ public struct OurneyTimelineProvider: TimelineProvider {
   // WidgetKit owns Context construction. Keep the callback bodies callable from RunnerTests.
   func getSnapshot(isPreview: Bool, completion: (OurneyWidgetEntry) -> Void) {
     let mode = isPreview ? "preview" : "live"
-    completion(Self.buildSnapshotEntry(isPreview: isPreview, pinnedId: nil, operation: "static \(kind) snapshot \(mode)"))
+    let operation = "static \(kind) snapshot \(mode)"
+    let entry = WidgetDiagnostics.traceSynchronously(operation) {
+      Self.buildSnapshotEntry(isPreview: isPreview, pinnedId: nil, operation: operation)
+    }
+    completion(entry)
   }
 
   func getTimeline(completion: (Timeline<OurneyWidgetEntry>) -> Void) {
-    completion(Self.buildTimeline(pinnedId: nil, operation: "static \(kind) timeline"))
+    let operation = "static \(kind) timeline"
+    let timeline = WidgetDiagnostics.traceSynchronously(operation) {
+      Self.buildTimeline(pinnedId: nil, operation: operation)
+    }
+    completion(timeline)
   }
 }
 
@@ -148,27 +152,30 @@ public struct OurneyAppIntentTimelineProvider<ConfigurationIntent: OurneyPinning
   }
 
   public func snapshot(for configuration: ConfigurationIntent, in context: Context) async -> OurneyWidgetEntry {
-    await snapshot(for: configuration, isPreview: context.isPreview)
+    snapshot(for: configuration, isPreview: context.isPreview)
   }
 
   public func timeline(for configuration: ConfigurationIntent, in context: Context) async -> Timeline<OurneyWidgetEntry> {
-    await timeline(for: configuration)
+    timeline(for: configuration)
   }
 
-  func snapshot(for configuration: ConfigurationIntent, isPreview: Bool) async -> OurneyWidgetEntry {
+  func snapshot(for configuration: ConfigurationIntent, isPreview: Bool) -> OurneyWidgetEntry {
     let mode = isPreview ? "preview" : "live"
-    return OurneyTimelineProvider.buildSnapshotEntry(
-      isPreview: isPreview,
-      pinnedId: isPreview ? nil : configuration.pinnedEntityId,
-      operation: "appIntent \(kind) snapshot \(mode)"
-    )
+    let operation = "appIntent \(kind) snapshot \(mode)"
+    return WidgetDiagnostics.traceSynchronously(operation) {
+      OurneyTimelineProvider.buildSnapshotEntry(
+        isPreview: isPreview,
+        pinnedId: isPreview ? nil : configuration.pinnedEntityId,
+        operation: operation
+      )
+    }
   }
 
-  func timeline(for configuration: ConfigurationIntent) async -> Timeline<OurneyWidgetEntry> {
-    OurneyTimelineProvider.buildTimeline(
-      pinnedId: configuration.pinnedEntityId,
-      operation: "appIntent \(kind) timeline"
-    )
+  func timeline(for configuration: ConfigurationIntent) -> Timeline<OurneyWidgetEntry> {
+    let operation = "appIntent \(kind) timeline"
+    return WidgetDiagnostics.traceSynchronously(operation) {
+      OurneyTimelineProvider.buildTimeline(pinnedId: configuration.pinnedEntityId, operation: operation)
+    }
   }
 }
 #endif
