@@ -3,8 +3,15 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/feedback/data/feedback_providers.dart';
+import '../features/groups/data/groups_providers.dart'
+    show groupJourneysProvider;
 import '../features/import/data/import_providers.dart';
 import '../features/journeys/data/create_progress.dart';
+import '../features/journeys/data/journeys_providers.dart'
+    show
+        archivedJourneysProvider,
+        journeysListProvider,
+        pinnedJourneyIdsProvider;
 import '../features/onboarding/onboarding_providers.dart';
 import '../features/profile/settings_providers.dart';
 import '../features/reminders/data/reminder_scheduler.dart';
@@ -80,6 +87,11 @@ Future<void> resetAccountLocalState(
     ..invalidate(feedbackDraftProvider)
     ..invalidate(feedbackVoteOverlayProvider)
     ..invalidate(activeJourneyIdProvider)
+    ..invalidate(activeJourneyProvider)
+    ..invalidate(journeysListProvider)
+    ..invalidate(archivedJourneysProvider)
+    ..invalidate(pinnedJourneyIdsProvider)
+    ..invalidate(groupJourneysProvider)
     ..invalidate(createProgressProvider)
     ..invalidate(hideWeightOnShareProvider)
     ..invalidate(blurPhotosOnShareProvider)

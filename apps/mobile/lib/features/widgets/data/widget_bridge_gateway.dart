@@ -231,6 +231,8 @@ class FakeWidgetBridgeGateway implements WidgetBridgeGateway {
 
   WidgetCapabilities capabilities;
   Map<String, Object?>? pendingWidgetState;
+  bool nextSyncSnapshotResult = true;
+  bool nextSyncLiveActivityResult = true;
 
   final List<RecordedSnapshotSync> snapshotSyncs = [];
   final List<Map<String, Object?>?> liveActivitySyncs = [];
@@ -248,7 +250,7 @@ class FakeWidgetBridgeGateway implements WidgetBridgeGateway {
         thumbs: List.unmodifiable(thumbs),
       ),
     );
-    return true;
+    return nextSyncSnapshotResult;
   }
 
   @override
@@ -256,7 +258,7 @@ class FakeWidgetBridgeGateway implements WidgetBridgeGateway {
     liveActivitySyncs.add(
       payload == null ? null : Map<String, Object?>.unmodifiable(payload),
     );
-    return true;
+    return nextSyncLiveActivityResult;
   }
 
   @override

@@ -554,4 +554,140 @@ class WidgetSnapshotStoreTest {
             }
         }
     }
+
+    @Test
+    fun `resolves 4-state card states per-widget pinned selections and fallback to auto on archive or delete`() {
+        val store = WidgetSnapshotStore(tempFolder.newFolder("ourney_widgets_config"))
+        val at1200Utc = Instant.parse("2026-11-24T12:00:00.000Z").toEpochMilli()
+
+        // 1. Before first app sync (snapshot == null) -> Unsynced (never NoJourneys!)
+        assertNull(store.readSnapshot(at1200Utc))
+        assertEquals(
+            JourneyWidgetCardState.Unsynced,
+            WidgetSnapshot.resolveTodayCardState(null),
+        )
+        assertEquals(
+            JourneyWidgetCardState.Unsynced,
+            WidgetSnapshot.resolveStreakCardState(null),
+        )
+        assertEquals(
+            SquadWidgetCardState.Unsynced,
+            WidgetSnapshot.resolveSquadCardState(null),
+        )
+
+        // 2. Signed-out snapshot -> SignedOut
+        val signedOutSnap = WidgetSnapshot.fromJson(
+            """{"schemaVersion":1,"authState":"signedOut","journeys":[],"squads":[]}""",
+        )
+        assertEquals(
+            JourneyWidgetCardState.SignedOut,
+            WidgetSnapshot.resolveTodayCardState(signedOutSnap),
+        )
+        assertEquals(
+            JourneyWidgetCardState.SignedOut,
+            WidgetSnapshot.resolveStreakCardState(signedOutSnap),
+        )
+        assertEquals(
+            SquadWidgetCardState.SignedOut,
+            WidgetSnapshot.resolveSquadCardState(signedOutSnap),
+        )
+
+        // 3. Signed-in with 0 journeys -> NoJourneys / NoJourneysAtAll
+        val emptyReadySnap = WidgetSnapshot.fromJson(
+            """{"schemaVersion":1,"authState":"ready","journeys":[],"squads":[]}""",
+        )
+        assertEquals(
+            JourneyWidgetCardState.NoJourneys,
+            WidgetSnapshot.resolveTodayCardState(emptyReadySnap),
+        )
+        assertEquals(
+            JourneyWidgetCardState.NoJourneys,
+            WidgetSnapshot.resolveStreakCardState(emptyReadySnap),
+        )
+        assertEquals(
+            SquadWidgetCardState.NoJourneysAtAll,
+            WidgetSnapshot.resolveSquadCardState(emptyReadySnap),
+        )
+
+        // 4. Solo-only account on Squad widget (Rank 5) -> SoloOnlyAccount(soloCount = 2)
+        val soloOnlySnap = WidgetSnapshot.fromJson(
+            """
+            {
+              "schemaVersion": 1,
+              "authState": "ready",
+              "journeys": [
+                {"id": "solo-1", "title": "Weight Loss", "kind": "solo", "isSensitive": true},
+                {"id": "solo-2", "title": "Reading", "kind": "solo", "isSensitive": false}
+              ],
+              "squads": []
+            }
+            """.trimIndent(),
+        )
+        assertTrue(soloOnlySnap.journeys[0].isSensitive)
+        assertFalse(soloOnlySnap.journeys[1].isSensitive)
+        assertEquals(
+            SquadWidgetCardState.SoloOnlyAccount(soloCount = 2),
+            WidgetSnapshot.resolveSquadCardState(soloOnlySnap),
+        )
+
+        // 5. Ready snapshot with per-appWidgetId selection persistence and onDeleted cleanup
+        store.writeSnapshotAtomically(sampleSnapshotJson)
+        val readySnap = store.readSnapshot(at1200Utc)!!
+
+        // Default selection is "auto" -> picks pending journey 6f8c9a10-0001
+        assertEquals(WidgetSnapshot.AUTO_SELECTION_ID, store.getWidgetSelection(101))
+        val autoToday = WidgetSnapshot.resolveTodayCardState(
+            readySnap,
+            selectedId = store.getWidgetSelection(101),
+        ) as JourneyWidgetCardState.Ready
+        assertEquals("6f8c9a10-0001", autoToday.journey.id)
+        assertFalse(autoToday.isPinned)
+
+        // Pin widget #101 to already-checked-in journey 6f8c9a10-0002 ->
+        // shows 6f8c9a10-0002 with isPinned = true and pendingCount = 1 (hides cycle button!)
+        store.setWidgetSelection(101, "6f8c9a10-0002")
+        store.setWidgetSelection(102, "6f8c9a10-0001")
+        assertEquals("6f8c9a10-0002", store.getWidgetSelection(101))
+        assertEquals("6f8c9a10-0001", store.getWidgetSelection(102))
+
+        val pinnedToday = WidgetSnapshot.resolveTodayCardState(
+            readySnap,
+            selectedId = store.getWidgetSelection(101),
+        ) as JourneyWidgetCardState.Ready
+        assertEquals("6f8c9a10-0002", pinnedToday.journey.id)
+        assertTrue(pinnedToday.isPinned)
+        assertEquals(1, pinnedToday.pendingCount)
+
+        val pinnedStreak = WidgetSnapshot.resolveStreakCardState(
+            readySnap,
+            selectedId = store.getWidgetSelection(101),
+        ) as JourneyWidgetCardState.Ready
+        assertEquals("6f8c9a10-0002", pinnedStreak.journey.id)
+        assertTrue(pinnedStreak.isPinned)
+
+        // 6. Selection of a journey that no longer exists (archived/deleted) falls back to "auto"
+        store.setWidgetSelection(103, "archived-journey-999")
+        val fallbackToday = WidgetSnapshot.resolveTodayCardState(
+            readySnap,
+            selectedId = store.getWidgetSelection(103),
+        ) as JourneyWidgetCardState.Ready
+        assertEquals("6f8c9a10-0001", fallbackToday.journey.id)
+        assertFalse("Fallback to auto must clear isPinned", fallbackToday.isPinned)
+
+        val fallbackSquad = WidgetSnapshot.resolveSquadCardState(
+            readySnap,
+            selectedId = "deleted-squad-999",
+        ) as SquadWidgetCardState.Ready
+        assertEquals("6f8c9a10-0001", fallbackSquad.squad.journeyId)
+        assertFalse(fallbackSquad.isPinned)
+
+        // 7. Selecting "auto" or calling removeWidgetSelections (onDeleted) cleans up state.json
+        store.setWidgetSelection(101, WidgetSnapshot.AUTO_SELECTION_ID)
+        assertEquals(WidgetSnapshot.AUTO_SELECTION_ID, store.getWidgetSelection(101))
+
+        store.removeWidgetSelections(intArrayOf(102, 103))
+        assertEquals(WidgetSnapshot.AUTO_SELECTION_ID, store.getWidgetSelection(102))
+        assertEquals(WidgetSnapshot.AUTO_SELECTION_ID, store.getWidgetSelection(103))
+        assertTrue(store.readState().widgetSelections.isEmpty())
+    }
 }

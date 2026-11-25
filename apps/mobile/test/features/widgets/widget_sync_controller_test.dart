@@ -53,6 +53,73 @@ class _SignedInUser extends CurrentUserId {
   String? build() => 'user-a';
 
   void signOut() => state = null;
+  void signIn(String userId) => state = userId;
+}
+
+class _SignedOutThenSignInUser extends CurrentUserId {
+  @override
+  String? build() => null;
+
+  void signIn(String userId) => state = userId;
+}
+
+/// Mimics [DataJourneyRepository.watchActive] and [watchPinnedJourneyIds],
+/// which return an immediately-closing `Stream.value(const [])` when
+/// `currentUserId == null` (pre-login) and live streams once signed in.
+class _AuthGatedJourneyRepository extends FakeReminderJourneyRepository {
+  _AuthGatedJourneyRepository(super.journeys, this.currentUserIdReader);
+
+  final String? Function() currentUserIdReader;
+
+  @override
+  Stream<List<Journey>> watchActive() {
+    if (currentUserIdReader() == null) {
+      return Stream.value(const []);
+    }
+    return super.watchActive();
+  }
+
+  @override
+  Stream<Set<String>> watchPinnedJourneyIds() {
+    if (currentUserIdReader() == null) {
+      return Stream.value(const <String>{});
+    }
+    return Stream.value({if (journeys.isNotEmpty) journeys.first.id});
+  }
+}
+
+class _StalledGroupRepository implements GroupRepository {
+  final Completer<List<MemberToday>> _neverCompletes =
+      Completer<List<MemberToday>>();
+
+  @override
+  Stream<List<MemberToday>> watchToday(String journeyId) =>
+      _neverCompletes.future.asStream();
+
+  @override
+  Future<String> joinByCode(String code) => throw UnimplementedError();
+
+  @override
+  Future<String> rotateInviteCode(String journeyId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> react(String checkInId, String emoji) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> unreact(String checkInId) => throw UnimplementedError();
+
+  @override
+  Stream<List<Reaction>> watchReactions(String checkInId) =>
+      const Stream.empty();
+
+  @override
+  Future<void> leave(String journeyId) => throw UnimplementedError();
+
+  @override
+  Future<void> removeMember(String journeyId, String userId) =>
+      throw UnimplementedError();
 }
 
 void main() {
@@ -639,6 +706,303 @@ void main() {
           Directory(p.join(tempRoot.path, kWidgetThumbsTempDirName)).existsSync(),
           isFalse,
         );
+      },
+    );
+  });
+
+  group('Batch 1 P0 Sync Fixes (Ranks 1, 3, 4)', () {
+    testWidgets(
+      'Rank 1: mounting WidgetLifecycleHook while signedOut (currentUserId == null) '
+      'does not freeze journeysListProvider on const [] after sign-in',
+      (tester) async {
+        final prefs = await testPrefs();
+        final fakeBridge = FakeWidgetBridgeGateway();
+        final thumbPreparer = _NoOpThumbPreparer();
+
+        final j1 = Journey(
+          id: 'j-after-login-1',
+          ownerId: 'user-a',
+          kind: JourneyKind.solo,
+          templateId: TemplateId.englishDaily,
+          title: 'IELTS After Login',
+          emoji: '',
+          startDate: const LocalDate(2026, 11, 10),
+          durationDays: 30,
+          timezone: 'Asia/Ho_Chi_Minh',
+          visibility: JourneyVisibility.private,
+          status: JourneyStatus.active,
+        );
+        final j2 = Journey(
+          id: 'j-after-login-2',
+          ownerId: 'user-a',
+          kind: JourneyKind.group,
+          templateId: TemplateId.workout30,
+          title: 'Squad Run After Login',
+          emoji: '',
+          startDate: const LocalDate(2026, 11, 12),
+          durationDays: 30,
+          timezone: 'Asia/Ho_Chi_Minh',
+          visibility: JourneyVisibility.group,
+          status: JourneyStatus.active,
+        );
+
+        late ProviderContainer container;
+        final authGatedRepo = _AuthGatedJourneyRepository(
+          [j1, j2],
+          () => container.read(currentUserIdProvider),
+        );
+
+        container = ProviderContainer(
+          overrides: [
+            appConfigProvider.overrideWithValue(testBackendConfig),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            supabaseClientProvider.overrideWithValue(null),
+            currentUserIdProvider.overrideWith(_SignedOutThenSignInUser.new),
+            widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
+            widgetThumbPreparerProvider.overrideWithValue(thumbPreparer),
+            journeyRepositoryProvider.overrideWithValue(authGatedRepo),
+            checkInRepositoryProvider.overrideWithValue(
+              FakeReminderCheckInRepository(),
+            ),
+            notificationGatewayProvider.overrideWithValue(
+              FakeNotificationGateway(granted: true),
+            ),
+            reminderDeviceTimezoneProvider.overrideWith(
+              (ref) async => 'Asia/Ho_Chi_Minh',
+            ),
+            journeysClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+            remindersClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+            widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+            groupTodayProvider(j2.id).overrideWith(
+              (ref) => Stream.value(const <MemberToday>[]),
+            ),
+            groupCheckInsProvider(j2.id).overrideWith(
+              (ref) => Stream.value(const <CheckIn>[]),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        // Even if journeysListProvider and pinnedJourneyIdsProvider are read before sign-in:
+        final preLoginSub = container.listen(journeysListProvider, (_, _) {});
+        final preLoginPinSub = container.listen(
+          pinnedJourneyIdsProvider,
+          (_, _) {},
+        );
+        addTearDown(preLoginSub.close);
+        addTearDown(preLoginPinSub.close);
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const Directionality(
+              textDirection: TextDirection.ltr,
+              child: WidgetLifecycleHook(child: SizedBox.shrink()),
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump();
+
+        expect(container.read(journeysListProvider).value, isEmpty);
+        expect(fakeBridge.clearAllCount, greaterThanOrEqualTo(1));
+        expect(fakeBridge.snapshotSyncs, isEmpty);
+
+        // Now sign in as 'user-a' -> journeysListProvider & pinnedJourneyIdsProvider
+        // must automatically rebuild and sync both active journeys to snapshot_v1.json!
+        (container.read(currentUserIdProvider.notifier)
+                as _SignedOutThenSignInUser)
+            .signIn('user-a');
+        await tester.pump();
+        await tester.pump();
+
+        expect(container.read(journeysListProvider).value, hasLength(2));
+        expect(
+          container.read(pinnedJourneyIdsProvider).value,
+          contains('j-after-login-1'),
+        );
+        expect(fakeBridge.snapshotSyncs, isNotEmpty);
+
+        final latestJson =
+            jsonDecode(fakeBridge.snapshotSyncs.last.snapshotJson)
+                as Map<String, Object?>;
+        expect(latestJson['authState'], 'ready');
+        final syncedJourneys = latestJson['journeys'] as List<Object?>;
+        expect(syncedJourneys, hasLength(2));
+        final syncedSquads = latestJson['squads'] as List<Object?>;
+        expect(syncedSquads, hasLength(1));
+      },
+    );
+
+    test(
+      'Rank 3: stalled groupRepository.watchToday RPC times out cleanly and '
+      'writes snapshot using local groupCheckIns fallback',
+      () async {
+        final prefs = await testPrefs();
+        final fakeBridge = FakeWidgetBridgeGateway();
+        final thumbPreparer = _NoOpThumbPreparer();
+
+        final soloJ = Journey(
+          id: 'j-solo-fast',
+          ownerId: 'user-a',
+          kind: JourneyKind.solo,
+          templateId: TemplateId.englishDaily,
+          title: 'Fast Solo',
+          emoji: '',
+          startDate: const LocalDate(2026, 11, 10),
+          durationDays: 30,
+          timezone: 'Asia/Ho_Chi_Minh',
+          visibility: JourneyVisibility.private,
+          status: JourneyStatus.active,
+        );
+        final groupJ = Journey(
+          id: 'j-group-stalled',
+          ownerId: 'user-a',
+          kind: JourneyKind.group,
+          templateId: TemplateId.workout30,
+          title: 'Offline Cellular Squad',
+          emoji: '',
+          startDate: const LocalDate(2026, 11, 10),
+          durationDays: 30,
+          timezone: 'Asia/Ho_Chi_Minh',
+          visibility: JourneyVisibility.group,
+          status: JourneyStatus.active,
+        );
+
+        final container = ProviderContainer(
+          overrides: [
+            appConfigProvider.overrideWithValue(testBackendConfig),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            supabaseClientProvider.overrideWithValue(null),
+            currentUserIdProvider.overrideWith(_SignedInUser.new),
+            widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
+            widgetThumbPreparerProvider.overrideWithValue(thumbPreparer),
+            journeyRepositoryProvider.overrideWithValue(
+              FakeReminderJourneyRepository([soloJ, groupJ]),
+            ),
+            checkInRepositoryProvider.overrideWithValue(
+              FakeReminderCheckInRepository(),
+            ),
+            groupRepositoryProvider.overrideWithValue(
+              _StalledGroupRepository(),
+            ),
+            notificationGatewayProvider.overrideWithValue(
+              FakeNotificationGateway(granted: true),
+            ),
+            reminderDeviceTimezoneProvider.overrideWith(
+              (ref) async => 'Asia/Ho_Chi_Minh',
+            ),
+            journeysClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+            remindersClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+            widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final sw = Stopwatch()..start();
+        await container.read(widgetSyncControllerProvider).syncNow();
+        sw.stop();
+
+        expect(
+          sw.elapsedMilliseconds,
+          lessThan(2500),
+          reason: 'Stalled group_today RPC must time out at 1200ms, not 30s',
+        );
+        expect(fakeBridge.snapshotSyncs, hasLength(1));
+        final decoded =
+            jsonDecode(fakeBridge.snapshotSyncs.single.snapshotJson)
+                as Map<String, Object?>;
+        expect(decoded['journeys'] as List<Object?>, hasLength(2));
+        expect(decoded['squads'] as List<Object?>, hasLength(1));
+      },
+    );
+
+    test(
+      'Rank 4: failed syncSnapshot / syncLiveActivity (returning false) does not '
+      'cache digest and retries on the next syncNow()',
+      () async {
+        final prefs = await testPrefs();
+        final fakeBridge = FakeWidgetBridgeGateway()
+          ..nextSyncSnapshotResult = false
+          ..nextSyncLiveActivityResult = false;
+        final thumbPreparer = _NoOpThumbPreparer();
+
+        final journey = Journey(
+          id: journeyId,
+          ownerId: 'user-a',
+          kind: JourneyKind.solo,
+          templateId: TemplateId.englishDaily,
+          title: 'Retry Digest Test',
+          emoji: '',
+          startDate: const LocalDate(2026, 11, 10),
+          durationDays: 30,
+          timezone: 'Asia/Ho_Chi_Minh',
+          visibility: JourneyVisibility.private,
+          status: JourneyStatus.active,
+        );
+
+        final container = ProviderContainer(
+          overrides: [
+            appConfigProvider.overrideWithValue(testBackendConfig),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            supabaseClientProvider.overrideWithValue(null),
+            currentUserIdProvider.overrideWith(_SignedInUser.new),
+            widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
+            widgetThumbPreparerProvider.overrideWithValue(thumbPreparer),
+            journeyRepositoryProvider.overrideWithValue(
+              FakeReminderJourneyRepository([journey]),
+            ),
+            checkInRepositoryProvider.overrideWithValue(
+              FakeReminderCheckInRepository(),
+            ),
+            notificationGatewayProvider.overrideWithValue(
+              FakeNotificationGateway(granted: true),
+            ),
+            reminderDeviceTimezoneProvider.overrideWith(
+              (ref) async => 'Asia/Ho_Chi_Minh',
+            ),
+            journeysClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+            remindersClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+            widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final controller = container.read(widgetSyncControllerProvider);
+
+        // Attempt #1: native bridge returns false -> digest must NOT be cached.
+        await controller.syncNow();
+        expect(fakeBridge.snapshotSyncs, hasLength(1));
+        expect(fakeBridge.liveActivitySyncs, hasLength(1));
+
+        // Attempt #2: native bridge now succeeds -> identical payload IS resent!
+        fakeBridge
+          ..nextSyncSnapshotResult = true
+          ..nextSyncLiveActivityResult = true;
+        await controller.syncNow();
+        expect(
+          fakeBridge.snapshotSyncs,
+          hasLength(2),
+          reason: 'Must retry identical snapshot after failed attempt #1',
+        );
+        expect(
+          fakeBridge.liveActivitySyncs,
+          hasLength(2),
+          reason: 'Must retry identical live activity after failed attempt #1',
+        );
+
+        // Attempt #3: nothing changed and attempt #2 succeeded -> deduplicated!
+        await controller.syncNow();
+        expect(fakeBridge.snapshotSyncs, hasLength(2));
+        expect(fakeBridge.liveActivitySyncs, hasLength(2));
+
+        // Attempt #4: force: true (e.g. AppLifecycleState.resumed) -> resends to heal disk!
+        controller.scheduleCoalescedMicrotaskSync(
+          consumeNativeState: true,
+          force: true,
+        );
+        await pumpEventQueue();
+        expect(fakeBridge.snapshotSyncs, hasLength(3));
       },
     );
   });

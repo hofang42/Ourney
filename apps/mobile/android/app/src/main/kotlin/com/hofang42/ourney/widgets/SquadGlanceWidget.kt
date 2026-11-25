@@ -1,21 +1,27 @@
 package com.hofang42.ourney.widgets
 
+import android.appwidget.AppWidgetManager
 import android.content.Context
 import androidx.annotation.Keep
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalSize
+import androidx.glance.action.Action
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
+import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
@@ -29,10 +35,20 @@ import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.semantics.contentDescription
 import androidx.glance.semantics.semantics
+import androidx.glance.state.GlanceStateDefinition
+import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.hofang42.ourney.R
+
+private class SquadRenderBundle(
+    val l10n: Context,
+    val palette: OurneyWidgetPalette,
+    val cardState: SquadWidgetCardState,
+    val avatarStripBitmap: android.graphics.Bitmap?,
+    val memberPolaroids: List<Pair<String, android.graphics.Bitmap>>,
+)
 
 /**
  * `OurneySquadWidget` — Responsive `4×2` (`250×110dp`) and `4×4` (`250×250dp`)
@@ -41,72 +57,141 @@ import com.hofang42.ourney.R
 @Keep
 class SquadGlanceWidget : GlanceAppWidget() {
 
+    override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
+
     override val sizeMode: SizeMode = SizeMode.Responsive(
         setOf(MEDIUM_BOX, LARGE_BOX),
     )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val nowMs = System.currentTimeMillis()
         val store = WidgetSnapshotStore.fromContext(context)
-        val snapshot = store.readSnapshot(nowMs)
-        val isDark = OurneyGlanceTheme.resolveIsDark(context, snapshot?.themeMode)
-        val l10n = OurneyGlanceTheme.localizedContext(context, snapshot?.locale)
-
-        val squad = snapshot?.takeIf { !it.isSignedOut }?.selectSquad()
-        val palette = if (squad != null) {
-            OurneyGlanceTheme.skinPalette(squad.skinId, squad.colorVariant, isDark)
-        } else {
-            OurneyGlanceTheme.neutralShellPalette(isDark)
-        }
-
-        val avatarStripBitmap = squad?.let {
-            OurneyWidgetCanvas.renderSquadAvatarStrip(
-                context = context,
-                store = store,
-                members = it.members,
-                totalMemberCount = it.memberCount,
-                palette = palette,
-            )
-        }
-
-        val photoMode = snapshot?.privacy?.photoMode
-        val showMemberPhotos = photoMode == "blurred" || photoMode == "clear"
-        val memberPolaroids = if (squad != null && showMemberPhotos) {
-            squad.members
-                .filter { it.checkedInToday && !it.todayThumbFile.isNullOrBlank() }
-                .take(2)
-                .mapNotNull { member ->
-                    OurneyWidgetCanvas.renderFramedPhoto(
-                        context = context,
-                        photoFile = store.resolveThumbFile(member.todayThumbFile),
-                        palette = palette,
-                        widthDp = 64f,
-                        heightDp = 64f,
-                    )?.let { bmp -> member.displayName to bmp }
-                }
-        } else {
-            emptyList()
+        val appWidgetId = try {
+            GlanceAppWidgetManager(context).getAppWidgetId(id)
+        } catch (_: Exception) {
+            AppWidgetManager.INVALID_APPWIDGET_ID
         }
 
         provideContent {
+            val prefs = currentState<Preferences>()
+            val snapshotSeq = prefs[WidgetPrefsKeys.SNAPSHOT_SEQ] ?: 0L
+            val prefSelectedId = prefs[WidgetPrefsKeys.SELECTED_ID]
             val size = LocalSize.current
-            if (squad == null) {
-                EmptySquadCard(
-                    context = context,
-                    l10n = l10n,
-                    palette = palette,
-                    isSignedOut = snapshot?.isSignedOut == true,
+
+            val bundle = remember(snapshotSeq, prefSelectedId) {
+                val nowMs = System.currentTimeMillis()
+                val snapshot = store.readSnapshot(nowMs)
+                val selectedId = prefSelectedId
+                    ?.takeIf { it.isNotBlank() }
+                    ?: store.getWidgetSelection(appWidgetId)
+                val cardState = WidgetSnapshot.resolveSquadCardState(
+                    snapshot = snapshot,
+                    selectedId = selectedId,
                 )
-            } else {
-                SquadCardContent(
-                    context = context,
+                val isDark = OurneyGlanceTheme.resolveIsDark(context, snapshot?.themeMode)
+                val l10n = OurneyGlanceTheme.localizedContext(context, snapshot?.locale)
+
+                val squad = (cardState as? SquadWidgetCardState.Ready)?.squad
+                val palette = if (squad != null) {
+                    OurneyGlanceTheme.skinPalette(squad.skinId, squad.colorVariant, isDark)
+                } else {
+                    OurneyGlanceTheme.neutralShellPalette(isDark)
+                }
+
+                val avatarStripBitmap = squad?.let {
+                    OurneyWidgetCanvas.renderSquadAvatarStrip(
+                        context = context,
+                        store = store,
+                        members = it.members,
+                        totalMemberCount = it.memberCount,
+                        palette = palette,
+                    )
+                }
+
+                val photoMode = snapshot?.privacy?.photoMode
+                val showMemberPhotos = photoMode == "blurred" || photoMode == "clear"
+                val memberPolaroids = if (squad != null && showMemberPhotos) {
+                    squad.members
+                        .filter { it.checkedInToday && !it.todayThumbFile.isNullOrBlank() }
+                        .take(2)
+                        .mapNotNull { member ->
+                            OurneyWidgetCanvas.renderFramedPhoto(
+                                context = context,
+                                photoFile = store.resolveThumbFile(member.todayThumbFile),
+                                palette = palette,
+                                widthDp = 64f,
+                                heightDp = 64f,
+                            )?.let { bmp -> member.displayName to bmp }
+                        }
+                } else {
+                    emptyList()
+                }
+
+                SquadRenderBundle(
                     l10n = l10n,
-                    squad = squad,
                     palette = palette,
+                    cardState = cardState,
                     avatarStripBitmap = avatarStripBitmap,
                     memberPolaroids = memberPolaroids,
-                    isLarge = size.height >= 200.dp,
                 )
+            }
+
+            val l10n = bundle.l10n
+            val palette = bundle.palette
+            when (val state = bundle.cardState) {
+                is SquadWidgetCardState.Unsynced -> {
+                    EmptySquadCard(
+                        palette = palette,
+                        iconRes = R.drawable.ic_ourney_sticker_sparkle,
+                        title = l10n.getString(R.string.widget_unsynced_title),
+                        subtitle = l10n.getString(R.string.widget_unsynced_subtitle),
+                        ctaText = l10n.getString(R.string.widget_unsynced_cta),
+                        clickAction = WidgetActions.syncWidgetsAction(context),
+                    )
+                }
+                is SquadWidgetCardState.SignedOut -> {
+                    EmptySquadCard(
+                        palette = palette,
+                        iconRes = R.drawable.ic_ourney_sticker_lock,
+                        title = l10n.getString(R.string.widget_signed_out_title),
+                        subtitle = l10n.getString(R.string.widget_signed_out_subtitle),
+                        ctaText = l10n.getString(R.string.widget_signed_out_cta),
+                        clickAction = WidgetActions.syncWidgetsAction(context),
+                    )
+                }
+                is SquadWidgetCardState.SoloOnlyAccount -> {
+                    EmptySquadCard(
+                        palette = palette,
+                        iconRes = R.drawable.ic_ourney_sticker_squad,
+                        title = l10n.getString(R.string.widget_squad_empty_title),
+                        subtitle = l10n.getString(
+                            R.string.widget_squad_solo_only_subtitle,
+                            state.soloCount,
+                        ),
+                        ctaText = l10n.getString(R.string.widget_squad_empty_cta),
+                        clickAction = WidgetActions.groupsHubAction(context),
+                    )
+                }
+                is SquadWidgetCardState.NoJourneysAtAll -> {
+                    EmptySquadCard(
+                        palette = palette,
+                        iconRes = R.drawable.ic_ourney_sticker_squad,
+                        title = l10n.getString(R.string.widget_squad_empty_title),
+                        subtitle = l10n.getString(R.string.widget_squad_empty_subtitle),
+                        ctaText = l10n.getString(R.string.widget_squad_empty_cta),
+                        clickAction = WidgetActions.groupsHubAction(context),
+                    )
+                }
+                is SquadWidgetCardState.Ready -> {
+                    SquadCardContent(
+                        context = context,
+                        l10n = l10n,
+                        squad = state.squad,
+                        palette = palette,
+                        avatarStripBitmap = bundle.avatarStripBitmap,
+                        memberPolaroids = bundle.memberPolaroids,
+                        isLarge = size.height >= 200.dp,
+                    )
+                }
             }
         }
     }
@@ -366,33 +451,25 @@ class SquadGlanceWidget : GlanceAppWidget() {
 
     @Composable
     private fun EmptySquadCard(
-        context: Context,
-        l10n: Context,
         palette: OurneyWidgetPalette,
-        isSignedOut: Boolean,
+        iconRes: Int,
+        title: String,
+        subtitle: String,
+        ctaText: String,
+        clickAction: Action,
     ) {
-        val title = if (isSignedOut) {
-            l10n.getString(R.string.widget_signed_out_title)
-        } else {
-            l10n.getString(R.string.widget_squad_empty_title)
-        }
-        val subtitle = if (isSignedOut) {
-            l10n.getString(R.string.widget_signed_out_subtitle)
-        } else {
-            l10n.getString(R.string.widget_squad_empty_subtitle)
-        }
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(ImageProvider(palette.cardBackgroundRes()))
-                .clickable(WidgetActions.groupsHubAction(context))
+                .clickable(clickAction)
                 .semantics { contentDescription = "$title. $subtitle" }
                 .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(
-                    provider = ImageProvider(R.drawable.ic_ourney_sticker_squad),
+                    provider = ImageProvider(iconRes),
                     contentDescription = null,
                     modifier = GlanceModifier.size(22.dp),
                 )
@@ -417,6 +494,25 @@ class SquadGlanceWidget : GlanceAppWidget() {
                 ),
                 maxLines = 2,
             )
+            Spacer(modifier = GlanceModifier.height(8.dp))
+            Row(
+                modifier = GlanceModifier
+                    .height(48.dp)
+                    .background(ImageProvider(R.drawable.bg_widget_cta))
+                    .clickable(clickAction)
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = ctaText,
+                    style = TextStyle(
+                        color = OurneyGlanceTheme.neutralShellPalette(isDark = false).inkProvider,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                    maxLines = 1,
+                )
+            }
         }
     }
 

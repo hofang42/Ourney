@@ -48,12 +48,12 @@ class OurneyWidgetBridge(context: Context) : MethodChannel.MethodCallHandler {
             val writeResult = store.writeSnapshotAtomically(snapshotJson)
             val snapshot = writeResult.snapshot
             if (writeResult.success && snapshot != null) {
-                store.syncThumbs(thumbSpecs, snapshot.referencedThumbPaths())
+                val thumbsChanged = store.syncThumbs(thumbSpecs, snapshot.referencedThumbPaths())
                 val nowMs = System.currentTimeMillis()
                 val evaluated = snapshot.evaluateAt(nowMs)
                 CheckInWindowReceiver.scheduleNextRollover(appContext, evaluated, nowMs)
                 CheckInLiveUpdateManager.syncFromStore(appContext, nowMs)
-                if (writeResult.changed) {
+                if (writeResult.changed || thumbsChanged) {
                     WidgetActions.refreshAllWidgetsAsync(appContext)
                 }
             }

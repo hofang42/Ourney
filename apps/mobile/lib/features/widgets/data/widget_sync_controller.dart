@@ -41,6 +41,15 @@ export 'widget_settings.dart';
 /// repository and settings emissions into a single native write (§4.5).
 const Duration kWidgetSyncDebounceDuration = Duration(milliseconds: 250);
 
+/// Maximum wait for local repository/timezone stream `.first` reads during
+/// widget snapshot assembly (§4.5).
+const Duration kWidgetLocalReadTimeout = Duration(seconds: 3);
+
+/// Maximum wait for a cold `group_today` network RPC during widget snapshot
+/// assembly before falling back to local `groupCheckIns` (`groupTodayProvider`
+/// listener automatically pushes an enriched snapshot once the RPC finishes).
+const Duration kWidgetGroupRpcTimeout = Duration(milliseconds: 1200);
+
 /// Clock used for widget snapshot timestamps and check-in window evaluation.
 /// Defaults to `journeysClockProvider`; override in tests if needed.
 final widgetsClockProvider = Provider<Clock>(
@@ -54,15 +63,21 @@ class WidgetSyncController {
   WidgetSyncController(
     this._ref, {
     this.debounceDuration = kWidgetSyncDebounceDuration,
+    this.localReadTimeout = kWidgetLocalReadTimeout,
+    this.groupRpcTimeout = kWidgetGroupRpcTimeout,
   });
 
   final Ref _ref;
   final Duration debounceDuration;
+  final Duration localReadTimeout;
+  final Duration groupRpcTimeout;
 
   Timer? _debounceTimer;
+  final Set<Timer> _activeTimers = <Timer>{};
   bool _microtaskScheduled = false;
   Future<void> _serial = Future.value();
   bool _pendingConsumeNativeState = false;
+  bool _pendingForceSync = false;
   bool _disposed = false;
 
   String? _lastSnapshotDigest;
@@ -91,15 +106,21 @@ class WidgetSyncController {
   /// Coalesces synchronous provider-change bursts within the current event-loop
   /// turn using a microtask (zero `Timer`s created, safe in `FakeAsync` widget
   /// tests that exit without pumping 250ms of idle timer time).
-  void scheduleCoalescedMicrotaskSync({bool consumeNativeState = false}) {
+  void scheduleCoalescedMicrotaskSync({
+    bool consumeNativeState = false,
+    bool force = false,
+  }) {
     if (_disposed) return;
     if (consumeNativeState) _pendingConsumeNativeState = true;
+    if (force) _pendingForceSync = true;
     if (_microtaskScheduled) return;
     _microtaskScheduled = true;
     Future.microtask(() {
       _microtaskScheduled = false;
       if (!_disposed) {
-        unawaited(syncNow());
+        final runForce = _pendingForceSync;
+        _pendingForceSync = false;
+        unawaited(syncNow(force: runForce));
       }
     });
   }
@@ -112,9 +133,11 @@ class WidgetSyncController {
   }) {
     if (_disposed) return Future.value();
     if (consumeNativeState) _pendingConsumeNativeState = true;
+    final effectiveForce = force || _pendingForceSync;
+    _pendingForceSync = false;
     _debounceTimer?.cancel();
     _debounceTimer = null;
-    final next = _serial.then((_) => _runSync(force: force));
+    final next = _serial.then((_) => _runSync(force: effectiveForce));
     _serial = next.catchError((Object _) {});
     return _serial;
   }
@@ -126,6 +149,7 @@ class WidgetSyncController {
     _debounceTimer?.cancel();
     _debounceTimer = null;
     _pendingConsumeNativeState = false;
+    _pendingForceSync = false;
     _lastSnapshotDigest = null;
     _lastLiveActivityDigest = null;
     _lastActiveWindow = null;
@@ -226,11 +250,13 @@ class WidgetSyncController {
           .toString();
 
       if (force || fullSnapshotDigest != _lastSnapshotDigest) {
-        await _gateway.syncSnapshot(
+        final synced = await _gateway.syncSnapshot(
           snapshotJson: snapshot.toJsonString(),
           thumbs: preparedThumbs,
         );
-        _lastSnapshotDigest = fullSnapshotDigest;
+        if (synced) {
+          _lastSnapshotDigest = fullSnapshotDigest;
+        }
       }
 
       final livePlan = LiveActivityWindowPlanner.plan(
@@ -247,10 +273,14 @@ class WidgetSyncController {
 
       final liveDigest = _computeLiveDigest(livePlan);
       if (force || liveDigest != _lastLiveActivityDigest) {
-        await _gateway.syncLiveActivity(livePlan.channelPayload);
-        _lastLiveActivityDigest = liveDigest;
+        final synced = await _gateway.syncLiveActivity(livePlan.channelPayload);
+        if (synced) {
+          _lastLiveActivityDigest = liveDigest;
+        }
       }
-      _lastActiveWindow = livePlan.window;
+      if (_lastLiveActivityDigest == liveDigest) {
+        _lastActiveWindow = livePlan.window;
+      }
     } on Object catch (e) {
       debugPrint('widgets: sync skipped: $e');
     }
@@ -277,14 +307,38 @@ class WidgetSyncController {
     }
   }
 
+  Future<T> _withTimeout<T>(Future<T> future, Duration timeout) {
+    final completer = Completer<T>();
+    final timer = Timer(timeout, () {
+      _activeTimers.removeWhere((t) => !t.isActive);
+      if (!completer.isCompleted) {
+        completer.completeError(
+          TimeoutException('Widget sync read timed out', timeout),
+        );
+      }
+    });
+    _activeTimers.add(timer);
+    future.then(
+      (value) {
+        if (_activeTimers.remove(timer)) timer.cancel();
+        if (!completer.isCompleted) completer.complete(value);
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (_activeTimers.remove(timer)) timer.cancel();
+        if (!completer.isCompleted) completer.completeError(error, stackTrace);
+      },
+    );
+    return completer.future;
+  }
+
   Future<Set<String>> _readPinnedIds() async {
     final cached = _ref.read(pinnedJourneyIdsProvider);
     if (cached.hasValue) return cached.requireValue;
     try {
-      return await _ref
-          .read(journeyRepositoryProvider)
-          .watchPinnedJourneyIds()
-          .first;
+      return await _withTimeout(
+        _ref.read(journeyRepositoryProvider).watchPinnedJourneyIds().first,
+        localReadTimeout,
+      );
     } on Object {
       return const <String>{};
     }
@@ -294,10 +348,10 @@ class WidgetSyncController {
     final cached = _ref.read(groupBlockedIdsProvider);
     if (cached.hasValue) return cached.requireValue;
     try {
-      return await _ref
-          .read(safetyRepositoryProvider)
-          .watchBlockedIds()
-          .first;
+      return await _withTimeout(
+        _ref.read(safetyRepositoryProvider).watchBlockedIds().first,
+        localReadTimeout,
+      );
     } on Object {
       return const <String>{};
     }
@@ -312,10 +366,10 @@ class WidgetSyncController {
       journeys = cachedJourneys.requireValue;
     } else {
       try {
-        journeys = await _ref
-            .read(journeyRepositoryProvider)
-            .watchActive()
-            .first;
+        journeys = await _withTimeout(
+          _ref.read(journeyRepositoryProvider).watchActive().first,
+          localReadTimeout,
+        );
       } on Object {
         return const [];
       }
@@ -332,10 +386,10 @@ class WidgetSyncController {
         membership = cachedMembership.requireValue;
       } else {
         try {
-          membership = await _ref
-              .read(journeyRepositoryProvider)
-              .watchMyMembership(j.id)
-              .first;
+          membership = await _withTimeout(
+            _ref.read(journeyRepositoryProvider).watchMyMembership(j.id).first,
+            localReadTimeout,
+          );
         } on Object {
           membership = null;
         }
@@ -348,10 +402,13 @@ class WidgetSyncController {
         myCheckIns = cachedMyCheckIns.requireValue;
       } else {
         try {
-          myCheckIns = await _ref
-              .read(checkInRepositoryProvider)
-              .watchForJourney(j.id, userId: effectiveUserId)
-              .first;
+          myCheckIns = await _withTimeout(
+            _ref
+                .read(checkInRepositoryProvider)
+                .watchForJourney(j.id, userId: effectiveUserId)
+                .first,
+            localReadTimeout,
+          );
         } on Object {
           myCheckIns = const [];
         }
@@ -365,10 +422,10 @@ class WidgetSyncController {
           groupMembers = cachedGroupToday.requireValue;
         } else {
           try {
-            groupMembers = await _ref
-                .read(groupRepositoryProvider)
-                .watchToday(j.id)
-                .first;
+            groupMembers = await _withTimeout(
+              _ref.read(groupRepositoryProvider).watchToday(j.id).first,
+              groupRpcTimeout,
+            );
           } on Object {
             groupMembers = null;
           }
@@ -378,10 +435,10 @@ class WidgetSyncController {
           groupCheckIns = cachedGroupCheckIns.requireValue;
         } else {
           try {
-            groupCheckIns = await _ref
-                .read(checkInRepositoryProvider)
-                .watchForJourney(j.id)
-                .first;
+            groupCheckIns = await _withTimeout(
+              _ref.read(checkInRepositoryProvider).watchForJourney(j.id).first,
+              localReadTimeout,
+            );
           } on Object {
             groupCheckIns = const [];
           }
@@ -406,6 +463,10 @@ class WidgetSyncController {
     _disposed = true;
     _debounceTimer?.cancel();
     _debounceTimer = null;
+    for (final timer in _activeTimers) {
+      timer.cancel();
+    }
+    _activeTimers.clear();
   }
 }
 
@@ -473,7 +534,10 @@ class _WidgetLifecycleHookState extends ConsumerState<WidgetLifecycleHook>
     if (state == AppLifecycleState.resumed && mounted) {
       ref
           .read(widgetSyncControllerProvider)
-          .scheduleCoalescedMicrotaskSync(consumeNativeState: true);
+          .scheduleCoalescedMicrotaskSync(
+            consumeNativeState: true,
+            force: true,
+          );
     }
   }
 
@@ -501,10 +565,10 @@ class _WidgetLifecycleHookState extends ConsumerState<WidgetLifecycleHook>
         .scheduleCoalescedMicrotaskSync();
     void ignoreError(Object _, StackTrace _) {}
 
+    final authStatus = ref.watch(authStatusProvider);
+
     ref
       ..listen(authStatusProvider, trigger, onError: ignoreError)
-      ..listen(journeysListProvider, trigger, onError: ignoreError)
-      ..listen(pinnedJourneyIdsProvider, trigger, onError: ignoreError)
       ..listen(journeysNowProvider, trigger, onError: ignoreError)
       ..listen(themeModeProvider, trigger, onError: ignoreError)
       ..listen(localeOverrideProvider, trigger, onError: ignoreError)
@@ -513,7 +577,6 @@ class _WidgetLifecycleHookState extends ConsumerState<WidgetLifecycleHook>
       ..listen(hideWeightOnShareProvider, trigger, onError: ignoreError)
       ..listen(blurPhotosOnShareProvider, trigger, onError: ignoreError)
       ..listen(hiddenCheckInIdsProvider, trigger, onError: ignoreError)
-      ..listen(groupBlockedIdsProvider, trigger, onError: ignoreError)
       ..listen(blockedNamesProvider, trigger, onError: ignoreError)
       ..listen(reminderSettingsProvider, trigger, onError: ignoreError)
       ..listen(streakAlertsEnabledProvider, trigger, onError: ignoreError)
@@ -523,18 +586,25 @@ class _WidgetLifecycleHookState extends ConsumerState<WidgetLifecycleHook>
       ..listen(defaultWidgetJourneyIdProvider, trigger, onError: ignoreError)
       ..listen(dismissedLiveWindowKeyProvider, trigger, onError: ignoreError);
 
-    final activeJourneys =
-        ref.watch(journeysListProvider).asData?.value ?? const <Journey>[];
-    final localOnly = ref.watch(appConfigProvider).localOnly;
-    for (final j in activeJourneys) {
-      if (j.status != JourneyStatus.active) continue;
+    if (authStatus != AuthStatus.signedOut) {
       ref
-        ..listen(myMembershipProvider(j.id), trigger, onError: ignoreError)
-        ..listen(myCheckInsProvider(j.id), trigger, onError: ignoreError);
-      if (j.kind == JourneyKind.group && !localOnly) {
+        ..listen(journeysListProvider, trigger, onError: ignoreError)
+        ..listen(pinnedJourneyIdsProvider, trigger, onError: ignoreError)
+        ..listen(groupBlockedIdsProvider, trigger, onError: ignoreError);
+
+      final activeJourneys =
+          ref.watch(journeysListProvider).asData?.value ?? const <Journey>[];
+      final localOnly = ref.watch(appConfigProvider).localOnly;
+      for (final j in activeJourneys) {
+        if (j.status != JourneyStatus.active) continue;
         ref
-          ..listen(groupTodayProvider(j.id), trigger, onError: ignoreError)
-          ..listen(groupCheckInsProvider(j.id), trigger, onError: ignoreError);
+          ..listen(myMembershipProvider(j.id), trigger, onError: ignoreError)
+          ..listen(myCheckInsProvider(j.id), trigger, onError: ignoreError);
+        if (j.kind == JourneyKind.group && !localOnly) {
+          ref
+            ..listen(groupTodayProvider(j.id), trigger, onError: ignoreError)
+            ..listen(groupCheckInsProvider(j.id), trigger, onError: ignoreError);
+        }
       }
     }
 

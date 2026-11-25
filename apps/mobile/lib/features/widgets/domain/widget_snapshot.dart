@@ -159,6 +159,7 @@ class WidgetJourneyItem {
     required this.heroThumbFile,
     required this.heroThumbBlurred,
     required this.weekStrip,
+    this.isSensitive = false,
   });
 
   final String id;
@@ -184,6 +185,12 @@ class WidgetJourneyItem {
   final bool heroThumbBlurred;
   final List<WidgetWeekDayItem> weekStrip;
 
+  /// True when the journey is a weight-loss or default-hidden-metric journey
+  /// (`WidgetPrivacyPolicy.isSensitiveMetricJourney`), allowing Lock Screen
+  /// widgets pinned to a non-sensitive journey to display its title in smart
+  /// mode while still redacting weight-loss titles (§B.5).
+  final bool isSensitive;
+
   Map<String, Object?> toJson() => {
     'id': id,
     'title': title,
@@ -206,6 +213,7 @@ class WidgetJourneyItem {
     if (reminderAtUtc != null) 'reminderAtUtc': reminderAtUtc,
     if (heroThumbFile != null) 'heroThumbFile': heroThumbFile,
     'heroThumbBlurred': heroThumbBlurred,
+    'isSensitive': isSensitive,
     'weekStrip': [for (final w in weekStrip) w.toJson()],
   };
 }
@@ -792,6 +800,7 @@ abstract final class WidgetSnapshotBuilder {
           heroThumbFile: heroThumbFile,
           heroThumbBlurred: heroThumbBlurred,
           weekStrip: weekStrip,
+          isSensitive: WidgetPrivacyPolicy.isSensitiveMetricJourney(j),
         ),
       );
 

@@ -329,10 +329,14 @@ void main() {
       final wItem = snapshot.journeys.firstWhere((j) => j.id == 'j-weight');
       expect(wItem.heroThumbFile, isNotNull);
       expect(wItem.heroThumbBlurred, isTrue);
+      expect(wItem.isSensitive, isTrue);
+      expect(wItem.toJson()['isSensitive'], isTrue);
 
       final sItem = snapshot.journeys.firstWhere((j) => j.id == 'j-study');
       expect(sItem.heroThumbFile, isNotNull);
       expect(sItem.heroThumbBlurred, isFalse);
+      expect(sItem.isSensitive, isFalse);
+      expect(sItem.toJson()['isSensitive'], isFalse);
 
       // In smart mode, squad member avatars are shown, but todayThumbFile is omitted!
       final squad = snapshot.squads.single;
