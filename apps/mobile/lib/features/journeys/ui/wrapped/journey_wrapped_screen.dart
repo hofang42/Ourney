@@ -8,6 +8,8 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../../app/app_routes.dart';
+import '../../../../app/providers.dart'
+    show appConfigProvider, sharingRepositoryProvider;
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../personas/persona_contract.dart';
 import '../../../../ui/ui.dart';
@@ -23,7 +25,7 @@ import '../../../share_card/data/share_card_providers.dart'
         shareCardSaverProvider,
         shareCardSharerProvider;
 import '../../../share_card/domain/share_card_content.dart'
-    show ShareCardFormat, activePublicToken, shareMetricHidden;
+    show ShareCardFormat, publicAddressForCaption, shareMetricHidden;
 import '../../data/journeys_providers.dart';
 import '../../domain/journey_progress.dart';
 import '../../domain/wrapped_story.dart';
@@ -41,6 +43,7 @@ String wrappedShareText(
   Journey journey,
   PersonaSkinId skin,
   WrappedStats stats, {
+  String? publicAddress,
   bool hideKg = true,
   bool hideBrand = false,
 }) {
@@ -48,10 +51,9 @@ String wrappedShareText(
   final weights = skin == PersonaSkinId.quietTransformer && !hideKg
       ? _Summary._weights(stats)
       : null;
-  final token = activePublicToken(journey);
   final String? footer;
-  if (token != null) {
-    final url = 'https://ourney.tech/p/$token';
+  if (publicAddress != null) {
+    final url = publicJourneyLink(publicAddress);
     footer = hideBrand ? url : 'ourney · $url';
   } else {
     footer = hideBrand ? null : 'ourney · https://ourney.tech';
@@ -657,21 +659,38 @@ class _SummaryState extends ConsumerState<_Summary> {
             _boundaryKey.currentContext?.findRenderObject()
                 as RenderRepaintBoundary?;
         if (boundary == null) throw StateError('wrapped card not laid out');
+        final file = await exporter.export(
+          boundary,
+          format,
+          baseName: shareCardBaseName(journey.id, format),
+        );
+        if (!context.mounted) return;
+        final address = await publicAddressForCaption(
+          journey,
+          () => ref.read(appConfigProvider).hasBackend
+              ? ref.read(sharingRepositoryProvider)
+              : null,
+          hideTitle: () =>
+              !context.mounted ||
+              shareMetricHidden(
+                journey,
+                ref.read(membershipProvider).value,
+                forceHideMetric: quiet && hideKg,
+                hideWeight: ref.read(hideWeightOnShareProvider),
+              ),
+        );
+        if (!context.mounted) return;
         final text = wrappedShareText(
           l10n,
           journey,
           skin,
           stats,
+          publicAddress: address,
           hideKg: _hideExportKg(
             ref.read(membershipProvider),
             ref.read(hideWeightOnShareProvider),
           ),
           hideBrand: hideWordmark,
-        );
-        final file = await exporter.export(
-          boundary,
-          format,
-          baseName: shareCardBaseName(journey.id, format),
         );
         await sharer.shareImage(
           path: file.path,

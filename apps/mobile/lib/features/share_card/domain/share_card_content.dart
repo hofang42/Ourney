@@ -290,6 +290,27 @@ String? activePublicToken(Journey journey) {
   return token;
 }
 
+/// Check that a cached link still exists before adding an address to a
+/// caption. A different title-bearing address needs a fresh copy action.
+Future<String?> publicAddressForCaption(
+  Journey journey,
+  SharingRepository? Function() sharing, {
+  required bool Function() hideTitle,
+}) async {
+  final token = activePublicToken(journey);
+  if (token == null) return null;
+  try {
+    final repo = sharing();
+    if (repo == null) return isTitledPublicSlug(token) ? null : token;
+    final state = await repo.watchShareState(journey.id).first;
+    return state.publicAddress(
+      hideTitle: hideTitle() || state.publicToken != token,
+    );
+  } on OurneyException {
+    return null;
+  }
+}
+
 /// Check-ins offered as the card photo, newest day first, one per day.
 List<CheckIn> photoCandidates(Iterable<CheckIn> checkIns) {
   final byDate = <LocalDate, CheckIn>{};

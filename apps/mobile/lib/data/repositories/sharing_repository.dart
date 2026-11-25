@@ -96,20 +96,28 @@ class DataSharingRepository implements SharingRepository {
   }
 
   @override
-  Future<String?> setPublicLink(
+  Future<PublicLinkResult> setPublicLink(
     String journeyId, {
     required bool enabled,
     bool reset = false,
+    String? approvedTitle,
+    bool hideWeight = false,
+    bool existingOnly = false,
+    String? expectedAddress,
   }) async {
     await _flushFirst();
-    final token = await social.call('set_public_link', {
+    final result = await social.call('set_readable_public_link', {
       'journey': journeyId,
       'enabled': enabled,
       'reset': reset,
-    }, (json) => json is String ? json : null);
-    await _cachePublicToken(journeyId, token);
+      'approved_title': ?approvedTitle,
+      if (hideWeight) 'hide_weight': true,
+      if (existingOnly) 'existing_only': true,
+      'expected_address': ?expectedAddress,
+    }, publicLinkFromJson);
+    await _cachePublicToken(journeyId, result.address());
     social.changed();
-    return token;
+    return result;
   }
 
   /// Mirrors the link into the cached journey (Hub / share card). Solo

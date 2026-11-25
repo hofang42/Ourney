@@ -22,7 +22,14 @@ void main() {
     expect(
         isValidPublicToken('0123456789abcdefghij0123456789abcdefghij'), isTrue);
     expect(isValidPublicToken('A' * 40), isFalse);
-    expect(isValidPublicToken('a' * 39), isFalse);
+    expect(isValidPublicToken('a' * 31), isFalse);
+    expect(isValidPublicToken('a' * 65), isFalse);
+    expect(isValidPublicToken('7-ngay-da-lat-abcdefghijklmnop'), isTrue);
+    expect(isValidPublicToken('${'x' * 23}-abcdefghijklmnop'), isTrue);
+    expect(isValidPublicToken('${'x' * 24}-abcdefghijklmnop'), isFalse);
+    expect(isValidPublicToken('7-ngay--da-lat-abcdefghijklmnop'), isFalse);
+    expect(isValidPublicToken('journey-abcdefghijklmn01'), isFalse);
+    expect(isValidPublicToken('journey-abcdefghijklmno'), isFalse);
   });
 
   test('publicJourneyUri and publicJourneyLink', () {

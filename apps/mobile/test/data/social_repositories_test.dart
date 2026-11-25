@@ -343,19 +343,31 @@ void main() {
       remote.rpcHandlers['create_journey'] = (p) =>
           journeyRow(p['p_id'] as String, ownerId: me);
       final j = await layer.journeys.create(soloDraft());
-      remote.rpcHandlers['set_public_link'] = (p) =>
-          p['enabled'] == true ? 'a' * 40 : null;
-      expect(
-        await layer.sharing!.setPublicLink(j.id, enabled: true, reset: true),
-        'a' * 40,
+      const slug = '7-ngay-da-lat-abcdefghijklmnop';
+      remote.rpcHandlers['set_readable_public_link'] = (_) => {
+        'issued': true,
+        'public_slug': slug,
+        'public_token': 'legacy',
+        'style': 'titled',
+        'title': '7 Ngày Đà Lạt',
+      };
+      final result = await layer.sharing!.setPublicLink(
+        j.id,
+        enabled: true,
+        reset: true,
+        approvedTitle: '7 Ngày Đà Lạt',
       );
-      expect(lastArgs('set_public_link'), {
+      expect(result.address(), slug);
+      expect(result.issued, isTrue);
+      expect(result.address(hideTitle: true), 'legacy');
+      expect(lastArgs('set_readable_public_link'), {
         'journey': j.id,
         'enabled': true,
         'reset': true,
+        'approved_title': '7 Ngày Đà Lạt',
       });
       var cached = await layer.journeys.watch(j.id).first;
-      expect(cached!.publicToken, 'a' * 40);
+      expect(cached!.publicToken, slug);
       expect(cached.visibility, JourneyVisibility.link);
 
       await layer.sharing!.unshare(j.id, all: true);

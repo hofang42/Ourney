@@ -9,6 +9,7 @@ import '../db/app_database.dart';
 import '../local_store.dart';
 import '../mapping.dart';
 import '../remote/remote_api.dart';
+import '../social_mapping.dart' show publicLinkFromJson;
 import '../sync/outbox.dart';
 
 class DataJourneyRepository implements JourneyRepository {
@@ -753,17 +754,29 @@ class DataJourneyRepository implements JourneyRepository {
   }
 
   @override
-  Future<String?> setPublicLink(
+  Future<PublicLinkResult> setPublicLink(
     String journeyId, {
     required bool enabled,
+    String? approvedTitle,
+    bool hideWeight = false,
+    bool existingOnly = false,
+    bool reset = false,
+    String? expectedAddress,
   }) async {
     final remote = ctx.requireRemote();
     await _flushFirst();
-    final token = await remote.rpc('set_public_link', {
-      'journey': journeyId,
-      'enabled': enabled,
-    });
-    final value = token is String ? token : null;
+    final result = publicLinkFromJson(
+      await remote.rpc('set_readable_public_link', {
+        'journey': journeyId,
+        'enabled': enabled,
+        'approved_title': ?approvedTitle,
+        if (hideWeight) 'hide_weight': true,
+        if (existingOnly) 'existing_only': true,
+        if (reset) 'reset': true,
+        'expected_address': ?expectedAddress,
+      }),
+    );
+    final value = result.address();
     final local = await (_db.select(
       _db.journeys,
     )..where((t) => t.id.equals(journeyId))).getSingleOrNull();
@@ -784,7 +797,7 @@ class DataJourneyRepository implements JourneyRepository {
             : const Value.absent(),
       ),
     );
-    return value;
+    return result;
   }
 
   @override

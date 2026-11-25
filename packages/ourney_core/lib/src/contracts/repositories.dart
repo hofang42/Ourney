@@ -24,7 +24,7 @@
 // [OurneyErrorCode.fromServer]. Writes that are queued offline do not throw.
 
 import '../models.dart';
-import 'social.dart' show PersonSummary;
+import 'social.dart' show PersonSummary, PublicLinkResult;
 
 /// Result of an attempt that may need the server.
 sealed class SyncResult {
@@ -186,11 +186,19 @@ abstract interface class JourneyRepository {
   /// via the Storage API (own-objects delete policy).
   Future<void> delete(String journeyId);
 
-  /// `set_public_link` (solo journeys only). `enabled: true` creates or
-  /// rotates the token (old links stop working) and returns it; `false`
-  /// revokes it and returns null. Throws `invalid` for group journeys,
-  /// `forbidden`, `ended` (archived), `notFound`.
-  Future<String?> setPublicLink(String journeyId, {required bool enabled});
+  /// Enables a public link for a finished journey. Pass [approvedTitle] only
+  /// after the owner agrees to put that title in a new URL. [existingOnly]
+  /// checks a link before copying without enabling it. [expectedAddress] guards
+  /// a reset confirmed for a specific address. Disabling revokes both forms.
+  Future<PublicLinkResult> setPublicLink(
+    String journeyId, {
+    required bool enabled,
+    String? approvedTitle,
+    bool hideWeight = false,
+    bool existingOnly = false,
+    bool reset = false,
+    String? expectedAddress,
+  });
 
   /// The caller's own `memberships` row (role, status, joinedAt, prefs).
   /// Use `joinedAt` with `computeMemberStreak` / `effectiveStreakStart`.
@@ -358,6 +366,8 @@ enum OurneyErrorCode {
         return unauthenticated;
       case '22008':
         return invalidCapturedAt;
+      case '55P03': // Lock unavailable. The outbox retries transient errors.
+        return internal;
     }
     if (sqlstate != null &&
         (sqlstate.startsWith('22') || sqlstate.startsWith('23'))) {
