@@ -48,8 +48,10 @@
       hero_cta_primary: 'nhận lời mời beta',
       hero_cta_secondary: 'xem 6 giao diện',
       hero_cta_android: 'tải ngay cho Android (APK)',
-      hero_cta_ios: 'iOS · nhận thông tin beta',
+      hero_cta_ios: 'iOS · đăng ký danh sách chờ beta',
       hero_apk_note: 'Android tải trực tiếp file .apk (nếu Play Protect hỏi, chạm “Vẫn cài đặt”). iOS điền email bên dưới để nhận thông tin beta.',
+      hero_apk_note_android: 'Tải trực tiếp file Ourney.apk (nếu Google Play Protect hỏi, chạm “Vẫn cài đặt”).',
+      hero_apk_note_ios: 'Điền email ở vé bên dưới để đăng ký danh sách chờ beta cho iOS (iPhone).',
       hero_scroll_aria: 'Cuộn xuống xem 6 giao diện',
       dock_cta_aria: 'Nhận lời mời beta',
       dock_cta_text: 'Ngày 1 bắt đầu hôm nay.',
@@ -141,11 +143,15 @@
       faq_q5: 'Khi nào Ourney mở tải trên iOS và Android?',
       faq_a5: 'Ourney được phát triển đồng thời bằng Flutter cho cả iOS và Android. Để lại email ở vé bên dưới để nhận lời mời thử nghiệm beta đợt đầu tiên cho iOS và Android.',
       beta_eyebrow: 'tải bản beta · android & ios',
+      beta_eyebrow_android: 'tải bản beta · android',
+      beta_eyebrow_ios: 'danh sách chờ beta · ios',
       beta_h2: 'ngày 1 của bạn bắt đầu từ hôm nay.',
       beta_apk_kicker: 'Đã có bản cài đặt trực tiếp',
       beta_apk_btn: 'tải xuống ngay cho Android (Ourney.apk)',
       beta_apk_note: 'Mở file Ourney.apk vừa tải và cho phép cài từ trình duyệt. Nếu Google Play Protect cảnh báo (vì bản beta chưa lên Play Store), chọn “Chi tiết khác” → “Vẫn cài đặt”.',
       beta_ios_lead: 'Dùng iOS (iPhone) hoặc muốn nhận thông báo khi có bản cập nhật mới? Để lại email nhận thông tin beta:',
+      beta_ios_lead_android: 'Muốn nhận thông báo khi có bản cập nhật Android mới hoặc khi lên Google Play? Để lại email nhận thông tin beta:',
+      beta_ios_lead_ios: 'Để lại email để đăng ký danh sách chờ beta cho iOS (iPhone):',
       beta_plat_aria: 'Chọn nền tảng điện thoại',
       beta_email_label: 'Email',
       beta_placeholder: 'ban@email-cua-ban.vn',
@@ -153,7 +159,11 @@
       beta_stub_kicker: 'NGÀY 01',
       beta_stub_title: 'VÉ BETA',
       form_err: 'Email chưa đúng định dạng — bạn kiểm tra lại giúp nhé.',
-      form_ok: 'Đã ghi danh! Tụi mình vừa gửi email cảm ơn, nhớ xem cả mục Quảng cáo/Spam nhé. Bản beta mở là bạn nhận lời mời đầu tiên.',
+      form_plat_err: 'Bạn chọn giúp ít nhất một nền tảng (iOS hoặc Android) nhé.',
+      form_ok: 'Đã ghi danh vào danh sách beta cho iOS và Android! Tụi mình vừa gửi email cảm ơn, nhớ xem cả mục Quảng cáo/Spam nhé. Bản beta mở là bạn nhận lời mời đầu tiên.',
+      form_ok_ios: 'Đã ghi danh vào danh sách chờ beta cho iOS! Tụi mình vừa gửi email xác nhận, nhớ xem cả mục Quảng cáo/Spam nhé. Khi bản beta iOS mở, bạn sẽ nhận lời mời đầu tiên.',
+      form_ok_android: 'Đã ghi danh nhận thông tin beta cho Android! Tụi mình vừa gửi email xác nhận, nhớ xem cả mục Quảng cáo/Spam nhé. Khi có bản cập nhật Android mới, bạn sẽ nhận thông báo đầu tiên.',
+      form_ok_both: 'Đã ghi danh vào danh sách beta cho iOS và Android! Tụi mình vừa gửi email xác nhận, nhớ xem cả mục Quảng cáo/Spam nhé. Bản beta mở là bạn nhận lời mời đầu tiên.',
       form_sending: 'Đang gửi…',
       form_fail: 'Chưa gửi được, bạn thử lại sau ít phút nhé.',
       form_rate: 'Bạn gửi hơi nhiều lần rồi, đợi một lúc rồi thử lại nhé.',
@@ -210,8 +220,10 @@
       hero_cta_primary: 'get beta invite',
       hero_cta_secondary: 'see 6 skins',
       hero_cta_android: 'download for Android (APK)',
-      hero_cta_ios: 'iOS · get beta updates',
+      hero_cta_ios: 'iOS · join the beta waitlist',
       hero_apk_note: 'Android downloads the .apk directly (if Play Protect prompts, tap “Install anyway”). iOS can leave an email below for beta updates.',
+      hero_apk_note_android: 'Download Ourney.apk directly (if Google Play Protect prompts, tap “Install anyway”).',
+      hero_apk_note_ios: 'Leave your email on the ticket below to join the iOS beta waitlist.',
       hero_scroll_aria: 'Scroll down to explore 6 skins',
       dock_cta_aria: 'Get beta invite',
       dock_cta_text: 'Day 1 starts today.',
@@ -303,11 +315,15 @@
       faq_q5: 'When will Ourney launch on iOS and Android?',
       faq_a5: 'Ourney is built for both iOS and Android. Drop your email on the ticket below to get first-wave iOS and Android beta invites.',
       beta_eyebrow: 'beta release · android & ios',
+      beta_eyebrow_android: 'beta release · android',
+      beta_eyebrow_ios: 'beta waitlist · ios',
       beta_h2: 'your day 1 starts today.',
       beta_apk_kicker: 'Direct install available now',
       beta_apk_btn: 'download now for Android (Ourney.apk)',
       beta_apk_note: 'Open the downloaded Ourney.apk and allow install from your browser. If Google Play Protect warns (pre-Play Store beta), tap “More details” → “Install anyway”.',
       beta_ios_lead: 'Using iOS (iPhone) or want notifications when a new update drops? Leave your email for beta updates:',
+      beta_ios_lead_android: 'Want notifications when a new Android beta update or Google Play release drops? Leave your email for beta updates:',
+      beta_ios_lead_ios: 'Leave your email to join the iOS beta waitlist:',
       beta_plat_aria: 'Select phone platform',
       beta_email_label: 'Email',
       beta_placeholder: 'you@example.com',
@@ -315,7 +331,11 @@
       beta_stub_kicker: 'DAY 01',
       beta_stub_title: 'BETA PASS',
       form_err: 'That email doesn’t look right — please check and try again.',
-      form_ok: 'You’re on the list! We just sent you a thank-you email (check spam too). You’ll get the first beta invite.',
+      form_plat_err: 'Please select at least one platform (iOS or Android).',
+      form_ok: 'You’re on the beta list for iOS and Android! We just sent you a thank-you email (check spam too). You’ll get the first beta invite.',
+      form_ok_ios: 'You’re on the iOS beta waitlist! We just sent you a confirmation email (check spam too). You’ll get the first invite when the iOS beta opens.',
+      form_ok_android: 'You’re on the Android beta list! We just sent you a confirmation email (check spam too). You’ll get the first update invite.',
+      form_ok_both: 'You’re on the beta list for iOS and Android! We just sent you a confirmation email (check spam too). You’ll get the first beta invite.',
       form_sending: 'Sending…',
       form_fail: 'Couldn’t send that. Please try again in a few minutes.',
       form_rate: 'Too many tries. Please wait a bit and try again.',
@@ -460,6 +480,89 @@
   let curHeroCycle = 0;
   let minhNudged = false;
   let streakTicked = isReducedMotion() || root.classList.contains('intro-seen');
+
+  /* --- 2b. Detect Platform (Android / iOS / Desktop) & Sync Platform CTAs --- */
+  const detectPlatform = () => {
+    const ua = navigator.userAgent || '';
+    if (/Android/i.test(ua)) return 'android';
+    if (/iPhone|iPad|iPod/i.test(ua)) return 'ios';
+    return 'desktop';
+  };
+  const platform = detectPlatform();
+  root.dataset.platform = platform;
+
+  const heroAndroidDl = $('hero-android-dl');
+  const heroIosBeta = $('hero-ios-beta');
+  const heroApkNote = $('hero-apk-note') || document.querySelector('.hero-apk-note');
+  const betaApkBox = $('beta-apk-box');
+  const betaEyebrow = $('beta-eyebrow') || document.querySelector('[data-i18n="beta_eyebrow"]');
+  const betaIosLead = $('beta-ios-lead') || document.querySelector('.beta-ios-lead');
+  const betaStubCode = $('beta-stub-code') || document.querySelector('.cta-stub-code');
+
+  const syncPlatformCtas = () => {
+    const dict = COPY[curLang];
+    if (platform === 'ios') {
+      if (heroAndroidDl) heroAndroidDl.hidden = true;
+      if (betaApkBox) betaApkBox.hidden = true;
+      if (heroIosBeta) {
+        heroIosBeta.hidden = false;
+        heroIosBeta.classList.remove('btn-secondary');
+        heroIosBeta.classList.add('btn-primary');
+      }
+      if (heroApkNote) {
+        heroApkNote.dataset.i18n = 'hero_apk_note_ios';
+        heroApkNote.textContent = dict.hero_apk_note_ios;
+      }
+      if (betaEyebrow) {
+        betaEyebrow.dataset.i18n = 'beta_eyebrow_ios';
+        betaEyebrow.textContent = dict.beta_eyebrow_ios;
+      }
+      if (betaIosLead) {
+        betaIosLead.dataset.i18n = 'beta_ios_lead_ios';
+        betaIosLead.textContent = dict.beta_ios_lead_ios;
+      }
+      if (betaStubCode) betaStubCode.textContent = 'IOS · BETA';
+    } else if (platform === 'android') {
+      if (heroAndroidDl) heroAndroidDl.hidden = false;
+      if (betaApkBox) betaApkBox.hidden = false;
+      if (heroIosBeta) heroIosBeta.hidden = true;
+      if (heroApkNote) {
+        heroApkNote.dataset.i18n = 'hero_apk_note_android';
+        heroApkNote.textContent = dict.hero_apk_note_android;
+      }
+      if (betaEyebrow) {
+        betaEyebrow.dataset.i18n = 'beta_eyebrow_android';
+        betaEyebrow.textContent = dict.beta_eyebrow_android;
+      }
+      if (betaIosLead) {
+        betaIosLead.dataset.i18n = 'beta_ios_lead_android';
+        betaIosLead.textContent = dict.beta_ios_lead_android;
+      }
+      if (betaStubCode) betaStubCode.textContent = 'ANDROID · APK';
+    } else {
+      if (heroAndroidDl) heroAndroidDl.hidden = false;
+      if (betaApkBox) betaApkBox.hidden = false;
+      if (heroIosBeta) {
+        heroIosBeta.hidden = false;
+        heroIosBeta.classList.remove('btn-primary');
+        heroIosBeta.classList.add('btn-secondary');
+      }
+      if (heroApkNote) {
+        heroApkNote.dataset.i18n = 'hero_apk_note';
+        heroApkNote.textContent = dict.hero_apk_note;
+      }
+      if (betaEyebrow) {
+        betaEyebrow.dataset.i18n = 'beta_eyebrow';
+        betaEyebrow.textContent = dict.beta_eyebrow;
+      }
+      if (betaIosLead) {
+        betaIosLead.dataset.i18n = 'beta_ios_lead';
+        betaIosLead.textContent = dict.beta_ios_lead;
+      }
+      if (betaStubCode) betaStubCode.textContent = 'IOS · ANDROID';
+    }
+  };
+  syncPlatformCtas();
 
   /* --- 3. Theme Resolution & <picture> Source Media Sync --- */
   const isDark = () => root.dataset.theme ? root.dataset.theme === 'dark' : darkMql.matches;
@@ -1006,28 +1109,9 @@
   if (tgBlurImg) tgBlurImg.addEventListener('change', syncPrivacyPreview);
 
   /* --- 11. Section 8: Platform Pills, Beta Form & Focus Not Obscured Guard --- */
-  document.querySelectorAll('.plat-pill').forEach((pill) => {
-    pill.addEventListener('click', () => {
-      const cur = pill.getAttribute('aria-pressed') === 'true';
-      pill.setAttribute('aria-pressed', String(!cur));
-    });
-  });
-
-  document.querySelectorAll('[data-select-plat]').forEach((link) => {
-    link.addEventListener('click', () => {
-      const targetPlat = link.getAttribute('data-select-plat');
-      if (targetPlat) {
-        document.querySelectorAll('.plat-pill').forEach((pill) => {
-          pill.setAttribute('aria-pressed', String(pill.getAttribute('data-plat') === targetPlat));
-        });
-      }
-      setTimeout(() => {
-        if (email) email.focus({ preventScroll: true });
-      }, 320);
-    });
-  });
-
   const form = $('beta-form'), msg = $('form-msg'), email = $('email'), betaFollow = $('beta-follow');
+  const platGroup = $('platform-group') || document.querySelector('.platform-group');
+  const platPills = [...document.querySelectorAll('.plat-pill')];
   let formMsgKey = '';
   let announceRaf = 0;
   const announce = (key) => {
@@ -1039,6 +1123,82 @@
       msg.textContent = (formMsgKey && COPY[curLang][formMsgKey]) || '';
     });
   };
+
+  const getSelectedPlatforms = () =>
+    platPills
+      .filter((b) => b.getAttribute('aria-pressed') === 'true')
+      .map((b) => b.getAttribute('data-plat'))
+      .filter((p) => p === 'ios' || p === 'android');
+
+  const setSelectedPlatforms = (targets) => {
+    const set = new Set(targets);
+    platPills.forEach((pill) => {
+      const p = pill.getAttribute('data-plat');
+      pill.setAttribute('aria-pressed', String(set.has(p)));
+    });
+    if (platGroup && set.size > 0) {
+      platGroup.removeAttribute('aria-invalid');
+    }
+  };
+
+  /* Initialize platform selection without preselecting a wrong OS:
+     - Explicit ?plat=ios|android query param wins
+     - iOS device preselects iOS
+     - Android device preselects Android
+     - Desktop preselects neither until the user chooses */
+  (() => {
+    let initialPlat = '';
+    try {
+      const qp = (new URLSearchParams(location.search).get('plat') || '').toLowerCase();
+      if (qp === 'ios' || qp === 'android') initialPlat = qp;
+    } catch (e) {}
+    if (!initialPlat && (platform === 'ios' || platform === 'android')) {
+      initialPlat = platform;
+    }
+    setSelectedPlatforms(initialPlat ? [initialPlat] : []);
+  })();
+
+  platPills.forEach((pill) => {
+    pill.addEventListener('click', () => {
+      const cur = pill.getAttribute('aria-pressed') === 'true';
+      if (cur) {
+        const activeCount = getSelectedPlatforms().length;
+        if (activeCount <= 1) {
+          if (platGroup) platGroup.setAttribute('aria-invalid', 'true');
+          announce('form_plat_err');
+          return;
+        }
+        pill.setAttribute('aria-pressed', 'false');
+      } else {
+        pill.setAttribute('aria-pressed', 'true');
+        if (platGroup) platGroup.removeAttribute('aria-invalid');
+        if (formMsgKey === 'form_plat_err') announce('');
+      }
+    });
+  });
+
+  document.querySelectorAll('[data-select-plat]').forEach((link) => {
+    link.addEventListener('click', () => {
+      const targetPlat = link.getAttribute('data-select-plat');
+      if (targetPlat === 'ios' || targetPlat === 'android') {
+        setSelectedPlatforms([targetPlat]);
+        if (formMsgKey === 'form_plat_err') announce('');
+      }
+      setTimeout(() => {
+        if (email) email.focus({ preventScroll: true });
+      }, 320);
+    });
+  });
+
+  const confirmKeyForPlatforms = (platforms) => {
+    const hasIos = platforms.includes('ios');
+    const hasAndroid = platforms.includes('android');
+    if (hasIos && hasAndroid) return 'form_ok_both';
+    if (hasIos) return 'form_ok_ios';
+    if (hasAndroid) return 'form_ok_android';
+    return 'form_ok';
+  };
+
   if (form && email) {
     // Endpoint of the waitlist-signup Edge Function, set in <meta name="ourney-waitlist-endpoint">.
     const endpointMeta = document.querySelector('meta[name="ourney-waitlist-endpoint"]');
@@ -1050,6 +1210,14 @@
       e.preventDefault();
       if (sending) return;
       if (betaFollow) betaFollow.hidden = true;
+      const platforms = getSelectedPlatforms();
+      if (platforms.length === 0) {
+        if (platGroup) platGroup.setAttribute('aria-invalid', 'true');
+        announce('form_plat_err');
+        if (platPills[0]) platPills[0].focus();
+        return;
+      }
+      if (platGroup) platGroup.removeAttribute('aria-invalid');
       const ok = Boolean(email.value.trim()) && email.checkValidity();
       email.setAttribute('aria-invalid', ok ? 'false' : 'true');
       if (!ok) {
@@ -1061,9 +1229,6 @@
         announce('form_fail');
         return;
       }
-      const platforms = Array.from(document.querySelectorAll('.plat-pill[aria-pressed="true"]'))
-        .map((b) => b.getAttribute('data-plat'))
-        .filter((p) => p === 'ios' || p === 'android');
       sending = true;
       if (submitBtn) submitBtn.disabled = true;
       form.setAttribute('aria-busy', 'true');
@@ -1081,7 +1246,7 @@
             website: honeypot ? honeypot.value : '',
           }),
         });
-        if (res.ok) key = 'form_ok';
+        if (res.ok) key = confirmKeyForPlatforms(platforms);
         else if (res.status === 429) key = 'form_rate';
         else if (res.status === 400) key = 'form_err';
       } catch (_) {
@@ -1091,7 +1256,7 @@
       if (submitBtn) submitBtn.disabled = false;
       form.removeAttribute('aria-busy');
       announce(key);
-      if (key === 'form_ok') {
+      if (key.startsWith('form_ok')) {
         form.reset();
         if (betaFollow) betaFollow.hidden = false;
       } else {
@@ -1173,6 +1338,7 @@
     renderHeroCycle(curHeroCycle);
     applyJourneyTab(curTab, false, false);
     syncPrivacyPreview();
+    syncPlatformCtas();
     reactChips.forEach(syncReactChipAria);
     if (minhNudged) {
       if (nudgeLabel) nudgeLabel.textContent = dict.sq_nudge_done;

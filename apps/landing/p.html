@@ -303,7 +303,7 @@
             </div>
 
             <div class="link-actions">
-              <a class="btn btn-primary link-btn-block" id="open-app-btn" href="ourney://capture">
+              <a class="btn btn-primary link-btn-block" id="open-app-btn" href="#qr-panel">
                 <svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-camera"/></svg>
                 <span data-i18n="open_in_app">Mở trong app</span>
               </a>
@@ -323,7 +323,6 @@
           <div class="link-grid-wrap" id="p-grid-wrap">
             <div class="link-grid-head">
               <h2 class="link-grid-h" data-i18n="p_grid_h">Nhật ký ảnh từng ngày</h2>
-              <span class="link-ttl-note" id="p-ttl-note" data-i18n="p_ttl_note">Ảnh có hiệu lực 10 phút</span>
             </div>
             <div class="link-photo-grid" id="p-photo-grid"></div>
             <p class="link-empty-photos" id="p-empty-photos" hidden data-i18n="p_empty_photos">Hành trình này chưa có ảnh công khai nào.</p>
@@ -361,7 +360,7 @@
           </div>
         </section>
 
-        <!-- Fallbacks: Android APK, iOS TestFlight / Waitlist, Desktop QR Code -->
+        <!-- Fallbacks: Android APK, iOS Beta Waitlist, Desktop QR Code -->
         <aside class="card link-fallback-card" aria-labelledby="fallback-heading">
           <div class="link-fallback-main">
             <p class="link-fallback-kicker" id="fallback-heading" data-i18n="fallback_title">Bắt đầu Ngày 1 của riêng bạn trên Ourney</p>
@@ -373,11 +372,11 @@
               </a>
               <a class="btn btn-secondary link-fallback-btn" id="fallback-ios" href="/#beta-waitlist-box" data-waitlist-link>
                 <svg class="o-sticker" width="22" height="22" aria-hidden="true"><use href="#i-sparkle"/></svg>
-                <span data-i18n="fallback_ios">Tham gia beta TestFlight / waitlist</span>
+                <span data-i18n="fallback_ios">iOS · đăng ký danh sách chờ beta</span>
                 <span class="link-plat-badge" translate="no">iOS</span>
               </a>
             </div>
-            <p class="link-fallback-note" data-i18n="fallback_note">Chụp một tấm mỗi ngày, giữ một chuỗi, đi một mình hoặc cùng hội bạn thân.</p>
+            <p class="link-fallback-note" id="fallback-note" data-i18n="fallback_note_p">Chụp một tấm mỗi ngày, giữ một chuỗi, đi một mình hoặc cùng hội bạn thân.</p>
           </div>
 
           <div class="link-qr-panel" id="qr-panel">

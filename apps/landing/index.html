@@ -534,10 +534,10 @@
             </a>
             <a class="btn btn-secondary" id="hero-ios-beta" href="#beta-waitlist-box" data-select-plat="ios">
               <svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-camera"/></svg>
-              <span data-i18n="hero_cta_ios">iOS · nhận thông tin beta</span>
+              <span data-i18n="hero_cta_ios">iOS · đăng ký danh sách chờ beta</span>
             </a>
           </div>
-          <p class="hero-apk-note" data-i18n="hero_apk_note">Android tải trực tiếp file .apk (nếu Play Protect hỏi, chạm “Vẫn cài đặt”). iOS điền email bên dưới để nhận thông tin beta.</p>
+          <p class="hero-apk-note" id="hero-apk-note" data-i18n="hero_apk_note">Android tải trực tiếp file .apk (nếu Play Protect hỏi, chạm “Vẫn cài đặt”). iOS điền email bên dưới để nhận thông tin beta.</p>
           <a class="hero-scroll-cue" id="hero-scroll-cue" href="#journeys" aria-label="Cuộn xuống xem 6 giao diện" data-i18n-aria="hero_scroll_aria">
             <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 9 7 7 7-7"/></svg>
           </a>
@@ -984,7 +984,7 @@
         <div class="cta-ticket card">
           <svg class="o-sticker cta-sticker" width="78" height="78" aria-hidden="true"><use href="#i-star"/></svg>
           <div class="cta-main">
-            <p class="eyebrow" data-i18n="beta_eyebrow">tải bản beta · android &amp; ios</p>
+            <p class="eyebrow" id="beta-eyebrow" data-i18n="beta_eyebrow">tải bản beta · android &amp; ios</p>
             <h2 class="cta-h" data-i18n="beta_h2">ngày 1 của bạn bắt đầu từ hôm nay.</h2>
 
             <!-- Direct Android APK Download Block -->
@@ -1002,9 +1002,9 @@
 
             <!-- iOS & Beta Release Notification Form -->
             <div class="beta-waitlist-box" id="beta-waitlist-box">
-              <p class="beta-ios-lead" data-i18n="beta_ios_lead">Dùng iOS (iPhone) hoặc muốn nhận thông báo khi có bản cập nhật mới? Để lại email nhận thông tin beta:</p>
-              <div class="platform-group" role="group" aria-label="Chọn nền tảng điện thoại" data-i18n-aria="beta_plat_aria">
-                <button type="button" class="plat-pill" aria-pressed="true" data-plat="ios">
+              <p class="beta-ios-lead" id="beta-ios-lead" data-i18n="beta_ios_lead">Dùng iOS (iPhone) hoặc muốn nhận thông báo khi có bản cập nhật mới? Để lại email nhận thông tin beta:</p>
+              <div class="platform-group" id="platform-group" role="group" aria-label="Chọn nền tảng điện thoại" data-i18n-aria="beta_plat_aria">
+                <button type="button" class="plat-pill" aria-pressed="false" data-plat="ios">
                   <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12.5 4 4 8-9"/></svg>
                   <span translate="no">iOS</span>
                 </button>
@@ -1032,7 +1032,7 @@
           <div class="cta-stub" aria-hidden="true">
             <span class="cta-stub-kicker" data-i18n="beta_stub_kicker">NGÀY 01</span>
             <strong data-i18n="beta_stub_title">VÉ BETA</strong>
-            <span class="cta-stub-code" translate="no">IOS · ANDROID</span>
+            <span class="cta-stub-code" id="beta-stub-code" translate="no">IOS · ANDROID</span>
           </div>
         </div>
       </div>
