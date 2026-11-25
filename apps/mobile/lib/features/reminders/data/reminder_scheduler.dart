@@ -13,6 +13,7 @@ import '../../../app/redirect.dart' show AuthStatus;
 import '../../../personas/persona_contract.dart' show personaSkinOf;
 import '../../../shared/time_zones.dart';
 import '../../../ui/ui.dart' show uiSkinIdFor;
+import '../../update/data/update_providers.dart';
 import '../domain/reminder_plan.dart';
 import '../l10n/generated/reminders_localizations.dart';
 import 'notification_gateway.dart';
@@ -66,6 +67,7 @@ class ReminderScheduler {
   );
 
   NotificationGateway get _gateway => _ref.read(notificationGatewayProvider);
+  bool get _paused => _ref.read(appUpdateWorkPausedProvider);
 
   Future<void> reschedule() {
     final next = _last.then((_) => _reschedule());
@@ -75,12 +77,14 @@ class ReminderScheduler {
 
   Future<void> _reschedule() async {
     try {
+      if (_paused) return;
       final gateway = _gateway;
       await gateway.initialize();
       final deviceTz = await _ref.read(reminderDeviceTimezoneProvider.future);
       final planned = await gateway.isPermissionGranted()
           ? await buildPlan(deviceTimezone: deviceTz)
           : const <PlannedNotification>[];
+      if (_paused) return;
       await _apply(gateway, planned, deviceTimezone: deviceTz);
       lastPlanned.value = List.unmodifiable(planned);
     } on Object catch (e, st) {
@@ -161,6 +165,7 @@ class ReminderScheduler {
   }) async {
     final l10n = lookupRemindersL10n(_ref.read(reminderLocaleProvider));
     for (var i = 0; i < planned.length && i < kMaxPendingNotifications; i++) {
+      if (_paused) return;
       final p = planned[i];
       final isAlert = p.kind == PlannedKind.streakAlert;
       final String body;
@@ -197,6 +202,7 @@ class ReminderScheduler {
     };
     final pending = await gateway.pendingIds();
     for (final id in pending.where(_isReminderId)) {
+      if (_paused) return;
       if (!used.contains(id)) await gateway.cancel(id);
     }
   }

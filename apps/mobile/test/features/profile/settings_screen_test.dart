@@ -9,9 +9,16 @@ import 'package:ourney/app/locale_override.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/auth/auth_providers.dart';
 import 'package:ourney/features/profile/settings_providers.dart';
+import 'package:ourney/features/update/data/update_manifest_source.dart';
+import 'package:ourney/features/update/data/update_providers.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart'
-    show OurneyErrorCode, OurneyException;
+    show
+        AppUpdateManifest,
+        OurneyErrorCode,
+        OurneyException,
+        UpdatePlatform;
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../app/test_helpers.dart' show pumpOurneyApp, testBackendConfig;
 import '../journeys/journeys_fakes.dart' show FakeJourneyRepository, testJourney;
@@ -619,6 +626,9 @@ void main() {
           tester,
           config: testBackendConfig,
           auth: RecordingAuthRepository(userId: 'u1'),
+          initialPrefs: const {
+            'update.firstSeenAtMs': 1700000000000,
+          },
           overrides: [
             profileRepositoryProvider.overrideWithValue(
               FakeProfileRepository(aliceProfile),
@@ -803,4 +813,170 @@ void main() {
       },
     );
   });
+
+  group('settings version row update integration', () {
+    AppUpdateManifest buildManifest({
+      String latest = '1.2.0',
+      String recommended = '1.2.0',
+      String minSupported = '1.0.0',
+    }) => AppUpdateManifest.tryFromJson({
+      'platform': 'android',
+      'latest': latest,
+      'latest_build': 3,
+      'recommended': recommended,
+      'min_supported': minSupported,
+      'force_on_major': true,
+      'kill_switch': false,
+      'download_url': 'https://ourney.tech/Ourney.apk',
+      'notes': {
+        'vi': ['Tiện ích màn hình chính nhẹ nhàng hơn'],
+        'en': ['Calmer Home Screen widgets'],
+      },
+      'updated_at': '2026-11-25T00:00:00Z',
+    })!;
+
+    testWidgets(
+      'shows "Phiên bản 1.1.0" + "Có bản mới 1.2.0" badge when update available and opens SoftUpdateSheet without skip CTA',
+      (tester) async {
+        final source = _FakeSettingsManifestSource(buildManifest());
+        final c = await pumpOurneyApp(
+          tester,
+          config: testBackendConfig,
+          auth: RecordingAuthRepository(userId: 'u1'),
+          initialPrefs: const {
+            'update.firstSeenAtMs': 1700000000000,
+          },
+          overrides: [
+            profileRepositoryProvider.overrideWithValue(
+              FakeProfileRepository(aliceProfile),
+            ),
+            journeyRepositoryProvider.overrideWithValue(FakeJourneyRepository()),
+            mediaStoreProvider.overrideWithValue(FakeMediaStore()),
+            appUpdateEnabledProvider.overrideWithValue(true),
+            updatePlatformProvider.overrideWithValue(UpdatePlatform.android),
+            packageInfoProvider.overrideWithValue(
+              PackageInfo(
+                appName: 'Ourney',
+                packageName: 'com.hofang42.ourney',
+                version: '1.1.0',
+                buildNumber: '2',
+              ),
+            ),
+            updateManifestSourceProvider.overrideWithValue(source),
+          ],
+        );
+        await c.read(appUpdateControllerProvider.notifier).refresh(manual: true);
+        await goTo(tester, c, '/profile/settings');
+        await tester.ensureVisible(byKey('settings-version'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Phiên bản 1.1.0'), findsOneWidget);
+        expect(find.text('Có bản mới 1.2.0'), findsOneWidget);
+        expect(byKey('settings-version-badge'), findsOneWidget);
+
+        await tester.tap(byKey('settings-version'));
+        await tester.pumpAndSettle();
+
+        expect(byKey('update-soft-sheet'), findsOneWidget);
+        expect(find.text('Có bản Ourney 1.2.0 mới'), findsOneWidget);
+        expect(byKey('update-soft-install'), findsOneWidget);
+        expect(byKey('update-soft-later'), findsOneWidget);
+        // Opened manually from Settings -> "Bỏ qua bản" tertiary button is hidden.
+        expect(byKey('update-soft-skip'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'up-to-date version row is always tappable, triggers refresh(manual: true) with calm toast even when release notes exist, and opens SoftUpdateSheet if a newer version is found',
+      (tester) async {
+        final source = _FakeSettingsManifestSource(
+          buildManifest(latest: '1.1.0', recommended: '1.1.0'),
+        );
+        final c = await pumpOurneyApp(
+          tester,
+          config: testBackendConfig,
+          auth: RecordingAuthRepository(userId: 'u1'),
+          initialPrefs: const {
+            'update.firstSeenAtMs': 1700000000000,
+            'update.lastSeenInstalledVersion': '1.1.0',
+          },
+          overrides: [
+            profileRepositoryProvider.overrideWithValue(
+              FakeProfileRepository(aliceProfile),
+            ),
+            journeyRepositoryProvider.overrideWithValue(FakeJourneyRepository()),
+            mediaStoreProvider.overrideWithValue(FakeMediaStore()),
+            appUpdateEnabledProvider.overrideWithValue(true),
+            updatePlatformProvider.overrideWithValue(UpdatePlatform.android),
+            packageInfoProvider.overrideWithValue(
+              PackageInfo(
+                appName: 'Ourney',
+                packageName: 'com.hofang42.ourney',
+                version: '1.1.0',
+                buildNumber: '2',
+              ),
+            ),
+            updateManifestSourceProvider.overrideWithValue(source),
+          ],
+        );
+        await c.read(appUpdateControllerProvider.notifier).refresh(manual: true);
+        await goTo(tester, c, '/profile/settings');
+        await tester.ensureVisible(byKey('settings-version'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Phiên bản'), findsOneWidget);
+        expect(find.text('1.1.0 (2)'), findsOneWidget);
+        expect(byKey('settings-version-badge'), findsNothing);
+        final callsBefore = source.calls;
+
+        // 1. Tap while up to date (even though release notes exist) -> refreshes and shows calm toast.
+        await tester.tap(byKey('settings-version'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 250));
+
+        expect(source.calls, callsBefore + 1);
+        expect(byKey('ui-toast'), findsOneWidget);
+        expect(find.text('Bạn đang dùng bản mới nhất'), findsOneWidget);
+
+        // 2. Tap when check fails -> shows calm error toast.
+        source.shouldFail = true;
+        await tester.tap(byKey('settings-version'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 250));
+
+        expect(source.calls, callsBefore + 2);
+        expect(
+          find.text('Chưa kiểm tra được bản cập nhật. Thử lại sau nhé.'),
+          findsOneWidget,
+        );
+
+        // 3. Tap when a new release (1.2.0) was just published -> updates badge and opens SoftUpdateSheet.
+        source.shouldFail = false;
+        source.manifest = buildManifest(latest: '1.2.0', recommended: '1.2.0');
+        await tester.tap(byKey('settings-version'));
+        await tester.pumpAndSettle();
+
+        expect(source.calls, callsBefore + 3);
+        expect(byKey('update-soft-sheet'), findsOneWidget);
+        expect(find.text('Có bản Ourney 1.2.0 mới'), findsOneWidget);
+      },
+    );
+  });
+}
+
+class _FakeSettingsManifestSource implements UpdateManifestSource {
+  _FakeSettingsManifestSource(this.manifest);
+
+  AppUpdateManifest manifest;
+  bool shouldFail = false;
+  int calls = 0;
+
+  @override
+  Future<AppUpdateManifest> fetch(UpdatePlatform platform) async {
+    calls++;
+    if (shouldFail) {
+      throw StateError('network unavailable');
+    }
+    return manifest;
+  }
 }

@@ -3,6 +3,7 @@
   "widgets_title": "widgets.",
   "widgets_back": "Back",
   "widgets_intro": "Keep your streak, today's check-in, and your squad on your Home Screen or Lock Screen. Weight (kg) and private goals never appear on widgets.",
+  "widgets_appGroupUnavailable": "This install can’t share data with widgets. Widgets will work with the TestFlight or App Store version, or when installed through AltStore or SideStore.",
   "widgets_secPreview": "widget preview",
   "widgets_tabToday": "Today",
   "widgets_tabStreak": "Streak",

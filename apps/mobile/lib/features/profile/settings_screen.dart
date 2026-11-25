@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:ourney_core/ourney_core.dart' show UpdateUrgency;
 
 import '../../app/app_routes.dart';
 import '../../app/locale_override.dart';
@@ -13,6 +13,8 @@ import '../../app/theme/motion.dart';
 import '../../ui/ui.dart';
 import '../auth/phone_format.dart';
 import '../safety/safety_paths.dart';
+import '../update/data/update_providers.dart';
+import '../update/ui/soft_update_sheet.dart';
 import 'l10n/generated/profile_localizations.dart';
 import 'profile_screen.dart' show profileEditPath;
 import 'settings_providers.dart';
@@ -393,29 +395,104 @@ class _PasswordRow extends ConsumerWidget {
 /// App version and build, read once from the platform (empty when the
 /// platform channel is not available, e.g. in tests).
 final appVersionProvider = FutureProvider<String>((ref) async {
-  try {
-    final info = await PackageInfo.fromPlatform();
-    return info.buildNumber.isEmpty
-        ? info.version
-        : '${info.version} (${info.buildNumber})';
-  } on Object {
-    return '';
-  }
+  final info = ref.watch(packageInfoProvider) ?? await readUpdatePackageInfo();
+  if (info == null) return '';
+  return info.buildNumber.isEmpty
+      ? info.version
+      : '${info.version} (${info.buildNumber})';
 });
 
 class _VersionRow extends ConsumerWidget {
   const _VersionRow();
 
+  Future<void> _handleManualCheck(BuildContext context, WidgetRef ref) async {
+    if (ref.read(appUpdateControllerProvider).isChecking) return;
+    OurneyHaptics.selection();
+    final l10n = ProfileL10n.of(context);
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    await ref
+        .read(appUpdateControllerProvider.notifier)
+        .refresh(manual: true);
+    if (!context.mounted) return;
+    final next = ref.read(appUpdateControllerProvider);
+    if (next.urgency == UpdateUrgency.forced) return;
+    final nextManifest = next.manifest;
+    if (next.showSettingsBadge && nextManifest != null) {
+      unawaited(
+        showSoftUpdateSheet(
+          context,
+          fromSettings: true,
+          version: nextManifest.latest,
+        ),
+      );
+      return;
+    }
+    if (next.checkFailed) {
+      showUiToast(
+        context,
+        l10n.profile_settings_versionCheckFailed,
+        messenger: messenger,
+      );
+      return;
+    }
+    showUiToast(
+      context,
+      l10n.profile_settings_versionUpToDate,
+      messenger: messenger,
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ProfileL10n.of(context);
+    final ui = context.ui;
     final version = ref.watch(appVersionProvider).asData?.value ?? '';
+    final updateState = ref.watch(appUpdateControllerProvider);
+    final manifest = updateState.manifest;
+
+    if (updateState.showSettingsBadge && manifest != null) {
+      final installedLabel =
+          updateState.installedVersion?.precedence ?? version;
+      final latestLabel = manifest.latest.precedence;
+      return MergeSemantics(
+        child: UiRow(
+          key: const ValueKey('settings-version'),
+          leading: const OurneyIcon(name: 'sparkle', size: 22),
+          title: installedLabel.isEmpty
+              ? l10n.profile_settings_version
+              : l10n.profile_settings_versionValue(installedLabel),
+          subtitle: Text(
+            l10n.profile_settings_versionUpdateBadge(latestLabel),
+            key: const ValueKey('settings-version-badge'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: UiText.body(
+              size: 12,
+              weight: FontWeight.w700,
+              height: 1.4,
+              color: ui.timeCue,
+            ),
+          ),
+          divider: false,
+          onPressed: () => unawaited(
+            showSoftUpdateSheet(
+              context,
+              fromSettings: true,
+              version: manifest.latest,
+            ),
+          ),
+        ),
+      );
+    }
+
     return MergeSemantics(
       child: UiRow(
         key: const ValueKey('settings-version'),
         leading: const OurneyIcon(name: 'info', flat: true),
         title: l10n.profile_settings_version,
         divider: false,
+        showChevron: false,
+        onPressed: () => unawaited(_handleManualCheck(context, ref)),
         trailing: version.isEmpty
             ? null
             : Text(
@@ -423,7 +500,7 @@ class _VersionRow extends ConsumerWidget {
                 style: UiText.body(
                   size: 14,
                   height: 1.4,
-                  color: context.ui.inkMuted,
+                  color: ui.inkMuted,
                 ),
               ),
       ),

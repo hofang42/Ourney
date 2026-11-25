@@ -305,6 +305,7 @@ enum OurneyErrorCode {
   linksNotAllowed('links_not_allowed'), // 23514 (0024 URL guard)
   invalidCapturedAt('invalid_captured_at'), // 22008
   consentRequired('consent_required'), // v1.3: group share needs consent first
+  clientOutdated('client_outdated'),
   // Edge Function codes.
   methodNotAllowed('method_not_allowed'),
   storageListingFailed('storage_listing_failed'),
