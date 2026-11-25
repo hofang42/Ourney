@@ -406,6 +406,13 @@ class ProfileL10nVi extends ProfileL10n {
   }
 
   @override
+  String get profile_settings_versionUpToDate => 'Bạn đang dùng bản mới nhất';
+
+  @override
+  String get profile_settings_versionCheckFailed =>
+      'Chưa kiểm tra được bản cập nhật. Thử lại sau nhé.';
+
+  @override
   String get profile_settings_signOut => 'Đăng xuất';
 
   @override

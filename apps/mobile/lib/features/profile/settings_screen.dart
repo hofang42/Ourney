@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ourney_core/ourney_core.dart' show UpdateUrgency;
 
 import '../../app/app_routes.dart';
 import '../../app/locale_override.dart';
@@ -14,7 +15,6 @@ import '../auth/phone_format.dart';
 import '../safety/safety_paths.dart';
 import '../update/data/update_providers.dart';
 import '../update/ui/soft_update_sheet.dart';
-import '../update/ui/whats_new_sheet.dart';
 import 'l10n/generated/profile_localizations.dart';
 import 'profile_screen.dart' show profileEditPath;
 import 'settings_providers.dart';
@@ -405,13 +405,49 @@ final appVersionProvider = FutureProvider<String>((ref) async {
 class _VersionRow extends ConsumerWidget {
   const _VersionRow();
 
+  Future<void> _handleManualCheck(BuildContext context, WidgetRef ref) async {
+    if (ref.read(appUpdateControllerProvider).isChecking) return;
+    OurneyHaptics.selection();
+    final l10n = ProfileL10n.of(context);
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    await ref
+        .read(appUpdateControllerProvider.notifier)
+        .refresh(manual: true);
+    if (!context.mounted) return;
+    final next = ref.read(appUpdateControllerProvider);
+    if (next.urgency == UpdateUrgency.forced) return;
+    final nextManifest = next.manifest;
+    if (next.showSettingsBadge && nextManifest != null) {
+      unawaited(
+        showSoftUpdateSheet(
+          context,
+          fromSettings: true,
+          version: nextManifest.latest,
+        ),
+      );
+      return;
+    }
+    if (next.checkFailed) {
+      showUiToast(
+        context,
+        l10n.profile_settings_versionCheckFailed,
+        messenger: messenger,
+      );
+      return;
+    }
+    showUiToast(
+      context,
+      l10n.profile_settings_versionUpToDate,
+      messenger: messenger,
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ProfileL10n.of(context);
     final ui = context.ui;
     final version = ref.watch(appVersionProvider).asData?.value ?? '';
     final updateState = ref.watch(appUpdateControllerProvider);
-    final updateEnabled = ref.watch(appUpdateEnabledProvider);
     final manifest = updateState.manifest;
 
     if (updateState.showSettingsBadge && manifest != null) {
@@ -449,26 +485,6 @@ class _VersionRow extends ConsumerWidget {
       );
     }
 
-    final installedNotes = updateState.installedReleaseNotes;
-    final hasWhatsNew = installedNotes != null && installedNotes.isNotEmpty;
-    final VoidCallback? onUpToDateTap = hasWhatsNew
-        ? () => unawaited(
-            showWhatsNewSheet(
-              context,
-              version: updateState.installedVersion,
-            ),
-          )
-        : updateEnabled
-        ? () {
-            OurneyHaptics.selection();
-            unawaited(
-              ref
-                  .read(appUpdateControllerProvider.notifier)
-                  .refresh(manual: true),
-            );
-          }
-        : null;
-
     return MergeSemantics(
       child: UiRow(
         key: const ValueKey('settings-version'),
@@ -476,7 +492,7 @@ class _VersionRow extends ConsumerWidget {
         title: l10n.profile_settings_version,
         divider: false,
         showChevron: false,
-        onPressed: onUpToDateTap,
+        onPressed: () => unawaited(_handleManualCheck(context, ref)),
         trailing: version.isEmpty
             ? null
             : Text(

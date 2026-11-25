@@ -7,18 +7,51 @@ import '../../../ui/ui.dart';
 import '../data/update_providers.dart';
 import '../l10n/generated/update_localizations.dart';
 
+/// Outcome returned when [SoftUpdateSheet] closes.
+enum SoftUpdateSheetResult {
+  snoozed,
+  skipped,
+}
+
+/// Whether [downloadUrl] points to an `ourney.tech` or `.apk` download that
+/// should show the Android notification-shade sideload hint after launching.
+bool shouldShowAndroidSideloadHint(Uri? downloadUrl) {
+  if (downloadUrl == null) return false;
+  final host = downloadUrl.host.toLowerCase();
+  final path = downloadUrl.path.toLowerCase();
+  return host == 'ourney.tech' ||
+      host == 'www.ourney.tech' ||
+      path.endsWith('.apk');
+}
+
 /// Opens the gentle [SoftUpdateSheet] for minor updates or manual checks.
-Future<void> showSoftUpdateSheet(
+///
+/// Dismissing the sheet via swipe-down, scrim tap, or system Back (`null`
+/// modal result) records a snooze via [AppUpdateController.snoozeSheet]
+/// exactly like tapping "Để sau" / "Not now".
+Future<SoftUpdateSheetResult> showSoftUpdateSheet(
   BuildContext context, {
   bool fromSettings = false,
   SemVer? version,
-}) => showUiSheet<void>(
-  context: context,
-  builder: (_) => SoftUpdateSheet(
-    fromSettings: fromSettings,
-    version: version,
-  ),
-);
+}) async {
+  final container = ProviderScope.containerOf(context, listen: false);
+  final targetVersion =
+      version ?? container.read(appUpdateControllerProvider).manifest?.latest;
+  final result = await showUiSheet<SoftUpdateSheetResult>(
+    context: context,
+    builder: (_) => SoftUpdateSheet(
+      fromSettings: fromSettings,
+      version: targetVersion,
+    ),
+  );
+  if (result == null) {
+    await container
+        .read(appUpdateControllerProvider.notifier)
+        .snoozeSheet(version: targetVersion);
+    return SoftUpdateSheetResult.snoozed;
+  }
+  return result;
+}
 
 /// Gentle bottom sheet presenting release notes, install CTA, snooze, and
 /// per-version skip action.
@@ -65,7 +98,10 @@ class _SoftUpdateSheetState extends ConsumerState<SoftUpdateSheet> {
     final isAndroid = _resolvePlatform(state) == UpdatePlatform.android;
     setState(() {
       _busy = false;
-      _showAndroidHint = ok && isAndroid;
+      _showAndroidHint =
+          ok &&
+          isAndroid &&
+          shouldShowAndroidSideloadHint(state.manifest?.downloadUrl);
       _launchFailed = !ok;
     });
   }
@@ -76,7 +112,7 @@ class _SoftUpdateSheetState extends ConsumerState<SoftUpdateSheet> {
         .read(appUpdateControllerProvider.notifier)
         .snoozeSheet(version: targetVersion);
     if (!mounted) return;
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(SoftUpdateSheetResult.snoozed);
   }
 
   Future<void> _handleSkip(SemVer? targetVersion) async {
@@ -85,7 +121,7 @@ class _SoftUpdateSheetState extends ConsumerState<SoftUpdateSheet> {
         .read(appUpdateControllerProvider.notifier)
         .skipVersion(version: targetVersion);
     if (!mounted) return;
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(SoftUpdateSheetResult.skipped);
   }
 
   @override

@@ -421,6 +421,14 @@
       }
     }
   },
+  "profile_settings_versionUpToDate": "Bạn đang dùng bản mới nhất",
+  "@profile_settings_versionUpToDate": {
+    "description": "Calm toast shown after tapping the Settings version row when no newer version is available."
+  },
+  "profile_settings_versionCheckFailed": "Chưa kiểm tra được bản cập nhật. Thử lại sau nhé.",
+  "@profile_settings_versionCheckFailed": {
+    "description": "Calm toast shown after tapping the Settings version row when the update check fails."
+  },
   "profile_settings_signOut": "Đăng xuất",
   "profile_settings_delete": "Xóa tài khoản",
   "profile_settingsEntry": "Cài đặt",

@@ -887,7 +887,7 @@ void main() {
     );
 
     testWidgets(
-      'up-to-date version row reopens WhatsNewSheet when installed release notes exist',
+      'up-to-date version row is always tappable, triggers refresh(manual: true) with calm toast even when release notes exist, and opens SoftUpdateSheet if a newer version is found',
       (tester) async {
         final source = _FakeSettingsManifestSource(
           buildManifest(latest: '1.1.0', recommended: '1.1.0'),
@@ -897,6 +897,7 @@ void main() {
           config: testBackendConfig,
           auth: RecordingAuthRepository(userId: 'u1'),
           initialPrefs: const {
+            'update.firstSeenAtMs': 1700000000000,
             'update.lastSeenInstalledVersion': '1.1.0',
           },
           overrides: [
@@ -926,16 +927,38 @@ void main() {
         expect(find.text('Phiên bản'), findsOneWidget);
         expect(find.text('1.1.0 (2)'), findsOneWidget);
         expect(byKey('settings-version-badge'), findsNothing);
+        final callsBefore = source.calls;
 
+        // 1. Tap while up to date (even though release notes exist) -> refreshes and shows calm toast.
+        await tester.tap(byKey('settings-version'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 250));
+
+        expect(source.calls, callsBefore + 1);
+        expect(byKey('ui-toast'), findsOneWidget);
+        expect(find.text('Bạn đang dùng bản mới nhất'), findsOneWidget);
+
+        // 2. Tap when check fails -> shows calm error toast.
+        source.shouldFail = true;
+        await tester.tap(byKey('settings-version'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 250));
+
+        expect(source.calls, callsBefore + 2);
+        expect(
+          find.text('Chưa kiểm tra được bản cập nhật. Thử lại sau nhé.'),
+          findsOneWidget,
+        );
+
+        // 3. Tap when a new release (1.2.0) was just published -> updates badge and opens SoftUpdateSheet.
+        source.shouldFail = false;
+        source.manifest = buildManifest(latest: '1.2.0', recommended: '1.2.0');
         await tester.tap(byKey('settings-version'));
         await tester.pumpAndSettle();
 
-        expect(byKey('update-whats-new-sheet'), findsOneWidget);
-        expect(find.text('Có gì mới ở Ourney 1.1.0'), findsOneWidget);
-        expect(
-          find.text('Tiện ích màn hình chính nhẹ nhàng hơn'),
-          findsOneWidget,
-        );
+        expect(source.calls, callsBefore + 3);
+        expect(byKey('update-soft-sheet'), findsOneWidget);
+        expect(find.text('Có bản Ourney 1.2.0 mới'), findsOneWidget);
       },
     );
   });
@@ -945,11 +968,15 @@ class _FakeSettingsManifestSource implements UpdateManifestSource {
   _FakeSettingsManifestSource(this.manifest);
 
   AppUpdateManifest manifest;
+  bool shouldFail = false;
   int calls = 0;
 
   @override
   Future<AppUpdateManifest> fetch(UpdatePlatform platform) async {
     calls++;
+    if (shouldFail) {
+      throw StateError('network unavailable');
+    }
     return manifest;
   }
 }

@@ -10,6 +10,7 @@ import '../../safety/data/safety_providers.dart'
     show safetyUrlLauncherProvider, supportEmailProvider;
 import '../data/update_providers.dart';
 import '../l10n/generated/update_localizations.dart';
+import 'soft_update_sheet.dart' show shouldShowAndroidSideloadHint;
 
 /// Root host mounted in `OurneyApp.builder` that replaces the app shell and
 /// reminder banners with [UpdateGateScreen] whenever
@@ -107,7 +108,10 @@ class _UpdateGateScreenState extends ConsumerState<UpdateGateScreen> {
     final isAndroid = _resolvePlatform(state) == UpdatePlatform.android;
     setState(() {
       _launching = false;
-      _showAndroidHint = ok && isAndroid;
+      _showAndroidHint =
+          ok &&
+          isAndroid &&
+          shouldShowAndroidSideloadHint(state.manifest?.downloadUrl);
       _launchFailed = !ok;
     });
   }

@@ -32,6 +32,7 @@ class AppShell extends ConsumerStatefulWidget {
 
 class _AppShellState extends ConsumerState<AppShell> {
   String? _promptedTermsKey;
+  bool _termsSheetOpen = false;
 
   void _go(int index) {
     final navigationShell = widget.navigationShell;
@@ -53,9 +54,21 @@ class _AppShellState extends ConsumerState<AppShell> {
       final key = '$userId:$requiredVersion';
       if (_promptedTermsKey != key) {
         _promptedTermsKey = key;
+        _termsSheetOpen = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          unawaited(showTermsUpdateSheet(context));
+          if (!mounted) {
+            _termsSheetOpen = false;
+            return;
+          }
+          unawaited(
+            showTermsUpdateSheet(context).whenComplete(() {
+              if (mounted) {
+                setState(() => _termsSheetOpen = false);
+              } else {
+                _termsSheetOpen = false;
+              }
+            }),
+          );
         });
       }
     }
@@ -63,7 +76,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     final navigationShell = widget.navigationShell;
     final onCamera = navigationShell.currentIndex == AppShell.captureIndex;
     final termsBlocking =
-        (userId != null && needsTermsUpdate) || _promptedTermsKey != null;
+        _termsSheetOpen ||
+        (userId != null && needsTermsUpdate && _promptedTermsKey == null);
     return Scaffold(
       backgroundColor: context.ui.bg,
       extendBody: true,

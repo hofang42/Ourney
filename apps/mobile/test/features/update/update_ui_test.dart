@@ -87,9 +87,10 @@ void main() {
     Future<bool> Function(Uri)? onLaunchUpdate,
     Future<bool> Function(Uri)? onLaunchSupport,
     PersonaSkinId? activeSkin,
+    Clock? updateClock,
   }) async {
     final userAuth = auth ?? FakeAuthRepository(userId: 'u1');
-    return pumpOurneyApp(
+    final container = await pumpOurneyApp(
       tester,
       config: testBackendConfig,
       auth: userAuth,
@@ -110,7 +111,9 @@ void main() {
         mediaStoreProvider.overrideWithValue(FakeMediaStore()),
         appUpdateEnabledProvider.overrideWithValue(true),
         updatePlatformProvider.overrideWithValue(platform),
-        appUpdateClockProvider.overrideWithValue(Clock(() => fixedNow)),
+        appUpdateClockProvider.overrideWithValue(
+          updateClock ?? Clock(() => fixedNow),
+        ),
         appUpdateConnectivityChangesProvider.overrideWithValue(
           () => const Stream<bool>.empty(),
         ),
@@ -131,6 +134,8 @@ void main() {
           activePersonaSkinProvider.overrideWithValue(activeSkin),
       ],
     );
+    addTearDown(() => container.invalidate(appUpdateControllerProvider));
+    return container;
   }
 
   group('CLAUDE.md §1.3 anti-slop guard', () {
@@ -302,6 +307,120 @@ void main() {
         c.read(routerProvider).go(AppRoutes.journeys);
         await tester.pumpAndSettle();
         expect(find.byKey(const ValueKey('update-soft-sheet')), findsNothing);
+
+        // Once TermsUpdateSheet clears, UpdateShellCoordinator retries and shows SoftUpdateSheet.
+        await tester.tap(
+          find.byKey(const ValueKey('safety-terms-update-later')),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('safety-terms-update-sheet')),
+          findsNothing,
+        );
+        expect(find.byKey(const ValueKey('update-soft-sheet')), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'active ReminderBanner defers SoftUpdateSheet and WhatsNewSheet until banner clears',
+      (tester) async {
+        final source = FakeManifestSource(
+          (_) async => buildTestManifest(latest: '1.1.0'),
+        );
+        final c = await pumpUpdateApp(tester, source: source);
+        expect(
+          c.read(appUpdateControllerProvider).urgency,
+          UpdateUrgency.softSheet,
+        );
+
+        // Show a ReminderBanner before switching to /journeys.
+        c.read(reminderBannerProvider.notifier).show(
+          const ReminderBannerData(
+            journeyId: 'j1',
+            journeyName: 'Chạy bộ',
+            skinId: 'flexer',
+            kind: ReminderBannerKind.daily,
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(ReminderBanner), findsOneWidget);
+
+        // Switch to /journeys while ReminderBanner is active: SoftUpdateSheet must not stack.
+        await tester.tap(find.text('Hành trình'));
+        await tester.pumpAndSettle();
+        expect(find.byType(ReminderBanner), findsOneWidget);
+        expect(find.byKey(const ValueKey('update-soft-sheet')), findsNothing);
+
+        // Dismiss ReminderBanner -> SoftUpdateSheet opens automatically.
+        c.read(reminderBannerProvider.notifier).dismiss();
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('update-soft-sheet')), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'active ReminderBanner defers WhatsNewSheet until banner clears, and subsequent release in same session still prompts SoftUpdateSheet',
+      (tester) async {
+        final source = FakeManifestSource(
+          (_) async => buildTestManifest(latest: '1.1.0'),
+        );
+        final c = await pumpUpdateApp(
+          tester,
+          source: source,
+          installedVersion: '1.1.0',
+          installedBuild: '2',
+          initialPrefs: const {
+            'update.lastSeenInstalledVersion': '1.0.0',
+          },
+        );
+        expect(c.read(appUpdateControllerProvider).canShowWhatsNew, isTrue);
+
+        c.read(reminderBannerProvider.notifier).show(
+          const ReminderBannerData(
+            journeyId: 'j1',
+            journeyName: 'Chạy bộ',
+            skinId: 'flexer',
+            kind: ReminderBannerKind.daily,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Hành trình'));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('update-whats-new-sheet')),
+          findsNothing,
+        );
+
+        // Clearing ReminderBanner triggers WhatsNewSheet.
+        c.read(reminderBannerProvider.notifier).dismiss();
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('update-whats-new-sheet')),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.byKey(const ValueKey('update-whats-new-done')));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('update-whats-new-sheet')),
+          findsNothing,
+        );
+
+        // Later in the same long-lived session, 1.2.0 is released -> SoftUpdateSheet opens.
+        source.onFetch = (_) async => buildTestManifest(latest: '1.2.0');
+        await c
+            .read(appUpdateControllerProvider.notifier)
+            .refresh(manual: true);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('update-soft-sheet')), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('update-soft-sheet')),
+            matching: find.text('Có bản Ourney 1.2.0 mới'),
+          ),
+          findsOneWidget,
+        );
       },
     );
   });
@@ -370,6 +489,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Phiên bản 1.1.0'), findsOneWidget);
         expect(find.text('Có bản mới 1.1.1'), findsOneWidget);
+        c.invalidate(appUpdateControllerProvider);
       },
     );
   });
@@ -477,6 +597,171 @@ void main() {
           find.byKey(const ValueKey('update-soft-later')),
           findsOneWidget,
         );
+      },
+    );
+
+    testWidgets(
+      'dismissing SoftUpdateSheet by swipe, scrim tap, or system Back calls snoozeSheet (3d -> 7d -> stop) and re-evaluates in a long-lived session',
+      (tester) async {
+        var now = fixedNow;
+        final source = FakeManifestSource(
+          (_) async => buildTestManifest(latest: '1.1.0'),
+        );
+        final c = await pumpUpdateApp(
+          tester,
+          source: source,
+          updateClock: Clock(() => now),
+        );
+
+        // 1. Switch to /journeys -> automatic SoftUpdateSheet opens (prompt #1).
+        await tester.tap(find.text('Hành trình'));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('update-soft-sheet')), findsOneWidget);
+
+        // Dismiss #1 by swiping the sheet down -> snoozed for 3 days (urgency drops to softBanner).
+        await tester.fling(
+          find.byKey(const ValueKey('update-soft-sheet')),
+          const Offset(0, 400),
+          1000,
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('update-soft-sheet')), findsNothing);
+        expect(
+          c.read(appUpdateControllerProvider).urgency,
+          UpdateUrgency.softBanner,
+        );
+
+        // 2. Advance past the 3-day snooze window in the same session -> re-opens (prompt #2).
+        now = now.add(const Duration(days: 3, hours: 1));
+        await c
+            .read(appUpdateControllerProvider.notifier)
+            .refresh(manual: true);
+        await tester.pumpAndSettle();
+        expect(
+          c.read(appUpdateControllerProvider).urgency,
+          UpdateUrgency.softSheet,
+        );
+        expect(find.byKey(const ValueKey('update-soft-sheet')), findsOneWidget);
+
+        // Dismiss #2 by tapping the scrim barrier -> snoozed for 7 days.
+        await tester.tapAt(const Offset(20, 20));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('update-soft-sheet')), findsNothing);
+        expect(
+          c.read(appUpdateControllerProvider).urgency,
+          UpdateUrgency.softBanner,
+        );
+
+        // 3. Advance past the 7-day snooze window in the same session -> re-opens (prompt #3).
+        now = now.add(const Duration(days: 7, hours: 1));
+        await c
+            .read(appUpdateControllerProvider.notifier)
+            .refresh(manual: true);
+        await tester.pumpAndSettle();
+        expect(
+          c.read(appUpdateControllerProvider).urgency,
+          UpdateUrgency.softSheet,
+        );
+        expect(find.byKey(const ValueKey('update-soft-sheet')), findsOneWidget);
+
+        // Dismiss #3 via Android system Back -> 3rd snooze permanently stops automatic sheets for 1.1.0.
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('update-soft-sheet')), findsNothing);
+        expect(
+          c.read(appUpdateControllerProvider).urgency,
+          UpdateUrgency.passive,
+        );
+
+        // 4. Advancing 30 more days never re-opens SoftUpdateSheet for 1.1.0.
+        now = now.add(const Duration(days: 30));
+        await c
+            .read(appUpdateControllerProvider.notifier)
+            .refresh(manual: true);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('update-soft-sheet')), findsNothing);
+
+        // 5. When a new minor release 1.2.0 arrives in the same session, SoftUpdateSheet prompts for 1.2.0.
+        source.onFetch = (_) async => buildTestManifest(latest: '1.2.0');
+        await c
+            .read(appUpdateControllerProvider.notifier)
+            .refresh(manual: true);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('update-soft-sheet')), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('update-soft-sheet')),
+            matching: find.text('Có bản Ourney 1.2.0 mới'),
+          ),
+          findsOneWidget,
+        );
+        c.invalidate(appUpdateControllerProvider);
+      },
+    );
+
+    testWidgets(
+      'Android sideload hint shows only for ourney.tech or .apk URLs, not Play Store URLs',
+      (tester) async {
+        expect(
+          shouldShowAndroidSideloadHint(
+            Uri.parse('https://ourney.tech/Ourney.apk'),
+          ),
+          isTrue,
+        );
+        expect(
+          shouldShowAndroidSideloadHint(
+            Uri.parse('https://www.ourney.tech/download'),
+          ),
+          isTrue,
+        );
+        expect(
+          shouldShowAndroidSideloadHint(
+            Uri.parse(
+              'https://github.com/hofang42/ourney-releases/releases/download/v1.1.0/Ourney.apk',
+            ),
+          ),
+          isTrue,
+        );
+        expect(
+          shouldShowAndroidSideloadHint(
+            Uri.parse(
+              'https://play.google.com/store/apps/details?id=com.hofang42.ourney',
+            ),
+          ),
+          isFalse,
+        );
+        expect(shouldShowAndroidSideloadHint(null), isFalse);
+
+        final launched = <Uri>[];
+        final playStoreUrl =
+            'https://play.google.com/store/apps/details?id=com.hofang42.ourney';
+        final source = FakeManifestSource(
+          (_) async => buildTestManifest(
+            latest: '1.1.0',
+            downloadUrl: playStoreUrl,
+          ),
+        );
+        final c = await pumpUpdateApp(
+          tester,
+          source: source,
+          onLaunchUpdate: (uri) async {
+            launched.add(uri);
+            return true;
+          },
+        );
+
+        await tester.tap(find.text('Hành trình'));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('update-soft-sheet')), findsOneWidget);
+
+        await tester.tap(find.byKey(const ValueKey('update-soft-install')));
+        await tester.pumpAndSettle();
+        expect(launched, [Uri.parse(playStoreUrl)]);
+        expect(
+          find.byKey(const ValueKey('update-android-install-hint')),
+          findsNothing,
+        );
+        c.invalidate(appUpdateControllerProvider);
       },
     );
   });

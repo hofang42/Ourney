@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_dock.dart';
+import '../../../app/overlays/reminder_banner.dart';
 import '../data/update_providers.dart';
 import 'soft_update_sheet.dart';
 import 'whats_new_sheet.dart';
@@ -15,10 +16,12 @@ import 'whats_new_sheet.dart';
 /// Rules enforced:
 /// - Never opens automatic update sheets on the Camera tab
 ///   (`currentIndex == AppDock.captureIndex`).
+/// - Defers presentation while a [ReminderBanner] or `TermsUpdateSheet` is
+///   visible, and retries automatically once it clears.
 /// - Respects single-sheet priority:
 ///   `TermsUpdateSheet` > `WhatsNewSheet` > `SoftUpdateSheet`.
-/// - Never stacks two sheets at once or re-prompts the same version in the
-///   same session after a dismissal.
+/// - Re-evaluates after a snooze window expires or a newer release arrives in
+///   a long-lived session.
 class UpdateShellCoordinator extends ConsumerStatefulWidget {
   const UpdateShellCoordinator({
     required this.currentIndex,
@@ -45,11 +48,24 @@ class _UpdateShellCoordinatorState
 
   bool get _onBrowseTab => widget.currentIndex != AppDock.captureIndex;
 
-  void _maybeSchedule(AppUpdateState state) {
+  void _syncPromptGuards(AppUpdateState state) {
+    if (!state.canShowWhatsNew) {
+      _promptedWhatsNewVersion = null;
+    }
+    if (state.urgency != UpdateUrgency.softSheet) {
+      _promptedSoftVersion = null;
+    }
+  }
+
+  void _maybeSchedule(
+    AppUpdateState state, {
+    required bool reminderBlocking,
+  }) {
     if (_scheduled ||
         _sheetOpen ||
         !_onBrowseTab ||
         widget.termsSheetBlocking ||
+        reminderBlocking ||
         state.urgency == UpdateUrgency.forced) {
       return;
     }
@@ -61,7 +77,6 @@ class _UpdateShellCoordinatorState
     final latest = state.manifest?.latest;
     final wantsSoftSheet =
         !wantsWhatsNew &&
-        _promptedWhatsNewVersion == null &&
         state.urgency == UpdateUrgency.softSheet &&
         state.manifest?.downloadUrl != null &&
         latest != null &&
@@ -76,10 +91,12 @@ class _UpdateShellCoordinatorState
           _sheetOpen ||
           !_onBrowseTab ||
           widget.termsSheetBlocking ||
+          ref.read(reminderBannerProvider) != null ||
           (ModalRoute.of(context)?.isCurrent == false)) {
         return;
       }
       final live = ref.read(appUpdateControllerProvider);
+      _syncPromptGuards(live);
       if (live.urgency == UpdateUrgency.forced) return;
 
       if (live.canShowWhatsNew &&
@@ -103,7 +120,7 @@ class _UpdateShellCoordinatorState
       }
 
       final liveLatest = live.manifest?.latest;
-      if (_promptedWhatsNewVersion == null &&
+      if (!live.canShowWhatsNew &&
           live.urgency == UpdateUrgency.softSheet &&
           live.manifest?.downloadUrl != null &&
           liveLatest != null &&
@@ -129,8 +146,10 @@ class _UpdateShellCoordinatorState
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(appUpdateControllerProvider);
+    final reminderBlocking = ref.watch(reminderBannerProvider) != null;
+    _syncPromptGuards(state);
     if (ModalRoute.of(context)?.isCurrent != false) {
-      _maybeSchedule(state);
+      _maybeSchedule(state, reminderBlocking: reminderBlocking);
     }
     return widget.child;
   }

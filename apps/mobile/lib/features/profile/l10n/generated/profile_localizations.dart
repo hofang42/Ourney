@@ -818,6 +818,18 @@ abstract class ProfileL10n {
   /// **'Có bản mới {latest}'**
   String profile_settings_versionUpdateBadge(String latest);
 
+  /// Calm toast shown after tapping the Settings version row when no newer version is available.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn đang dùng bản mới nhất'**
+  String get profile_settings_versionUpToDate;
+
+  /// Calm toast shown after tapping the Settings version row when the update check fails.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa kiểm tra được bản cập nhật. Thử lại sau nhé.'**
+  String get profile_settings_versionCheckFailed;
+
   /// No description provided for @profile_settings_signOut.
   ///
   /// In vi, this message translates to:

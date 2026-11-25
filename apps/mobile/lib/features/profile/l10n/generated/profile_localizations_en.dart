@@ -408,6 +408,14 @@ class ProfileL10nEn extends ProfileL10n {
   }
 
   @override
+  String get profile_settings_versionUpToDate =>
+      'You\'re on the latest version';
+
+  @override
+  String get profile_settings_versionCheckFailed =>
+      'Couldn\'t check for updates right now. Please try again later.';
+
+  @override
   String get profile_settings_signOut => 'Sign out';
 
   @override
