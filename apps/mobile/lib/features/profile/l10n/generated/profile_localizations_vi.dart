@@ -288,14 +288,14 @@ class ProfileL10nVi extends ProfileL10n {
 
   @override
   String get profile_settings_remindersSub =>
-      'Giờ nhắc từng hành trình và báo trước khi chuỗi đứt';
+      'Giờ nhắc từng hành trình và nhắc buổi tối lúc 21:00';
 
   @override
   String get profile_settings_widgetsRow => 'Tiện ích & Live Activity';
 
   @override
   String get profile_settings_widgetsSub =>
-      'Tiện ích màn hình chính, màn hình khóa và đếm ngược cuối ngày';
+      'Tiện ích màn hình chính, màn hình khóa và khung giờ chụp buổi tối';
 
   @override
   String get profile_settings_themeLight => 'Sáng';

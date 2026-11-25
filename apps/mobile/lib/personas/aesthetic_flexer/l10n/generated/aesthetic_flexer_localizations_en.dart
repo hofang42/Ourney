@@ -34,7 +34,7 @@ class AestheticFlexerL10nEn extends AestheticFlexerL10n {
 
   @override
   String aesthetic_flexer_activeDaysHeader(int active, int total, int streak) {
-    return '$active/$total DAYS ACTIVE · 🔥 $streak STREAK';
+    return '$active/$total DAYS ACTIVE · $streak STREAK';
   }
 
   @override

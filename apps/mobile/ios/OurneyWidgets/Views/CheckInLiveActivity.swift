@@ -27,9 +27,7 @@ public struct CheckInLiveActivity: Widget {
       let state = context.state
       let captureURL = OurneyDeepLinks.capture(journeyId: state.journeyId)
       let isUrgent = state.atRisk && !state.isCompletedCelebration
-      let flameNumeralColor = isUrgent
-        ? Color(.sRGB, red: 1.0, green: 0.302, blue: 0.427, opacity: 1.0) // #FF4D6D
-        : Color(.sRGB, red: 0.949, green: 0.663, blue: 0.231, opacity: 1.0) // #F2A93B
+      let flameNumeralColor = OurneyWidgetTheme.cameraDark.flame // #F2A93B
       let headerLabelColor = state.isCompletedCelebration
         ? OurneyWidgetTheme.cameraDark.success
         : flameNumeralColor
@@ -233,9 +231,7 @@ private struct CheckInLockScreenBannerView: View {
     let dark = OurneyWidgetTheme.cameraDark
     let captureURL = OurneyDeepLinks.capture(journeyId: state.journeyId)
     let isUrgent = state.atRisk && !state.isCompletedCelebration
-    let flameColor = isUrgent
-      ? Color(.sRGB, red: 1.0, green: 0.302, blue: 0.427, opacity: 1.0)
-      : dark.flame
+    let flameColor = dark.flame
     let headerLabelColor = state.isCompletedCelebration ? dark.success : flameColor
 
     VStack(alignment: .leading, spacing: 8) {

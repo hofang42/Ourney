@@ -846,7 +846,7 @@ struct TodayPhaseStatusBadge: View {
     let textColor: Color = {
       switch phase {
       case .completed: return theme.success
-      case .urgentAtRisk: return theme.warn
+      case .urgentAtRisk: return theme.timeCue
       case .eveningCue: return theme.ink
       case .daytime: return theme.inkMuted
       }

@@ -43,7 +43,7 @@
       }
     }
   },
-  "aesthetic_flexer_activeDaysHeader": "{active}/{total} NGÀY TẬP · 🔥 {streak} CHUỖI",
+  "aesthetic_flexer_activeDaysHeader": "{active}/{total} NGÀY TẬP · CHUỖI {streak}",
   "@aesthetic_flexer_activeDaysHeader": {
     "description": "Tiêu đề khi hành trình không có chỉ số",
     "placeholders": {

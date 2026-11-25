@@ -20,7 +20,7 @@
   "@onboarding_cameraAllow": {
     "description": "Primary button of the camera permission sheet."
   },
-  "onboarding_nudgeTitle": "để mình khẽ nhắc trước khi chuỗi đứt.",
+  "onboarding_nudgeTitle": "để ourney nhắc nhẹ vào giờ bạn chọn.",
   "@onboarding_nudgeTitle": {
     "description": "Title of the notification permission sheet."
   },
@@ -53,7 +53,7 @@
   "@onboarding_quizQ2": {
     "description": "Quiz question 2."
   },
-  "onboarding_quizQ3": "bạn hay quên vào lúc nào?",
+  "onboarding_quizQ3": "bạn muốn chụp vào khung giờ nào?",
   "@onboarding_quizQ3": {
     "description": "Quiz question 3."
   },
@@ -105,7 +105,7 @@
   "@onboarding_whoCoupleHint": {
     "description": "Company hint."
   },
-  "onboarding_coupleStyleHint": "mình sẽ dùng phong cách Hai đứa mình",
+  "onboarding_coupleStyleHint": "Ourney sẽ dùng phong cách Hai đứa mình",
   "@onboarding_coupleStyleHint": {
     "description": "Shown when the couple option is chosen."
   },
@@ -179,7 +179,7 @@
   "@onboarding_permissionClose": {
     "description": "Close button of the permission sheets."
   },
-  "onboarding_nudgeBody": "Bật nhắc để mình nhắc bạn lúc {time}. Có thể trễ tuỳ máy.",
+  "onboarding_nudgeBody": "Bật nhắc để Ourney gửi lời nhắc lúc {time}. Có thể trễ tuỳ máy.",
   "@onboarding_nudgeBody": {
     "description": "Body of the notification permission sheet.",
     "placeholders": {

@@ -131,7 +131,7 @@ abstract class OnboardingL10n {
   /// Title of the notification permission sheet.
   ///
   /// In vi, this message translates to:
-  /// **'để mình khẽ nhắc trước khi chuỗi đứt.'**
+  /// **'để ourney nhắc nhẹ vào giờ bạn chọn.'**
   String get onboarding_nudgeTitle;
 
   /// Primary button of the notification sheet.
@@ -173,7 +173,7 @@ abstract class OnboardingL10n {
   /// Quiz question 3.
   ///
   /// In vi, this message translates to:
-  /// **'bạn hay quên vào lúc nào?'**
+  /// **'bạn muốn chụp vào khung giờ nào?'**
   String get onboarding_quizQ3;
 
   /// Goal option.
@@ -251,7 +251,7 @@ abstract class OnboardingL10n {
   /// Shown when the couple option is chosen.
   ///
   /// In vi, this message translates to:
-  /// **'mình sẽ dùng phong cách Hai đứa mình'**
+  /// **'Ourney sẽ dùng phong cách Hai đứa mình'**
   String get onboarding_coupleStyleHint;
 
   /// Reminder option.
@@ -347,7 +347,7 @@ abstract class OnboardingL10n {
   /// Body of the notification permission sheet.
   ///
   /// In vi, this message translates to:
-  /// **'Bật nhắc để mình nhắc bạn lúc {time}. Có thể trễ tuỳ máy.'**
+  /// **'Bật nhắc để Ourney gửi lời nhắc lúc {time}. Có thể trễ tuỳ máy.'**
   String onboarding_nudgeBody(String time);
 
   /// First quiz question: skip the quiz and go to sign-in.

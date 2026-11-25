@@ -59,7 +59,7 @@
   "empty_default_title": "Nothing here yet",
   "streak_days": "{count, plural, =1{{count} day} other{{count} days}}",
   "streak_semantics": "Streak of {count, plural, =1{{count} day} other{{count} days}}",
-  "streak_atRisk": "Streak at risk",
+  "streak_atRisk": "Still time today",
   "needsServer_title": "Server needed",
   "needsServer_message": "This build runs in on-device mode. Solo journeys work as usual; squads need a server.",
   "placeholder_comingSoon": "Coming soon",
@@ -79,7 +79,7 @@
   "@reminderBanner_daily_quiet": {
     "description": "Daily reminder banner copy, quiet skin."
   },
-  "reminderBanner_daily_squad": "Check-in time! The whole squad is waiting.",
+  "reminderBanner_daily_squad": "Time to add today's photo with your squad.",
   "@reminderBanner_daily_squad": {
     "description": "Daily reminder banner copy, squad skin."
   },
@@ -91,7 +91,7 @@
   "@reminderBanner_daily_couple": {
     "description": "Daily reminder banner copy, couple skin."
   },
-  "reminderBanner_daily_flexer": "TIME. GO TRAIN.",
+  "reminderBanner_daily_flexer": "SESSION WINDOW OPEN.",
   "@reminderBanner_daily_flexer": {
     "description": "Daily reminder banner copy, flexer skin."
   },
@@ -116,7 +116,7 @@
       }
     }
   },
-  "reminderBanner_streak_squad": "Streak {streak} breaks at {time}. Snap now!",
+  "reminderBanner_streak_squad": "Streak {streak} stays open until {time}. Add yours today.",
   "@reminderBanner_streak_squad": {
     "description": "Streak-at-risk reminder banner copy, squad skin.",
     "placeholders": {
@@ -137,7 +137,7 @@
       }
     }
   },
-  "reminderBanner_streak_couple": "Your {streak}-day streak breaks at {time}.",
+  "reminderBanner_streak_couple": "Your {streak}-day streak stays open until {time}.",
   "@reminderBanner_streak_couple": {
     "description": "Streak-at-risk reminder banner copy, couple skin.",
     "placeholders": {
@@ -161,7 +161,7 @@
       }
     }
   },
-  "reminderBanner_streak_minimal": "STREAK {streak}. {time}.",
+  "reminderBanner_streak_minimal": "STREAK {streak} · UNTIL {time}.",
   "@reminderBanner_streak_minimal": {
     "description": "Streak-at-risk reminder banner copy, minimal skin.",
     "placeholders": {
@@ -173,7 +173,7 @@
       }
     }
   },
-  "missedDay_chipSquad": "DAY {day} · MISSED",
+  "missedDay_chipSquad": "DAY {day} · PAUSE",
   "@missedDay_chipSquad": {
     "description": "Missed-day chip, squad skin.",
     "placeholders": {
@@ -191,7 +191,7 @@
       }
     }
   },
-  "missedDay_titleSquad": "missed day.",
+  "missedDay_titleSquad": "a quick breather.",
   "@missedDay_titleSquad": {
     "description": "Sheet title."
   },
@@ -199,7 +199,7 @@
   "@missedDay_titleQuiet": {
     "description": "Sheet title."
   },
-  "missedDay_bodySquad": "Just one day missed. Back on track tomorrow!",
+  "missedDay_bodySquad": "Taking a day off is okay. Jump back in whenever you're ready.",
   "@missedDay_bodySquad": {
     "description": "Sheet body."
   },

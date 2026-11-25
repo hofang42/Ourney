@@ -13,7 +13,7 @@
     <string name="widget_checked_in_short">Done</string>
     <string name="widget_pending_today">Not checked in yet</string>
     <string name="widget_evening_nudge">Time to capture today\'s moment</string>
-    <string name="widget_streak_at_risk">%1$d-day streak at risk</string>
+    <string name="widget_streak_at_risk">%1$d-day streak · still time</string>
     <string name="widget_streak_days">%1$d-day streak</string>
     <string name="widget_best_streak">Best %1$d days</string>
     <string name="widget_day_progress">Day %1$d/%2$d</string>
@@ -31,10 +31,10 @@
     <string name="widget_squad_me_done">You\'re done</string>
     <string name="widget_squad_me_pending">Your turn</string>
     <string name="widget_live_channel_name">Check-in window live updates</string>
-    <string name="widget_live_channel_desc">Evening check-in window countdown to protect your active streak.</string>
+    <string name="widget_live_channel_desc">Silent evening check-in window progress for your journeys.</string>
     <string name="widget_live_public_title">Ourney · Check-in window</string>
     <string name="widget_live_public_body">Open Ourney to complete today\'s check-in.</string>
-    <string name="widget_live_title_at_risk">Save %1$d-day streak · %2$s</string>
+    <string name="widget_live_title_at_risk">%1$d-day streak · %2$s</string>
     <string name="widget_live_title_window">Check-in window · %1$s</string>
     <string name="widget_live_body_progress">%1$d/%2$d journeys done today</string>
     <string name="widget_live_celebrate_title">All checked in for today</string>

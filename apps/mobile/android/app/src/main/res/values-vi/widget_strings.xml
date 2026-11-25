@@ -13,7 +13,7 @@
     <string name="widget_checked_in_short">Đã xong</string>
     <string name="widget_pending_today">Chưa check-in hôm nay</string>
     <string name="widget_evening_nudge">Đến giờ lưu khoảnh khắc hôm nay</string>
-    <string name="widget_streak_at_risk">Chuỗi %1$d ngày sắp hết hạn</string>
+    <string name="widget_streak_at_risk">Chuỗi %1$d ngày · vẫn kịp</string>
     <string name="widget_streak_days">Chuỗi %1$d ngày</string>
     <string name="widget_best_streak">Kỷ lục %1$d ngày</string>
     <string name="widget_day_progress">Ngày %1$d/%2$d</string>
@@ -31,10 +31,10 @@
     <string name="widget_squad_me_done">Bạn đã xong</string>
     <string name="widget_squad_me_pending">Đến lượt bạn</string>
     <string name="widget_live_channel_name">Khung giờ check-in trực tiếp</string>
-    <string name="widget_live_channel_desc">Đếm ngược khung giờ check-in buổi tối để giữ chuỗi ngày.</string>
+    <string name="widget_live_channel_desc">Hiển thị nhẹ nhàng khung giờ check-in buổi tối của bạn.</string>
     <string name="widget_live_public_title">Ourney · Khung giờ check-in</string>
     <string name="widget_live_public_body">Mở Ourney để hoàn thành check-in hôm nay.</string>
-    <string name="widget_live_title_at_risk">Giữ chuỗi %1$d ngày · %2$s</string>
+    <string name="widget_live_title_at_risk">Chuỗi %1$d ngày · %2$s</string>
     <string name="widget_live_title_window">Đến giờ check-in · %1$s</string>
     <string name="widget_live_body_progress">Đã xong %1$d/%2$d hành trình hôm nay</string>
     <string name="widget_live_celebrate_title">Đã hoàn thành tất cả hôm nay</string>

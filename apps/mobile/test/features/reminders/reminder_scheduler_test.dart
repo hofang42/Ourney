@@ -184,7 +184,7 @@ void main() {
         ..sort((a, b) => a.fireAt.compareTo(b.fireAt));
       expect(before.first.fireAt, DateTime.utc(2026, 10, 16, 13));
       final alert = before[1];
-      expect(alert.title, 'Streak sắp mất');
+      expect(alert.title, 'Vẫn kịp cho hôm nay');
       expect(alert.body, contains('1 ngày'));
       expect(alert.fireAt, DateTime.utc(2026, 10, 16, 14)); // 21:00 local
 

@@ -840,7 +840,7 @@ class _TodayWidgetPreview extends ConsumerWidget {
                         height: 1.35,
                         color: checkedInToday
                             ? ui.success
-                            : (atRisk ? ui.warn : ui.inkMuted),
+                            : (atRisk ? ui.timeCue : ui.inkMuted),
                       ),
                     ),
                   ),

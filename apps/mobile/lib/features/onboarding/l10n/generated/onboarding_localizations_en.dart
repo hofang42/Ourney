@@ -27,7 +27,7 @@ class OnboardingL10nEn extends OnboardingL10n {
 
   @override
   String get onboarding_nudgeTitle =>
-      'let us nudge you before the streak breaks.';
+      'let ourney send a gentle daily reminder.';
 
   @override
   String get onboarding_nudgeAllow => 'Allow';
@@ -50,7 +50,7 @@ class OnboardingL10nEn extends OnboardingL10n {
   String get onboarding_quizQ2 => 'on your own or with company?';
 
   @override
-  String get onboarding_quizQ3 => 'when do you usually forget?';
+  String get onboarding_quizQ3 => 'when is your best time to snap?';
 
   @override
   String get onboarding_goalWeight => 'Lose weight';
@@ -89,7 +89,8 @@ class OnboardingL10nEn extends OnboardingL10n {
   String get onboarding_whoCoupleHint => 'paired, two people only';
 
   @override
-  String get onboarding_coupleStyleHint => 'we will use the Two of us style';
+  String get onboarding_coupleStyleHint =>
+      'Ourney will use the Two of us style';
 
   @override
   String get onboarding_remMorning => 'Early morning';
@@ -142,7 +143,7 @@ class OnboardingL10nEn extends OnboardingL10n {
 
   @override
   String onboarding_nudgeBody(String time) {
-    return 'Turn on reminders and we will nudge you at $time. It may run late on some phones.';
+    return 'Turn on notifications so Ourney can remind you at $time. Timing may vary by phone.';
   }
 
   @override

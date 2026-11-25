@@ -35,6 +35,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     required this.success,
     required this.successSoft,
     required this.warn,
+    this.timeCue = const Color(0xFF8A4300),
     required this.danger,
     required this.flame,
     required this.grabber,
@@ -106,6 +107,9 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
   /// Deadline / locked text (`#B33A0A` / `#FF9A62`).
   final Color warn;
 
+  /// Calm evening / time-window cue (`#8A4300` / `#F2A93B`).
+  final Color timeCue;
+
   /// Unread dot, destructive (`#B3261E` / `#FF9C94`).
   final Color danger;
 
@@ -159,6 +163,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     success: Color(0xFF287747),
     successSoft: Color(0xFFDCFCE7),
     warn: Color(0xFFB33A0A),
+    timeCue: Color(0xFF8A4300),
     danger: Color(0xFFB3261E),
     flame: Color(0xFFD97706),
     grabber: Color(0xFFD6CCBB),
@@ -195,6 +200,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     success: Color(0xFF6FCF8E),
     successSoft: Color(0xFF1F3B2A),
     warn: Color(0xFFF2A070),
+    timeCue: Color(0xFFF2A93B),
     danger: Color(0xFFF2A097),
     flame: Color(0xFFF2A93B),
     grabber: Color(0xFF5A534A),
@@ -272,6 +278,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     success: success,
     successSoft: successSoft,
     warn: warn,
+    timeCue: timeCue,
     danger: danger,
     flame: flame,
     grabber: grabber ?? this.grabber,
@@ -312,6 +319,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
       success: l(success, other.success),
       successSoft: l(successSoft, other.successSoft),
       warn: l(warn, other.warn),
+      timeCue: l(timeCue, other.timeCue),
       danger: l(danger, other.danger),
       flame: l(flame, other.flame),
       grabber: l(grabber, other.grabber),

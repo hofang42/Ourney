@@ -149,13 +149,13 @@ abstract class RemindersL10n {
   /// Title of the switch for the 21:00 streak-about-to-break alert.
   ///
   /// In vi, this message translates to:
-  /// **'Cảnh báo streak lúc 21:00'**
+  /// **'Nhắc giữ chuỗi lúc 21:00'**
   String get reminders_streakAlertTitle;
 
   /// Subtitle of the streak alert switch.
   ///
   /// In vi, this message translates to:
-  /// **'Nếu đến 21:00 bạn vẫn chưa check-in mà đang có streak.'**
+  /// **'Nhắc nhẹ lúc 21:00 nếu bạn đang có chuỗi mà chưa chụp hôm nay.'**
   String get reminders_streakAlertSubtitle;
 
   /// Empty state title when there is no active journey.
@@ -209,7 +209,7 @@ abstract class RemindersL10n {
   /// Body of the in-context dialog shown before the OS notification prompt.
   ///
   /// In vi, this message translates to:
-  /// **'Ourney chỉ gửi những lời nhắc bạn đặt, và báo lúc 21:00 khi streak sắp mất. Không quảng cáo.'**
+  /// **'Ourney chỉ gửi giờ nhắc bạn chọn và lời nhắc nhẹ lúc 21:00 khi đang có chuỗi. Không quảng cáo.'**
   String get reminders_permissionMessage;
 
   /// Button that continues to the OS notification prompt.
@@ -239,13 +239,13 @@ abstract class RemindersL10n {
   /// Title of the 21:00 streak alert notification.
   ///
   /// In vi, this message translates to:
-  /// **'Streak sắp mất'**
+  /// **'Vẫn kịp cho hôm nay'**
   String get reminders_alertTitle;
 
   /// Body of the 21:00 streak alert notification.
   ///
   /// In vi, this message translates to:
-  /// **'{journey}: chuỗi {count} ngày sẽ mất lúc nửa đêm. Một tấm ảnh là giữ được.'**
+  /// **'{journey}: chuỗi {count} ngày còn mở đến nửa đêm. Một tấm ảnh nhỏ là đủ.'**
   String reminders_alertBody(String journey, int count);
 
   /// Android notification channel name (shown in system settings).
@@ -257,7 +257,7 @@ abstract class RemindersL10n {
   /// Android notification channel description.
   ///
   /// In vi, this message translates to:
-  /// **'Lời nhắc check-in hằng ngày và cảnh báo streak sắp mất.'**
+  /// **'Lời nhắc check-in hằng ngày và nhắc giữ chuỗi buổi tối.'**
   String get reminders_channelDescription;
 }
 

@@ -388,7 +388,7 @@ void main() {
         await goTo(tester, c, AppRoutes.widgets);
 
         expect(
-          find.text('Live Updates & status-bar countdown'),
+          find.text('Live Updates & status-bar check-in'),
           findsOneWidget,
         );
         expect(
@@ -414,7 +414,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(
-          find.text('Live Activity & check-in window countdown'),
+          find.text('Live Activity & check-in window'),
           findsOneWidget,
         );
         expect(

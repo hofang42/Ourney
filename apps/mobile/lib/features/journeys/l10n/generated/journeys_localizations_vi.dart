@@ -295,7 +295,7 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String journeys_cellMissed(int day, String date) {
-    return 'Ngày $day, $date: bỏ lỡ';
+    return 'Ngày $day, $date: chưa chụp';
   }
 
   @override
@@ -525,7 +525,7 @@ class JourneysL10nVi extends JourneysL10n {
   }
 
   @override
-  String get journeys_todayAtRisk => 'Sắp đứt chuỗi';
+  String get journeys_todayAtRisk => 'Đang có chuỗi';
 
   @override
   String get journeys_todayRest => 'Còn lại';
@@ -597,7 +597,7 @@ class JourneysL10nVi extends JourneysL10n {
   }
 
   @override
-  String get journeys_ticketTagQuiet => 'Chỉ mình mình thấy. Từng chút một.';
+  String get journeys_ticketTagQuiet => 'Chỉ mình bạn thấy. Từng chút một.';
 
   @override
   String get journeys_ticketTagSquad => 'Điểm danh mỗi ngày, cả nhóm cùng lên!';
@@ -610,10 +610,10 @@ class JourneysL10nVi extends JourneysL10n {
       'Mỗi ngày một nửa, ghép lại thành một.';
 
   @override
-  String get journeys_ticketTagFlexer => 'Ra khỏi giường. Chạy tiếp.';
+  String get journeys_ticketTagFlexer => 'Bền bỉ từng bước. Chạy tiếp.';
 
   @override
-  String get journeys_ticketTagFlexerTrain => 'Ra khỏi giường. Tập tiếp.';
+  String get journeys_ticketTagFlexerTrain => 'Bền bỉ từng buổi. Tập tiếp.';
 
   @override
   String get journeys_ticketPreview => 'Xem trước vé khởi hành';
