@@ -41,11 +41,11 @@ class RemindersL10nEn extends RemindersL10n {
   String get reminders_pickTimeHelp => 'Check-in reminder time';
 
   @override
-  String get reminders_streakAlertTitle => 'Streak alert at 21:00';
+  String get reminders_streakAlertTitle => 'Evening streak reminder at 21:00';
 
   @override
   String get reminders_streakAlertSubtitle =>
-      'When it\'s 21:00, you have a streak going and haven\'t checked in yet.';
+      'A calm reminder at 21:00 if you have a streak going and haven\'t checked in yet.';
 
   @override
   String get reminders_emptyTitle => 'No journeys yet';
@@ -76,7 +76,7 @@ class RemindersL10nEn extends RemindersL10n {
 
   @override
   String get reminders_permissionMessage =>
-      'Ourney only sends the reminders you set, plus a heads-up at 21:00 when your streak is about to break. No ads.';
+      'Ourney only sends the reminders you choose, plus a gentle 21:00 nudge for active streaks. No ads.';
 
   @override
   String get reminders_permissionContinue => 'Continue';
@@ -93,11 +93,11 @@ class RemindersL10nEn extends RemindersL10n {
   }
 
   @override
-  String get reminders_alertTitle => 'Your streak is about to break';
+  String get reminders_alertTitle => 'Still time for today';
 
   @override
   String reminders_alertBody(String journey, int count) {
-    return '$journey: your $count-day streak ends at midnight. One photo keeps it going.';
+    return '$journey: your $count-day streak is open until midnight. One photo is enough.';
   }
 
   @override
@@ -110,5 +110,5 @@ class RemindersL10nEn extends RemindersL10n {
 
   @override
   String get reminders_channelDescription =>
-      'Daily check-in reminders and streak alerts.';
+      'Daily check-in reminders and evening streak nudges.';
 }

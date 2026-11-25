@@ -96,12 +96,12 @@ object OurneyWidgetCanvas {
         val radiusPx = 12f * density
 
         val pillFill = when {
-            atRisk && !checkedInToday -> if (palette.isDark) 0xFF3B1F1F.toInt() else 0xFFFEE2E2.toInt()
+            atRisk && !checkedInToday -> if (palette.isDark) 0xFF2E2417.toInt() else 0xFFFEF3C7.toInt()
             checkedInToday -> palette.successSoft
             else -> palette.surface
         }
         val pillBorder = when {
-            atRisk && !checkedInToday -> palette.warn
+            atRisk && !checkedInToday -> if (palette.isDark) 0xFFF2A93B.toInt() else 0xFFB8650A.toInt()
             else -> palette.outline
         }
 
@@ -140,7 +140,7 @@ object OurneyWidgetCanvas {
             typeface = getDisplayTypeface(context)
             isFakeBoldText = true
             textSize = (if (compact) 20f else 24f) * density
-            color = if (atRisk && !checkedInToday) palette.warn else palette.ink
+            color = if (atRisk && !checkedInToday) palette.timeCue else palette.ink
             textAlign = Paint.Align.LEFT
         }
         val numStr = streakCount.toString()

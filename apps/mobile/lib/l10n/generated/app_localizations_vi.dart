@@ -120,7 +120,7 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get streak_atRisk => 'Sắp mất chuỗi';
+  String get streak_atRisk => 'Còn kịp hôm nay';
 
   @override
   String get needsServer_title => 'Cần kết nối máy chủ';
@@ -147,7 +147,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get reminderBanner_daily_squad =>
-      'Tới giờ điểm danh! Cả nhóm đang chờ.';
+      'Đến giờ góp một tấm cùng cả nhóm nhé.';
 
   @override
   String get reminderBanner_daily_memory =>
@@ -157,7 +157,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get reminderBanner_daily_couple => 'Hai đứa ơi, đến giờ rồi.';
 
   @override
-  String get reminderBanner_daily_flexer => 'ĐẾN GIỜ. TẬP ĐI.';
+  String get reminderBanner_daily_flexer => 'KHUNG GIỜ TẬP ĐÃ MỞ.';
 
   @override
   String reminderBanner_daily_minimal(int day) {
@@ -171,7 +171,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String reminderBanner_streak_squad(int streak, String time) {
-    return 'Chuỗi $streak sắp đứt lúc $time. Chụp ngay nào!';
+    return 'Chuỗi $streak ngày mở đến $time. Cùng giữ nhịp nhé.';
   }
 
   @override
@@ -181,7 +181,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String reminderBanner_streak_couple(int streak, String time) {
-    return 'Chuỗi $streak ngày sắp đứt lúc $time.';
+    return 'Chuỗi $streak ngày còn mở đến $time.';
   }
 
   @override
@@ -191,12 +191,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String reminderBanner_streak_minimal(int streak, String time) {
-    return 'CHUỖI $streak. $time.';
+    return 'CHUỖI $streak · ĐẾN $time.';
   }
 
   @override
   String missedDay_chipSquad(int day) {
-    return 'NGÀY $day · LỠ';
+    return 'NGÀY $day · TẠM NGHỈ';
   }
 
   @override
@@ -205,13 +205,14 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get missedDay_titleSquad => 'ngày lỡ.';
+  String get missedDay_titleSquad => 'nghỉ một nhịp.';
 
   @override
   String get missedDay_titleQuiet => 'ngày nghỉ.';
 
   @override
-  String get missedDay_bodySquad => 'Lỡ một hôm thôi. Mai về lại đường nào!';
+  String get missedDay_bodySquad =>
+      'Nghỉ một hôm không sao cả. Sẵn sàng thì đi tiếp cùng nhóm!';
 
   @override
   String get missedDay_bodyQuiet => 'Một ngày nghỉ không xóa hành trình.';

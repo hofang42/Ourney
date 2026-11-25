@@ -5,7 +5,7 @@
   "aesthetic_flexer_streakLabel": "{streak}-day streak",
   "aesthetic_flexer_checkInsLabel": "{count, plural, =1{1 check-in} other{{count} check-ins}}",
   "aesthetic_flexer_telemetryHeader": "{total} TOTAL · {latest} LATEST",
-  "aesthetic_flexer_activeDaysHeader": "{active}/{total} DAYS ACTIVE · 🔥 {streak} STREAK",
+  "aesthetic_flexer_activeDaysHeader": "{active}/{total} DAYS ACTIVE · {streak} STREAK",
   "aesthetic_flexer_milestoneStart": "DAY 01 · START",
   "aesthetic_flexer_milestoneStar": "DAY {day} ★ MILESTONE",
   "aesthetic_flexer_milestoneToday": "DAY {day} · TODAY",

@@ -186,7 +186,7 @@
       }
     }
   },
-  "groups_wallWaiting": "{name} · WAITING",
+  "groups_wallWaiting": "{name} · NOT YET",
   "@groups_wallWaiting": {
     "placeholders": {
       "name": {

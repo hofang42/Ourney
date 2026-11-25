@@ -249,7 +249,7 @@ class StreakGlanceWidget : GlanceAppWidget() {
                 Text(
                     text = statusLabel,
                     style = TextStyle(
-                        color = if (urgent) palette.warnProvider else palette.inkMutedProvider,
+                        color = if (urgent) palette.timeCueProvider else palette.inkMutedProvider,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                     ),

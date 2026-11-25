@@ -102,13 +102,13 @@ void main() {
         b: Brightness.dark,
       ),
     );
-    expect(find.text('NGÀY 9 · LỠ'), findsOneWidget);
+    expect(find.text('NGÀY 9 · TẠM NGHỈ'), findsOneWidget);
     await t.tap(find.byKey(const ValueKey('missed-day-chip')));
     await t.pumpAndSettle();
-    expect(find.text('ngày lỡ.'), findsOneWidget);
+    expect(find.text('nghỉ một nhịp.'), findsOneWidget);
     await t.tap(find.byKey(const ValueKey('missed-day-dismiss')));
     await t.pumpAndSettle();
-    expect(find.text('ngày lỡ.'), findsNothing);
+    expect(find.text('nghỉ một nhịp.'), findsNothing);
   });
 
   testWidgets('unknown route shows not-found screen with way home (DE-14)', (

@@ -845,7 +845,7 @@ abstract class GroupsL10n {
   /// No description provided for @groups_wallWaiting.
   ///
   /// In vi, this message translates to:
-  /// **'{name} · ĐANG CHỜ'**
+  /// **'{name} · CHƯA CHỤP'**
   String groups_wallWaiting(String name);
 
   /// No description provided for @groups_quietTitle.

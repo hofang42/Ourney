@@ -424,7 +424,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
                     text = statusText,
                     style = TextStyle(
                         color = when {
-                            urgent -> palette.warnProvider
+                            urgent -> palette.timeCueProvider
                             journey.checkedInToday -> palette.successProvider
                             else -> palette.inkMutedProvider
                         },
@@ -572,7 +572,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
                         text = statusText,
                         style = TextStyle(
                             color = when {
-                                urgent -> palette.warnProvider
+                                urgent -> palette.timeCueProvider
                                 journey.checkedInToday -> palette.successProvider
                                 else -> palette.inkMutedProvider
                             },

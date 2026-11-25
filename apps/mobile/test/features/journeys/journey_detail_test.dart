@@ -125,7 +125,7 @@ void main() {
       expect(_key('journey-today-ring'), findsOneWidget);
       expect(find.bySemanticsLabel(RegExp(r': checked in$')), findsNWidgets(5));
       expect(
-        find.bySemanticsLabel(RegExp(r'^Day 3, .*: missed$')),
+        find.bySemanticsLabel(RegExp(r'^Day 3, .*: no photo$')),
         findsOneWidget,
       );
       expect(

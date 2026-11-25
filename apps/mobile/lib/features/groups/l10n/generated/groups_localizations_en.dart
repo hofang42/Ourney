@@ -459,7 +459,7 @@ class GroupsL10nEn extends GroupsL10n {
 
   @override
   String groups_wallWaiting(String name) {
-    return '$name · WAITING';
+    return '$name · NOT YET';
   }
 
   @override

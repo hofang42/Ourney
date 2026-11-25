@@ -26,7 +26,7 @@ class OnboardingL10nVi extends OnboardingL10n {
   String get onboarding_cameraAllow => 'Cho phép';
 
   @override
-  String get onboarding_nudgeTitle => 'để mình khẽ nhắc trước khi chuỗi đứt.';
+  String get onboarding_nudgeTitle => 'để ourney nhắc nhẹ vào giờ bạn chọn.';
 
   @override
   String get onboarding_nudgeAllow => 'Cho phép';
@@ -49,7 +49,7 @@ class OnboardingL10nVi extends OnboardingL10n {
   String get onboarding_quizQ2 => 'đi một mình hay cùng nhóm?';
 
   @override
-  String get onboarding_quizQ3 => 'bạn hay quên vào lúc nào?';
+  String get onboarding_quizQ3 => 'bạn muốn chụp vào khung giờ nào?';
 
   @override
   String get onboarding_goalWeight => 'Giảm cân';
@@ -89,7 +89,7 @@ class OnboardingL10nVi extends OnboardingL10n {
 
   @override
   String get onboarding_coupleStyleHint =>
-      'mình sẽ dùng phong cách Hai đứa mình';
+      'Ourney sẽ dùng phong cách Hai đứa mình';
 
   @override
   String get onboarding_remMorning => 'Sáng sớm';
@@ -142,7 +142,7 @@ class OnboardingL10nVi extends OnboardingL10n {
 
   @override
   String onboarding_nudgeBody(String time) {
-    return 'Bật nhắc để mình nhắc bạn lúc $time. Có thể trễ tuỳ máy.';
+    return 'Bật nhắc để Ourney gửi lời nhắc lúc $time. Có thể trễ tuỳ máy.';
   }
 
   @override
