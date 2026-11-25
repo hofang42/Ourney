@@ -294,13 +294,15 @@ String? activePublicToken(Journey journey) {
 /// caption. A different title-bearing address needs a fresh copy action.
 Future<String?> publicAddressForCaption(
   Journey journey,
-  SharingRepository Function() sharing, {
+  SharingRepository? Function() sharing, {
   required bool Function() hideTitle,
 }) async {
   final token = activePublicToken(journey);
   if (token == null) return null;
   try {
-    final state = await sharing().watchShareState(journey.id).first;
+    final repo = sharing();
+    if (repo == null) return isTitledPublicSlug(token) ? null : token;
+    final state = await repo.watchShareState(journey.id).first;
     return state.publicAddress(
       hideTitle: hideTitle() || state.publicToken != token,
     );

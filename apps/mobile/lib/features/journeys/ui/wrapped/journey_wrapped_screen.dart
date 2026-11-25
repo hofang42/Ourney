@@ -8,7 +8,8 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../../app/app_routes.dart';
-import '../../../../app/providers.dart' show sharingRepositoryProvider;
+import '../../../../app/providers.dart'
+    show appConfigProvider, sharingRepositoryProvider;
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../personas/persona_contract.dart';
 import '../../../../ui/ui.dart';
@@ -666,7 +667,9 @@ class _SummaryState extends ConsumerState<_Summary> {
         if (!context.mounted) return;
         final address = await publicAddressForCaption(
           journey,
-          () => ref.read(sharingRepositoryProvider),
+          () => ref.read(appConfigProvider).hasBackend
+              ? ref.read(sharingRepositoryProvider)
+              : null,
           hideTitle: () =>
               !context.mounted ||
               shareMetricHidden(

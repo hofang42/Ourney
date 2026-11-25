@@ -683,7 +683,9 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       if (!mounted) return;
       final token = await publicAddressForCaption(
         journey,
-        () => ref.read(sharingRepositoryProvider),
+        () => ref.read(appConfigProvider).hasBackend
+            ? ref.read(sharingRepositoryProvider)
+            : null,
         hideTitle: () =>
             !mounted ||
             shareMetricHidden(
