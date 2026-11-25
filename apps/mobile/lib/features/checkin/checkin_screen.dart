@@ -15,14 +15,13 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
 import '../camera/capture_services.dart' show galleryPickerProvider;
-import '../groups/data/groups_providers.dart' show groupTodayProvider;
 import '../journeys/data/journeys_providers.dart'
     show journeyStartingWeightPrefKey;
 import '../reminders/data/reminder_scheduler.dart';
 import '../reminders/ui/reminder_permission_prompt.dart';
-import '../sharing/data/sharing_providers.dart' show shareStateProvider;
 import '../widgets/data/widget_sync_controller.dart' show syncWidgetsNow;
 import 'captured_photo.dart';
+import 'checkin_audience.dart';
 import 'checkin_controller.dart';
 import 'checkin_progress.dart';
 import 'checkin_success.dart';
@@ -515,31 +514,20 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
         : journey.metricUnit == null
         ? metricName
         : '$metricName (${journey.metricUnit})';
-    final shareState = ref.watch(appConfigProvider).localOnly
-        ? null
-        : ref.watch(shareStateProvider(journey.id)).value;
-    final isSharedSolo =
-        journey.visibility == JourneyVisibility.link ||
-        (journey.publicToken != null &&
-            journey.publicToken!.trim().isNotEmpty) ||
-        (shareState?.linkOn ?? false) ||
-        (shareState?.viewers.isNotEmpty ?? false);
-    final groupMembers =
-        (!ref.watch(appConfigProvider).localOnly &&
-            journey.kind == JourneyKind.group)
-        ? ref.watch(groupTodayProvider(journey.id)).value
-        : null;
-    final isAloneInGroup =
-        journey.kind == JourneyKind.group &&
-        groupMembers != null &&
-        groupMembers.length <= 1;
-    final privacy = (journey.kind == JourneyKind.solo || isAloneInGroup)
-        ? isSharedSolo
-              ? (UiPrivacy.link, l10n.checkin_privacyShared)
-              : (UiPrivacy.private, l10n.checkin_privacyPrivate)
-        : isCoupleJourney(journey)
-        ? (UiPrivacy.couple, l10n.checkin_privacyCouple)
-        : (UiPrivacy.squad, l10n.checkin_privacySquad);
+    final privacy = switch (watchCheckinAudience(ref, journey)) {
+      CheckinAudience.unknown => null,
+      CheckinAudience.private => (
+        UiPrivacy.private,
+        l10n.checkin_privacyPrivate,
+      ),
+      CheckinAudience.shared => (UiPrivacy.link, l10n.checkin_privacyShared),
+      CheckinAudience.couple => (UiPrivacy.couple, l10n.checkin_privacyCouple),
+      CheckinAudience.squad => (UiPrivacy.squad, l10n.checkin_privacySquad),
+      CheckinAudience.futureMembers => (
+        isCoupleJourney(journey) ? UiPrivacy.couple : UiPrivacy.squad,
+        l10n.checkin_privacyFutureMembers,
+      ),
+    };
     // Per-skin copy of the Figma Post screens (primary label, caption label).
     final skin = personaSkinOf(journey);
     final sport = journey.dna?['sport'] as String?;
@@ -626,7 +614,20 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
                         ),
                       ),
                       const SizedBox(height: 2),
-                      UiPrivacyTag(type: privacy.$1, label: privacy.$2),
+                      if (privacy == null)
+                        Text(
+                          l10n.checkin_privacyPending,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: UiText.body(
+                            size: 11,
+                            height: 1.4,
+                            weight: FontWeight.w500,
+                            color: ui.inkMuted,
+                          ),
+                        )
+                      else
+                        UiPrivacyTag(type: privacy.$1, label: privacy.$2),
                     ],
                   ),
                 ),

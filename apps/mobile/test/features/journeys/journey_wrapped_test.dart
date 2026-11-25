@@ -11,9 +11,11 @@ import 'package:ourney/features/share_card/data/share_card_exporter.dart';
 import 'package:ourney/features/share_card/data/share_card_providers.dart';
 import 'package:ourney/features/share_card/domain/share_card_content.dart';
 import 'package:ourney/features/social/data/social_providers.dart';
+import 'package:ourney/ui/ui.dart' show UiButton;
 import 'package:ourney_core/ourney_core.dart';
 
-import '../share_card/share_card_fakes.dart' show FakeExporter, FakeSaver, FakeSharer;
+import '../share_card/share_card_fakes.dart'
+    show FakeExporter, FakeSaver, FakeSharer;
 import 'journeys_fakes.dart';
 
 Finder _key(String k) => find.byKey(ValueKey(k));
@@ -257,7 +259,7 @@ void main() {
         expect(defaultSharePositionOrigin().isEmpty, isFalse);
         final exporter = FakeExporter();
         final sharer = FakeSharer();
-        final saver = FakeSaver();
+        final saver = _GatedSaver();
         final token = 'pub${'0' * 37}';
         final base = testJourney(
           status: JourneyStatus.ended,
@@ -333,6 +335,17 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(_key('wrapped-share-save'));
         await tester.pumpAndSettle();
+        expect(saver.saved, isEmpty);
+        expect(
+          tester.widget<UiButton>(_key('wrapped-share')).onPressed,
+          isNull,
+        );
+        saver.gate.complete();
+        await tester.pumpAndSettle();
+        expect(
+          tester.widget<UiButton>(_key('wrapped-share')).onPressed,
+          isNotNull,
+        );
         expect(saver.saved, hasLength(1));
         expect(find.text('Card saved.'), findsOneWidget);
 
@@ -502,4 +515,17 @@ void main() {
       },
     );
   });
+}
+
+class _GatedSaver extends FakeSaver {
+  final gate = Completer<void>();
+
+  @override
+  Future<String> saveImage({
+    required String path,
+    required String mimeType,
+  }) async {
+    await gate.future;
+    return super.saveImage(path: path, mimeType: mimeType);
+  }
 }

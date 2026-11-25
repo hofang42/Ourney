@@ -394,8 +394,9 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     // Read before any await: the screen may be gone when the work finishes.
     final progress = ref.read(createProgressProvider.notifier);
     final activeJourney = ref.read(activeJourneyIdProvider.notifier);
+    final container = ProviderScope.containerOf(context, listen: false);
     final title = _finalTitle(form);
-    var extrasRejected = false;
+    var settingsNotSaved = false;
     setState(() => _busy = true);
     try {
       final journey = await repo.create(
@@ -423,36 +424,47 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           color: _variant,
           layout: _isCouple ? PersonaSkinId.coupleRituals : null,
         ),
-        onExtrasRejected: () => extrasRejected = true,
+        onExtrasRejected: () => settingsNotSaved = true,
       );
       // The journey exists: the saved draft must not resurrect it (U8).
       unawaited(progress.clear());
-      final prefs = ref.read(sharedPreferencesProvider);
-      if (!_weightSkipped && _dna['weight'] is num) {
-        await prefs.setDouble(
-          journeyStartingWeightPrefKey(journey.id),
-          (_dna['weight'] as num).toDouble(),
-        );
-      }
-      if (_dna['ghostRequested'] is bool) {
-        await prefs.setBool(
-          journeyGhostGuidePrefKey(journey.id),
-          _dna['ghostRequested']! as bool,
-        );
-      }
       final invite = _inviteHandle?.trim();
       if (invite != null &&
           invite.isNotEmpty &&
           journey.kind == JourneyKind.group) {
         try {
-          await ref
+          await container
               .read(groupInviteRepositoryProvider)
               .send(journey.id, handle: invite);
         } on Object {
           // Non-fatal: the journey exists; the owner can still invite from the journey screen.
         }
       }
-      if (mounted && extrasRejected) {
+      final weight = _dna['weight'];
+      if (!_weightSkipped && weight is num) {
+        try {
+          await container
+              .read(sharedPreferencesProvider)
+              .setDouble(
+                journeyStartingWeightPrefKey(journey.id),
+                weight.toDouble(),
+              );
+        } on Object {
+          settingsNotSaved = true;
+        }
+      }
+      final ghost = _dna['ghostRequested'];
+      if (ghost is bool) {
+        try {
+          await container
+              .read(sharedPreferencesProvider)
+              .setBool(journeyGhostGuidePrefKey(journey.id), ghost);
+        } on Object {
+          settingsNotSaved = true;
+        }
+      }
+      if (!mounted) return;
+      if (settingsNotSaved) {
         showJourneySnack(
           context,
           JourneysL10n.of(context).journeys_createSettingsNotSaved,

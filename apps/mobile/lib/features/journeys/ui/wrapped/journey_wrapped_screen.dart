@@ -584,6 +584,7 @@ class _Summary extends ConsumerStatefulWidget {
 class _SummaryState extends ConsumerState<_Summary> {
   final _boundaryKey = GlobalKey();
   final _shareButtonKey = GlobalKey();
+  bool _exporting = false;
 
   Journey get journey => widget.journey;
   PersonaSkinId get skin => widget.skin;
@@ -875,7 +876,9 @@ class _SummaryState extends ConsumerState<_Summary> {
               key: const ValueKey('wrapped-share'),
               label: l10n.journeys_wrapped_share,
               glyph: const OurneyIcon(name: 'share', size: 18, flat: true),
-              onPressed: () => _shareSheet(context, shareNow, saveCard),
+              onPressed: _exporting
+                  ? null
+                  : () => _shareSheet(context, shareNow, saveCard),
             ),
           ),
           const SizedBox(height: UiSpace.sm),
@@ -905,14 +908,24 @@ class _SummaryState extends ConsumerState<_Summary> {
         onHideBrand: onHideBrand,
         onShare: (hide) {
           Navigator.of(ctx).pop();
-          unawaited(onShare(hide));
+          unawaited(_runExport(() => onShare(hide)));
         },
         onSave: (hide) {
           Navigator.of(ctx).pop();
-          unawaited(onSave(hide));
+          unawaited(_runExport(() => onSave(hide)));
         },
       ),
     );
+  }
+
+  Future<void> _runExport(Future<void> Function() export) async {
+    if (!mounted || _exporting) return;
+    setState(() => _exporting = true);
+    try {
+      await export();
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
   }
 }
 

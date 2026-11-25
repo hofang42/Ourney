@@ -11,25 +11,12 @@ import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../l10n/generated/app_localizations.dart';
-import '../../personas/persona_contract.dart' show defaultSkinOf, personaSkinOf;
+import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
-import '../groups/data/groups_providers.dart' show groupTodayProvider;
 import '../groups/ui/group_photo.dart';
-import '../sharing/data/sharing_providers.dart' show shareStateProvider;
+import 'checkin_audience.dart';
 import 'checkin_progress.dart';
 import 'l10n/generated/checkin_localizations.dart';
-
-/// True when [journey] is a 2-person couple group journey rather than a
-/// multi-member squad (even if a multi-member squad picks the Couple layout
-/// override in `JourneyEditScreen`).
-bool isCoupleJourney(Journey journey) {
-  if (journey.kind != JourneyKind.group) return false;
-  if (journey.maxMembers > 2) return false;
-  return journey.maxMembers == 2 ||
-      journey.coupleSelfName != null ||
-      journey.couplePartnerName != null ||
-      defaultSkinOf(journey) == PersonaSkinId.coupleRituals;
-}
 
 /// Success state after posting (FR-C8, App.tsx `Posted`): per-skin V2
 /// celebration hero (Rank #1 Phase 2a), rolling streak counter + flame
@@ -45,8 +32,6 @@ class CheckinSuccessView extends ConsumerStatefulWidget {
     required this.onShare,
     this.holdAutoClose,
     this.journey,
-    this.activeMemberCount,
-    this.hasSharedViewers,
     super.key,
   });
 
@@ -55,12 +40,6 @@ class CheckinSuccessView extends ConsumerStatefulWidget {
   final bool haptics;
   final VoidCallback onDone;
   final VoidCallback onShare;
-
-  /// Optional override for active member count in a group/couple journey.
-  final int? activeMemberCount;
-
-  /// Optional override for whether a solo journey is shared with friends.
-  final bool? hasSharedViewers;
 
   /// The plain success state closes [autoCloseDelay] after this completes
   /// (B-B2): the notification offer opened on top of this screen must not
@@ -356,41 +335,14 @@ class _CheckinSuccessViewState extends ConsumerState<CheckinSuccessView>
     final milestone = outcome.milestone;
     // Figma Done screens: a per-skin hero, the streak, one calm line.
     final headline = _headline(l10n, skin, day ?? 1, outcome.streakAfter);
-    final j = journey;
-    final shareState = j == null
-        ? null
-        : ref.watch(shareStateProvider(j.id)).value;
-    final groupMembers = (j != null && j.kind == JourneyKind.group)
-        ? ref.watch(groupTodayProvider(j.id)).value
-        : null;
-    final memberCount = widget.activeMemberCount ?? groupMembers?.length;
-    final hasFriendViewers =
-        widget.hasSharedViewers ?? (shareState?.viewers.isNotEmpty ?? false);
-    final isSharedLink =
-        j != null &&
-        (j.visibility == JourneyVisibility.link ||
-            (j.publicToken != null && j.publicToken!.trim().isNotEmpty) ||
-            (shareState?.linkOn ?? false));
-    final isAloneInGroup =
-        j != null &&
-        j.kind == JourneyKind.group &&
-        memberCount != null &&
-        memberCount <= 1;
-    final isCoupleAudience = j != null
-        ? (!isAloneInGroup && isCoupleJourney(j))
-        : skin == 'couple';
-    final isSquadAudience =
-        j != null &&
-        j.kind == JourneyKind.group &&
-        !isAloneInGroup &&
-        !isCoupleAudience;
-    final audienceMessage = isCoupleAudience
-        ? l10n.checkin_done_coupleSent
-        : isSquadAudience
-        ? l10n.checkin_done_sharedSquad
-        : (isSharedLink || hasFriendViewers)
-        ? l10n.checkin_done_sharedLink
-        : l10n.checkin_done_savedPrivate;
+    final audienceMessage = switch (watchCheckinAudience(ref, journey)) {
+      CheckinAudience.unknown => l10n.checkin_done_saved,
+      CheckinAudience.private => l10n.checkin_done_savedPrivate,
+      CheckinAudience.shared => l10n.checkin_done_sharedLink,
+      CheckinAudience.couple => l10n.checkin_done_coupleSent,
+      CheckinAudience.squad => l10n.checkin_done_sharedSquad,
+      CheckinAudience.futureMembers => l10n.checkin_done_futureMembers,
+    };
     final message = outcome.extraPhoto
         ? l10n.checkin_photoAdded(outcome.photoOfDay)
         : milestoneTitle != null

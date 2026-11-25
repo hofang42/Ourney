@@ -4,12 +4,15 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/checkin/checkin_progress.dart';
 import 'package:ourney/features/checkin/checkin_success.dart';
 import 'package:ourney/ui/ui.dart' show UiPolaroid, UiStamp;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
+import '../groups/groups_fakes.dart' show FakeGroupRepository, memberToday;
+import '../sharing/sharing_fakes.dart' show FakeSharingRepository, person;
 import 'fakes.dart';
 
 void main() {
@@ -199,6 +202,25 @@ void main() {
     }) async {
       await tester.pumpWidget(
         ProviderScope(
+          key: UniqueKey(),
+          overrides: [
+            appConfigProvider.overrideWithValue(testBackendConfig),
+            sharingRepositoryProvider.overrideWithValue(
+              FakeSharingRepository(
+                viewers: hasSharedViewers == true ? [person('friend')] : [],
+              ),
+            ),
+            groupRepositoryProvider.overrideWithValue(
+              FakeGroupRepository(
+                today: {
+                  j.id: [
+                    for (var i = 0; i < (activeMemberCount ?? 0); i++)
+                      memberToday('u$i', 'Member $i'),
+                  ],
+                },
+              ),
+            ),
+          ],
           child: testApp(
             CheckinSuccessView(
               outcome: CheckInOutcome(
@@ -207,8 +229,6 @@ void main() {
                 streakAfter: streakAfter,
               ),
               journey: j,
-              activeMemberCount: activeMemberCount,
-              hasSharedViewers: hasSharedViewers,
               haptics: false,
               onDone: () {},
               onShare: () {},
@@ -238,7 +258,10 @@ void main() {
       ),
       activeMemberCount: 1,
     );
-    expect(find.text('Đã lưu. Chỉ mình bạn thấy.'), findsOneWidget);
+    expect(
+      find.text('Đã lưu. Người tham gia sau có thể xem ảnh này.'),
+      findsOneWidget,
+    );
     await tester.pump(CheckinSuccessView.autoCloseDelay);
 
     // Multi-member squad using Couple visual layout override (UX-03).
@@ -262,12 +285,9 @@ void main() {
     await tester.pump(CheckinSuccessView.autoCloseDelay);
 
     await pumpAudience(
-      testJourney(
-        kind: JourneyKind.group,
-        visibility: JourneyVisibility.group,
-      ),
+      testJourney(kind: JourneyKind.group, visibility: JourneyVisibility.group),
     );
-    expect(find.text('Đã chia sẻ với cả nhóm.'), findsOneWidget);
+    expect(find.text('Đã lưu vào hành trình của bạn.'), findsOneWidget);
     await tester.pump(CheckinSuccessView.autoCloseDelay);
 
     await pumpAudience(

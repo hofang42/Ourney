@@ -20,6 +20,8 @@ import 'package:ourney/features/reminders/data/notification_gateway.dart';
 import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
+import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+import 'package:shared_preferences_platform_interface/types.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -875,6 +877,46 @@ void _dnaGroup() {
     );
 
     testWidgets(
+      'UX-14: failed weight preference preserves invitation and creation',
+      (tester) async {
+        final invites = FakeGroupInviteRepository();
+        late _FailingWeightPreferences platform;
+        final h = await pumpJourneys(
+          tester,
+          location: '${AppRoutes.journeyNew}?who=group&invite=nam',
+          locale: const Locale('en'),
+          config: testBackendConfig,
+          userId: 'u1',
+          prefsPlatform: (values) =>
+              platform = _FailingWeightPreferences(values),
+          extraOverrides: [
+            groupInviteRepositoryProvider.overrideWithValue(invites),
+          ],
+        );
+        await _tap(tester, 'template-weight_loss');
+        await _tap(tester, 'dna-choice-goal-lose');
+        await _tap(tester, 'create-next');
+        await _tap(tester, 'create-next');
+        await _tap(tester, 'dna-ghost-later');
+        await finish(tester);
+
+        final journeyId = h.journeys.journeys.last.id;
+        expect(h.journeys.created.single.kind, JourneyKind.group);
+        expect(invites.calls, ['send:$journeyId']);
+        expect(platform.failedKeys, [journeyStartingWeightPrefKey(journeyId)]);
+        expect(
+          await platform.getBool(
+            journeyGhostGuidePrefKey(journeyId),
+            const SharedPreferencesOptions(),
+          ),
+          isFalse,
+        );
+        expect(h.location, AppRoutes.journey(journeyId));
+        expect(find.text("Some settings couldn't be saved"), findsOneWidget);
+      },
+    );
+
+    testWidgets(
       'weight loss: 0.1 kg precision and ghost guide preference are persisted on device (UX-02)',
       (tester) async {
         final h = await _open(tester);
@@ -934,4 +976,20 @@ void _dnaGroup() {
       },
     );
   });
+}
+
+final class _FailingWeightPreferences extends InMemorySharedPreferencesAsync {
+  _FailingWeightPreferences(super.data) : super.withData();
+
+  final failedKeys = <String>[];
+
+  @override
+  Future<bool> setDouble(
+    String key,
+    double value,
+    SharedPreferencesOptions options,
+  ) async {
+    failedKeys.add(key);
+    throw StateError('Preference storage unavailable');
+  }
 }

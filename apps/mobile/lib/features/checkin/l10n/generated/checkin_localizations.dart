@@ -272,11 +272,23 @@ abstract class CheckinL10n {
   /// **'Tạo thiệp'**
   String get checkin_shareSkinQuiet;
 
+  /// No description provided for @checkin_done_saved.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lưu vào hành trình của bạn.'**
+  String get checkin_done_saved;
+
   /// No description provided for @checkin_done_savedPrivate.
   ///
   /// In vi, this message translates to:
   /// **'Đã lưu. Chỉ mình bạn thấy.'**
   String get checkin_done_savedPrivate;
+
+  /// No description provided for @checkin_done_futureMembers.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lưu. Người tham gia sau có thể xem ảnh này.'**
+  String get checkin_done_futureMembers;
 
   /// No description provided for @checkin_done_sharedSquad.
   ///
@@ -409,6 +421,18 @@ abstract class CheckinL10n {
   /// In vi, this message translates to:
   /// **'Chỉ mình bạn'**
   String get checkin_privacyPrivate;
+
+  /// No description provided for @checkin_privacyPending.
+  ///
+  /// In vi, this message translates to:
+  /// **'Trong hành trình này'**
+  String get checkin_privacyPending;
+
+  /// No description provided for @checkin_privacyFutureMembers.
+  ///
+  /// In vi, this message translates to:
+  /// **'Người tham gia sau có thể xem'**
+  String get checkin_privacyFutureMembers;
 
   /// Privacy tag under the journey name on the compose screen: solo journey shared via public link or with friends.
   ///

@@ -95,7 +95,10 @@ class MainActivity : FlutterActivity() {
                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
             ) == PackageManager.PERMISSION_GRANTED
             if (!granted) {
-                pendingStoragePermissionCallback?.invoke(false)
+                if (pendingStoragePermissionCallback != null) {
+                    result.error("SAVE_FAILED", "A storage permission request is already open", null)
+                    return
+                }
                 pendingStoragePermissionCallback = { allowed ->
                     if (allowed) {
                         saveFileToMediaStore(sourceFile, fileName, mimeType, result)
@@ -192,7 +195,9 @@ class MainActivity : FlutterActivity() {
                         val publishValues = ContentValues().apply {
                             put(MediaStore.Images.Media.IS_PENDING, 0)
                         }
-                        resolver.update(uri, publishValues, null, null)
+                        check(resolver.update(uri, publishValues, null, null) == 1) {
+                            "Could not publish the MediaStore image"
+                        }
                     }
                     val savedUri = uri.toString()
                     runOnUiThread {

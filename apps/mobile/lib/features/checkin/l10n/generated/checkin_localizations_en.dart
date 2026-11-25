@@ -106,7 +106,14 @@ class CheckinL10nEn extends CheckinL10n {
   String get checkin_shareSkinQuiet => 'Make a card';
 
   @override
+  String get checkin_done_saved => 'Saved to your journey.';
+
+  @override
   String get checkin_done_savedPrivate => 'Saved. Only you can see it.';
+
+  @override
+  String get checkin_done_futureMembers =>
+      'Saved. People who join can see this photo.';
 
   @override
   String get checkin_done_sharedSquad => 'Shared with your squad.';
@@ -193,6 +200,12 @@ class CheckinL10nEn extends CheckinL10n {
 
   @override
   String get checkin_privacyPrivate => 'Only you';
+
+  @override
+  String get checkin_privacyPending => 'For this journey';
+
+  @override
+  String get checkin_privacyFutureMembers => 'Visible to people who join';
 
   @override
   String get checkin_privacyShared => 'Shared';

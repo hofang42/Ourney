@@ -73,7 +73,9 @@
   "checkin_shareSkinFlexer": "Chia sẻ lên Story",
   "checkin_shareSkinMinimal": "Xuất thẻ",
   "checkin_shareSkinQuiet": "Tạo thiệp",
+  "checkin_done_saved": "Đã lưu vào hành trình của bạn.",
   "checkin_done_savedPrivate": "Đã lưu. Chỉ mình bạn thấy.",
+  "checkin_done_futureMembers": "Đã lưu. Người tham gia sau có thể xem ảnh này.",
   "checkin_done_sharedSquad": "Đã chia sẻ với cả nhóm.",
   "checkin_done_sharedLink": "Đã hiển thị trên hành trình chia sẻ.",
   "checkin_chooseAnother": "Chọn ảnh khác",
@@ -137,6 +139,8 @@
   "@checkin_privacyPrivate": {
     "description": "Privacy tag under the journey name on the compose screen: solo journey."
   },
+  "checkin_privacyPending": "Trong hành trình này",
+  "checkin_privacyFutureMembers": "Người tham gia sau có thể xem",
   "checkin_privacyShared": "Đã chia sẻ",
   "@checkin_privacyShared": {
     "description": "Privacy tag under the journey name on the compose screen: solo journey shared via public link or with friends."

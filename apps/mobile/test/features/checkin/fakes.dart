@@ -312,8 +312,9 @@ List<Override> baseOverrides({
   required SharedPreferencesWithCache prefs,
   JourneyRepository? journeys,
   CheckInRepository? checkIns,
+  AppConfig config = const AppConfig.localOnly(),
 }) => [
-  appConfigProvider.overrideWithValue(const AppConfig.localOnly()),
+  appConfigProvider.overrideWithValue(config),
   sharedPreferencesProvider.overrideWithValue(prefs),
   supabaseClientProvider.overrideWithValue(null),
   draftFilesProvider.overrideWithValue(FakeDraftFiles()),

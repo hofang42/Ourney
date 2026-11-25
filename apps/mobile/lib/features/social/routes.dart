@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_routes.dart';
@@ -57,12 +58,16 @@ final List<RouteBase> socialRoutes = [
   GoRoute(
     path: '/f/:token',
     parentNavigatorKey: rootNavigatorKey,
-    pageBuilder: (context, state) => buildUiPage<void>(
-      context: context,
-      state: state,
-      kind: UiPageTransition.verticalSheet,
-      child: InviteAcceptScreen(token: state.pathParameters['token']!),
-    ),
+    pageBuilder: (context, state) {
+      final token = state.pathParameters['token']!;
+      return buildUiPage<void>(
+        context: context,
+        state: state,
+        pageKey: ValueKey('${state.pageKey.value}:$token'),
+        kind: UiPageTransition.verticalSheet,
+        child: InviteAcceptScreen(token: token),
+      );
+    },
   ),
 ];
 

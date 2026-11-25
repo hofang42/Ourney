@@ -114,22 +114,48 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
 
   void _snack(String message) => showSharingSnack(context, message);
 
-  Future<void> _share(List<String> ids) async {
-    final l10n = SharingL10n.of(context);
-    setState(() => _sharing = true);
+  Future<void> _share(List<String> ids) {
+    return _shareWithFriends(
+      ref.read(sharingRepositoryProvider),
+      _journey.id,
+      ids,
+      context,
+      ScaffoldMessenger.maybeOf(context),
+    );
+  }
+
+  Future<void> _shareWithFriends(
+    SharingRepository repo,
+    String journeyId,
+    List<String> ids,
+    BuildContext feedbackContext,
+    ScaffoldMessengerState? messenger,
+  ) async {
+    if (mounted) setState(() => _sharing = true);
     try {
-      await ref
-          .read(sharingRepositoryProvider)
-          .shareWithFriends(_journey.id, ids);
-      if (!mounted) return;
-      setState(() => _ticked = {..._ticked!}..removeAll(ids));
-      _snack(l10n.sharing_sharedSnack(ids.length));
+      await repo.shareWithFriends(journeyId, ids);
+      if (mounted && _ticked != null) {
+        setState(() => _ticked = {..._ticked!}..removeAll(ids));
+      }
+      if (feedbackContext.mounted && messenger?.mounted == true) {
+        showUiToast(
+          feedbackContext,
+          SharingL10n.of(feedbackContext).sharing_sharedSnack(ids.length),
+          messenger: messenger,
+        );
+      }
     } on Object catch (e) {
-      if (!mounted) return;
-      if (sharingErrorCode(e) == OurneyErrorCode.consentRequired) {
+      if (mounted && sharingErrorCode(e) == OurneyErrorCode.consentRequired) {
         setState(() => _consentNeeded = true);
       }
-      _snack(sharingFailure(context, e));
+      if (feedbackContext.mounted && messenger?.mounted == true) {
+        showUiToast(
+          feedbackContext,
+          sharingFailure(feedbackContext, e),
+          messenger: messenger,
+          isError: true,
+        );
+      }
     } finally {
       if (mounted) setState(() => _sharing = false);
     }
@@ -137,6 +163,8 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
 
   Future<void> _unshareFriend(PersonSummary friend) async {
     final l10n = SharingL10n.of(context);
+    final rootContext = Navigator.of(context, rootNavigator: true).context;
+    final messenger = ScaffoldMessenger.maybeOf(rootContext);
     final repo = ref.read(sharingRepositoryProvider);
     final journeyId = _journey.id;
     final friendId = friend.userId;
@@ -148,25 +176,33 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
     setState(() => _removing.add(friendId));
     try {
       await repo.unshare(journeyId, friendId: friendId);
-      if (!mounted) return;
+      if (!rootContext.mounted || messenger?.mounted != true) return;
       showUiToast(
-        context,
+        rootContext,
         removedToast,
         actionLabel: undoLabel,
+        messenger: messenger,
         onAction: () {
-          if (mounted) {
-            unawaited(_share([friendId]));
-          } else {
-            unawaited(
-              repo
-                  .shareWithFriends(journeyId, [friendId])
-                  .catchError((Object _) {}),
-            );
-          }
+          unawaited(
+            _shareWithFriends(
+              repo,
+              journeyId,
+              [friendId],
+              rootContext,
+              messenger,
+            ),
+          );
         },
       );
     } on Object catch (e) {
-      if (mounted) _snack(sharingFailure(context, e));
+      if (rootContext.mounted && messenger?.mounted == true) {
+        showUiToast(
+          rootContext,
+          sharingFailure(rootContext, e),
+          messenger: messenger,
+          isError: true,
+        );
+      }
     } finally {
       if (mounted) setState(() => _removing.remove(friendId));
     }
