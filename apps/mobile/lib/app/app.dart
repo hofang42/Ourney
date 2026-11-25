@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart' show JourneyStatus;
 
 import '../data/data_providers.dart' show serverPullsProvider;
+import '../features/checkin/captured_photo.dart';
 import '../features/import/data/import_providers.dart'
     show importResumeProvider;
 import '../features/journeys/data/journeys_providers.dart'
@@ -31,16 +32,80 @@ import 'providers.dart';
 import 'router.dart';
 import 'theme/app_theme.dart' show OurneyTextScaleClamp;
 
-class OurneyApp extends ConsumerWidget {
+class OurneyApp extends ConsumerStatefulWidget {
   const OurneyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<OurneyApp> createState() => _OurneyAppState();
+}
+
+class _OurneyAppState extends ConsumerState<OurneyApp> {
+  GoRouter? _mountedRouter;
+  bool _appInteractive = false;
+  String? _deferredUpdateRoute;
+
+  String? _captureDraftRoute(GoRouter router) {
+    final configuration = router.routerDelegate.currentConfiguration;
+    if (configuration.isEmpty || configuration.isError) return null;
+    // Use the top route state so pushed Post pages are seen above the camera.
+    final route = router.state;
+    return switch (route.uri.path) {
+      AppRoutes.checkin when route.extra is CapturedPhoto => AppRoutes.checkin,
+      AppRoutes.capture ||
+      AppRoutes.importJourney when _appInteractive => route.uri.path,
+      _ => null,
+    };
+  }
+
+  bool _deferUpdateGate() {
+    if (_deferredUpdateRoute != null) return true;
+    final router = _mountedRouter;
+    if (router == null) return false;
+    final route = _captureDraftRoute(router);
+    if (route == null) return false;
+    _deferredUpdateRoute = route;
+    router.routerDelegate.addListener(_onDeferredRouteChanged);
+    return true;
+  }
+
+  void _onDeferredRouteChanged() {
+    final route = _captureDraftRoute(_mountedRouter!);
+    if (route == _deferredUpdateRoute) return;
+    if (_deferredUpdateRoute == AppRoutes.capture &&
+        route == AppRoutes.checkin) {
+      _deferredUpdateRoute = route;
+      return;
+    }
+    // Returning to the camera from Post ends this flow too.
+    _stopDeferringUpdate();
+    _mountedRouter = null;
+    scheduleMicrotask(() {
+      if (mounted) setState(() {});
+    });
+  }
+
+  void _stopDeferringUpdate() {
+    if (_deferredUpdateRoute == null) return;
+    _mountedRouter?.routerDelegate.removeListener(_onDeferredRouteChanged);
+    _deferredUpdateRoute = null;
+  }
+
+  @override
+  void dispose() {
+    _stopDeferringUpdate();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     ref.watch(appUpdateLifecycleProvider);
     final workPaused = ref.watch(appUpdateWorkPausedProvider);
     final locale = ref.watch(localeOverrideProvider);
     final themeMode = ref.watch(themeModeProvider);
-    if (workPaused) {
+    if (!workPaused) _stopDeferringUpdate();
+    if (workPaused && !_deferUpdateGate()) {
+      _mountedRouter = null;
+      _appInteractive = false;
       return MaterialApp(
         onGenerateTitle: (context) => AppLocalizations.of(context).app_name,
         debugShowCheckedModeBanner: false,
@@ -56,6 +121,7 @@ class OurneyApp extends ConsumerWidget {
       );
     }
     final router = ref.watch(routerProvider);
+    _mountedRouter = router;
     // Keep the haptics toggle mirrored into OurneyHaptics.enabled.
     ref.watch(hapticsEnabledProvider);
     // Sign-out / account deletion clears the previous account's local state.
@@ -101,6 +167,7 @@ class OurneyApp extends ConsumerWidget {
                 // `reminderBannerProvider` holds a value; a tap opens the camera.
                 child: _SplashGate(
                   returning: onboarded,
+                  onInteractive: () => _appInteractive = true,
                   child: ReminderBannerHost(
                     onOpenJourneyCamera: (id) =>
                         unawaited(_openReminderJourney(ref, router, id)),
@@ -153,9 +220,14 @@ class OurneyApp extends ConsumerWidget {
 /// Returning person: wordmark and spinner for 650ms. Reduced motion keeps the
 /// first tagline and removes the rotation and fades.
 class _SplashGate extends StatefulWidget {
-  const _SplashGate({required this.returning, required this.child});
+  const _SplashGate({
+    required this.returning,
+    required this.onInteractive,
+    required this.child,
+  });
 
   final bool returning;
+  final VoidCallback onInteractive;
   final Widget child;
 
   @override
@@ -216,6 +288,7 @@ class _SplashGateState extends State<_SplashGate>
     final nextIndex = _reduced ? 0 : (elapsed ~/ _taglineEvery);
     final nextIgnoring = t > 0.5;
     final nextCompleted = _c.isCompleted;
+    if (nextIgnoring && !_ignoring) widget.onInteractive();
     if (nextIndex != _taglineIndex ||
         nextIgnoring != _ignoring ||
         nextCompleted != _completed) {

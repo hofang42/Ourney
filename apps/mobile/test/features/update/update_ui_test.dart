@@ -8,11 +8,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_dock.dart';
 import 'package:ourney/app/overlays/reminder_banner.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
+import 'package:ourney/features/camera/camera_session.dart';
+import 'package:ourney/features/checkin/checkin_clock.dart';
+import 'package:ourney/features/checkin/photo_compressor.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney/features/update/data/update_manifest_source.dart';
 import 'package:ourney/features/update/data/update_providers.dart';
@@ -25,6 +29,7 @@ import 'package:ourney_core/ourney_core.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../app/test_helpers.dart';
+import '../checkin/fakes.dart' as checkin;
 import '../journeys/journeys_fakes.dart'
     show FakeCheckInRepository, FakeJourneyRepository;
 import '../profile/fakes.dart';
@@ -88,6 +93,9 @@ void main() {
     Future<bool> Function(Uri)? onLaunchSupport,
     PersonaSkinId? activeSkin,
     Clock? updateClock,
+    JourneyRepository? journeys,
+    CheckInRepository? checkIns,
+    List<Override> overrides = const [],
   }) async {
     final userAuth = auth ?? FakeAuthRepository(userId: 'u1');
     final container = await pumpOurneyApp(
@@ -106,8 +114,12 @@ void main() {
         profileRepositoryProvider.overrideWithValue(
           FakeProfileRepository(aliceProfile),
         ),
-        journeyRepositoryProvider.overrideWithValue(FakeJourneyRepository()),
-        checkInRepositoryProvider.overrideWithValue(FakeCheckInRepository()),
+        journeyRepositoryProvider.overrideWithValue(
+          journeys ?? FakeJourneyRepository(),
+        ),
+        checkInRepositoryProvider.overrideWithValue(
+          checkIns ?? FakeCheckInRepository(),
+        ),
         mediaStoreProvider.overrideWithValue(FakeMediaStore()),
         appUpdateEnabledProvider.overrideWithValue(true),
         updatePlatformProvider.overrideWithValue(platform),
@@ -132,6 +144,7 @@ void main() {
           safetyUrlLauncherProvider.overrideWithValue(onLaunchSupport),
         if (activeSkin != null)
           activePersonaSkinProvider.overrideWithValue(activeSkin),
+        ...overrides,
       ],
     );
     addTearDown(() => container.invalidate(appUpdateControllerProvider));
@@ -767,6 +780,88 @@ void main() {
   });
 
   group('Forced UpdateGateScreen', () {
+    for (final post in [true, false]) {
+      testWidgets(
+        post
+            ? 'live gate preserves the Post draft until the check-in is saved'
+            : 'live gate on the camera waits for Post to be discarded',
+        (tester) async {
+          final source = FakeManifestSource(
+            (_) async => buildTestManifest(latest: '1.0.0', latestBuild: 1),
+          );
+          final camera = checkin.FakeCameraSession();
+          final drafts = checkin.FakeDraftFiles();
+          final compressor = checkin.FakePhotoCompressor();
+          final checkIns = checkin.FakeCheckInRepository();
+          final c = await pumpUpdateApp(
+            tester,
+            source: source,
+            journeys: checkin.FakeJourneyRepository(
+              journeys: [
+                checkin.testJourney(
+                  durationDays: null,
+                  templateId: TemplateId.weightLoss,
+                ),
+              ],
+            ),
+            checkIns: checkIns,
+            overrides: [
+              cameraSessionFactoryProvider.overrideWithValue(() => camera),
+              checkinClockProvider.overrideWithValue(
+                checkin.FakeCheckinClock(fixedNow),
+              ),
+              draftFilesProvider.overrideWithValue(drafts),
+              photoCompressorProvider.overrideWithValue(compressor),
+            ],
+          );
+
+          final allowCamera = find.text('Cho phép camera');
+          await tester.ensureVisible(allowCamera);
+          await tester.tap(allowCamera);
+          await tester.pumpAndSettle();
+
+          Future<void> forceUpdate() async {
+            source.onFetch = (_) async =>
+                buildTestManifest(latest: '2.0.0', minSupported: '2.0.0');
+            await c
+                .read(appUpdateControllerProvider.notifier)
+                .refresh(manual: true);
+            await tester.pumpAndSettle();
+            expect(c.read(appUpdateWorkPausedProvider), isTrue);
+            expect(find.byType(UpdateGateScreen), findsNothing);
+          }
+
+          if (!post) await forceUpdate();
+          await tester.tap(find.byKey(const ValueKey('capture-shutter')));
+          await tester.pumpAndSettle();
+
+          final caption = find.byKey(const ValueKey('checkin-caption'));
+          await tester.enterText(caption, 'A draft caption');
+          await tester.testTextInput.receiveAction(TextInputAction.done);
+          await tester.pumpAndSettle();
+          if (post) await forceUpdate();
+
+          expect(find.text('A draft caption'), findsOneWidget);
+          expect(drafts.discarded, isEmpty);
+
+          if (post) {
+            await tester.tap(find.byKey(const ValueKey('checkin-post')));
+            await tester.pumpAndSettle();
+            expect(compressor.sources, ['/tmp/shot1.jpg']);
+            expect(checkIns.submitted.single.caption, 'A draft caption');
+            await tester.tap(find.byKey(const ValueKey('checkin-done')));
+          } else {
+            await tester.tap(find.byKey(const ValueKey('checkin-close')));
+          }
+          await tester.pumpAndSettle();
+
+          expect(drafts.discarded, contains('/tmp/shot1.jpg'));
+          expect(find.byType(UpdateGateScreen), findsOneWidget);
+          c.invalidate(appUpdateControllerProvider);
+        },
+      );
+    }
+
     testWidgets(
       'blocks Android system back, hides AppDock and ReminderBanner, expands release notes, and unmounts when policy clears',
       (tester) async {
