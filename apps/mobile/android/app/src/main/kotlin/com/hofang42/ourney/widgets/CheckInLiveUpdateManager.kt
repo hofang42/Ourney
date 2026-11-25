@@ -67,7 +67,14 @@ object CheckInLiveUpdateManager {
             return true
         }
 
-        val locale = (args["locale"] as? String) ?: snapshot?.locale ?: "vi"
+        val defaultLocale = if (
+            java.util.Locale.getDefault().language.lowercase(java.util.Locale.ROOT).startsWith("vi")
+        ) {
+            "vi"
+        } else {
+            "en"
+        }
+        val locale = (args["locale"] as? String) ?: snapshot?.locale ?: defaultLocale
         val redactLockScreen = resolveRedactLockScreenTitles(args, snapshot, window)
 
         postOrUpdate(

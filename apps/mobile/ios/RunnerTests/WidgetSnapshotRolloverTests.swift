@@ -499,5 +499,9 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
     XCTAssertFalse(WidgetL10n.isEnglish("vi"))
     XCTAssertTrue(WidgetL10n.isEnglish("en"))
     XCTAssertTrue(WidgetL10n.isEnglish("fr"))
+    XCTAssertEqual(WidgetPreviewFixtures.sampleTodaySnapshot(locale: "en").locale, "en")
+    XCTAssertEqual(WidgetPreviewFixtures.sampleTodaySnapshot(locale: "en").journeys.first?.title, "30-Day IELTS Study")
+    XCTAssertEqual(WidgetPreviewFixtures.sampleTodaySnapshot(locale: "vi").locale, "vi")
+    XCTAssertEqual(WidgetPreviewFixtures.sampleTodaySnapshot(locale: "vi").journeys.first?.title, "Tự học IELTS 30 ngày")
   }
 }

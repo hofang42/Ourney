@@ -122,11 +122,11 @@ class WidgetsL10nVi extends WidgetsL10n {
 
   @override
   String get widgets_redactTitlesSub =>
-      'Khi máy đang khóa, tiện ích khóa và Live Activity chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.';
+      'Trên Màn hình khóa, tiện ích khóa và Live Activity chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.';
 
   @override
   String get widgets_redactTitlesSubAndroid =>
-      'Khi máy đang khóa, thông báo đếm ngược trên Màn hình khóa chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.';
+      'Trên Màn hình khóa, thông báo đếm ngược chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.';
 
   @override
   String get widgets_secLiveActivity => 'đếm ngược cuối ngày';

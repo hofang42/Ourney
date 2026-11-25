@@ -392,12 +392,19 @@ void main() {
           findsOneWidget,
         );
         expect(
+          find.text(
+            'On the Lock Screen, live updates show "Ourney" instead of specific journey names.',
+          ),
+          findsOneWidget,
+        );
+        expect(
           find.text('1. Touch and hold your Home Screen'),
           findsOneWidget,
         );
         expect(find.textContaining('Dynamic Island'), findsNothing);
         expect(find.textContaining('Live Activity'), findsNothing);
         expect(find.textContaining('Live Activities'), findsNothing);
+        expect(find.textContaining('Lock Screen widgets'), findsNothing);
 
         // 2. iOS: shows Live Activity & Dynamic Island, no Android launcher terms.
         debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
@@ -408,6 +415,12 @@ void main() {
 
         expect(
           find.text('Live Activity & check-in window countdown'),
+          findsOneWidget,
+        );
+        expect(
+          find.text(
+            'On the Lock Screen, widgets and Live Activities show "Ourney" instead of specific journey names.',
+          ),
           findsOneWidget,
         );
         expect(find.textContaining('Dynamic Island'), findsOneWidget);

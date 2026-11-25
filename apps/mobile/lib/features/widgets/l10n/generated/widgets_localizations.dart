@@ -293,13 +293,13 @@ abstract class WidgetsL10n {
   /// Switch subtitle for redacting journey titles on the Lock Screen (iOS).
   ///
   /// In vi, this message translates to:
-  /// **'Khi máy đang khóa, tiện ích khóa và Live Activity chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.'**
+  /// **'Trên Màn hình khóa, tiện ích khóa và Live Activity chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.'**
   String get widgets_redactTitlesSub;
 
   /// Switch subtitle for redacting journey titles on the Lock Screen (Android).
   ///
   /// In vi, this message translates to:
-  /// **'Khi máy đang khóa, thông báo đếm ngược trên Màn hình khóa chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.'**
+  /// **'Trên Màn hình khóa, thông báo đếm ngược chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.'**
   String get widgets_redactTitlesSubAndroid;
 
   /// Section heading for Check-In Window Live Activity / Live Update.

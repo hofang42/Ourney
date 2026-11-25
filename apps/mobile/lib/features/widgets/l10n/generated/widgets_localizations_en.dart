@@ -114,18 +114,18 @@ class WidgetsL10nEn extends WidgetsL10n {
 
   @override
   String get widgets_photoModeClearNote =>
-      'Shows crisp check-in photos on your unlocked Home Screen. Lock Screen widgets still never show photos or weight (kg).';
+      'Shows crisp check-in photos on your unlocked Home Screen. Your Lock Screen still never shows photos or weight (kg).';
 
   @override
   String get widgets_redactTitlesLabel => 'Hide journey titles on Lock Screen';
 
   @override
   String get widgets_redactTitlesSub =>
-      'While your phone is locked, Lock Screen widgets and Live Activities show \"Ourney\" instead of specific journey names.';
+      'On the Lock Screen, widgets and Live Activities show \"Ourney\" instead of specific journey names.';
 
   @override
   String get widgets_redactTitlesSubAndroid =>
-      'While your phone is locked, Lock Screen live updates show \"Ourney\" instead of specific journey names.';
+      'On the Lock Screen, live updates show \"Ourney\" instead of specific journey names.';
 
   @override
   String get widgets_secLiveActivity => 'evening countdown';

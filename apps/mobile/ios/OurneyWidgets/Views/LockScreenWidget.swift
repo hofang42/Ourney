@@ -144,7 +144,6 @@ private struct LockScreenRectangularView: View {
         Text(title)
           .font(OurneyWidgetFont.body(11.5, bold: true))
           .lineLimit(1)
-          .privacySensitive(redactTitle)
       }
 
       // 7-day mini chain bar

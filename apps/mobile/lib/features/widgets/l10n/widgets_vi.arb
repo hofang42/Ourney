@@ -154,11 +154,11 @@
   "@widgets_redactTitlesLabel": {
     "description": "Switch label for redacting journey titles on the Lock Screen."
   },
-  "widgets_redactTitlesSub": "Khi máy đang khóa, tiện ích khóa và Live Activity chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.",
+  "widgets_redactTitlesSub": "Trên Màn hình khóa, tiện ích khóa và Live Activity chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.",
   "@widgets_redactTitlesSub": {
     "description": "Switch subtitle for redacting journey titles on the Lock Screen (iOS)."
   },
-  "widgets_redactTitlesSubAndroid": "Khi máy đang khóa, thông báo đếm ngược trên Màn hình khóa chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.",
+  "widgets_redactTitlesSubAndroid": "Trên Màn hình khóa, thông báo đếm ngược chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.",
   "@widgets_redactTitlesSubAndroid": {
     "description": "Switch subtitle for redacting journey titles on the Lock Screen (Android)."
   },
