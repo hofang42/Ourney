@@ -996,8 +996,6 @@ void _dnaGroup() {
     testWidgets(
       'travel: recent trips, international results and a custom destination',
       (tester) async {
-        final semantics = tester.ensureSemantics();
-        addTearDown(semantics.dispose);
         await _open(
           tester,
           journeys: FakeJourneyRepository(
