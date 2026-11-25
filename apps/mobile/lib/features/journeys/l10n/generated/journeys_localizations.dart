@@ -1952,6 +1952,12 @@ abstract class JourneysL10n {
   /// **'Tìm điểm đến'**
   String get journeys_dna_place_search;
 
+  /// No description provided for @journeys_dna_place_limit.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập tối đa {max} ký tự.'**
+  String journeys_dna_place_limit(int max);
+
   /// No description provided for @journeys_dna_dates_open.
   ///
   /// In vi, this message translates to:

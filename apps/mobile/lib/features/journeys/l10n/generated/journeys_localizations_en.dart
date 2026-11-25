@@ -1068,6 +1068,11 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_dna_place_search => 'Search destinations';
 
   @override
+  String journeys_dna_place_limit(int max) {
+    return 'Use up to $max characters.';
+  }
+
+  @override
   String get journeys_dna_dates_open => 'return date not set';
 
   @override

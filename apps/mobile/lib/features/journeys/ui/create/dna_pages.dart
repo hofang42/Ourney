@@ -3,7 +3,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:ourney_core/ourney_core.dart' show durationMax, durationMin;
+import 'package:ourney_core/ourney_core.dart'
+    show dnaPlaceMax, durationMax, durationMin;
 
 import '../../../../shared/places/place_picker.dart';
 import '../../../../ui/ui.dart';
@@ -446,7 +447,8 @@ class DnaPlacePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = JourneysL10n.of(context).journeys_dna_place_search;
+    final l10n = JourneysL10n.of(context);
+    final label = l10n.journeys_dna_place_search;
     return PlacePicker(
       controller: controller,
       onChanged: onChanged,
@@ -455,6 +457,8 @@ class DnaPlacePicker extends StatelessWidget {
       hint: label,
       recent: recent,
       browseWhenEmpty: true,
+      maxRunes: dnaPlaceMax,
+      limitMessage: l10n.journeys_dna_place_limit(dnaPlaceMax),
     );
   }
 }

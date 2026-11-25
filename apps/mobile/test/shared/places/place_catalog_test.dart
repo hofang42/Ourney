@@ -7,7 +7,7 @@ void main() {
       placeCatalog.where((p) => p.id.startsWith('vn-province-')),
       hasLength(34),
     );
-    expect(placeCatalog.where((p) => p.id.startsWith('city-')), hasLength(163));
+    expect(placeCatalog.where((p) => p.id.startsWith('city-')), hasLength(160));
     expect(placeCatalog.where((p) => p.isCountry), hasLength(257));
     expect(
       placeCatalog.map((p) => p.id).toSet(),
@@ -47,7 +47,7 @@ void main() {
   });
 
   test(
-    'empty search promotes destination and deduplicates localized recents',
+    'empty search keeps saved spelling and deduplicates place identities',
     () {
       final items = placeSuggestions(
         query: ' ',
@@ -56,12 +56,15 @@ void main() {
         recent: ['Ha Noi', '  Cabin by the lake ', 'Phu Quoc', 'Phú Quốc', ''],
       );
       expect(items.take(3).map((p) => p.value), [
-        'Hà Nội',
+        'Hanoi',
         'Cabin by the lake',
-        'Phú Quốc',
+        'Phu Quoc',
       ]);
-      expect(items.where((p) => p.value == 'Hà Nội'), hasLength(1));
-      expect(items.where((p) => p.value == 'Phú Quốc'), hasLength(1));
+      expect(items.where((p) => p.id == 'vn-province-ha-noi'), hasLength(1));
+      expect(
+        items.where((p) => p.id == 'vn-destination-phu-quoc'),
+        hasLength(1),
+      );
       expect(
         placeSuggestions(
           query: 'Tokyo',
@@ -72,4 +75,66 @@ void main() {
       );
     },
   );
+
+  test('related places help search and keep separate saved suggestions', () {
+    const related = {
+      'Vịnh Hạ Long': 'Hạ Long',
+      'Okinawa': 'Naha',
+      'Hawaii': 'Honolulu',
+      'Angkor': 'Siem Reap',
+    };
+    final items = placeSuggestions(
+      query: '',
+      language: 'vi',
+      destination: related.keys.first,
+      recent: related.keys.skip(1),
+    );
+    expect(items.take(4).map((p) => p.value), related.keys);
+    expect(items.take(4).map((p) => p.id), everyElement(isNull));
+    for (final entry in related.entries) {
+      expect(searchPlaces(entry.key).first.nameVi, entry.value);
+    }
+  });
+
+  test('territory names and aliases resolve to one row without a subtitle', () {
+    for (final (vi, en, queries) in [
+      (
+        'Hồng Kông',
+        'Hong Kong',
+        [
+          'Hong Kong',
+          'Hong Kong SAR China',
+          'Đặc khu Hành chính Hồng Kông, Trung Quốc',
+        ],
+      ),
+      (
+        'Ma Cao',
+        'Macao',
+        [
+          'Macao',
+          'Macau',
+          'Macao SAR China',
+          'Đặc khu Hành chính Macao, Trung Quốc',
+        ],
+      ),
+      ('Singapore', 'Singapore', ['Singapore', 'Singapura']),
+    ]) {
+      for (final query in queries) {
+        for (final (language, name) in [('vi', vi), ('en', en)]) {
+          final item = placeSuggestions(
+            query: query,
+            language: language,
+          ).single;
+          expect((item.value, item.country), (name, null));
+        }
+      }
+    }
+  });
+
+  test('Athens displays A-ten in Vietnamese and accepts Athena', () {
+    for (final query in ['A-ten', 'Athena', 'Athens']) {
+      final place = searchPlaces(query).first;
+      expect((place.nameVi, place.nameEn), ('A-ten', 'Athens'));
+    }
+  });
 }

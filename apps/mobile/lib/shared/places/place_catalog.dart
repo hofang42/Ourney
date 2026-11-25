@@ -7,6 +7,7 @@ class Place {
     this.nameEn,
     this.countryCode, [
     this.aliases = const [],
+    this.relatedNames = const [],
   ]);
 
   final String id;
@@ -14,6 +15,9 @@ class Place {
   final String nameEn;
   final String countryCode;
   final List<String> aliases;
+
+  /// Search terms for nearby or overlapping places with their own identity.
+  final List<String> relatedNames;
 
   String get countryVi => _countriesByCode[countryCode]!.nameVi;
   String get countryEn => _countriesByCode[countryCode]!.nameEn;
@@ -70,7 +74,12 @@ String foldPlaceName(String value) => value
 
 final _searchKeys = [
   for (final place in placeCatalog)
-    {place.nameVi, place.nameEn, ...place.aliases}.map(foldPlaceName).toSet(),
+    {
+      place.nameVi,
+      place.nameEn,
+      ...place.aliases,
+      ...place.relatedNames,
+    }.map(foldPlaceName).toSet(),
 ];
 final _placesByName = _indexNames();
 
@@ -121,7 +130,8 @@ Iterable<Place> searchPlaces(String query) {
 
 typedef PlaceSuggestion = ({String value, String? country, String? id});
 
-/// [recent] is ordered newest first. An optional trip destination goes first.
+/// Saved suggestions keep their spelling. The current trip destination goes
+/// first, followed by [recent] in newest-first order.
 List<PlaceSuggestion> placeSuggestions({
   required String query,
   required String language,
@@ -130,20 +140,25 @@ List<PlaceSuggestion> placeSuggestions({
   int? maxRunes,
 }) {
   final items = <PlaceSuggestion>[];
-  final seen = <String>{};
+  final seenNames = <String>{};
+  final seenIds = <String>{};
   void add(String value, {Place? place}) {
     final folded = foldPlaceName(value);
+    final nameKey = folded.isEmpty ? value : folded;
+    final id = place?.id;
     if (value.isEmpty ||
         (maxRunes != null && value.runes.length > maxRunes) ||
-        !seen.add(folded.isEmpty ? value : folded)) {
+        (id != null && seenIds.contains(id)) ||
+        !seenNames.add(nameKey)) {
       return;
     }
+    if (id != null) seenIds.add(id);
     items.add((
       value: value,
       country: place == null || place.isCountry
           ? null
           : place.country(language),
-      id: place?.id,
+      id: id,
     ));
   }
 
@@ -152,7 +167,7 @@ List<PlaceSuggestion> placeSuggestions({
     for (final saved in [?destination, ...recent]) {
       final name = saved.trim();
       final place = _placesByName[foldPlaceName(name)];
-      add(place?.name(language) ?? name, place: place);
+      add(name, place: place);
       if (items.length == 5) break;
     }
   }

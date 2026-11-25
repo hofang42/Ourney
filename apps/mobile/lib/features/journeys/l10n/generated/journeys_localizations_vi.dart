@@ -1053,6 +1053,11 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_dna_place_search => 'Tìm điểm đến';
 
   @override
+  String journeys_dna_place_limit(int max) {
+    return 'Nhập tối đa $max ký tự.';
+  }
+
+  @override
   String get journeys_dna_dates_open => 'chưa hẹn ngày về';
 
   @override

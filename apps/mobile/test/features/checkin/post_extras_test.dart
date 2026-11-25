@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -126,20 +128,36 @@ void main() {
           ).copyWith(dna: {'place': 'Phu Quoc'}),
         ],
       );
+      final field = find.byKey(const ValueKey('checkin-place'));
+      final semantics = tester.getSemantics(field);
+      expect(semantics.flagsCollection.isTextField, isTrue);
+      expect(semantics.label, startsWith('Bạn đang ở đâu?'));
+      expect(semantics.flagsCollection.isExpanded, Tristate.isFalse);
       await tapKey(tester, 'checkin-place');
+      expect(
+        tester.getSemantics(field).flagsCollection.isExpanded,
+        Tristate.isTrue,
+      );
       final current = find.byKey(const ValueKey('vn-province-ha-noi'));
       final recent = find.byKey(const ValueKey('vn-destination-phu-quoc'));
       expect(
         tester.getTopLeft(current).dy,
         lessThan(tester.getTopLeft(recent).dy),
       );
-      expect(find.text('Hà Nội'), findsOneWidget);
-      expect(find.text('Phú Quốc'), findsOneWidget);
+      expect(find.bySemanticsLabel('Hanoi, Việt Nam'), findsOneWidget);
+      expect(find.text('Phu Quoc'), findsOneWidget);
       await tapKey(tester, 'vn-province-ha-noi');
+      await tester.pumpAndSettle();
+      final selected = tester.getSemantics(field);
+      expect(selected.flagsCollection.isTextField, isTrue);
+      expect(selected.label, 'Bạn đang ở đâu?');
+      expect(selected.value, 'Hanoi');
+      expect(selected.flagsCollection.isExpanded, Tristate.isFalse);
+      expect(find.bySemanticsLabel('Hanoi, Việt Nam'), findsNothing);
       await post(tester);
       expect(
         checkIns.submitted.single.extras,
-        const CheckInExtras(place: 'Hà Nội'),
+        const CheckInExtras(place: 'Hanoi'),
       );
     },
   );

@@ -366,7 +366,6 @@ class _PlaceField extends StatelessWidget {
       destination: destination,
       recent: recent,
       maxRunes: extrasPlaceMax,
-      inputFormatters: const [_RuneLimit(extrasPlaceMax)],
     );
   }
 }
@@ -410,7 +409,7 @@ class _CoupleInputs extends StatelessWidget {
               : l10n.checkin_extraMomentHint,
           controller: c.dish,
           textCapitalization: TextCapitalization.sentences,
-          inputFormatters: [_RuneLimit(extrasDishMax)],
+          inputFormatters: const [CodePointLimitFormatter(extrasDishMax)],
         ),
         if (cooking) ...[
           const SizedBox(height: UiSpace.md),
@@ -625,27 +624,6 @@ class _PaceKeypad extends StatelessWidget {
           ],
         ),
       ],
-    );
-  }
-}
-
-/// Limits input to [max] Unicode code points (matches the SQL CHECK).
-class _RuneLimit extends TextInputFormatter {
-  const _RuneLimit(this.max);
-
-  final int max;
-
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final runes = newValue.text.runes;
-    if (runes.length <= max) return newValue;
-    final text = String.fromCharCodes(runes.take(max));
-    return TextEditingValue(
-      text: text,
-      selection: TextSelection.collapsed(offset: text.length),
     );
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +9,10 @@ import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/app/router.dart';
 import 'package:ourney/app/theme/app_theme.dart';
+import 'package:ourney/features/checkin/captured_photo.dart';
+import 'package:ourney/features/checkin/checkin_clock.dart';
 import 'package:ourney/features/groups/data/groups_providers.dart';
 import 'package:ourney/features/journeys/data/create_progress.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
@@ -27,6 +32,7 @@ import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../app/test_helpers.dart';
+import '../checkin/fakes.dart' show FakeCheckinClock;
 import '../groups/groups_fakes.dart' show FakeGroupInviteRepository;
 import '../reminders/reminders_fakes.dart' show FakeNotificationGateway;
 import 'journeys_fakes.dart';
@@ -1023,6 +1029,9 @@ void _dnaGroup() {
         expect(find.text('Not a trip'), findsNothing);
         await tester.enterText(_key('dna-place-field'), 'Tokyo');
         await tester.pumpAndSettle();
+        final field = tester.getSemantics(_key('dna-place-field'));
+        expect(field.label, 'Search destinations');
+        expect(field.value, 'Tokyo');
         expect(find.bySemanticsLabel('Tokyo, Japan'), findsOneWidget);
         expect(_key('vn-destination-hoi-an'), findsNothing);
 
@@ -1041,6 +1050,99 @@ void _dnaGroup() {
           'A cabin by the lake',
         );
         expect(_key('place-use-text'), findsNothing);
+        await _tap(tester, 'create-next');
+        expect(_key('dna-page-dates'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'travel: custom destination is saved and selected in check-in',
+      (tester) async {
+        final h = await pumpJourneys(
+          tester,
+          location: AppRoutes.journeyNew,
+          extraOverrides: [
+            checkinClockProvider.overrideWithValue(FakeCheckinClock(testNow)),
+          ],
+        );
+        const place = 'Vịnh Hạ Long';
+        await _tap(tester, 'template-travel');
+        await tester.enterText(_key('dna-place-field'), place);
+        await tester.pumpAndSettle();
+        expect(_key('vn-destination-ha-long'), findsOneWidget);
+        expect(find.text('Dùng “$place”'), findsOneWidget);
+        await _tap(tester, 'place-use-text');
+        await _tap(tester, 'create-next');
+        await _tap(tester, 'dna-day-${testNow.day}');
+        await _tap(tester, 'dna-dates-open');
+        await finish(tester);
+        expect(h.journeys.created.single.dna?['place'], place);
+
+        unawaited(
+          h.container
+              .read(routerProvider)
+              .push<void>(
+                AppRoutes.checkin,
+                extra: CapturedPhoto(
+                  journeyId: 'new-1',
+                  path: '/tmp/shot.jpg',
+                  capturedAt: testNow,
+                ),
+              ),
+        );
+        await tester.pumpAndSettle();
+        await _tap(tester, 'checkin-place');
+        await _tap(tester, 'recent:$place');
+        expect(
+          tester.widget<TextField>(_key('checkin-place')).controller!.text,
+          place,
+        );
+      },
+    );
+
+    testWidgets('travel: the destination limit counts Unicode code points', (
+      tester,
+    ) async {
+      await _open(tester);
+      await _tap(tester, 'template-travel');
+      final field = _key('dna-place-field');
+      final atLimit = '${'x' * 58}🌏e';
+      await tester.enterText(field, '$atLimit\u0301more');
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(field).controller!.text, atLimit);
+      expect(find.text('Use up to 60 characters.'), findsOneWidget);
+      expect(find.text('Use “$atLimit”'), findsOneWidget);
+      await _tap(tester, 'place-use-text');
+      await _tap(tester, 'create-next');
+      expect(_key('dna-page-dates'), findsOneWidget);
+    });
+
+    testWidgets(
+      'travel: an older draft with an overlong destination can be corrected',
+      (tester) async {
+        final h = await _open(tester);
+        await toDates(tester);
+        await _tap(tester, 'create-close');
+        final progress = h.container.read(createProgressProvider.notifier);
+        final draft = progress.readDraft()!;
+        final overLimit = 'x' * 61;
+        await progress.save(
+          2,
+          draft: {
+            ...draft,
+            'place': overLimit,
+            'dna': {'place': overLimit},
+          },
+        );
+        await tester.pumpAndSettle();
+        await _tap(tester, 'hub-create-progress');
+        expect(find.text('Use up to 60 characters.'), findsOneWidget);
+        await _tap(tester, 'create-next');
+        expect(_key('dna-page-place'), findsOneWidget);
+        expect(_key('place-use-text'), findsNothing);
+
+        await tester.enterText(_key('dna-place-field'), 'Da Lat');
+        await tester.pumpAndSettle();
         await _tap(tester, 'create-next');
         expect(_key('dna-page-dates'), findsOneWidget);
       },

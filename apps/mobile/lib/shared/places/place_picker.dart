@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../l10n/generated/app_localizations.dart';
 import '../../ui/ui.dart';
@@ -14,12 +13,12 @@ class PlacePicker extends StatefulWidget {
     required this.fieldKey,
     required this.label,
     required this.hint,
+    required this.maxRunes,
     this.onChanged,
     this.destination,
     this.recent = const [],
     this.browseWhenEmpty = false,
-    this.maxRunes,
-    this.inputFormatters,
+    this.limitMessage,
     super.key,
   });
 
@@ -31,8 +30,8 @@ class PlacePicker extends StatefulWidget {
   final String? destination;
   final List<String> recent;
   final bool browseWhenEmpty;
-  final int? maxRunes;
-  final List<TextInputFormatter>? inputFormatters;
+  final int maxRunes;
+  final String? limitMessage;
 
   @override
   State<PlacePicker> createState() => _PlacePickerState();
@@ -78,11 +77,14 @@ class _PlacePickerState extends State<PlacePicker> {
         builder: (context, _) {
           final query = widget.controller.text.trim();
           final show = _expanded || (widget.browseWhenEmpty && query.isEmpty);
+          final remaining =
+              widget.maxRunes - widget.controller.text.runes.length;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               UiTextField(
                 fieldKey: widget.fieldKey,
+                expanded: show,
                 pill: widget.browseWhenEmpty,
                 label: widget.label,
                 hint: widget.hint,
@@ -90,7 +92,9 @@ class _PlacePickerState extends State<PlacePicker> {
                 leading: const OurneyIcon(name: 'map-pin', size: 20),
                 textCapitalization: TextCapitalization.words,
                 autocorrect: false,
-                inputFormatters: widget.inputFormatters,
+                inputFormatters: [CodePointLimitFormatter(widget.maxRunes)],
+                helper: remaining == 0 ? widget.limitMessage : null,
+                error: remaining < 0 ? widget.limitMessage : null,
                 onChanged: widget.onChanged,
                 onSubmitted: (_) => _close(),
               ),
@@ -111,7 +115,9 @@ class _PlacePickerState extends State<PlacePicker> {
       maxRunes: widget.maxRunes,
     );
     final offerCustom =
-        query.isNotEmpty && !options.any((item) => item.value == query);
+        query.isNotEmpty &&
+        query.runes.length <= widget.maxRunes &&
+        !options.any((item) => item.value == query);
     final customIndex = options.isEmpty ? 0 : 1;
     final ui = context.ui;
     final radius = BorderRadius.circular(UiRadius.input);

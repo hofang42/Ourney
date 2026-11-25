@@ -840,6 +840,14 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       _variant = ((d['variant'] as int?) ?? 0).clamp(0, 2);
       _dnaPage = ((d['dnaPage'] as int?) ?? 0).clamp(0, _questions.length);
       _step = ((d['step'] as int?) ?? 1).clamp(1, _steps - 1);
+      // Older drafts could advance with a destination longer than storage allows.
+      if (_place.text.runes.length > dnaPlaceMax) {
+        final placePage = _questions.indexWhere((q) => q.kind == DnaKind.place);
+        if (placePage >= 0) {
+          _dnaPage = placePage;
+          _step = 1;
+        }
+      }
       return true;
     } on Object {
       // Older or broken draft: start over (and forget it).

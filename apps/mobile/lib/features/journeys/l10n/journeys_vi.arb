@@ -943,6 +943,14 @@
   "journeys_dna_trophy_label": "Tên chiếc cúp",
   "journeys_dna_trophy_hint": "Cúp 7.5",
   "journeys_dna_place_search": "Tìm điểm đến",
+  "journeys_dna_place_limit": "Nhập tối đa {max} ký tự.",
+  "@journeys_dna_place_limit": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_dna_dates_open": "chưa hẹn ngày về",
   "journeys_dna_dates_prompt": "Chọn ngày đi và ngày về",
   "journeys_dna_dates_open_summary": "{start} · chưa hẹn ngày về",
