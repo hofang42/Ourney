@@ -1,7 +1,7 @@
 -- UX-38: block list identity is authorized at block time and redacted on read.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(14);
 
 create schema tests;
 grant usage on schema tests to authenticated;
@@ -109,6 +109,18 @@ select is(tests.blocked_row(2), null::jsonb, 'unblocking removes the row from th
 do $$ begin perform public.block_user(tests.u(2)); end $$;
 select is(tests.blocked_row(2), tests.redacted_row(2),
   'reblocking without the severed friendship cannot expose the previous snapshot');
+
+-- A maintenance edit can deactivate a block without running unblock_user.
+reset role;
+insert into private.blocked_profile_names (blocker_id, blocked_id, username, display_name)
+values (tests.u(1), tests.u(7), 'blockeduser7', 'Blocked User 7');
+update public.blocks set deleted_at = now()
+ where blocker_id = tests.u(1) and blocked_id = tests.u(7);
+do $$ begin perform tests.as_user(tests.u(1));
+  perform public.block_user(tests.u(7));
+end $$;
+select is(tests.blocked_row(7), tests.redacted_row(7),
+  'reactivation without visibility clears a snapshot left by a maintenance edit');
 
 select * from finish();
 rollback;

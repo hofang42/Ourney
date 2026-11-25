@@ -234,18 +234,9 @@ Future<void> _queuePrivacyWork(Future<void> Function() run) {
 
 /// On app start and resume, retry failed pushes and enforce the enabled
 /// weight preference on existing memberships, including after an upgrade.
-Future<void> healSharePrivacy(
-  ProviderContainer container, {
-  bool atLaunch = false,
-}) async {
+Future<void> healSharePrivacy(ProviderContainer container) async {
   await _queuePrivacyWork(() => _healFailedSharePrivacy(container));
-  if (atLaunch) {
-    // Older builds could write the local bit before creating the outbox item.
-    // Reassert it on launch even when the local membership looks hidden.
-    await pushSharePrivacyToMemberships(container, hideWeight: true);
-  } else {
-    await reconcileHiddenWeight(container);
-  }
+  await reconcileHiddenWeight(container);
 }
 
 /// Backfill active memberships, even on ended or archived journeys. Also
@@ -395,10 +386,7 @@ class _SharePrivacyHealHookState extends ConsumerState<SharePrivacyHealHook>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       unawaited(
-        healSharePrivacy(
-          ProviderScope.containerOf(context, listen: false),
-          atLaunch: true,
-        ),
+        healSharePrivacy(ProviderScope.containerOf(context, listen: false)),
       );
     });
   }
@@ -510,6 +498,16 @@ Future<void> _pushSharePrivacyToMemberships(
     bool blurActive() =>
         blur != null && container.read(blurPhotosOnShareProvider) == blur;
     if (!hideActive() && !blurActive()) return;
+    if (reconcile && userId != null) {
+      try {
+        await container
+            .read(legacyWeightPrivacyRepairProvider)
+            ?.call(userId, isWeightMetric);
+      } on Object catch (e) {
+        debugPrint('share privacy: legacy weight repair failed: $e');
+      }
+      if (!sameAccount() || !hideActive()) return;
+    }
     List<Journey> journeys;
     try {
       journeys = await repo.allMine();

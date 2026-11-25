@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/config.dart';
+import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/profile/profile_providers.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney/features/safety/safety_paths.dart';
@@ -144,7 +145,12 @@ void main() {
       await tester.tap(byKey('safety-block-confirm'));
       await tester.pumpAndSettle();
       expect(repo.blocked, {'u2'});
-      expect(c.read(blockedNamesProvider), {'u2': 'Lan'});
+      expect(
+        c
+            .read(sharedPreferencesProvider)
+            .containsKey(SafetyPrefs.legacyBlockedNames),
+        isFalse,
+      );
       expect(result, isTrue);
     });
 
@@ -193,7 +199,7 @@ void main() {
       expect(repo.blocked, isEmpty);
     });
 
-    testWidgets('confirm blocks, remembers the name, shows a snack bar', (
+    testWidgets('confirm blocks and shows the name in a snack bar', (
       tester,
     ) async {
       final repo = FakeSafetyRepository();
@@ -203,7 +209,12 @@ void main() {
       await tester.tap(byKey('safety-block-confirm'));
       await tester.pumpAndSettle();
       expect(repo.blocked, {'u9'});
-      expect(c.read(blockedNamesProvider)['u9'], 'Minh');
+      expect(
+        c
+            .read(sharedPreferencesProvider)
+            .containsKey(SafetyPrefs.legacyBlockedNames),
+        isFalse,
+      );
       expect(find.text('Đã chặn Minh.'), findsOneWidget);
     });
 
@@ -271,8 +282,11 @@ void main() {
           ];
         final c = await pumpSignedInApp(tester, repo: repo);
         await c
-            .read(blockedNamesProvider.notifier)
-            .remember(redactedId, 'Previously visible name');
+            .read(sharedPreferencesProvider)
+            .setString(
+              SafetyPrefs.legacyBlockedNames,
+              '{"$redactedId":"Previously visible name"}',
+            );
         await goTo(tester, c, SafetyPaths.blocked);
         expect(find.text('Lan'), findsOneWidget);
         expect(find.text('Người dùng'), findsNothing);
@@ -296,7 +310,6 @@ void main() {
         await tester.tap(byKey('safety-unblock-confirm'));
         await tester.pumpAndSettle();
         expect(repo.blocked, isEmpty);
-        expect(c.read(blockedNamesProvider), isEmpty);
       },
     );
 
@@ -362,8 +375,11 @@ void main() {
           ..blockedPeopleError = StateError('offline');
         final c = await pumpSignedInApp(tester, repo: repo);
         await c
-            .read(blockedNamesProvider.notifier)
-            .remember('3f8a91c2-1111', 'Previously visible name');
+            .read(sharedPreferencesProvider)
+            .setString(
+              SafetyPrefs.legacyBlockedNames,
+              '{"3f8a91c2-1111":"Previously visible name"}',
+            );
         await goTo(tester, c, SafetyPaths.blocked);
         expect(find.text('Người dùng'), findsNothing);
         expect(find.text('Tài khoản đã chặn'), findsOneWidget);

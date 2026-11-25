@@ -193,17 +193,22 @@ class SyncEngine {
         );
         await _applyJourneyIfSession(row, epoch, user);
       case OutboxKind.updateMembership:
+        final values = {
+          if (p.containsKey('hide_metric')) 'hide_metric': p['hide_metric'],
+          if (p.containsKey('blur_media')) 'blur_media': p['blur_media'],
+          if (p.containsKey('hide_extras')) 'hide_extras': p['hide_extras'],
+          if (p.containsKey('pinned')) 'pinned': p['pinned'],
+        };
         await remote.update(
           'memberships',
-          {
-            if (p.containsKey('hide_metric')) 'hide_metric': p['hide_metric'],
-            if (p.containsKey('blur_media')) 'blur_media': p['blur_media'],
-            if (p.containsKey('hide_extras')) 'hide_extras': p['hide_extras'],
-            if (p.containsKey('pinned')) 'pinned': p['pinned'],
-          },
+          values,
           match: {
             'journey_id': p['journey_id'] as String,
             'user_id': p['user_id'] as String,
+            // A legacy repair can only tell whether the bit was set on this
+            // device. Avoid touching updated_at if it already reached server.
+            if (values.length == 1 && values['hide_metric'] == true)
+              'hide_metric': false,
           },
         );
     }

@@ -59,13 +59,15 @@ begin
   if p_user is null or p_user = uid then
     raise exception 'invalid';
   end if;
-  select p.username, p.display_name into v_username, v_display_name
+  -- Capture the identity and its authorization from the same snapshot.
+  select p.username, p.display_name,
+         private.can_see_profile(p.id) and not private.is_user_banned(p.id)
+    into v_username, v_display_name, v_visible
     from public.profiles p
    where p.id = p_user and p.deleted_at is null;
   if not found then
     raise exception 'not_found';
   end if;
-  v_visible := private.can_see_profile(p_user) and not private.is_user_banned(p_user);
 
   insert into public.blocks (blocker_id, blocked_id) values (uid, p_user)
   on conflict (blocker_id, blocked_id) do nothing;
@@ -86,6 +88,9 @@ begin
     values (uid, p_user, v_username, v_display_name)
     on conflict (blocker_id, blocked_id) do update
       set username = excluded.username, display_name = excluded.display_name;
+  else
+    delete from private.blocked_profile_names
+     where blocker_id = uid and blocked_id = p_user;
   end if;
 end;
 $$;

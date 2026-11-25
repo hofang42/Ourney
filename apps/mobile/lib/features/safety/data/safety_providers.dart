@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -48,9 +47,8 @@ abstract final class SafetyPrefs {
       ? key.substring(termsVersionPrefix.length)
       : null;
 
-  /// JSON `{userId: displayName}` of people blocked from this device, so
-  /// the blocked list can show names (the contract only streams ids).
-  static const blockedNames = 'safety.blockedNames';
+  /// Retired blocked names cache, kept here for account reset to delete.
+  static const legacyBlockedNames = 'safety.blockedNames';
 }
 
 /// Whether the EULA was accepted (FR-F3, Apple Guideline 1.2). Gate any
@@ -300,46 +298,6 @@ final hiddenCheckInIdsProvider = NotifierProvider<HiddenCheckIns, Set<String>>(
   HiddenCheckIns.new,
 );
 
-/// Names of blocked users remembered locally (see [SafetyPrefs.blockedNames]).
-class BlockedNames extends Notifier<Map<String, String>> {
-  @override
-  Map<String, String> build() {
-    final raw = ref
-        .watch(sharedPreferencesProvider)
-        .getString(SafetyPrefs.blockedNames);
-    if (raw == null) return const {};
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is! Map<String, Object?>) return const {};
-      return {
-        for (final e in decoded.entries)
-          if (e.value case final String name) e.key: name,
-      };
-    } on Object {
-      return const {};
-    }
-  }
-
-  Future<void> remember(String userId, String name) async {
-    if (name.isEmpty || state[userId] == name) return;
-    state = {...state, userId: name};
-    await _save();
-  }
-
-  Future<void> forget(String userId) async {
-    if (!state.containsKey(userId)) return;
-    state = {...state}..remove(userId);
-    await _save();
-  }
-
-  Future<void> _save() => ref
-      .read(sharedPreferencesProvider)
-      .setString(SafetyPrefs.blockedNames, jsonEncode(state));
-}
-
-final blockedNamesProvider =
-    NotifierProvider<BlockedNames, Map<String, String>>(BlockedNames.new);
-
 /// Opens external URLs (mailto). Override in tests.
 final safetyUrlLauncherProvider = Provider<Future<bool> Function(Uri)>(
   (ref) =>
@@ -395,17 +353,9 @@ class SafetyActions {
     }
   }
 
-  Future<void> block(String userId, {String? name}) async {
-    await _repo.block(userId);
-    if (name != null) {
-      await _ref.read(blockedNamesProvider.notifier).remember(userId, name);
-    }
-  }
+  Future<void> block(String userId) => _repo.block(userId);
 
-  Future<void> unblock(String userId) async {
-    await _repo.unblock(userId);
-    await _ref.read(blockedNamesProvider.notifier).forget(userId);
-  }
+  Future<void> unblock(String userId) => _repo.unblock(userId);
 }
 
 final safetyActionsProvider = Provider<SafetyActions>(SafetyActions.new);

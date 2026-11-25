@@ -197,6 +197,9 @@ List<Override> dataOverrides(DataEnvironment env, {bool? social}) => [
   journeyRepositoryProvider.overrideWith(
     (ref) => ref.watch(dataLayerProvider).journeys,
   ),
+  legacyWeightPrivacyRepairProvider.overrideWith(
+    (ref) => ref.watch(dataLayerProvider).journeys.repairLegacyHiddenWeight,
+  ),
   checkInRepositoryProvider.overrideWith(
     (ref) => ref.watch(dataLayerProvider).checkIns,
   ),

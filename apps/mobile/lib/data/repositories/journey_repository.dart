@@ -14,6 +14,8 @@ import '../sync/outbox.dart';
 class DataJourneyRepository implements JourneyRepository {
   DataJourneyRepository(this.ctx);
 
+  static const _legacyWeightPrivacyCursor = 'repair.legacyWeightPrivacy.v1';
+
   final DataContext ctx;
 
   AppDatabase get _db => ctx.db;
@@ -78,6 +80,43 @@ class DataJourneyRepository implements JourneyRepository {
     // Active memberships only, archived and ended journeys included.
     final rows = await _mine(me).get();
     return [for (final r in rows) journeyFromRow(r.readTable(_db.journeys))];
+  }
+
+  /// Old builds could persist hide_metric locally before enqueueing it. Only
+  /// that ambiguous cached state needs a legacy repair. The outbox checks
+  /// the server-side bit when sending, and normal reconciliation handles
+  /// any memberships that still look visible locally.
+  Future<void> repairLegacyHiddenWeight(
+    String userId,
+    bool Function(Journey) isWeightMetric,
+  ) async {
+    final outbox = ctx.outbox;
+    if (outbox == null ||
+        ctx.userId != userId ||
+        await _db.readCursor(_legacyWeightPrivacyCursor) == userId) {
+      return;
+    }
+    if (ctx.userId != userId) return;
+    await ctx.claimUserId();
+    final repaired = await _db.transaction(() async {
+      if (ctx.userId != userId ||
+          await _db.readCursor(_legacyWeightPrivacyCursor) == userId) {
+        return false;
+      }
+      final query = _mine(userId)
+        ..where(_db.memberships.hideMetric.equals(true));
+      for (final row in await query.get()) {
+        final journey = journeyFromRow(row.readTable(_db.journeys));
+        if (isWeightMetric(journey)) {
+          await _enqueueMembershipUpdate(outbox, journey.id, userId, {
+            'hide_metric': true,
+          });
+        }
+      }
+      await _db.writeCursor(_legacyWeightPrivacyCursor, userId);
+      return true;
+    });
+    if (repaired) unawaited(outbox.flush());
   }
 
   @override
@@ -794,20 +833,60 @@ class DataJourneyRepository implements JourneyRepository {
                 ),
               );
       if (updated == 0) throw const OurneyException(OurneyErrorCode.notFound);
-      await outbox?.enqueue(
-        OutboxKind.updateMembership,
-        membershipKey(journeyId),
-        {
-          'journey_id': journeyId,
-          'user_id': me,
-          'hide_metric': ?hideMetric,
-          'blur_media': ?blurMedia,
-          'hide_extras': ?hideExtras,
-          'pinned': ?pinned,
-        },
-      );
+      if (outbox == null) return;
+      await _enqueueMembershipUpdate(outbox, journeyId, me, {
+        'hide_metric': ?hideMetric,
+        'blur_media': ?blurMedia,
+        'hide_extras': ?hideExtras,
+        'pinned': ?pinned,
+      });
     });
     if (outbox != null) unawaited(outbox.flush());
+  }
+
+  /// Reuse pending changes when the newest value for each flag already agrees.
+  /// Call inside the same Drift transaction as any local membership write.
+  Future<void> _enqueueMembershipUpdate(
+    Outbox outbox,
+    String journeyId,
+    String userId,
+    Map<String, bool> changes,
+  ) async {
+    final key = membershipKey(journeyId);
+    final remaining = changes.keys.toSet();
+    final rows =
+        await (_db.select(_db.uploadQueue)
+              ..where(
+                (t) =>
+                    t.entityKey.equals(key) &
+                    t.kind.equals(OutboxKind.updateMembership.wire) &
+                    t.dead.equals(false),
+              )
+              ..orderBy([(t) => OrderingTerm.desc(t.id)]))
+            .get();
+    for (final row in rows) {
+      final Object? payload;
+      try {
+        payload = jsonDecode(row.payload);
+      } on FormatException {
+        continue;
+      }
+      if (payload is! Map ||
+          payload['user_id'] != userId ||
+          payload['journey_id'] != journeyId) {
+        continue;
+      }
+      final pendingValues = payload;
+      final fields = remaining.where(pendingValues.containsKey).toList();
+      if (fields.any((field) => pendingValues[field] != changes[field])) break;
+      remaining.removeAll(fields);
+      if (remaining.isEmpty) return;
+    }
+    await outbox.enqueue(OutboxKind.updateMembership, key, {
+      'journey_id': journeyId,
+      'user_id': userId,
+      ...changes,
+    });
   }
 }
 
