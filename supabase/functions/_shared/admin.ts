@@ -3,7 +3,7 @@
 // Docs: https://supabase.com/docs/guides/functions/secrets#default-secrets
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.117.2";
 
-function secretKey(): string {
+export function serviceRoleKey(): string {
   // New-style keys first (SUPABASE_SECRET_KEYS = {"default": "sb_secret_..."}), then legacy.
   const raw = Deno.env.get("SUPABASE_SECRET_KEYS");
   if (raw) {
@@ -23,7 +23,7 @@ function secretKey(): string {
 export function adminClient(): SupabaseClient {
   const url = Deno.env.get("SUPABASE_URL");
   if (!url) throw new Error("SUPABASE_URL missing from environment");
-  return createClient(url, secretKey(), {
+  return createClient(url, serviceRoleKey(), {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
 }
