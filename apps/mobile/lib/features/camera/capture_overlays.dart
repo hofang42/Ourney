@@ -70,6 +70,7 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.partnerPhotoFile != null) return _partner(context);
     switch (widget.skin) {
       case PersonaSkinId.quietTransformer:
         return IgnorePointer(
@@ -86,7 +87,6 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
           ),
         );
       case PersonaSkinId.coupleRituals:
-        return _partner(context);
       case PersonaSkinId.accountabilitySquad:
       case PersonaSkinId.memoryCollectors:
       case PersonaSkinId.aestheticFlexer:

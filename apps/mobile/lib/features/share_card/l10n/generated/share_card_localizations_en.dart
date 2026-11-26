@@ -86,6 +86,9 @@ class ShareCardL10nEn extends ShareCardL10n {
       'No check-in photos yet. The card uses an illustration.';
 
   @override
+  String get share_card_coupleOwnPhotos => 'This card shows only your photos.';
+
+  @override
   String get share_card_stateError =>
       'Couldn\'t check which photos are hidden from sharing, so the card has no photo for now. You can still share it with the illustration, or try again.';
 

@@ -288,14 +288,24 @@ class TimelineIndex {
         monthFirstNo = dayNo;
       }
       final latest = progress.checkInsByDate[date];
-      heat.add(latest != null);
+      final cover =
+          latest ??
+          progress.couple
+              .slotsOn(date)
+              .map((slot) => slot.checkIn)
+              .nonNulls
+              .firstOrNull;
+      heat.add(cover != null);
+      if (cover != null) {
+        covers.add(cover);
+        if (covers.length > 3) covers.removeAt(0);
+        if (latest == null) monthPhotos++;
+      }
       if (latest != null) {
         done++;
         final all = progress.checkInsOn(date);
         frames += all.length;
         monthPhotos += all.length;
-        covers.add(latest);
-        if (covers.length > 3) covers.removeAt(0);
         final m = latestMetric(all);
         if (m != null) {
           metric.add(m);
@@ -324,6 +334,8 @@ class TimelineIndex {
       for (final d in progress.checkInsByDate.keys) {
         if (d.isAfter(tail)) tail = d;
       }
+      final shared = progress.couple.latestDate;
+      if (shared != null && shared.isAfter(tail)) tail = shared;
       if (tail.isBefore(start)) tail = start;
       length = start.daysUntil(tail) + 1;
     }

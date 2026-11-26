@@ -287,16 +287,10 @@ class CheckinL10nVi extends CheckinL10n {
   }
 
   @override
-  String get checkin_extraPartnerPhoto => 'Thêm ảnh của người ấy';
+  String get checkin_coupleInvite => 'Mời người ấy tham gia';
 
   @override
-  String get checkin_extraPartnerPhotoChange => 'Đổi ảnh của người ấy';
-
-  @override
-  String get checkin_extraPartnerPhotoRemove => 'Bỏ ảnh của người ấy';
-
-  @override
-  String get checkin_extraPartnerPhotoSemantics => 'Ảnh của người ấy';
+  String get checkin_coupleWaiting => 'Chờ người ấy đăng ảnh';
 
   @override
   String get checkin_extraPaceLabel => 'Nhịp chạy (phút/km)';

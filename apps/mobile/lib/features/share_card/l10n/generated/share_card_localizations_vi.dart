@@ -85,6 +85,10 @@ class ShareCardL10nVi extends ShareCardL10n {
       'Chưa có ảnh check-in. Thẻ sẽ dùng hình trang trí.';
 
   @override
+  String get share_card_coupleOwnPhotos =>
+      'Thẻ chia sẻ chỉ hiển thị ảnh của bạn.';
+
+  @override
   String get share_card_stateError =>
       'Chưa kiểm tra được ảnh nào đang bị ẩn khỏi chia sẻ nên thẻ tạm thời chưa có ảnh. Bạn vẫn có thể chia sẻ thẻ với hình trang trí hoặc thử lại.';
 

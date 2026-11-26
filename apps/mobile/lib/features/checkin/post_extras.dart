@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -43,7 +41,6 @@ class PostExtrasController extends ChangeNotifier {
   bool customMinutes = false;
   int? hearts;
   String? cook;
-  String? partnerPhotoPath;
   String _paceDigits;
 
   String get paceDigits => _paceDigits;
@@ -86,11 +83,6 @@ class PostExtrasController extends ChangeNotifier {
 
   void pickCook(String value) {
     cook = cook == value ? null : value;
-    notifyListeners();
-  }
-
-  void setPartnerPhoto(String? path) {
-    partnerPhotoPath = path;
     notifyListeners();
   }
 
@@ -146,7 +138,6 @@ class PostExtrasSection extends StatelessWidget {
     required this.controller,
     required this.selfName,
     required this.partnerName,
-    required this.onPickPartnerPhoto,
     this.ritual,
     this.isRunning = true,
     this.destination,
@@ -160,7 +151,6 @@ class PostExtrasSection extends StatelessWidget {
   /// Couple names of the journey (null: the localized You / Partner).
   final String? selfName;
   final String? partnerName;
-  final VoidCallback onPickPartnerPhoto;
 
   /// Couple ritual code (`cook`, `save`, `ldr`, `custom`).
   final String? ritual;
@@ -187,7 +177,6 @@ class PostExtrasSection extends StatelessWidget {
             controller: controller,
             selfName: selfName,
             partnerName: partnerName,
-            onPickPartnerPhoto: onPickPartnerPhoto,
             ritual: ritual,
           ),
           PersonaSkinId.aestheticFlexer =>
@@ -375,14 +364,12 @@ class _CoupleInputs extends StatelessWidget {
     required this.controller,
     required this.selfName,
     required this.partnerName,
-    required this.onPickPartnerPhoto,
     this.ritual,
   });
 
   final PostExtrasController controller;
   final String? selfName;
   final String? partnerName;
-  final VoidCallback onPickPartnerPhoto;
   final String? ritual;
 
   bool get _isCooking => ritual == null || ritual == 'cook';
@@ -394,7 +381,6 @@ class _CoupleInputs extends StatelessWidget {
     final c = controller;
     final self = selfName ?? l10n.checkin_extraYou;
     final partner = partnerName ?? l10n.checkin_extraPartner;
-    final photo = c.partnerPhotoPath;
     final cooking = _isCooking;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,66 +452,6 @@ class _CoupleInputs extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(height: UiSpace.sm),
-        if (photo == null)
-          UiButton.secondary(
-            key: const ValueKey('checkin-partner-photo-add'),
-            label: l10n.checkin_extraPartnerPhoto,
-            glyph: const OurneyIcon(name: 'image-plus', size: 20),
-            onPressed: onPickPartnerPhoto,
-          )
-        else
-          Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(UiRadius.otp),
-                child: Semantics(
-                  image: true,
-                  label: l10n.checkin_extraPartnerPhotoSemantics,
-                  child: Image.file(
-                    File(photo),
-                    key: const ValueKey('checkin-partner-photo'),
-                    width: 72,
-                    height: 96,
-                    fit: BoxFit.cover,
-                    cacheWidth: 240,
-                    errorBuilder: (_, _, _) => SizedBox(
-                      width: 72,
-                      height: 96,
-                      child: Center(
-                        child: OurneyIcon(
-                          name: 'image',
-                          flat: true,
-                          color: ui.inkMuted,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: UiSpace.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    UiTextAction(
-                      label: l10n.checkin_extraPartnerPhotoChange,
-                      onPressed: onPickPartnerPhoto,
-                      alignment: AlignmentDirectional.centerStart,
-                      size: 14,
-                    ),
-                    UiTextAction(
-                      key: const ValueKey('checkin-partner-photo-remove'),
-                      label: l10n.checkin_extraPartnerPhotoRemove,
-                      onPressed: () => c.setPartnerPhoto(null),
-                      alignment: AlignmentDirectional.centerStart,
-                      size: 14,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
       ],
     );
   }

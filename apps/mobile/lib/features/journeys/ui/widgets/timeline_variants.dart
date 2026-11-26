@@ -4,8 +4,8 @@ import 'dart:ui' show PathMetric;
 
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
-import 'package:ourney_core/ourney_core.dart';
 
+import '../../../../data/group_daily_checkins_provider.dart';
 import '../../../../ui/ui.dart';
 import '../../domain/journey_progress.dart';
 import '../../domain/timeline_window.dart';
@@ -856,8 +856,7 @@ class _ScrapRow extends StatelessWidget {
   }
 }
 
-/// Couple rituals: your photo left, heart node on the spine, the day on the
-/// partner's side.
+/// Authored photo slots on either side of the Couple timeline.
 class CoupleTimeline extends StatelessWidget {
   const CoupleTimeline({
     required this.days,
@@ -916,10 +915,20 @@ class _CouplePair extends StatelessWidget {
     final ui = context.ui;
     final l10n = JourneysL10n.of(context);
     final accent = timelineAccent(context);
-    final done = day.state == DayState.checkedIn;
-    final partnerPhoto = day.partnerCheckIn;
-    final waiting =
-        day.state == DayState.checkedIn || day.state == DayState.today;
+    final done = day.canOpen;
+    final slots = day.coupleSlots.isNotEmpty
+        ? day.coupleSlots
+        : [
+            CouplePhotoSlot(
+              isMine: true,
+              displayName: selfName,
+              checkIn: day.checkIn,
+            ),
+            CouplePhotoSlot(displayName: partnerName),
+          ];
+    final ordered = day.coupleSlots.isEmpty && selfOnRight
+        ? slots.reversed.toList()
+        : slots;
     final header = [
       _dayText(context, day),
       _dateText(context, day),
@@ -933,146 +942,130 @@ class _CouplePair extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, c) {
             final s = math.min((c.maxWidth - _spine) / 2, 120.0);
-    final selfHalf = _CoupleHalf(
-      label: (selfName?.trim().isNotEmpty ?? false)
-          ? selfName!.trim()
-          : l10n.journeys_coupleYou,
-      child: wrapTimelineDayHero(
-        day,
-        TimelineTile(day: day, size: s),
-      ),
-    );
-    final partnerHalf = _CoupleHalf(
-      label: (partnerName?.trim().isNotEmpty ?? false)
-          ? partnerName!.trim()
-          : l10n.journeys_ticketPartner,
-      child: partnerPhoto != null
-          ? _PartnerTile(checkIn: partnerPhoto, size: s)
-          : CustomPaint(
-              key: const ValueKey('couple-partner-slot'),
-              foregroundPainter: DashedOutlinePainter(
-                color: ui.border,
-                width: 1.5,
-                radius: UiRadius.otp,
-              ),
-              child: SizedBox.square(
-                dimension: s,
-                child: waiting
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(
-                            6,
-                          ),
-                          child: Text(
-                            l10n.journeys_coupleWaiting,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: UiText.muted(
-                              color: ui.inkMuted,
-                              size: 11,
+            Widget half(CouplePhotoSlot slot) => _CoupleHalf(
+              label: slot.displayName?.trim().isNotEmpty == true
+                  ? slot.displayName!.trim()
+                  : slot.isMine
+                  ? l10n.journeys_coupleYou
+                  : l10n.journeys_ticketPartner,
+              child: _tile(context, slot, s),
+            );
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  header.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: UiText.muted(color: ui.inkMuted, size: 11),
+                ),
+                const SizedBox(height: 6),
+                Stack(
+                  alignment: Alignment.topCenter,
+                  children: [
+                    Positioned.fill(
+                      child: ExcludeSemantics(
+                        child: CustomPaint(
+                          painter: RailPainter(color: ui.border),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: half(ordered.first)),
+                        SizedBox(
+                          width: _spine,
+                          height: s,
+                          child: Center(
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: done
+                                    ? accent.withValues(alpha: 0.25)
+                                    : ui.bg,
+                              ),
+                              child: Center(
+                                child: done
+                                    ? OurneyIcon(
+                                        name: 'heart',
+                                        size: 22,
+                                        color: accent,
+                                        inkColor: ui.ink,
+                                      )
+                                    : OurneyIcon(
+                                        name: 'heart',
+                                        size: 22,
+                                        flat: true,
+                                        color: ui.inkMuted,
+                                      ),
+                              ),
                             ),
                           ),
                         ),
-                      )
-                    : null,
-              ),
-            ),
-    );
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          header.toUpperCase(),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: UiText.muted(color: ui.inkMuted, size: 11),
-        ),
-        const SizedBox(height: 6),
-        Stack(
-          alignment: Alignment.topCenter,
-          children: [
-            Positioned.fill(
-              child: ExcludeSemantics(
-                child: CustomPaint(
-                  painter: RailPainter(color: ui.border),
-                ),
-              ),
-            ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: selfOnRight ? partnerHalf : selfHalf,
-                ),
-                SizedBox(
-                  width: _spine,
-                  height: s,
-                  child: Center(
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: done
-                            ? accent.withValues(alpha: 0.25)
-                            : ui.bg,
-                      ),
-                      child: Center(
-                        child: done
-                            ? OurneyIcon(
-                                name: 'heart',
-                                size: 22,
-                                color: accent,
-                                inkColor: ui.ink,
-                              )
-                            : OurneyIcon(
-                                name: 'heart',
-                                size: 22,
-                                flat: true,
-                                color: ui.inkMuted,
-                              ),
-                      ),
+                        Expanded(child: half(ordered.last)),
+                      ],
                     ),
-                  ),
-                ),
-                Expanded(
-                  child: selfOnRight ? selfHalf : partnerHalf,
+                  ],
                 ),
               ],
-            ),
-          ],
-        ),
-      ],
-    );
+            );
           },
         ),
       ),
     );
   }
-}
 
-/// The partner's photo in the pair row (replaces the waiting slot).
-class _PartnerTile extends StatelessWidget {
-  const _PartnerTile({required this.checkIn, required this.size});
-
-  final CheckIn checkIn;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _tile(BuildContext context, CouplePhotoSlot slot, double size) {
+    final ui = context.ui;
     final l10n = JourneysL10n.of(context);
-    return Semantics(
-      image: true,
-      label: l10n.journeys_partnerPhotoSemantics,
-      child: ClipRRect(
-        key: const ValueKey('couple-partner-photo'),
+    final photo = slot.checkIn;
+    if (photo != null && day.state != DayState.future) {
+      final tile = ClipRRect(
+        key: ValueKey(
+          slot.isMine ? 'couple-own-photo' : 'couple-partner-photo',
+        ),
         borderRadius: BorderRadius.circular(UiRadius.otp),
         child: SizedBox.square(
           dimension: size,
-          child: JourneyPhoto(checkIn: checkIn, partner: true, cacheWidth: 320),
+          child: JourneyPhoto(checkIn: photo, cacheWidth: 320),
         ),
+      );
+      return photo.id == day.viewerPhoto?.id
+          ? wrapTimelineDayHero(day, tile)
+          : tile;
+    }
+    final label = slot.photoUnavailable
+        ? l10n.journeys_photoUnavailable
+        : !slot.isMine && day.isToday
+        ? l10n.journeys_coupleWaiting
+        : null;
+    return CustomPaint(
+      key: ValueKey(slot.isMine ? 'couple-own-slot' : 'couple-partner-slot'),
+      foregroundPainter: DashedOutlinePainter(
+        color: ui.border,
+        width: 1.5,
+        radius: UiRadius.otp,
+      ),
+      child: SizedBox.square(
+        dimension: size,
+        child: label == null
+            ? null
+            : Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: Text(
+                    label,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: UiText.muted(color: ui.inkMuted, size: 11),
+                  ),
+                ),
+              ),
       ),
     );
   }

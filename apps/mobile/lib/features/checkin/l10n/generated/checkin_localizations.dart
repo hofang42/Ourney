@@ -590,29 +590,17 @@ abstract class CheckinL10n {
   /// **'{count} tim'**
   String checkin_extraHeartsValue(int count);
 
-  /// Post screen per-skin input.
+  /// Post screen action when the second Couple journey membership slot is open.
   ///
   /// In vi, this message translates to:
-  /// **'Thêm ảnh của người ấy'**
-  String get checkin_extraPartnerPhoto;
+  /// **'Mời người ấy tham gia'**
+  String get checkin_coupleInvite;
 
-  /// Post screen per-skin input.
+  /// Post screen status when an active partner has not posted on the captured photo’s journey-local date.
   ///
   /// In vi, this message translates to:
-  /// **'Đổi ảnh của người ấy'**
-  String get checkin_extraPartnerPhotoChange;
-
-  /// Post screen per-skin input.
-  ///
-  /// In vi, this message translates to:
-  /// **'Bỏ ảnh của người ấy'**
-  String get checkin_extraPartnerPhotoRemove;
-
-  /// Post screen per-skin input.
-  ///
-  /// In vi, this message translates to:
-  /// **'Ảnh của người ấy'**
-  String get checkin_extraPartnerPhotoSemantics;
+  /// **'Chờ người ấy đăng ảnh'**
+  String get checkin_coupleWaiting;
 
   /// Post screen per-skin input.
   ///

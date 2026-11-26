@@ -18,6 +18,7 @@
   "share_card_milestoneCompleted": "Made it!",
   "share_card_photoLabel": "Photo",
   "share_card_photoNone": "No check-in photos yet. The card uses an illustration.",
+  "share_card_coupleOwnPhotos": "This card shows only your photos.",
   "share_card_stateError": "Couldn't check which photos are hidden from sharing, so the card has no photo for now. You can still share it with the illustration, or try again.",
   "share_card_photoOfDay": "Photo from {date}",
   "share_card_blurPhoto": "Blur photo",

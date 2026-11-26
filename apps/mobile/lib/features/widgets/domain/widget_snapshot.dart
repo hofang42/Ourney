@@ -5,6 +5,8 @@ import 'package:flutter/material.dart' show ThemeMode;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/redirect.dart' show AuthStatus;
+import '../../../data/group_daily_checkins_provider.dart'
+    show compareCheckIns, coupleMemberIds, isCoupleGroup;
 import '../../../personas/persona_contract.dart' show personaSkinOf;
 import '../../../shared/time_zones.dart';
 import '../../../ui/components/avatar.dart' show UiAvatar;
@@ -230,7 +232,24 @@ class WidgetSquadMemberItem {
     required this.avatarFile,
     required this.todayThumbFile,
     required this.todayThumbBlurred,
+    this.slotId,
+    this.isVacant = false,
   });
+
+  const WidgetSquadMemberItem.vacant({required String slotId})
+    : this(
+        displayName: '',
+        initial: '',
+        avatarColorIndex: 0,
+        isMe: false,
+        checkedInToday: false,
+        streak: 0,
+        avatarFile: null,
+        todayThumbFile: null,
+        todayThumbBlurred: false,
+        slotId: slotId,
+        isVacant: true,
+      );
 
   final String displayName;
   final String initial;
@@ -242,6 +261,10 @@ class WidgetSquadMemberItem {
   final String? todayThumbFile;
   final bool todayThumbBlurred;
 
+  /// Account ID for an occupied Couple slot. Vacant slots use anonymous IDs.
+  final String? slotId;
+  final bool isVacant;
+
   Map<String, Object?> toJson() => {
     'displayName': displayName,
     'initial': initial,
@@ -252,6 +275,8 @@ class WidgetSquadMemberItem {
     if (avatarFile != null) 'avatarFile': avatarFile,
     if (todayThumbFile != null) 'todayThumbFile': todayThumbFile,
     'todayThumbBlurred': todayThumbBlurred,
+    if (slotId != null) 'slotId': slotId,
+    if (isVacant) 'isVacant': true,
   };
 }
 
@@ -812,6 +837,8 @@ abstract final class WidgetSnapshotBuilder {
       );
 
       if (j.kind == JourneyKind.group) {
+        final isCouple = isCoupleGroup(j);
+        final myUserId = currentUserId ?? membership?.userId;
         final rawMembers = input.groupMembers;
         final combinedCheckIns = <CheckIn>[
           ...input.groupCheckIns,
@@ -838,18 +865,44 @@ abstract final class WidgetSnapshotBuilder {
           journey: j,
           members: effectiveMembers,
           now: nowUtc,
-          myUserId: currentUserId ?? membership?.userId,
+          myUserId: myUserId,
           blockedIds: blockedUserIds,
           hiddenCheckInIds: hiddenCheckInIds,
           checkIns: combinedCheckIns,
           myMembership: membership,
         );
-        final orderedEntries = <GroupMemberEntry>[
+        final entries = <GroupMemberEntry>[
           ...groupView.done,
           ...groupView.pending,
         ];
+        final entriesById = {
+          for (final entry in entries) entry.member.userId: entry,
+        };
+        final Iterable<String?> slotIds = isCouple
+            ? coupleMemberIds(
+                journey: j,
+                myUserId: null,
+                members: [
+                  for (final member in effectiveMembers)
+                    if (entriesById.containsKey(member.userId)) member,
+                ],
+              )
+            : entries
+                  .take(j.maxMembers.clamp(1, 10))
+                  .map((entry) => entry.member.userId);
         final squadMembers = <WidgetSquadMemberItem>[];
-        for (final entry in orderedEntries.take(j.maxMembers.clamp(1, 10))) {
+        var vacantCount = 0;
+        for (final slotId in slotIds) {
+          final entry = entriesById[slotId];
+          if (entry == null) {
+            vacantCount++;
+            squadMembers.add(
+              WidgetSquadMemberItem.vacant(
+                slotId: vacantCount == 1 ? 'vacant' : 'vacant-$vacantCount',
+              ),
+            );
+            continue;
+          }
           final m = entry.member;
           final avatarDecision = WidgetPrivacyPolicy.decideSquadMemberAvatar(
             photoMode: photoMode,
@@ -864,8 +917,21 @@ abstract final class WidgetSnapshotBuilder {
 
           String? todayThumbFile;
           var todayThumbBlurred = false;
-          final photo = entry.photo;
-          if (entry.checkedInToday && entry.photoIsToday && photo != null) {
+          final photo = isCouple
+              ? _coupleTodayPhoto(
+                  journey: j,
+                  today: today,
+                  member: m,
+                  isMe: entry.isMe,
+                  cachedCheckIns: combinedCheckIns,
+                )
+              : entry.photoIsToday
+              ? entry.photo
+              : null;
+          final checkedInToday = isCouple
+              ? m.checkedInHidden || photo != null
+              : entry.checkedInToday;
+          if (checkedInToday && photo != null) {
             final photoDecision = WidgetPrivacyPolicy.decideSquadMemberPhoto(
               photoMode: photoMode,
               isMe: entry.isMe,
@@ -893,19 +959,15 @@ abstract final class WidgetSnapshotBuilder {
               initial: initialFor(m.displayName),
               avatarColorIndex: UiAvatar.indexFor(m.userId),
               isMe: entry.isMe,
-              checkedInToday: entry.checkedInToday,
+              checkedInToday: checkedInToday,
               streak: entry.streak,
               avatarFile: avatarFile,
               todayThumbFile: todayThumbFile,
               todayThumbBlurred: todayThumbBlurred,
+              slotId: isCouple ? m.userId : null,
             ),
           );
         }
-
-        final isCouple =
-            personaSkinOf(j) == PersonaSkinId.coupleRituals ||
-            j.maxMembers == 2 ||
-            j.coupleSelfName != null;
 
         squadItems.add(
           WidgetSquadItem(
@@ -917,7 +979,9 @@ abstract final class WidgetSnapshotBuilder {
             isCouple: isCouple,
             dayNumber: groupView.dayNumber,
             totalDays: groupView.totalDays,
-            doneCount: groupView.doneCount,
+            doneCount: isCouple
+                ? squadMembers.where((member) => member.checkedInToday).length
+                : groupView.doneCount,
             memberCount: groupView.memberCount,
             meCheckedInToday: summary.checkedInToday,
             midnightRolloverUtc: midnightRolloverUtc.toIso8601String(),
@@ -994,6 +1058,35 @@ abstract final class WidgetSnapshotBuilder {
       liveWindow: livePlan.window,
       thumbRequests: thumbsById.values.toList(growable: false),
     );
+  }
+
+  static CheckIn? _coupleTodayPhoto({
+    required Journey journey,
+    required LocalDate today,
+    required MemberToday member,
+    required bool isMe,
+    required Iterable<CheckIn> cachedCheckIns,
+  }) {
+    bool isTodaysOwnPhoto(CheckIn photo) =>
+        photo.journeyId == journey.id &&
+        photo.userId == member.userId &&
+        photo.localDate == today &&
+        journeyLocalDate(journey.timezone, photo.capturedAt) == today;
+
+    final server = member.todayCheckIn;
+    CheckIn? selected = server != null && isTodaysOwnPhoto(server)
+        ? server
+        : null;
+    for (final photo in cachedCheckIns) {
+      if (!isMe && photo.id != selected?.id) continue;
+      if (!isTodaysOwnPhoto(photo)) continue;
+      // Local media is useful for pending self posts and for the exact
+      // co-member post that the current group-day RPC returned.
+      if (selected == null || compareCheckIns(photo, selected) >= 0) {
+        selected = photo;
+      }
+    }
+    return selected;
   }
 
   static int _compareJourneyPriority(

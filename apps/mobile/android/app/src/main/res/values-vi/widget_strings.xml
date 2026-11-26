@@ -62,4 +62,8 @@
     <string name="widget_live_dismiss">Ẩn hôm nay</string>
     <string name="widget_live_chip_hours">Tối nay</string>
     <string name="widget_live_chip_mins">Tối nay</string>
+    <string name="widget_couple_partner">Người ấy</string>
+    <string name="widget_couple_waiting">Chờ ảnh</string>
+    <string name="widget_couple_no_preview">Không xem trước</string>
+    <string name="widget_couple_checked_in">Đã chụp</string>
 </resources>

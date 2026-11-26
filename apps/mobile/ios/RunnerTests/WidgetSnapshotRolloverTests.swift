@@ -181,6 +181,32 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
     XCTAssertEqual(completed.phase(at: urgent), .completed)
   }
 
+  func testCoupleSlotIDsSurviveRollover() throws {
+    let json = """
+    {"journeyId":"couple","isCouple":true,"memberCount":1,"doneCount":1,
+     "midnightRolloverUtc":"2026-11-24T17:00:00Z",
+     "members":[
+       {"slotId":"owner","displayName":"Minh","checkedInToday":true,
+        "todayThumbBlurred":true,"todayThumbFile":"thumbs/owner.jpg"},
+       {"slotId":"vacant","isVacant":true}
+     ]}
+    """
+    let squad = try JSONDecoder().decode(WidgetSquadItem.self, from: Data(json.utf8))
+    XCTAssertEqual(squad.coupleSlots.map(\.slotId), ["owner", "vacant"])
+    XCTAssertTrue(squad.coupleSlots[1].isVacant)
+
+    var legacy = squad
+    legacy.members.removeLast()
+    XCTAssertTrue(legacy.coupleSlots[1].isVacant)
+
+    let midnight = try XCTUnwrap(WidgetDateParser.parseISO8601(squad.midnightRolloverUtc))
+    let rolled = squad.evaluated(at: midnight)
+    XCTAssertEqual(rolled.coupleSlots.map(\.slotId), squad.coupleSlots.map(\.slotId))
+    XCTAssertFalse(rolled.coupleSlots[0].checkedInToday)
+    XCTAssertFalse(rolled.coupleSlots[0].todayThumbBlurred)
+    XCTAssertNil(rolled.coupleSlots[0].todayThumbFile)
+  }
+
   func testPostMidnightRolloverResetsCompletedAndBreaksMissedStreak() throws {
     let data = try XCTUnwrap(sampleJson.data(using: .utf8))
     let snapshot = try JSONDecoder().decode(WidgetSnapshot.self, from: data)

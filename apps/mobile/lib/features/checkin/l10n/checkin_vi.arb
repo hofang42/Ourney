@@ -263,21 +263,13 @@
       }
     }
   },
-  "checkin_extraPartnerPhoto": "Thêm ảnh của người ấy",
-  "@checkin_extraPartnerPhoto": {
-    "description": "Post screen per-skin input."
+  "checkin_coupleInvite": "Mời người ấy tham gia",
+  "@checkin_coupleInvite": {
+    "description": "Post screen action when the second Couple journey membership slot is open."
   },
-  "checkin_extraPartnerPhotoChange": "Đổi ảnh của người ấy",
-  "@checkin_extraPartnerPhotoChange": {
-    "description": "Post screen per-skin input."
-  },
-  "checkin_extraPartnerPhotoRemove": "Bỏ ảnh của người ấy",
-  "@checkin_extraPartnerPhotoRemove": {
-    "description": "Post screen per-skin input."
-  },
-  "checkin_extraPartnerPhotoSemantics": "Ảnh của người ấy",
-  "@checkin_extraPartnerPhotoSemantics": {
-    "description": "Post screen per-skin input."
+  "checkin_coupleWaiting": "Chờ người ấy đăng ảnh",
+  "@checkin_coupleWaiting": {
+    "description": "Post screen status when an active partner has not posted on the captured photo’s journey-local date."
   },
   "checkin_extraPaceLabel": "Nhịp chạy (phút/km)",
   "@checkin_extraPaceLabel": {

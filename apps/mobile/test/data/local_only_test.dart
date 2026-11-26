@@ -184,7 +184,7 @@ void main() {
     },
   );
 
-  test('local-only stores extras, partner photo and couple names', () async {
+  test('local-only stores ritual extras and couple names', () async {
     final layer = localLayer(db: db, media: media, clock: clock);
     final journey = await layer.journeys.create(
       JourneyDraft(
@@ -217,7 +217,6 @@ void main() {
     );
 
     final shot = fakeCapture(camera, 'c');
-    final partner = fakeCapture(camera, 'p');
     final saved = await layer.checkIns.submit(
       CheckInDraft(
         journeyId: journey.id,
@@ -225,15 +224,11 @@ void main() {
         photoFile: shot.photo,
         thumbFile: shot.thumb,
         extras: const CheckInExtras(dish: ' Phở ', hearts: 4),
-        partnerPhotoFile: partner.photo,
       ),
     );
     expect(saved.extras, const CheckInExtras(dish: 'Phở', hearts: 4));
-    expect(
-      saved.partnerPhotoPath,
-      checkInPartnerPhotoPath(journey.id, saved.userId, saved.id),
-    );
-    expect(File(saved.localPartnerPhotoFile!).existsSync(), isTrue);
+    expect(saved.partnerPhotoPath, isNull);
+    expect(saved.localPartnerPhotoFile, isNull);
 
     await expectLater(
       layer.checkIns.submit(

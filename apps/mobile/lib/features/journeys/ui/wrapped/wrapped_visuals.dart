@@ -18,6 +18,8 @@ class WrappedVisual extends StatelessWidget {
     required this.stats,
     required this.page,
     this.blurPhotos = false,
+    this.exporting = false,
+    this.hiddenPhotoIds = const {},
     super.key,
   });
 
@@ -25,11 +27,16 @@ class WrappedVisual extends StatelessWidget {
   final WrappedStats stats;
   final int page;
   final bool blurPhotos;
+  final bool exporting;
+  final Set<String> hiddenPhotoIds;
 
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final visual = switch (skin) {
+    final layout = stats.coupleSlots.isNotEmpty
+        ? PersonaSkinId.coupleRituals
+        : skin;
+    final visual = switch (layout) {
       PersonaSkinId.quietTransformer =>
         page == 2
             ? _Curve(
@@ -83,18 +90,12 @@ class WrappedVisual extends StatelessWidget {
         key: const ValueKey('wrapped-couple-frame'),
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _Frame(
-            checkIn: stats.photos.isEmpty ? null : stats.photos.first,
-            partner: false,
-          ),
+          _Frame(checkIn: _couplePhoto(0), blur: blurPhotos),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 8),
             child: OurneyIcon(name: 'heart', size: 34, active: true),
           ),
-          _Frame(
-            checkIn: stats.photos.isEmpty ? null : stats.photos.last,
-            partner: true,
-          ),
+          _Frame(checkIn: _couplePhoto(1), blur: blurPhotos),
         ],
       ),
       PersonaSkinId.aestheticFlexer =>
@@ -134,6 +135,17 @@ class WrappedVisual extends StatelessWidget {
       : all.length == 1
       ? [all.first]
       : [all.first, all.last];
+
+  CheckIn? _couplePhoto(int index) {
+    if (stats.coupleSlots.isEmpty) {
+      return index == 0 ? stats.photos.lastOrNull : null;
+    }
+    final slot = stats.coupleSlots[index];
+    final photo = slot.checkIn;
+    return exporting && (!slot.isMine || hiddenPhotoIds.contains(photo?.id))
+        ? null
+        : photo;
+  }
 }
 
 /// Climax slide trophy: rises `32dp` over `560ms` ([UiCurves.stampDecel]) with
@@ -258,10 +270,10 @@ class _TrophyState extends State<_Trophy>
 }
 
 class _Frame extends StatelessWidget {
-  const _Frame({required this.checkIn, required this.partner});
+  const _Frame({required this.checkIn, required this.blur});
 
   final CheckIn? checkIn;
-  final bool partner;
+  final bool blur;
 
   @override
   Widget build(BuildContext context) {
@@ -280,10 +292,14 @@ class _Frame extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           child: c == null
               ? null
-              : JourneyPhoto(
-                  checkIn: c,
-                  partner: partner && c.partnerPhotoPath != null,
-                  fallback: const SizedBox.shrink(),
+              : ImageFiltered(
+                  enabled: blur,
+                  imageFilter: ui_.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                  child: JourneyPhoto(
+                    key: ValueKey(c.id),
+                    checkIn: c,
+                    fallback: const SizedBox.shrink(),
+                  ),
                 ),
         ),
       ),

@@ -94,6 +94,7 @@ class ShareCard extends StatelessWidget {
     required this.blur,
     this.photo,
     this.gallery = const [],
+    this.couplePhotos,
     this.skinId = 'minimal',
     this.hideBrand = false,
     super.key,
@@ -108,6 +109,10 @@ class ShareCard extends StatelessWidget {
 
   /// More photos (newest first) for the contact sheet / grids.
   final List<ImageProvider> gallery;
+
+  /// Date/member order for a Couple journey. Null entries preserve the tile
+  /// positions of authors whose photos are absent or withheld from export.
+  final List<ImageProvider?>? couplePhotos;
   final String skinId;
 
   /// Hide the brand wordmark (the "Ẩn chữ ourney" switch).
@@ -128,6 +133,7 @@ class ShareCard extends StatelessWidget {
       blur: blur,
       photo: photo,
       gallery: gallery,
+      couplePhotos: couplePhotos,
       hideBrand: hideBrand,
       width: width,
       height: height,
@@ -170,6 +176,7 @@ class _Ctx {
     required this.blur,
     required this.photo,
     required this.gallery,
+    required this.couplePhotos,
     required this.hideBrand,
     required this.width,
     required this.height,
@@ -182,6 +189,7 @@ class _Ctx {
   final bool blur;
   final ImageProvider? photo;
   final List<ImageProvider> gallery;
+  final List<ImageProvider?>? couplePhotos;
   final bool hideBrand;
   final double width;
   final double height;
@@ -247,6 +255,7 @@ class _CardPhoto extends StatelessWidget {
     this.primary = false,
     this.glyphColor = const Color(0xFFFFFFFF),
     this.glyphSize = 36,
+    this.coupleSlot,
   });
 
   final _Ctx ctx;
@@ -258,12 +267,16 @@ class _CardPhoto extends StatelessWidget {
   final bool primary;
   final Color glyphColor;
   final double glyphSize;
+  final int? coupleSlot;
 
   @override
   Widget build(BuildContext context) {
-    final blurred = ctx.blur;
     final fallback = DecoratedBox(
-      key: primary ? const ValueKey('share-card-illustration') : null,
+      key: coupleSlot != null
+          ? ValueKey('share-card-couple-placeholder-$coupleSlot')
+          : primary
+          ? const ValueKey('share-card-illustration')
+          : null,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topRight,
@@ -282,19 +295,10 @@ class _CardPhoto extends StatelessWidget {
               ),
       ),
     );
-    Widget child = image == null
-        ? fallback
-        : Image(
-            key: primary ? const ValueKey('share-card-photo') : null,
-            image: image!,
-            fit: BoxFit.cover,
-            gaplessPlayback: true,
-            excludeFromSemantics: true,
-            errorBuilder: (context, error, stack) => fallback,
-          );
-    if (image != null && blurred) {
+    Widget applyBlur(Widget child) {
+      if (!ctx.blur) return child;
       final sigma = shareCardBlurSigma * ctx.width / 360;
-      child = ImageFiltered(
+      return ImageFiltered(
         key: primary ? const ValueKey('share-card-photo-blurred') : null,
         imageFilter: ImageFilter.blur(
           sigmaX: sigma,
@@ -304,9 +308,28 @@ class _CardPhoto extends StatelessWidget {
         child: child,
       );
     }
+
+    final child = image == null
+        ? fallback
+        : Image(
+            key: primary ? const ValueKey('share-card-photo') : null,
+            image: image!,
+            fit: BoxFit.cover,
+            gaplessPlayback: coupleSlot == null,
+            excludeFromSemantics: true,
+            errorBuilder: (context, error, stack) => fallback,
+            // The export captures the same boundary as the preview.
+            // Keep the slot's placeholder visible until a frame is ready.
+            frameBuilder: coupleSlot == null
+                ? null
+                : (context, child, frame, loadedSynchronously) =>
+                      frame == null ? fallback : applyBlur(child),
+          );
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
-      child: SizedBox.expand(child: child),
+      child: SizedBox.expand(
+        child: coupleSlot == null && image != null ? applyBlur(child) : child,
+      ),
     );
   }
 }
@@ -741,8 +764,9 @@ class _CoupleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = ctx.content;
-    final count = ctx.story ? 36 : 16;
+    final count = ctx.format.coupleTileCount;
     final cols = ctx.story ? 6 : 4;
+    final photos = ctx.couplePhotos;
     const ink = Color(0xFF261F22);
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -795,7 +819,12 @@ class _CoupleCard extends StatelessWidget {
                       for (var i = 0; i < count; i++)
                         _CardPhoto(
                           ctx: ctx,
-                          image: ctx.photoAt(i),
+                          image: photos == null
+                              ? ctx.photoAt(i)
+                              : i < photos.length
+                              ? photos[i]
+                              : null,
+                          coupleSlot: photos == null ? null : i,
                           primary: i == 0,
                           radius: 6,
                           glyphSize: 0,

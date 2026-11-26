@@ -1,22 +1,27 @@
 import 'dart:ui' show Tristate;
 
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ourney/features/camera/capture_services.dart';
+import 'package:ourney/app/config.dart';
+import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/checkin/captured_photo.dart';
 import 'package:ourney/features/checkin/checkin_clock.dart';
 import 'package:ourney/features/checkin/photo_compressor.dart';
 import 'package:ourney/features/checkin/post_extras.dart';
 import 'package:ourney/features/checkin/routes.dart';
+import 'package:ourney/features/groups/data/groups_providers.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
+import '../groups/groups_fakes.dart' show FakeGroupRepository, memberToday;
+import '../sharing/sharing_fakes.dart' show FakeSharingRepository;
 import 'fakes.dart';
 
-class _FakeGallery implements GalleryPicker {
+class _SignedInUser extends CurrentUserId {
   @override
-  Future<String?> pickPhoto() async => '/tmp/partner.jpg';
+  String build() => 'me';
 }
 
 void main() {
@@ -33,6 +38,7 @@ void main() {
     WidgetTester tester,
     Journey journey, {
     List<Journey> previousTrips = const [],
+    FakeGroupRepository? group,
   }) async {
     final prefs = await testPrefs(const {});
     checkIns = FakeCheckInRepository();
@@ -45,10 +51,19 @@ void main() {
             journeys: [journey, ...previousTrips],
           ),
           checkIns: checkIns,
+          config: group == null
+              ? const AppConfig.localOnly()
+              : testBackendConfig,
         ),
         photoCompressorProvider.overrideWithValue(compressor),
         checkinClockProvider.overrideWithValue(FakeCheckinClock()),
-        galleryPickerProvider.overrideWithValue(_FakeGallery()),
+        if (group != null) ...[
+          currentUserIdProvider.overrideWith(_SignedInUser.new),
+          groupRepositoryProvider.overrideWithValue(group),
+          sharingRepositoryProvider.overrideWithValue(FakeSharingRepository()),
+          sentGroupInvitationsProvider(journey.id)
+              .overrideWith((_) async => []),
+        ],
       ],
     );
     addTearDown(container.dispose);
@@ -203,7 +218,7 @@ void main() {
     expect(find.textContaining('500'), findsWidgets);
   });
 
-  testWidgets('couple skin posts dish, cook, hearts and the partner photo', (
+  testWidgets('couple skin posts the ritual with the author’s photo', (
     tester,
   ) async {
     final journey = Journey(
@@ -225,8 +240,10 @@ void main() {
     await tester.enterText(find.byKey(const ValueKey('checkin-dish')), 'Phở');
     await tapKey(tester, 'checkin-cook-Bình');
     await tapKey(tester, 'checkin-heart-4');
-    await tapKey(tester, 'checkin-partner-photo-add');
-    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('checkin-partner-photo-add')),
+      findsNothing,
+    );
     await post(tester);
 
     final draft = checkIns.submitted.single;
@@ -234,7 +251,75 @@ void main() {
       draft.extras,
       const CheckInExtras(dish: 'Phở', cook: 'Bình', hearts: 4),
     );
-    expect(draft.partnerPhotoFile, '/tmp/partner.jpg.1080.jpg');
+    expect(compressor.sources, [photo.path]);
+  });
+
+  testWidgets('open Couple slot opens the existing invite sheet', (
+    tester,
+  ) async {
+    final journey = testJourney(
+      kind: JourneyKind.group,
+      maxMembers: 2,
+      templateId: TemplateId.englishDaily,
+    ).copyWith(layout: PersonaSkinId.accountabilitySquad);
+    final group = FakeGroupRepository(
+      today: {
+        journey.id: [memberToday('me', 'An', role: MemberRole.owner)],
+      },
+    );
+    await pump(tester, journey, group: group);
+
+    expect(find.text('Mời người ấy tham gia'), findsOneWidget);
+    await tapKey(tester, 'checkin-couple-invite');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('group-invite-sheet')), findsOneWidget);
+  });
+
+  testWidgets('a member can post while waiting for their partner', (
+    tester,
+  ) async {
+    await withClock(Clock.fixed(testNowUtc), () async {
+      final journey = testJourney(kind: JourneyKind.group, maxMembers: 2);
+      final self = memberToday('me', 'An', role: MemberRole.owner);
+      final partner = memberToday('partner', 'Bình');
+      final group = FakeGroupRepository(
+        today: {
+          journey.id: [self, partner],
+        },
+      );
+      await pump(tester, journey, group: group);
+
+      expect(find.text('Chờ người ấy đăng ảnh'), findsOneWidget);
+      expect(find.text('Mời người ấy tham gia'), findsNothing);
+
+      group.setToday(journey.id, [
+        self,
+        memberToday(
+          'partner',
+          'Bình',
+          today: CheckIn(
+            id: 'partner-photo',
+            journeyId: journey.id,
+            userId: 'partner',
+            localDate: testToday,
+            capturedAt: testNowUtc,
+            photoPath: 'partner.jpg',
+            thumbPath: 'partner_t.jpg',
+            uploaded: true,
+          ),
+        ),
+      ]);
+      await tester.pumpAndSettle();
+      expect(find.text('Chờ người ấy đăng ảnh'), findsNothing);
+
+      group.setToday(journey.id, [self, partner]);
+      await tester.pumpAndSettle();
+      expect(find.text('Chờ người ấy đăng ảnh'), findsOneWidget);
+      await post(tester);
+
+      expect(checkIns.submitted.single.photoFile, '${photo.path}.1080.jpg');
+      expect(compressor.sources, [photo.path]);
+    });
   });
 
   testWidgets(

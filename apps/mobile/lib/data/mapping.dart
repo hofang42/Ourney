@@ -194,7 +194,7 @@ CheckInsCompanion checkInFromRemote(RemoteRow r) => CheckInsCompanion(
   updatedAt: Value(r['updated_at'] as String?),
 );
 
-/// Upsert body for `check_ins` (server recomputes `local_date`).
+/// Write body for `check_ins` (server recomputes `local_date`).
 RemoteRow checkInToRemote(CheckInRow r) => {
   'id': r.id,
   'journey_id': r.journeyId,
@@ -205,7 +205,6 @@ RemoteRow checkInToRemote(CheckInRow r) => {
   'thumb_path': r.thumbPath,
   'from_library': r.fromLibrary,
   'caption': r.caption,
-  'partner_photo_path': r.partnerPhotoPath,
 };
 
 /// Upsert body for `check_in_metrics` (on `checkin_id`; the server copies

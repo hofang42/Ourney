@@ -47,7 +47,8 @@ private class SquadRenderBundle(
     val palette: OurneyWidgetPalette,
     val cardState: SquadWidgetCardState,
     val avatarStripBitmap: android.graphics.Bitmap?,
-    val memberPolaroids: List<Pair<String, android.graphics.Bitmap>>,
+    val coupleAvatars: Map<WidgetSquadMember, android.graphics.Bitmap>,
+    val memberPolaroids: Map<WidgetSquadMember, android.graphics.Bitmap>,
 )
 
 /**
@@ -97,7 +98,7 @@ class SquadGlanceWidget : GlanceAppWidget() {
                     OurneyGlanceTheme.neutralShellPalette(isDark)
                 }
 
-                val avatarStripBitmap = squad?.let {
+                val avatarStripBitmap = squad?.takeUnless { it.isCouple }?.let {
                     OurneyWidgetCanvas.renderSquadAvatarStrip(
                         context = context,
                         store = store,
@@ -106,12 +107,26 @@ class SquadGlanceWidget : GlanceAppWidget() {
                         palette = palette,
                     )
                 }
+                val coupleAvatars = if (squad?.isCouple == true) {
+                    squad.coupleSlots.filterNot { it.isVacant }.associateWith { member ->
+                        OurneyWidgetCanvas.renderSquadAvatarStrip(
+                            context = context,
+                            store = store,
+                            members = listOf(member),
+                            totalMemberCount = 1,
+                            palette = palette,
+                        )
+                    }
+                } else {
+                    emptyMap()
+                }
 
                 val photoMode = snapshot?.privacy?.photoMode
                 val showMemberPhotos = photoMode == "blurred" || photoMode == "clear"
                 val memberPolaroids = if (squad != null && showMemberPhotos) {
-                    squad.members
-                        .filter { it.checkedInToday && !it.todayThumbFile.isNullOrBlank() }
+                    val members = if (squad.isCouple) squad.coupleSlots else squad.members
+                    members
+                        .filter { !it.isVacant && it.checkedInToday && !it.todayThumbFile.isNullOrBlank() }
                         .take(2)
                         .mapNotNull { member ->
                             OurneyWidgetCanvas.renderFramedPhoto(
@@ -120,10 +135,11 @@ class SquadGlanceWidget : GlanceAppWidget() {
                                 palette = palette,
                                 widthDp = 64f,
                                 heightDp = 64f,
-                            )?.let { bmp -> member.displayName to bmp }
+                            )?.let { bmp -> member to bmp }
                         }
+                        .toMap()
                 } else {
-                    emptyList()
+                    emptyMap()
                 }
 
                 SquadRenderBundle(
@@ -131,6 +147,7 @@ class SquadGlanceWidget : GlanceAppWidget() {
                     palette = palette,
                     cardState = cardState,
                     avatarStripBitmap = avatarStripBitmap,
+                    coupleAvatars = coupleAvatars,
                     memberPolaroids = memberPolaroids,
                 )
             }
@@ -189,6 +206,7 @@ class SquadGlanceWidget : GlanceAppWidget() {
                         squad = state.squad,
                         palette = palette,
                         avatarStripBitmap = bundle.avatarStripBitmap,
+                        coupleAvatars = bundle.coupleAvatars,
                         memberPolaroids = bundle.memberPolaroids,
                         isLarge = size.height >= 200.dp,
                     )
@@ -204,7 +222,8 @@ class SquadGlanceWidget : GlanceAppWidget() {
         squad: WidgetSquadItem,
         palette: OurneyWidgetPalette,
         avatarStripBitmap: android.graphics.Bitmap?,
-        memberPolaroids: List<Pair<String, android.graphics.Bitmap>>,
+        coupleAvatars: Map<WidgetSquadMember, android.graphics.Bitmap>,
+        memberPolaroids: Map<WidgetSquadMember, android.graphics.Bitmap>,
         isLarge: Boolean,
     ) {
         val progressText = l10n.getString(
@@ -287,12 +306,24 @@ class SquadGlanceWidget : GlanceAppWidget() {
 
             if (isLarge) {
                 Spacer(modifier = GlanceModifier.height(8.dp))
-                SquadMembersDetailSection(
-                    l10n = l10n,
-                    squad = squad,
-                    palette = palette,
-                    memberPolaroids = memberPolaroids,
-                )
+                if (squad.isCouple) {
+                    CoupleSlotsRow(
+                        l10n = l10n,
+                        members = squad.coupleSlots,
+                        palette = palette,
+                        avatars = coupleAvatars,
+                        memberPolaroids = memberPolaroids,
+                        showPhotos = true,
+                        modifier = GlanceModifier.fillMaxWidth(),
+                    )
+                } else {
+                    SquadMembersDetailSection(
+                        l10n = l10n,
+                        squad = squad,
+                        palette = palette,
+                        memberPolaroids = memberPolaroids,
+                    )
+                }
             }
 
             Spacer(modifier = GlanceModifier.defaultWeight())
@@ -301,7 +332,17 @@ class SquadGlanceWidget : GlanceAppWidget() {
                 modifier = GlanceModifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (avatarStripBitmap != null) {
+                if (squad.isCouple && !isLarge) {
+                    CoupleSlotsRow(
+                        l10n = l10n,
+                        members = squad.coupleSlots,
+                        palette = palette,
+                        avatars = coupleAvatars,
+                        memberPolaroids = memberPolaroids,
+                        showPhotos = false,
+                        modifier = GlanceModifier.defaultWeight(),
+                    )
+                } else if (avatarStripBitmap != null) {
                     Image(
                         provider = ImageProvider(avatarStripBitmap),
                         contentDescription = null,
@@ -369,29 +410,86 @@ class SquadGlanceWidget : GlanceAppWidget() {
     }
 
     @Composable
+    private fun CoupleSlotsRow(
+        l10n: Context,
+        members: List<WidgetSquadMember>,
+        palette: OurneyWidgetPalette,
+        avatars: Map<WidgetSquadMember, android.graphics.Bitmap>,
+        memberPolaroids: Map<WidgetSquadMember, android.graphics.Bitmap>,
+        showPhotos: Boolean,
+        modifier: GlanceModifier,
+    ) {
+        Row(modifier = modifier, verticalAlignment = Alignment.Top) {
+            members.forEachIndexed { index, member ->
+                if (index > 0) Spacer(modifier = GlanceModifier.width(6.dp))
+                val name = if (member.isVacant) {
+                    l10n.getString(R.string.widget_couple_partner)
+                } else {
+                    member.displayName
+                }
+                val photo = memberPolaroids[member]
+                val status = when {
+                    !member.checkedInToday -> R.string.widget_couple_waiting
+                    photo == null -> R.string.widget_couple_no_preview
+                    else -> R.string.widget_couple_checked_in
+                }
+                Column(
+                    modifier = GlanceModifier.defaultWeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    val bitmap = photo ?: avatars[member]
+                    Image(
+                        provider = bitmap?.let { ImageProvider(it) }
+                            ?: ImageProvider(R.drawable.ic_ourney_sticker_camera),
+                        contentDescription = null,
+                        modifier = GlanceModifier.size(if (showPhotos) 64.dp else 21.dp),
+                        contentScale = ContentScale.Fit,
+                    )
+                    Text(
+                        text = name,
+                        style = TextStyle(
+                            color = palette.inkProvider,
+                            fontSize = if (showPhotos) 11.sp else 10.sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        maxLines = 1,
+                    )
+                    if (!showPhotos || photo == null) {
+                        Text(
+                            text = l10n.getString(status),
+                            style = TextStyle(color = palette.inkMutedProvider, fontSize = 9.sp),
+                            maxLines = 1,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
     private fun SquadMembersDetailSection(
         l10n: Context,
         squad: WidgetSquadItem,
         palette: OurneyWidgetPalette,
-        memberPolaroids: List<Pair<String, android.graphics.Bitmap>>,
+        memberPolaroids: Map<WidgetSquadMember, android.graphics.Bitmap>,
     ) {
         if (memberPolaroids.isNotEmpty()) {
             Row(
                 modifier = GlanceModifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                memberPolaroids.forEachIndexed { idx, (name, bmp) ->
+                memberPolaroids.entries.forEachIndexed { idx, (member, bmp) ->
                     if (idx > 0) Spacer(modifier = GlanceModifier.width(10.dp))
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Image(
                             provider = ImageProvider(bmp),
-                            contentDescription = name,
+                            contentDescription = member.displayName,
                             modifier = GlanceModifier.size(64.dp),
                             contentScale = ContentScale.Fit,
                         )
                         Spacer(modifier = GlanceModifier.height(2.dp))
                         Text(
-                            text = name,
+                            text = member.displayName,
                             style = TextStyle(
                                 color = palette.inkProvider,
                                 fontSize = 11.sp,

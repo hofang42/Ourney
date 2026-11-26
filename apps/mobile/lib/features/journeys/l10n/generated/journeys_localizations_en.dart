@@ -736,7 +736,11 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_extraMoodTired => 'A bit tired';
 
   @override
-  String get journeys_partnerPhotoSemantics => 'Your partner\'s photo';
+  String get journeys_uploaderAttachment =>
+      'Photo you attached to this check-in';
+
+  @override
+  String get journeys_coupleNoPhoto => 'No photo for this day';
 
   @override
   String get journeys_inviteAction => 'Invite';

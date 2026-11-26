@@ -8,6 +8,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/journey_clock.dart';
 import '../../../app/providers.dart';
+import '../../../data/group_daily_checkins_provider.dart';
 import '../../../data/sync/outbox.dart' show isTransient;
 
 import '../../../shared/time_zones.dart';
@@ -243,6 +244,7 @@ final journeyTimelineIndexProvider = Provider.autoDispose
           membership: ref.watch(myMembershipProvider(id)).value,
           checkIns: checkIns.value!,
           now: ref.watch(journeysNowProvider),
+          couple: ref.watch(groupDailySnapshotProvider(journey)),
         ),
       );
     });

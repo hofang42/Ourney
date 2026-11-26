@@ -306,16 +306,10 @@ class CheckinL10nEn extends CheckinL10n {
   }
 
   @override
-  String get checkin_extraPartnerPhoto => 'Add your partner\'s photo';
+  String get checkin_coupleInvite => 'Invite your partner to join';
 
   @override
-  String get checkin_extraPartnerPhotoChange => 'Change partner\'s photo';
-
-  @override
-  String get checkin_extraPartnerPhotoRemove => 'Remove partner\'s photo';
-
-  @override
-  String get checkin_extraPartnerPhotoSemantics => 'Your partner\'s photo';
+  String get checkin_coupleWaiting => 'Waiting for your partner’s photo';
 
   @override
   String get checkin_extraPaceLabel => 'Pace (min/km)';

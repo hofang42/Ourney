@@ -443,6 +443,7 @@ Future<ShareHarness> pumpShare(
   List<CheckIn> checkIns = const [],
   bool backend = false,
   bool photos = false,
+  MediaStore? mediaStore,
   Locale locale = const Locale('vi'),
   double textScale = 1,
   Size size = const Size(420, 1800),
@@ -491,7 +492,9 @@ Future<ShareHarness> pumpShare(
       checkInRepositoryProvider.overrideWithValue(
         FakeCheckInRepository(checkIns),
       ),
-      mediaStoreProvider.overrideWithValue(FakeMediaStore(resolve: photos)),
+      mediaStoreProvider.overrideWithValue(
+        mediaStore ?? FakeMediaStore(resolve: photos),
+      ),
       shareCardClockProvider.overrideWithValue(Clock.fixed(testNow)),
       shareCardSharerProvider.overrideWithValue(sharer),
       shareCardSaverProvider.overrideWithValue(saver),

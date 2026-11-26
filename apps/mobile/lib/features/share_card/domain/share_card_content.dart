@@ -3,6 +3,8 @@ import 'dart:ui' show Size;
 import 'package:flutter/painting.dart' show EdgeInsets;
 import 'package:ourney_core/ourney_core.dart';
 
+import '../../../data/group_daily_checkins_provider.dart' show compareCheckIns;
+
 /// The two share card sizes (FR-E1). The card is laid out at a logical size
 /// of 360 points wide and rendered at [pixelRatio] 3, so the PNG is exactly
 /// [pixelWidth] x [pixelHeight] (docs/03 "Share card": view 360x640pt, x3).
@@ -34,6 +36,8 @@ enum ShareCardFormat {
   double get pixelRatio => pixelWidth / logicalWidth;
 
   Size get logicalSize => Size(logicalWidth, pixelHeight / pixelRatio);
+
+  int get coupleTileCount => this == story ? 36 : 16;
 
   /// Padding of the card content in logical points: the IG safe zones plus
   /// a uniform margin.
@@ -96,6 +100,7 @@ class ShareCardContent {
     bool forceHideMetric = false,
     bool hideMetricOnShare = false,
     bool blurPhotosOnShare = false,
+    int? photoCount,
   }) {
     final core = buildShareCard(journey, streak);
     var effectiveDay = dayNumber;
@@ -157,7 +162,8 @@ class ShareCardContent {
       dayNumber: effectiveDay,
       completedDays: streak.completed,
       streakDays: streak.current,
-      photoCount: checkIns.where((c) => c.photoPath.isNotEmpty).length,
+      photoCount:
+          photoCount ?? checkIns.where((c) => c.photoPath.isNotEmpty).length,
       activity: activity,
       title: core.title,
       emoji: core.emoji,
@@ -316,7 +322,7 @@ List<CheckIn> photoCandidates(Iterable<CheckIn> checkIns) {
   final byDate = <LocalDate, CheckIn>{};
   for (final c in checkIns) {
     final existing = byDate[c.localDate];
-    if (existing == null || c.capturedAt.isAfter(existing.capturedAt)) {
+    if (existing == null || compareCheckIns(c, existing) > 0) {
       byDate[c.localDate] = c;
     }
   }

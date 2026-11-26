@@ -1,5 +1,6 @@
 import 'package:ourney_core/ourney_core.dart';
 
+import '../../../data/group_daily_checkins_provider.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'journey_progress.dart';
 
@@ -17,6 +18,7 @@ class WrappedStats {
     required this.lastPlace,
     required this.pace,
     this.weights = const [],
+    this.coupleSlots = const [],
   });
 
   factory WrappedStats.from(JourneyProgress p) {
@@ -40,6 +42,7 @@ class WrappedStats {
         break;
       }
     }
+    final coupleDate = p.couple.latestDate ?? dates.lastOrNull ?? p.today;
     return WrappedStats(
       days: perDay.length,
       moments: every.length,
@@ -55,6 +58,10 @@ class WrappedStats {
       lastPlace: place,
       pace: pace,
       weights: [for (final d in dates) ?latestMetric(p.checkInsOn(d))],
+      coupleSlots: p.couple.slotsOn(
+        coupleDate,
+        ownPhoto: p.checkInsByDate[coupleDate],
+      ),
     );
   }
 
@@ -71,6 +78,7 @@ class WrappedStats {
 
   /// The latest photo of each day, oldest day first.
   final List<CheckIn> photos;
+  final List<CouplePhotoSlot> coupleSlots;
 
   /// The latest metric value logged each day, oldest first.
   final List<double> weights;

@@ -726,7 +726,10 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_extraMoodTired => 'Hơi mệt';
 
   @override
-  String get journeys_partnerPhotoSemantics => 'Ảnh của người ấy';
+  String get journeys_uploaderAttachment => 'Ảnh bạn đã đính kèm vào bài này';
+
+  @override
+  String get journeys_coupleNoPhoto => 'Chưa có ảnh cho ngày này';
 
   @override
   String get journeys_inviteAction => 'Mời bạn';
