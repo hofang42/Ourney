@@ -122,7 +122,15 @@ select is(
   'A-B8: owner/member sees hidden metric_name in follow_frame'
 );
 
-do $$ begin perform tests.as_user(tests.u(2)); end $$;
+do $$
+declare
+  v_tok text;
+begin
+  perform tests.as_user(tests.u(1));
+  v_tok := public.set_public_link(tests.custom_layout_id(), true);
+  perform tests.as_user(tests.u(2));
+  perform public.public_journey_by_token(v_tok);
+end $$;
 select ok(
   (public.follow_frame(tests.custom_layout_id()))->>'metric_name' is null
   and (public.follow_frame(tests.custom_layout_id()))->>'metric_unit' is null,

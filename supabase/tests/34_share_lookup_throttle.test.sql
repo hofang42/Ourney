@@ -53,7 +53,7 @@ select is(public.lookup_public_journey_for_edge('invalid', repeat('e', 64)),
 reset role;
 
 select is((select hits from private.share_lookup_buckets where scope = 'ip' and bucket_key = repeat('a', 64)),
-  1, 'a well-formed miss does not use the IP budget');
+  2, 'a well-formed miss also charges the IP budget');
 select is((select hits from private.share_lookup_buckets where scope = 'journey'),
   2, 'both aliases share the same journey budget and misses do not create journey buckets');
 select ok(not exists (select from private.share_lookup_buckets where bucket_key = repeat('e', 64)),
@@ -63,29 +63,29 @@ update private.share_lookup_buckets set hits = 60 where scope = 'ip' and bucket_
 set local role service_role;
 select ok((public.lookup_public_journey_for_edge(:'slug', repeat('a', 64))->>'retry_after')::int between 1 and 60,
   'the IP limit applies across credentials and returns a bounded retry time');
-select is(public.lookup_public_journey_for_edge(repeat('z', 40), repeat('a', 64)),
-  '{"journey": null, "retry_after": 0}'::jsonb, 'an unknown link remains a miss after IP budget exhaustion');
+select ok((public.lookup_public_journey_for_edge(repeat('z', 40), repeat('a', 64))->>'retry_after')::int between 1 and 60,
+  'an unknown link is also throttled after IP budget exhaustion');
 select is(public.lookup_public_journey_for_edge(:'slug', repeat('b', 64))->'journey'->>'title',
   'Throttle journey', 'a different IP can still open the same link');
 reset role;
 select is((select hits from private.share_lookup_buckets where scope = 'journey'),
   3, 'requests blocked by their IP quota do not use the journey budget');
 
-update private.share_lookup_buckets set hits = 120 where scope = 'journey';
+update private.share_lookup_buckets set hits = 600 where scope = 'journey';
 set local role service_role;
 select ok((public.lookup_public_journey_for_edge(:'legacy', repeat('c', 64))->>'retry_after')::int between 1 and 60,
   'the journey cap holds for a new IP and the legacy alias');
 select ok((public.lookup_public_journey_for_edge(:'slug', null)->>'retry_after')::int between 1 and 60,
   'the journey cap also holds when the gateway supplies no usable IP');
 select is(public.lookup_public_journey_for_edge(repeat('z', 40), null),
-  '{"journey": null, "retry_after": 0}'::jsonb, 'a miss without an IP stays a miss');
+  '{"journey": null, "retry_after": 0}'::jsonb, 'a miss without an IP stays a miss while the fallback IP budget has room');
 select is(public.lookup_public_journey_for_edge(:'other_slug', null)->'journey'->>'title',
   'Other throttle journey', 'the exhausted journey does not block another link without an IP');
 select is(public.lookup_public_journey_for_edge(:'other_slug', 'invalid')->'journey'->>'title',
-  'Other throttle journey', 'an invalid IP digest also skips the IP quota');
+  'Other throttle journey', 'an invalid IP digest shares the fallback IP quota');
 reset role;
-select is((select count(*) from private.share_lookup_buckets where scope = 'ip'), 2::bigint,
-  'only successful lookups with a usable IP have created IP buckets');
+select is((select count(*) from private.share_lookup_buckets where scope = 'ip'), 4::bigint,
+  'lookups charge per-IP buckets and the shared fallback bucket when IP is missing');
 
 update private.share_lookup_buckets set window_start = window_start - interval '1 minute';
 set local role service_role;
@@ -96,7 +96,7 @@ select is((select hits from private.share_lookup_buckets
   where scope = 'journey' and window_start = date_trunc('minute', now(), 'UTC')), 1,
   'the current minute has its own count');
 select is((select hits from private.share_lookup_buckets where scope = 'journey'
-  and bucket_key = 'b3400000-0000-4000-8000-000000000001' and window_start < date_trunc('minute', now(), 'UTC')), 120,
+  and bucket_key = 'b3400000-0000-4000-8000-000000000001' and window_start < date_trunc('minute', now(), 'UTC')), 600,
   'the previous minute remains available for cleanup');
 
 insert into private.share_lookup_buckets (scope, bucket_key, window_start, hits)
@@ -136,7 +136,8 @@ select throws_ok(format('select public.public_journey_by_token(%L)', :'slug'), '
   '{"code":"P0001","message":"rate_limited"}',
   'the same signed-in account is throttled across both token formats');
 select throws_ok($$ select public.public_journey_by_token(repeat('z', 40)) $$,
-  'P0001', 'not_found', 'an authenticated miss stays on the cheap path after budget exhaustion');
+  'PGRST', '{"code":"P0001","message":"rate_limited"}',
+  'an authenticated miss is also throttled after budget exhaustion');
 set local request.jwt.claims = '{"sub":"34000000-0000-4000-8000-000000000002","role":"authenticated"}';
 select is(public.public_journey_by_token(:'slug')->>'role', 'stranger',
   'another signed-in account retains its own quota and can open the readable link');
