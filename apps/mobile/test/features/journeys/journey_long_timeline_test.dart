@@ -535,13 +535,21 @@ void main() {
         ) async {
           final handle = tester.ensureSemantics();
           final j = _journey(skin, elapsed: 365, duration: 365);
-          await _pump(
-            tester,
-            j,
-            size: const Size(390, 930),
-            scale: 1.35,
-            brightness: brightness,
+          await _pump(tester, j, scale: 1.35, brightness: brightness);
+          final checkInRect = tester.getRect(_key('journey-checkin'));
+          final recentRect = tester.getRect(_key('timeline-mode-recent'));
+          final monthRect = tester.getRect(_key('timeline-mode-month'));
+          expect(
+            recentRect.overlaps(checkInRect),
+            isFalse,
+            reason: 'recent tab $recentRect must not overlap $checkInRect',
           );
+          expect(
+            monthRect.overlaps(checkInRect),
+            isFalse,
+            reason: 'month tab $monthRect must not overlap $checkInRect',
+          );
+          expect(monthRect.bottom, lessThanOrEqualTo(checkInRect.top));
           await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
           await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
           await expectLater(tester, meetsGuideline(textContrastGuideline));

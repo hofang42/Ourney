@@ -117,6 +117,7 @@ class JourneyHomeIntro extends StatelessWidget {
         : total == null
         ? l10n.journeys_home_dayStreakOpen(day, streak)
         : l10n.journeys_home_dayStreak(day, total!, streak);
+    final bigText = MediaQuery.textScalerOf(context).scale(10) > 13;
     return Column(
       key: ValueKey('journey-home-intro-$skin'),
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,7 +140,10 @@ class JourneyHomeIntro extends StatelessWidget {
             child: Text(
               headline,
               key: const ValueKey('journey-home-headline'),
-              style: UiText.h1(color: ui.ink).copyWith(height: 1.2),
+              style: UiText.h1(
+                color: ui.ink,
+                size: bigText ? 20 : 28,
+              ).copyWith(height: 1.2),
             ),
           ),
         const SizedBox(height: UiSpace.xs),
