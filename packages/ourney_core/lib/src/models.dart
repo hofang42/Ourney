@@ -597,7 +597,7 @@ class CheckIn {
   /// Per-skin Post inputs (`check_ins.extras`).
   final CheckInExtras extras;
 
-  /// Couple journeys: the partner's photo path, when one was attached.
+  /// Legacy photo attached by this check-in's author.
   final String? partnerPhotoPath;
 
   /// Set while the photo still lives only on this device.
@@ -616,7 +616,6 @@ class CheckInDraft {
     this.caption,
     this.metricValue,
     this.extras = CheckInExtras.empty,
-    this.partnerPhotoFile,
     this.id,
   });
 
@@ -634,9 +633,6 @@ class CheckInDraft {
   final String? caption;
   final double? metricValue;
   final CheckInExtras extras;
-
-  /// Optional already compressed JPEG of the partner (couple journeys).
-  final String? partnerPhotoFile;
 }
 
 /// One row of RPC `group_today(journey)` (active, non-blocked members ordered

@@ -52,6 +52,7 @@ Journey testJourney({
   String? metricName,
   String? metricUnit,
   bool hideMetricDefault = false,
+  int maxMembers = 10,
 }) => Journey(
   id: id,
   ownerId: ownerId,
@@ -67,6 +68,7 @@ Journey testJourney({
   metricName: metricName,
   metricUnit: metricUnit,
   hideMetricDefault: hideMetricDefault,
+  maxMembers: maxMembers,
 );
 
 Membership testMembership(

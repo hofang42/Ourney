@@ -15,8 +15,8 @@ Widget wrapTimelineDayHero(
   Widget child, {
   BorderRadius? borderRadiusBegin,
 }) {
-  final entryId = day.checkIn?.id;
-  if (day.state != DayState.checkedIn || entryId == null) return child;
+  final entryId = day.viewerPhoto?.id;
+  if (!day.canOpen || entryId == null) return child;
   return UiHero(
     tag: UiHeroTags.dayPhoto(entryId),
     borderRadiusBegin:
@@ -102,7 +102,8 @@ class JourneyTimeline extends StatelessWidget {
           ? TimelineEndCap(window: w)
           : const SizedBox.shrink();
     }
-    final core = switch (skinId) {
+    final variant = days.first.coupleSlots.isEmpty ? skinId : 'couple';
+    final core = switch (variant) {
       'quiet' => QuietTimeline(
         days: days,
         onTapDay: onTapDay,

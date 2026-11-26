@@ -9,6 +9,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
+import '../../../data/group_daily_checkins_provider.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../personas/persona_contract.dart' show personaSkinOf;
 import '../../../ui/ui.dart';
@@ -132,6 +133,9 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
 
     final membership = ref.watch(shareMembershipProvider(id)).value;
     final hasBackend = ref.watch(appConfigProvider).hasBackend;
+    final currentUserId = ref.watch(currentUserIdProvider);
+    final skinId = uiSkinIdFor(personaSkinOf(journey));
+    final coupleMosaic = skinId == 'couple' && isCoupleGroup(journey);
     // Every check-in counts for the streak / numbers; only the photos
     // offered on the card are filtered.
     final checkIns = ref.watch(shareCheckInsProvider(id)).value ?? const [];
@@ -160,6 +164,50 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
     final effectiveDayNumber = progress.isActive
         ? progress.dayNumber
         : (progress.elapsedDays < 1 ? 1 : progress.elapsedDays);
+    final callerId = currentUserId ?? (hasBackend ? null : membership?.userId);
+    final lastDay = progress.lastDay;
+    final memberIds = coupleMosaic
+        ? coupleMemberIds(
+            journey: journey,
+            myUserId: callerId,
+            members:
+                ref.watch(groupMembersTodaySafeProvider(id)).value ??
+                const <MemberToday>[],
+          )
+        : const <String?>[];
+    final candidates = photoCandidates(
+      coupleMosaic
+          ? shareable.where(
+              (c) =>
+                  c.userId == callerId &&
+                  memberIds.contains(callerId) &&
+                  c.photoPath.isNotEmpty &&
+                  !c.localDate.isBefore(journey.startDate) &&
+                  !c.localDate.isAfter(lastDay),
+            )
+          : shareable,
+    );
+    final couplePhotosByDay = {
+      if (coupleMosaic)
+        for (final c in candidates) c.localDate: c,
+    };
+    final couplePhotos = coupleMosaic
+        ? [
+            for (
+              var offset = 0;
+              offset < progress.elapsedDays &&
+                  offset < _format.coupleTileCount ~/ 2;
+              offset++
+            )
+              for (final memberId in memberIds)
+                if (memberId != null && memberId == callerId)
+                  _couplePhotoProvider(
+                    couplePhotosByDay[lastDay.addDays(-offset)],
+                  )
+                else
+                  null,
+          ]
+        : null;
     final content = ShareCardContent.from(
       journey: journey,
       membership: membership,
@@ -171,11 +219,12 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       // Global Settings > privacy switches (FR-B7).
       hideMetricOnShare: ref.watch(hideWeightOnShareProvider),
       blurPhotosOnShare: ref.watch(blurPhotosOnShareProvider),
+      photoCount: coupleMosaic ? candidates.length : null,
     );
-    final candidates = photoCandidates(shareable);
-    final selected =
-        candidates.where((c) => c.id == _photoCheckInId).firstOrNull ??
-        candidates.firstOrNull;
+    final selected = coupleMosaic
+        ? null
+        : candidates.where((c) => c.id == _photoCheckInId).firstOrNull ??
+              candidates.firstOrNull;
     final photo = selected == null
         ? null
         : _photoProvider(selected, thumb: false);
@@ -183,7 +232,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
     final showLink = canHavePublicLink(
       journey: journey,
       membership: membership,
-      currentUserId: ref.watch(currentUserIdProvider),
+      currentUserId: currentUserId,
       hasBackend: hasBackend,
     );
 
@@ -193,10 +242,10 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       caption.caption,
       '${content.emoji} ${content.title}',
     );
-    final skinId = uiSkinIdFor(personaSkinOf(journey));
     final hideBrand = _hideBrand ?? shareCardHidesBrandByDefault(skinId);
     final gallery = <ImageProvider>[
-      for (final c in candidates.take(36)) ?_photoProvider(c, thumb: true),
+      if (!coupleMosaic)
+        for (final c in candidates.take(36)) ?_photoProvider(c, thumb: true),
     ];
     final screenHeight = MediaQuery.sizeOf(context).height;
     final previewHeight = (screenHeight * 0.55).clamp(280.0, 620.0);
@@ -375,7 +424,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                                     final overlayAlpha = targetBlur
                                         ? (1.0 - blurT)
                                         : blurT;
-                                    if (overlayAlpha <= 0.001) {
+                                    if (coupleMosaic || overlayAlpha <= 0.001) {
                                       return baseChild!;
                                     }
                                     return Stack(
@@ -433,6 +482,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                                           blur: quiet ? true : blur,
                                           photo: photo,
                                           gallery: gallery,
+                                          couplePhotos: couplePhotos,
                                           skinId: skinId,
                                           hideBrand: hideBrand,
                                         ),
@@ -545,13 +595,18 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                   const SizedBox(height: UiSpace.xl),
                 ],
                 _SectionLabel(l10n.share_card_photoLabel),
-                if (candidates.isEmpty)
+                if (coupleMosaic)
+                  Text(
+                    l10n.share_card_coupleOwnPhotos,
+                    style: UiText.muted(color: ui.inkMuted, size: 14),
+                  )
+                else if (candidates.isEmpty)
                   Text(
                     l10n.share_card_photoNone,
                     key: const ValueKey('share-card-photo-none'),
                     style: UiText.muted(color: ui.inkMuted, size: 14),
                   )
-                else ...[
+                else
                   _PhotoStrip(
                     candidates: candidates,
                     selectedId: selected?.id,
@@ -561,6 +616,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                     ],
                     onSelect: (c) => setState(() => _photoCheckInId = c.id),
                   ),
+                if (candidates.isNotEmpty)
                   // The quiet card always blurs its portrait: the switch
                   // shows that and cannot be turned off there.
                   UiSwitchRow(
@@ -580,7 +636,6 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                             setState(() => _blurOverride = v);
                           },
                   ),
-                ],
                 if (content.metricHidden && !quiet)
                   Padding(
                     padding: const EdgeInsets.only(top: UiSpace.sm),
@@ -649,6 +704,20 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       null,
       FileImage(File(path)),
     );
+  }
+
+  ImageProvider? _couplePhotoProvider(CheckIn? checkIn) {
+    if (checkIn == null) return null;
+    final path = ref
+        .watch(
+          shareCardPhotoFileProvider((
+            storagePath: checkIn.photoPath,
+            localFile: checkIn.uploaded ? null : checkIn.localPhotoFile,
+          )),
+        )
+        .value;
+    if (path == null) return null;
+    return ResizeImage(FileImage(File(path)), width: 216);
   }
 
   Future<void> _share({

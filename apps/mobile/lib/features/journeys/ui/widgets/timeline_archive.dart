@@ -81,7 +81,6 @@ List<Widget> buildArchiveSlivers({
   required TimelineIndex index,
   required Set<int> open,
   required Map<int, GlobalKey> headerKeys,
-  required String skinId,
   required Color paper,
   required Color accent,
   required ValueChanged<int> onToggle,
@@ -121,7 +120,6 @@ List<Widget> buildArchiveSlivers({
         title: title,
         plain: plain,
         summary: summary,
-        skinId: skinId,
         paper: paper,
         accent: accent,
         pitch: pitch,
@@ -145,7 +143,6 @@ class _ArchiveMonthGroup extends StatefulWidget {
     required this.title,
     required this.plain,
     required this.summary,
-    required this.skinId,
     required this.paper,
     required this.accent,
     required this.pitch,
@@ -164,7 +161,6 @@ class _ArchiveMonthGroup extends StatefulWidget {
   final String title;
   final String plain;
   final String summary;
-  final String skinId;
   final Color paper;
   final Color accent;
   final double pitch;
@@ -276,7 +272,6 @@ class _ArchiveMonthGroupState extends State<_ArchiveMonthGroup> {
           _MonthGrid(
             month: m,
             index: widget.index,
-            skinId: widget.skinId,
             accent: widget.accent,
             pitch: widget.pitch,
             firstDay: widget.firstDay,
@@ -466,7 +461,6 @@ class _MonthGrid extends StatelessWidget {
   const _MonthGrid({
     required this.month,
     required this.index,
-    required this.skinId,
     required this.accent,
     required this.pitch,
     required this.firstDay,
@@ -477,7 +471,6 @@ class _MonthGrid extends StatelessWidget {
 
   final MonthBucket month;
   final TimelineIndex index;
-  final String skinId;
   final Color accent;
   final double pitch;
   final int firstDay;
@@ -560,7 +553,6 @@ class _MonthGrid extends StatelessWidget {
         size: tile,
         hit: pitch,
         cacheWidth: (tile * dpr).ceil(),
-        partner: skinId == 'couple' && day.partnerCheckIn != null,
         onTap: onTapDay,
       ),
     );

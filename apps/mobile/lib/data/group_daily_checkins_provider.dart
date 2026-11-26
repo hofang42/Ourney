@@ -1,142 +1,272 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
+import '../app/journey_clock.dart';
 import '../app/providers.dart';
 import '../features/groups/data/groups_providers.dart';
+import '../features/journeys/domain/journey_time.dart';
 
-/// Never retry on a timer so widget tests never leak pending timers.
 Duration? _noRetry(int _, Object _) => null;
 
-/// **Task D1**: Group check-in data indexed by day and partner status for
-/// `PersonaSkinId.coupleRituals` (D2 `DuoSplitTimeline`, D3 `HalfFrameDuoHud`,
-/// D4 `CoupleMosaicPosterShareCard`) and any multi-member persona.
-///
-/// In local-only mode (`appConfigProvider.localOnly`) or when repositories are
-/// not wired in a widget test, streams emit empty values gracefully instead of
-/// throwing.
-class GroupDailySnapshot {
-  const GroupDailySnapshot({
-    this.myName,
-    this.partnerName,
-    this.partnerCheckInsByDate = const {},
-    this.partnerCheckIns = const [],
-    this.partnerTodayCheckIn,
+bool isCoupleGroup(Journey journey) =>
+    journey.kind == JourneyKind.group && journey.maxMembers == 2;
+
+/// Oldest first, with the same tie-break as the check-in and group-day queries.
+int compareCheckIns(CheckIn a, CheckIn b) {
+  final time = a.capturedAt.compareTo(b.capturedAt);
+  return time == 0 ? a.id.compareTo(b.id) : time;
+}
+
+/// The group roster arrives in join order (then account ID). Orient the pair
+/// once for both viewers, including an empty slot while the group has one
+/// member. The owner's saved side preference applies to that join order.
+List<String?> coupleMemberIds({
+  required Journey journey,
+  required String? myUserId,
+  required List<MemberToday> members,
+}) {
+  final ids = <String>{for (final member in members) member.userId};
+  final ordered = switch (ids.length) {
+    2 => ids.toList(),
+    1 when ids.first != journey.ownerId => <String?>[null, ids.first],
+    1 => <String?>[ids.first, null],
+    _ when myUserId != null && myUserId != journey.ownerId => <String?>[
+      null,
+      myUserId,
+    ],
+    _ => <String?>[myUserId, null],
+  };
+  return List.unmodifiable(
+    journey.dna?['side'] == 'right' ? ordered.reversed : ordered,
+  );
+}
+
+class CouplePhotoSlot {
+  const CouplePhotoSlot({
+    this.userId,
+    this.displayName,
+    this.checkIn,
+    this.isMine = false,
+    this.photoUnavailable = false,
   });
 
-  static const empty = GroupDailySnapshot();
+  final String? userId;
+  final String? displayName;
+  final CheckIn? checkIn;
+  final bool isMine;
+  final bool photoUnavailable;
+}
 
-  final String? myName;
-  final String? partnerName;
-  final Map<LocalDate, CheckIn> partnerCheckInsByDate;
-  final List<CheckIn> partnerCheckIns;
-  final CheckIn? partnerTodayCheckIn;
+class GroupDailySnapshot {
+  const GroupDailySnapshot._({
+    this.memberIds = const [],
+    this.myUserId,
+    this.partnerId,
+    this.hasLoadedMembers = false,
+    this.canInvitePartner = false,
+    this.today,
+    this.partnerPostedToday = false,
+    this.memberNames = const {},
+    this.byDate = const {},
+    this.latestPartnerCheckIn,
+    this.photosByDate = const {},
+  });
 
-  /// Builds a snapshot for [journey] given all visible [allCheckIns], today's
-  /// [members], and the current user's [myUserId].
+  static const empty = GroupDailySnapshot._();
+
   factory GroupDailySnapshot.build({
     required Journey journey,
     required List<CheckIn> allCheckIns,
     required List<MemberToday> members,
-    String? myUserId,
+    required String? myUserId,
+    LocalDate? today,
+    bool hasLoadedMembers = true,
     Set<String> blockedIds = const {},
   }) {
-    if (journey.kind != JourneyKind.group) return empty;
+    if (!isCoupleGroup(journey)) return empty;
+    final visible = [
+      for (final member in members)
+        if (!blockedIds.contains(member.userId)) member,
+    ];
+    final memberIds = coupleMemberIds(
+      journey: journey,
+      myUserId: myUserId,
+      members: visible,
+    );
+    final partner =
+        myUserId != null && visible.any((member) => member.userId == myUserId)
+        ? visible.where((member) => member.userId != myUserId).singleOrNull
+        : null;
 
-    String? myName;
-    MemberToday? partnerMember;
-    for (final m in members) {
-      if (blockedIds.contains(m.userId)) continue;
-      if (myUserId != null && m.userId == myUserId) {
-        myName = m.displayName;
-      } else {
-        partnerMember ??= m;
-      }
-    }
-
-    final partnerId = partnerMember?.userId;
-    final byDate = <LocalDate, CheckIn>{};
-    final list = <CheckIn>[];
-
-    if (partnerId != null) {
-      for (final c in allCheckIns) {
-        if (blockedIds.contains(c.userId)) continue;
-        if (c.userId != partnerId) continue;
-
-        final prev = byDate[c.localDate];
-        if (prev == null || c.capturedAt.isAfter(prev.capturedAt)) {
-          byDate[c.localDate] = c;
+    final byDate = <LocalDate, Map<String, CheckIn>>{};
+    final photosByDate = <LocalDate, List<CheckIn>>{};
+    CheckIn? latestPartner;
+    for (final photo in allCheckIns) {
+      if (photo.journeyId != journey.id) continue;
+      final isMine = myUserId != null && photo.userId == myUserId;
+      if (!isMine) {
+        if (partner == null ||
+            photo.userId != partner.userId ||
+            !photo.uploaded) {
+          continue;
+        }
+        // The current group-day result covers reports/moderation even while
+        // the historical cache is still reconciling.
+        if (photo.localDate == today && photo.id != partner.todayCheckIn?.id) {
+          // Older eligible posts stay in the gallery. If the RPC withheld the
+          // entire day, withhold all cached photos of that day too.
+          if (partner.todayCheckIn == null ||
+              compareCheckIns(photo, partner.todayCheckIn!) >= 0) {
+            continue;
+          }
+          (photosByDate[photo.localDate] ??= []).add(photo);
+          continue;
+        }
+        if (latestPartner == null ||
+            compareCheckIns(photo, latestPartner) > 0) {
+          latestPartner = photo;
         }
       }
+      (photosByDate[photo.localDate] ??= []).add(photo);
+      final selected = byDate[photo.localDate] ??= {};
+      final previous = selected[photo.userId];
+      if (previous == null || compareCheckIns(photo, previous) > 0) {
+        selected[photo.userId] = photo;
+      }
     }
 
-    list.addAll(byDate.values);
-    list.sort((a, b) => a.localDate.compareTo(b.localDate));
+    final orderedNames = [journey.coupleSelfName, journey.couplePartnerName];
+    final memberNames = <String, String>{
+      for (final member in visible) member.userId: member.displayName,
+    };
+    for (var index = 0; index < memberIds.length; index++) {
+      final id = memberIds[index];
+      final name =
+          orderedNames[journey.dna?['side'] == 'right' ? 1 - index : index]
+              ?.trim();
+      if (id != null && name != null && name.isNotEmpty) memberNames[id] = name;
+    }
 
-    return GroupDailySnapshot(
-      myName: myName,
-      partnerName: partnerMember?.displayName,
-      partnerCheckInsByDate: byDate,
-      partnerCheckIns: list,
-      partnerTodayCheckIn: partnerMember?.todayCheckIn,
+    return GroupDailySnapshot._(
+      memberIds: memberIds,
+      myUserId: myUserId,
+      partnerId: partner?.userId,
+      hasLoadedMembers: hasLoadedMembers,
+      canInvitePartner:
+          hasLoadedMembers &&
+          members.length == 1 &&
+          members.single.userId == myUserId &&
+          blockedIds.isEmpty,
+      today: today,
+      partnerPostedToday: partner?.checkedIn ?? false,
+      memberNames: memberNames,
+      byDate: byDate,
+      latestPartnerCheckIn: latestPartner,
+      photosByDate: photosByDate,
     );
+  }
+
+  final List<String?> memberIds;
+  final String? myUserId;
+  final String? partnerId;
+  final bool hasLoadedMembers;
+  final bool canInvitePartner;
+  final LocalDate? today;
+  final bool partnerPostedToday;
+  final Map<String, String> memberNames;
+  final Map<LocalDate, Map<String, CheckIn>> byDate;
+  final Map<LocalDate, List<CheckIn>> photosByDate;
+  final CheckIn? latestPartnerCheckIn;
+
+  bool partnerPostedOn(LocalDate date) =>
+      (date == today && partnerPostedToday) || byDate[date]?[partnerId] != null;
+
+  List<CouplePhotoSlot> slotsOn(LocalDate date, {CheckIn? ownPhoto}) {
+    final entries = byDate[date] ?? const <String, CheckIn>{};
+    var mine = entries[myUserId];
+    if (ownPhoto != null &&
+        ownPhoto.userId == myUserId &&
+        ownPhoto.localDate == date &&
+        (mine == null || compareCheckIns(ownPhoto, mine) > 0)) {
+      mine = ownPhoto;
+    }
+    return [
+      for (final id in memberIds)
+        CouplePhotoSlot(
+          userId: id,
+          displayName: memberNames[id],
+          checkIn: id != null && id == myUserId ? mine : entries[id],
+          isMine: id != null && id == myUserId,
+          photoUnavailable:
+              id != null &&
+              id == partnerId &&
+              date == today &&
+              partnerPostedToday &&
+              entries[id] == null,
+        ),
+    ];
+  }
+
+  List<CheckIn> photosOn(LocalDate date) => photosByDate[date] ?? const [];
+
+  /// Most recent journey day with a visible authored contribution.
+  LocalDate? get latestDate {
+    LocalDate? latest;
+    for (final date in byDate.keys) {
+      if (latest == null || date.isAfter(latest)) latest = date;
+    }
+    return latest;
   }
 }
 
-/// Safe stream of all check-ins in a group journey (empty in local-only mode).
+/// RLS-filtered local history, reconciled when the roster stream opens.
 final groupAllCheckInsSafeProvider = StreamProvider.autoDispose
     .family<List<CheckIn>, String>((ref, journeyId) {
-      if (ref.watch(appConfigProvider).localOnly) {
-        return Stream.value(const <CheckIn>[]);
-      }
+      if (ref.watch(appConfigProvider).localOnly) return Stream.value(const []);
+      ref.watch(currentUserIdProvider);
       final CheckInRepository repo;
       try {
         repo = ref.watch(checkInRepositoryProvider);
       } on Object {
-        return Stream.value(const <CheckIn>[]);
+        return Stream.value(const []);
       }
-      return repo
-          .watchForJourney(journeyId)
-          .handleError((Object _) => const <CheckIn>[]);
+      return repo.watchForJourney(journeyId);
     }, retry: _noRetry);
 
-/// Safe stream of `group_today` rows (empty in local-only mode or if unwired).
+/// The latest group-day roster and privacy-filtered photo IDs from the server.
 final groupMembersTodaySafeProvider = StreamProvider.autoDispose
     .family<List<MemberToday>, String>((ref, journeyId) {
-      if (ref.watch(appConfigProvider).localOnly) {
-        return Stream.value(const <MemberToday>[]);
-      }
+      if (ref.watch(appConfigProvider).localOnly) return Stream.value(const []);
+      ref.watch(currentUserIdProvider);
       final GroupRepository repo;
       try {
         repo = ref.watch(groupRepositoryProvider);
       } on Object {
-        return Stream.value(const <MemberToday>[]);
+        return Stream.value(const []);
       }
-      return repo
-          .watchToday(journeyId)
-          .handleError((Object _) => const <MemberToday>[]);
+      return repo.watchToday(journeyId);
     }, retry: _noRetry);
 
-/// Computes [GroupDailySnapshot] for [journey].
 final groupDailySnapshotProvider = Provider.autoDispose
     .family<GroupDailySnapshot, Journey>((ref, journey) {
-      if (journey.kind != JourneyKind.group ||
-          ref.watch(appConfigProvider).localOnly) {
+      if (!isCoupleGroup(journey) || ref.watch(appConfigProvider).localOnly) {
         return GroupDailySnapshot.empty;
       }
-      final allCheckIns =
-          ref.watch(groupAllCheckInsSafeProvider(journey.id)).value ??
-          const <CheckIn>[];
-      final members =
-          ref.watch(groupMembersTodaySafeProvider(journey.id)).value ??
-          const <MemberToday>[];
-      final blockedIds =
-          ref.watch(groupBlockedIdsProvider).value ?? const <String>{};
-      final myUserId = ref.watch(currentUserIdProvider);
+      final members = ref
+          .watch(groupMembersTodaySafeProvider(journey.id))
+          .asData;
+      // Sample a fresh instant when either the roster or history refreshes.
+      // The app day ticker also invalidates the snapshot at midnight.
+      ref.watch(journeysNowProvider);
       return GroupDailySnapshot.build(
         journey: journey,
-        allCheckIns: allCheckIns,
-        members: members,
-        myUserId: myUserId,
-        blockedIds: blockedIds,
+        allCheckIns:
+            ref.watch(groupAllCheckInsSafeProvider(journey.id)).asData?.value ??
+            const [],
+        members: members?.value ?? const [],
+        hasLoadedMembers: members != null,
+        myUserId: ref.watch(currentUserIdProvider),
+        blockedIds: ref.watch(groupBlockedIdsProvider).value ?? const {},
+        today: journeyLocalDate(journey.timezone, ref.watch(journeysClockProvider).now()),
       );
     });

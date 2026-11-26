@@ -206,6 +206,12 @@ abstract class ShareCardL10n {
   /// **'Chưa có ảnh check-in. Thẻ sẽ dùng hình trang trí.'**
   String get share_card_photoNone;
 
+  /// Explains whose photos appear on the Couple share card.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thẻ chia sẻ chỉ hiển thị ảnh của bạn.'**
+  String get share_card_coupleOwnPhotos;
+
   /// Shown on the share card when the hidden-photo flags could not be loaded; sharing stays enabled and the card falls back to the illustration (no photo).
   ///
   /// In vi, this message translates to:

@@ -118,6 +118,7 @@ private struct SquadMediumView: View {
 
   var body: some View {
     let locale = snapshot.locale
+    let totalCount = squad.isCouple ? squad.memberCount : max(squad.memberCount, squad.members.count)
 
     VStack(alignment: .leading, spacing: 8) {
       // Header: Type icon + Squad title + Checked-in counter pill
@@ -133,7 +134,7 @@ private struct SquadMediumView: View {
 
         Spacer(minLength: 4)
 
-        Text(WidgetL10n.squadCheckedInBadge(done: squad.doneCount, total: max(squad.memberCount, squad.members.count), locale: locale))
+        Text(WidgetL10n.squadCheckedInBadge(done: squad.doneCount, total: totalCount, locale: locale))
           .font(OurneyWidgetFont.body(9.5, bold: true))
           .foregroundColor(theme.onAccent)
           .padding(.horizontal, 8)
@@ -150,9 +151,11 @@ private struct SquadMediumView: View {
       }
 
       // Middle: Couple Diptych (if isCouple) or 5-member avatar strip (+N overflow)
-      if squad.isCouple && squad.members.count >= 2 {
+      if squad.isCouple {
         CoupleDiptychRow(
-          members: Array(squad.members.prefix(2)),
+          members: squad.coupleSlots,
+          locale: locale,
+          allowsPhotos: snapshot.privacy.photoMode == "blurred" || snapshot.privacy.photoMode == "clear",
           theme: theme
         )
       } else {
@@ -221,8 +224,12 @@ private struct SquadLargeView: View {
 
   var body: some View {
     let locale = snapshot.locale
-    let featuredMembers = Array(squad.members.prefix(4))
-    let totalCount = max(squad.memberCount, squad.members.count)
+    let featuredMembers = squad.isCouple ? squad.coupleSlots : Array(squad.members.prefix(4))
+    let totalCount = squad.isCouple ? squad.memberCount : max(squad.memberCount, squad.members.count)
+    let coupleLocale = squad.isCouple ? locale : nil
+    let allowsPhotos = squad.isCouple
+      ? snapshot.privacy.photoMode == "blurred" || snapshot.privacy.photoMode == "clear"
+      : snapshot.privacy.allowsPhotosOnHomeScreen
 
     VStack(alignment: .leading, spacing: 8) {
       // Top header
@@ -259,32 +266,23 @@ private struct SquadLargeView: View {
       }
 
       // 2x2 Polaroid / Member Grid (`squadPolaroidWall` in CLAUDE.md §4)
-      let topRow = Array(featuredMembers.prefix(2))
-      let bottomRow = Array(featuredMembers.dropFirst(2).prefix(2))
+      let rows = [
+        Array(featuredMembers.prefix(2)),
+        Array(featuredMembers.dropFirst(2).prefix(2))
+      ].filter { !$0.isEmpty }
 
       VStack(spacing: 8) {
-        HStack(spacing: 8) {
-          ForEach(Array(topRow.enumerated()), id: \.offset) { _, member in
-            SquadMemberPolaroidTile(
-              member: member,
-              allowsPhotos: snapshot.privacy.allowsPhotosOnHomeScreen,
-              theme: theme
-            )
-          }
-          if topRow.count == 1 {
-            Spacer().frame(maxWidth: .infinity)
-          }
-        }
-        if !bottomRow.isEmpty {
+        ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
           HStack(spacing: 8) {
-            ForEach(Array(bottomRow.enumerated()), id: \.offset) { _, member in
+            ForEach(memberRows(row), id: \.id) { slot in
               SquadMemberPolaroidTile(
-                member: member,
-                allowsPhotos: snapshot.privacy.allowsPhotosOnHomeScreen,
-                theme: theme
+                member: slot.member,
+                allowsPhotos: allowsPhotos,
+                theme: theme,
+                coupleLocale: coupleLocale
               )
             }
-            if bottomRow.count == 1 {
+            if row.count == 1 {
               Spacer().frame(maxWidth: .infinity)
             }
           }
@@ -375,32 +373,61 @@ private struct SquadAvatarRow: View {
 
 private struct CoupleDiptychRow: View {
   let members: [WidgetSquadMember]
+  let locale: String
+  let allowsPhotos: Bool
   let theme: OurneyWidgetTheme
 
   var body: some View {
     HStack(spacing: 8) {
-      ForEach(Array(members.enumerated()), id: \.offset) { _, member in
+      ForEach(memberRows(members), id: \.id) { slot in
+        let member = slot.member
+        let photo = allowsPhotos && member.checkedInToday
+          ? OurneyThumbLoader.loadDownsampledImage(relativePath: member.todayThumbFile, maxPixelSize: 96)
+          : nil
         HStack(spacing: 7) {
-          OurneyAvatarDisc(
-            initial: member.initial,
-            colorIndex: member.avatarColorIndex,
-            avatarFile: member.avatarFile,
-            size: 32,
-            checkedInToday: member.checkedInToday,
-            theme: theme
-          )
-
+          if member.isVacant {
+            OurneyIconView(name: "camera", size: 26, ink: theme.ink)
+              .frame(width: 32, height: 32)
+          } else if let photo {
+            Image(uiImage: photo)
+              .resizable()
+              .scaledToFill()
+              .frame(width: 32, height: 32)
+              .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+              .privacySensitive()
+          } else {
+            OurneyAvatarDisc(
+              initial: member.initial,
+              colorIndex: member.avatarColorIndex,
+              avatarFile: member.avatarFile,
+              size: 32,
+              checkedInToday: member.checkedInToday,
+              theme: theme
+            )
+          }
           VStack(alignment: .leading, spacing: 1) {
-            Text(member.displayName)
+            Text(member.isVacant ? WidgetL10n.couplePartnerLabel(locale: locale) : member.displayName)
               .font(OurneyWidgetFont.body(11, bold: true))
               .foregroundColor(theme.ink)
               .lineLimit(1)
 
-            HStack(spacing: 3) {
-              OurneyIconView(name: "flame", size: 12, ink: theme.ink)
-              Text("\(member.streak)")
-                .font(OurneyWidgetFont.display(12, weight: .bold))
-                .foregroundColor(theme.ink)
+            if photo != nil {
+              HStack(spacing: 3) {
+                OurneyIconView(name: "flame", size: 12, ink: theme.ink)
+                Text("\(member.streak)")
+                  .font(OurneyWidgetFont.display(12, weight: .bold))
+                  .foregroundColor(theme.ink)
+              }
+            } else {
+              Text(
+                member.checkedInToday
+                  ? WidgetL10n.couplePhotoUnavailable(locale: locale)
+                  : WidgetL10n.coupleWaitingForPhoto(locale: locale)
+              )
+                .font(OurneyWidgetFont.body(9.5))
+                .foregroundColor(theme.inkMuted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             }
           }
           Spacer(minLength: 0)
@@ -421,10 +448,17 @@ private struct CoupleDiptychRow: View {
   }
 }
 
+private func memberRows(_ members: [WidgetSquadMember]) -> [(id: String, member: WidgetSquadMember)] {
+  members.enumerated().map { index, member in
+    (id: member.slotId ?? "legacy-\(index)", member: member)
+  }
+}
+
 private struct SquadMemberPolaroidTile: View {
   let member: WidgetSquadMember
   let allowsPhotos: Bool
   let theme: OurneyWidgetTheme
+  var coupleLocale: String? = nil
 
   var body: some View {
     VStack(alignment: .leading, spacing: 5) {
@@ -432,7 +466,8 @@ private struct SquadMemberPolaroidTile: View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
           .fill(theme.fill)
 
-        if member.checkedInToday,
+        if !member.isVacant,
+           member.checkedInToday,
            allowsPhotos,
            let uiImage = OurneyThumbLoader.loadDownsampledImage(
              relativePath: member.todayThumbFile,
@@ -444,6 +479,31 @@ private struct SquadMemberPolaroidTile: View {
             .scaledToFill()
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .privacySensitive()
+        } else if let locale = coupleLocale {
+          VStack(spacing: 6) {
+            if member.isVacant {
+              OurneyIconView(name: "camera", size: 25, ink: theme.ink)
+            } else {
+              OurneyAvatarDisc(
+                initial: member.initial,
+                colorIndex: member.avatarColorIndex,
+                avatarFile: member.avatarFile,
+                size: 36,
+                checkedInToday: member.checkedInToday,
+                theme: theme
+              )
+            }
+            Text(
+              member.checkedInToday
+                ? WidgetL10n.couplePhotoUnavailable(locale: locale)
+                : WidgetL10n.coupleWaitingForPhoto(locale: locale)
+            )
+            .font(OurneyWidgetFont.body(10))
+            .foregroundColor(theme.inkMuted)
+            .multilineTextAlignment(.center)
+            .lineLimit(2)
+          }
+          .padding(4)
         } else {
           OurneyAvatarDisc(
             initial: member.initial,
@@ -459,18 +519,20 @@ private struct SquadMemberPolaroidTile: View {
       .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
       HStack(spacing: 4) {
-        Text(member.displayName)
+        Text(member.isVacant ? WidgetL10n.couplePartnerLabel(locale: coupleLocale ?? "") : member.displayName)
           .font(OurneyWidgetFont.body(10.5, bold: true))
           .foregroundColor(theme.ink)
           .lineLimit(1)
 
         Spacer(minLength: 2)
 
-        HStack(spacing: 2) {
-          OurneyIconView(name: "flame", size: 11, ink: theme.ink)
-          Text("\(member.streak)")
-            .font(OurneyWidgetFont.display(11, weight: .bold))
-            .foregroundColor(theme.ink)
+        if !member.isVacant {
+          HStack(spacing: 2) {
+            OurneyIconView(name: "flame", size: 11, ink: theme.ink)
+            Text("\(member.streak)")
+              .font(OurneyWidgetFont.display(11, weight: .bold))
+              .foregroundColor(theme.ink)
+          }
         }
       }
     }

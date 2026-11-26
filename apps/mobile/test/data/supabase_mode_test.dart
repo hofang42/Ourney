@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/data/data_layer.dart';
 import 'package:ourney/data/db/app_database.dart';
@@ -278,6 +279,131 @@ void main() {
       isTrue,
     );
     expect(remote.callsOf('download'), isEmpty);
+  });
+
+  test(
+    'both Couple members upload their own check-in on the same journey day',
+    () async {
+      const journeyId = 'couple-journey';
+      final partnerRemote = FakeRemoteApi(userId: other);
+      final partnerLayer = supabaseLayer(
+        db: memoryDb(),
+        media: tempDir(),
+        clock: clock,
+        remote: partnerRemote,
+      );
+      final authors = [
+        (user: me, layer: layer, remote: remote),
+        (user: other, layer: partnerLayer, remote: partnerRemote),
+      ];
+      for (final author in authors) {
+        author.remote.tables['journeys'] = [
+          journeyRow(journeyId, ownerId: me, kind: 'group', visibility: 'group')
+            ..['max_members'] = 2,
+        ];
+        author.remote.tables['memberships'] = [
+          membershipRow(journeyId, me),
+          membershipRow(journeyId, other, role: 'member'),
+        ];
+        expect(await author.layer.syncNow(), isA<SyncOk>());
+        final shot = fakeCapture(camera, author.user);
+        final saved = await author.layer.checkIns.submit(
+          CheckInDraft(
+            id: author.user,
+            journeyId: journeyId,
+            capturedAt: clock.value,
+            photoFile: shot.photo,
+            thumbFile: shot.thumb,
+          ),
+        );
+        await author.layer.ctx.outbox!.flush(force: true);
+
+        expect(saved.userId, author.user);
+        expect(saved.localDate, const LocalDate(2026, 10, 16));
+        expect(author.remote.uploaded.keys, [
+          checkInPhotoPath(journeyId, author.user, saved.id),
+          checkInThumbPath(journeyId, author.user, saved.id),
+        ]);
+        final write = author.remote
+            .callsOf('upsert')
+            .singleWhere((call) => call.target == 'check_ins');
+        final values = (write.args! as Map)['row'] as Map;
+        expect(values['user_id'], author.user);
+        expect(values.containsKey('partner_photo_path'), isFalse);
+      }
+    },
+  );
+
+  group('legacy queued attachments', () {
+    late CheckIn pending;
+    late String attachment;
+
+    setUp(() async {
+      final journey = await layer.journeys.create(soloDraft());
+      remote.failure = offline;
+      pending = await checkIn(journey.id, 'legacy', metric: 70.5);
+      await settle();
+      attachment = checkInPartnerPhotoPath(journey.id, me, pending.id);
+      await (db.update(db.checkIns)..where((t) => t.id.equals(pending.id)))
+          .write(CheckInsCompanion(partnerPhotoPath: Value(attachment)));
+      await layer.ctx.files.writeBytes(attachment, [6, 7]);
+      remote.failure = null;
+      remote.calls.clear();
+    });
+
+    test('a fresh replay uploads only the main photo and finishes', () async {
+      // The old writer may have uploaded the object before losing connection.
+      remote.storageObjects[attachment] = [6, 7];
+      await settle();
+
+      expect(remote.uploaded.keys, [pending.photoPath, pending.thumbPath]);
+      final insert = remote.callsOf('insert').single;
+      expect(insert.target, 'check_ins');
+      expect((insert.args! as Map).containsKey('partner_photo_path'), isFalse);
+      expect(upsertsOf('check_in_metrics'), hasLength(1));
+      expect(upsertsOf('check_in_extras'), hasLength(1));
+      expect(remote.removed, [attachment]);
+      expect(layer.ctx.files.fileFor(attachment).existsSync(), isFalse);
+      expect(await layer.ctx.outbox!.pendingRows(), isEmpty);
+      final saved =
+          (await layer.checkIns.watchForJourney(pending.journeyId).first)
+              .single;
+      expect(saved.uploaded, isTrue);
+      expect(saved.partnerPhotoPath, isNull);
+    });
+
+    test('a committed replay preserves immutable media and finishes', () async {
+      remote.tables['check_ins'] = [
+        {
+          'id': pending.id,
+          'journey_id': pending.journeyId,
+          'user_id': me,
+          'partner_photo_path': attachment,
+          'updated_at': clock.value.toIso8601String(),
+        },
+      ];
+      // The companion writes can finish without the old draft's local media.
+      await layer.ctx.files.delete([
+        pending.photoPath,
+        pending.thumbPath,
+        attachment,
+      ]);
+
+      await settle();
+
+      expect(remote.callsOf('upload'), isEmpty);
+      expect(remote.callsOf('insert'), isEmpty);
+      expect(upsertsOf('check_ins'), isEmpty);
+      expect(upsertsOf('check_in_metrics'), hasLength(1));
+      expect(upsertsOf('check_in_extras'), hasLength(1));
+      expect(remote.removed, isEmpty);
+      expect(await layer.ctx.outbox!.pendingRows(), isEmpty);
+      final saved =
+          (await layer.checkIns.watchForJourney(pending.journeyId).first)
+              .single;
+      expect(saved.uploaded, isTrue);
+      expect(saved.partnerPhotoPath, attachment);
+    });
   });
 
   test(

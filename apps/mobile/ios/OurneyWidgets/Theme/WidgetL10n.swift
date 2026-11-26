@@ -105,6 +105,18 @@ public enum WidgetL10n {
     isEnglish(locale) ? "View squad" : "Xem nhóm"
   }
 
+  public static func couplePartnerLabel(locale: String) -> String {
+    isEnglish(locale) ? "Partner" : "Người ấy"
+  }
+
+  public static func coupleWaitingForPhoto(locale: String) -> String {
+    isEnglish(locale) ? "Waiting for a photo" : "Chờ ảnh hôm nay"
+  }
+
+  public static func couplePhotoUnavailable(locale: String) -> String {
+    isEnglish(locale) ? "No photo preview" : "Không có ảnh xem trước"
+  }
+
   // MARK: - Empty States (Including Unsynced, SignedOut, NoJourneys, SoloOnly — §A.3 & Rank 5)
 
   public static func unsyncedTitle(locale: String) -> String {

@@ -795,6 +795,20 @@ public struct WidgetSquadItem: Codable, Equatable, Identifiable {
   public var midnightRolloverUtc: String?
   public var members: [WidgetSquadMember]
 
+  /// Preserve the snapshot's account order, including an open side.
+  /// Older snapshots can omit both the slot IDs and the vacant entry.
+  public var coupleSlots: [WidgetSquadMember] {
+    (0..<2).map { index in
+      if index < members.count { return members[index] }
+      return WidgetSquadMember(
+        displayName: "",
+        initial: "",
+        slotId: "vacant-\(index)",
+        isVacant: true
+      )
+    }
+  }
+
   public init(
     journeyId: String,
     title: String,
@@ -908,6 +922,8 @@ public struct WidgetSquadMember: Codable, Equatable {
   public var avatarFile: String?
   public var todayThumbFile: String?
   public var todayThumbBlurred: Bool
+  public var slotId: String?
+  public var isVacant: Bool
 
   public init(
     displayName: String,
@@ -918,7 +934,9 @@ public struct WidgetSquadMember: Codable, Equatable {
     streak: Int = 0,
     avatarFile: String? = nil,
     todayThumbFile: String? = nil,
-    todayThumbBlurred: Bool = false
+    todayThumbBlurred: Bool = false,
+    slotId: String? = nil,
+    isVacant: Bool = false
   ) {
     self.displayName = displayName
     self.initial = initial
@@ -929,6 +947,8 @@ public struct WidgetSquadMember: Codable, Equatable {
     self.avatarFile = avatarFile
     self.todayThumbFile = todayThumbFile
     self.todayThumbBlurred = todayThumbBlurred
+    self.slotId = slotId
+    self.isVacant = isVacant
   }
 
   enum CodingKeys: String, CodingKey {
@@ -941,6 +961,8 @@ public struct WidgetSquadMember: Codable, Equatable {
     case avatarFile
     case todayThumbFile
     case todayThumbBlurred
+    case slotId
+    case isVacant
   }
 
   public init(from decoder: Decoder) throws {
@@ -961,6 +983,8 @@ public struct WidgetSquadMember: Codable, Equatable {
     self.avatarFile = try c.decodeIfPresent(String.self, forKey: .avatarFile)
     self.todayThumbFile = try c.decodeIfPresent(String.self, forKey: .todayThumbFile)
     self.todayThumbBlurred = try c.decodeIfPresent(Bool.self, forKey: .todayThumbBlurred) ?? false
+    self.slotId = try c.decodeIfPresent(String.self, forKey: .slotId)
+    self.isVacant = try c.decodeIfPresent(Bool.self, forKey: .isVacant) ?? false
   }
 }
 

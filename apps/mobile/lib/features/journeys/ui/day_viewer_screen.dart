@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
+import '../../../data/group_daily_checkins_provider.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../data/journeys_providers.dart';
@@ -16,10 +17,8 @@ import '../l10n/generated/journeys_localizations.dart';
 import 'journey_extras.dart';
 import 'journey_photo.dart';
 
-/// `/journey/:id/day/:date`: the caller's photos of that day (swipe through
-/// several, B-B6) with caption and metric, on the camera black. Because
-/// [DayViewerScreen] only ever displays the caller's own check-ins, their own
-/// metric is always shown to them directly (UX-25).
+/// A day's authored pair for a Couple journey, followed by extra photos.
+/// Other journeys open directly on the latest of the caller's photos.
 class DayViewerScreen extends ConsumerStatefulWidget {
   const DayViewerScreen({
     required this.journeyId,
@@ -183,17 +182,38 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
     final journey = ref.watch(journeyByIdProvider(widget.journeyId)).value;
     final checkIns = ref.watch(myCheckInsProvider(widget.journeyId));
     final date = widget.date;
-    // Every photo of the day, oldest first (several a day since `0014`).
-    final dayCheckIns = date == null
+    final couple = journey == null
+        ? GroupDailySnapshot.empty
+        : ref.watch(groupDailySnapshotProvider(journey));
+    final paired = couple.memberIds.isNotEmpty;
+    final ownPhotos = date == null
         ? const <CheckIn>[]
         : ([
             for (final c in checkIns.value ?? const <CheckIn>[])
               if (c.localDate == date) c,
-          ]..sort((a, b) => a.capturedAt.compareTo(b.capturedAt)));
+          ]..sort(compareCheckIns));
+    final slots = date == null
+        ? const <CouplePhotoSlot>[]
+        : couple.slotsOn(date, ownPhoto: ownPhotos.lastOrNull);
+    final selected = {for (final slot in slots) ?slot.checkIn?.id};
+    final pairAnchor =
+        slots.where((slot) => slot.isMine).firstOrNull?.checkIn ??
+        slots.map((slot) => slot.checkIn).nonNulls.firstOrNull;
+    final dayCheckIns = paired && date != null
+        ? [
+            ?pairAnchor,
+            ...([
+              for (final c in ownPhotos)
+                if (!selected.contains(c.id)) c,
+              for (final c in couple.photosOn(date))
+                if (c.userId == couple.partnerId && !selected.contains(c.id)) c,
+            ]..sort(compareCheckIns)),
+          ]
+        : ownPhotos;
     final count = dayCheckIns.length;
     if (count > 0 && _pages == null) {
-      _page = count - 1;
-      _pages = PageController(initialPage: count - 1);
+      _page = paired ? 0 : count - 1;
+      _pages = PageController(initialPage: _page);
     }
     final index = count == 0 ? 0 : _page.clamp(0, count - 1);
     final checkIn = count == 0 ? null : dayCheckIns[index];
@@ -222,6 +242,7 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
                   }
                 },
                 itemBuilder: (_, i) {
+                  if (paired && i == 0) return _pairFrame(context, slots);
                   final c = dayCheckIns[i];
                   return Semantics(
                     image: true,
@@ -317,7 +338,9 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
     }
 
     Widget? metadataChrome;
-    if (checkIn != null) {
+    final ownMetadata =
+        checkIn != null && (!paired || checkIn.userId == couple.myUserId);
+    if (ownMetadata) {
       final chromeColumn = Column(
         key: const ValueKey('journey-day-chrome'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -370,6 +393,25 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
               value: checkIn.metricValue!,
             ),
           ],
+          if (checkIn.partnerPhotoPath != null &&
+              (checkIn.uploaded || journey?.kind == JourneyKind.solo)) ...[
+            const SizedBox(height: UiSpace.lg),
+            Text(
+              l10n.journeys_uploaderAttachment,
+              style: UiText.body(size: 14, height: 1.4, color: _muted),
+            ),
+            const SizedBox(height: UiSpace.xs),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(UiRadius.input),
+                child: SizedBox.square(
+                  dimension: 96,
+                  child: JourneyPhoto(checkIn: checkIn, attachment: true),
+                ),
+              ),
+            ),
+          ],
         ],
       );
       final chromeFade = _chromeFade;
@@ -416,7 +458,9 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
           ],
         ),
         const SizedBox(height: UiSpace.sm),
-        if (checkIn == null)
+        if (checkIn == null && slots.isNotEmpty)
+          AspectRatio(aspectRatio: 1, child: _pairFrame(context, slots))
+        else if (checkIn == null)
           Padding(
             padding: const EdgeInsets.only(top: 120),
             child: Center(
@@ -458,6 +502,59 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
           child: child!,
         );
       },
+    );
+  }
+
+  Widget _pairFrame(BuildContext context, List<CouplePhotoSlot> slots) {
+    final l10n = JourneysL10n.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final (index, slot) in slots.indexed)
+          Expanded(
+            key: ValueKey(('day-viewer-slot', index, slot.userId)),
+            child: Padding(
+              padding: const EdgeInsets.all(2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: ColoredBox(
+                      color: UiCamera.onPhoto.withValues(alpha: 0.10),
+                      child: slot.checkIn == null
+                          ? Center(
+                              child: Text(
+                                slot.photoUnavailable
+                                    ? l10n.journeys_photoUnavailable
+                                    : l10n.journeys_coupleNoPhoto,
+                                textAlign: TextAlign.center,
+                                style: UiText.body(size: 14, color: _muted),
+                              ),
+                            )
+                          : JourneyPhoto(
+                              checkIn: slot.checkIn!,
+                              thumbnail: false,
+                            ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(UiSpace.xs),
+                    child: Text(
+                      slot.displayName ??
+                          (slot.isMine
+                              ? l10n.journeys_coupleYou
+                              : l10n.journeys_ticketPartner),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: UiText.body(size: 14, height: 1.4, color: _muted),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

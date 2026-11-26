@@ -150,7 +150,14 @@ void main() {
       (checkInId: 'c1', extras: '{"km":5.3}'),
     );
     expect(checkInFromRemote(remote).extras, const Value<String>.absent());
-    expect(body['partner_photo_path'], 'checkins/j1/u1/c1_p.jpg');
+    expect(body.containsKey('partner_photo_path'), isFalse);
+    expect(
+      checkInFromRemote({
+        ...remote,
+        'partner_photo_path': 'checkins/j1/u1/c1_p.jpg',
+      }).partnerPhotoPath,
+      const Value('checkins/j1/u1/c1_p.jpg'),
+    );
     expect(
       checkInFromRow(row).extras,
       const CheckInExtras(dish: 'Phở', hearts: 4),

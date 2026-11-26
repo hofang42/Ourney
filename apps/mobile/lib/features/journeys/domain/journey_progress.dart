@@ -1,5 +1,6 @@
 import 'package:ourney_core/ourney_core.dart';
 
+import '../../../data/group_daily_checkins_provider.dart';
 import 'journey_time.dart';
 
 /// State of one calendar cell in the journey timeline (FR-B4).
@@ -28,6 +29,7 @@ class TimelineDay {
     required this.isToday,
     this.checkIn,
     this._checkIns,
+    this.coupleSlots = const [],
   });
 
   final LocalDate date;
@@ -53,13 +55,16 @@ class TimelineDay {
   /// evening stretch after the morning weigh-in) does not hide it.
   double? get metricValue => latestMetric(checkIns);
 
-  /// The day's latest photo that carries a partner half (couple diptych).
-  CheckIn? get partnerCheckIn {
-    for (final c in checkIns.reversed) {
-      if (c.partnerPhotoPath != null) return c;
-    }
-    return null;
-  }
+  final List<CouplePhotoSlot> coupleSlots;
+
+  CheckIn? get viewerPhoto => coupleSlots.isEmpty
+      ? checkIn
+      : coupleSlots.where((slot) => slot.isMine).firstOrNull?.checkIn ??
+          coupleSlots.map((slot) => slot.checkIn).nonNulls.firstOrNull;
+
+  bool get canOpen =>
+      state == DayState.checkedIn ||
+      (state != DayState.future && viewerPhoto != null);
 }
 
 /// Latest non-null metric value of [dayCheckIns] (oldest first).
@@ -85,6 +90,7 @@ class JourneyProgress {
     required this.checkInsByDate,
     this._checkInsOnDate,
     this._lastDay,
+    this.couple = GroupDailySnapshot.empty,
   });
 
   factory JourneyProgress.compute({
@@ -92,6 +98,7 @@ class JourneyProgress {
     required Membership? membership,
     required Iterable<CheckIn> checkIns,
     required DateTime now,
+    GroupDailySnapshot couple = GroupDailySnapshot.empty,
   }) {
     final today = journeyLocalDate(journey.timezone, now);
     final joined = membership == null
@@ -105,7 +112,7 @@ class JourneyProgress {
     }
     final byDate = <LocalDate, CheckIn>{};
     for (final e in onDate.entries) {
-      e.value.sort((a, b) => a.capturedAt.compareTo(b.capturedAt));
+      e.value.sort(compareCheckIns);
       byDate[e.key] = e.value.last;
     }
     final summary = computeMemberStreak(
@@ -121,8 +128,9 @@ class JourneyProgress {
       memberStart: effectiveStreakStart(journey.startDate, joined),
       summary: summary,
       checkInsByDate: byDate,
-      lastDay: _lastDayOf(journey, today, byDate.keys),
+      lastDay: _lastDayOf(journey, today, [...byDate.keys, ?couple.latestDate]),
       checkInsOnDate: onDate,
+      couple: couple,
     );
   }
 
@@ -132,6 +140,7 @@ class JourneyProgress {
   /// First day that counts for the caller (later of start and join date).
   final LocalDate memberStart;
   final StreakSummary summary;
+  final GroupDailySnapshot couple;
 
   /// The latest check-in of each day.
   final Map<LocalDate, CheckIn> checkInsByDate;
@@ -191,6 +200,8 @@ class JourneyProgress {
       for (final d in checkInsByDate.keys) {
         if (d.isAfter(last)) last = d;
       }
+      final shared = couple.latestDate;
+      if (shared != null && shared.isAfter(last)) last = shared;
       if (last.isBefore(start)) last = start;
     }
     final count = start.daysUntil(last) + 1;
@@ -272,6 +283,7 @@ class JourneyProgress {
       isToday: isToday,
       checkIn: checkIn,
       checkIns: checkInsOn(date),
+      coupleSlots: couple.slotsOn(date, ownPhoto: checkIn),
     );
   }
 }

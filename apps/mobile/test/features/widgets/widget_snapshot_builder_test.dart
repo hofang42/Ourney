@@ -57,6 +57,8 @@ CheckIn _makeCheckIn({
   required LocalDate localDate,
   String userId = 'u-me',
   String thumbPath = 'checkins/j1/u-me/c1_t.jpg',
+  DateTime? capturedAt,
+  String? partnerPhotoPath,
   double? metricValue,
   String? caption,
 }) => CheckIn(
@@ -64,9 +66,12 @@ CheckIn _makeCheckIn({
   journeyId: journeyId,
   userId: userId,
   localDate: localDate,
-  capturedAt: DateTime.utc(localDate.year, localDate.month, localDate.day, 9),
+  capturedAt:
+      capturedAt ??
+      DateTime.utc(localDate.year, localDate.month, localDate.day, 9),
   photoPath: thumbPath.replaceAll('_t.jpg', '.jpg'),
   thumbPath: thumbPath,
+  partnerPhotoPath: partnerPhotoPath,
   metricValue: metricValue,
   caption: caption,
 );
@@ -74,6 +79,174 @@ CheckIn _makeCheckIn({
 void main() {
   // 2026-11-24 11:55 UTC == 2026-11-24 18:55 in Asia/Ho_Chi_Minh (+07:00).
   final nowUtc = DateTime.utc(2026, 11, 24, 11, 55);
+
+  group('Couple widgets', () {
+    final couple = _makeJourney(
+      id: 'j-couple',
+      title: 'Our photos',
+      kind: JourneyKind.group,
+      maxMembers: 2,
+      layout: PersonaSkinId.memoryCollectors,
+    );
+    const today = LocalDate(2026, 11, 24);
+    const me = MemberToday(
+      userId: 'u-me',
+      displayName: 'Minh',
+      role: MemberRole.owner,
+    );
+    const partner = MemberToday(
+      userId: 'u-partner',
+      displayName: 'Linh',
+      role: MemberRole.member,
+    );
+
+    WidgetSnapshot build({
+      List<MemberToday> members = const [me],
+      List<CheckIn> own = const [],
+      List<CheckIn> cached = const [],
+      WidgetPhotoMode mode = WidgetPhotoMode.clear,
+      Set<String> blocked = const {},
+      Set<String> hidden = const {},
+      DateTime? now,
+    }) => WidgetSnapshotBuilder.build(
+      now: now ?? nowUtc,
+      authStatus: AuthStatus.signedIn,
+      currentUserId: me.userId,
+      photoMode: mode,
+      blockedUserIds: blocked,
+      hiddenCheckInIds: hidden,
+      journeyInputs: [
+        WidgetJourneyBuildInput(
+          journey: couple,
+          groupMembers: members,
+          myCheckIns: own,
+          groupCheckIns: cached,
+        ),
+      ],
+    );
+
+    List<Object?> slotIds(WidgetSnapshot snapshot) => snapshot
+        .squads
+        .single
+        .members
+        .map((member) => member.toJson()['slotId'])
+        .toList();
+
+    test('reserves the open side and keeps author order as photos arrive', () {
+      final selfFirst = _makeCheckIn(
+        id: 'a-self',
+        journeyId: couple.id,
+        localDate: today,
+        thumbPath: 'checkins/j-couple/u-me/a-self_t.jpg',
+      );
+      final selfLatest = _makeCheckIn(
+        id: 'b-self',
+        journeyId: couple.id,
+        localDate: today,
+        thumbPath: 'checkins/j-couple/u-me/b-self_t.jpg',
+        partnerPhotoPath: 'checkins/j-couple/u-me/b-self_p.jpg',
+      );
+      final partnerPhoto = _makeCheckIn(
+        id: 'c-partner',
+        journeyId: couple.id,
+        localDate: today,
+        userId: partner.userId,
+        thumbPath: 'checkins/j-couple/u-partner/c-partner_t.jpg',
+      );
+      final posted = MemberToday(
+        userId: partner.userId,
+        displayName: partner.displayName,
+        role: partner.role,
+        todayCheckIn: partnerPhoto,
+      );
+
+      final open = build(own: [selfFirst, selfLatest]);
+      final openSquad = open.squads.single;
+      expect(openSquad.isCouple, isTrue);
+      expect(openSquad.memberCount, 1);
+      expect(slotIds(open), [me.userId, 'vacant']);
+      expect(openSquad.members.last.toJson()['isVacant'], isTrue);
+      expect(openSquad.members.last.todayThumbFile, isNull);
+
+      final partnerFirst = build(members: [me, posted]);
+      expect(slotIds(partnerFirst), [me.userId, partner.userId]);
+      expect(
+        partnerFirst.squads.single.members.map(
+          (member) => member.checkedInToday,
+        ),
+        [false, true],
+      );
+
+      final paired = build(members: [me, posted], own: [selfFirst, selfLatest]);
+      expect(slotIds(paired), slotIds(partnerFirst));
+      final slots = paired.squads.single.members;
+      expect(slots.map((member) => member.todayThumbFile), [
+        for (final checkIn in [selfLatest, partnerPhoto])
+          'thumbs/${widgetThumbFileName(sourceKey: checkIn.thumbPath, maxSide: kWidgetGridThumbMaxSide, blur: false)}',
+      ]);
+      expect(
+        paired.thumbRequests.map((request) => request.storagePath),
+        isNot(contains(selfLatest.partnerPhotoPath)),
+      );
+    });
+
+    test(
+      'keeps privacy placeholders for hidden photos and clears stale days',
+      () {
+        final older = _makeCheckIn(
+          id: 'old-partner',
+          journeyId: couple.id,
+          localDate: today,
+          userId: partner.userId,
+          thumbPath: 'checkins/j-couple/u-partner/old-partner_t.jpg',
+        );
+        final hidden = _makeCheckIn(
+          id: 'new-partner',
+          journeyId: couple.id,
+          localDate: today,
+          userId: partner.userId,
+          thumbPath: 'checkins/j-couple/u-partner/new-partner_t.jpg',
+          capturedAt: DateTime.utc(2026, 11, 24, 10),
+        );
+        final posted = MemberToday(
+          userId: partner.userId,
+          displayName: partner.displayName,
+          role: partner.role,
+          todayCheckIn: hidden,
+        );
+
+        final hiddenSnapshot = build(
+          members: [me, posted],
+          cached: [older, hidden],
+          hidden: {hidden.id},
+        );
+        final privateSlot = hiddenSnapshot.squads.single.members.last;
+        expect(privateSlot.checkedInToday, isTrue);
+        expect(privateSlot.todayThumbFile, isNull);
+        expect(hiddenSnapshot.thumbRequests, isEmpty);
+
+        final smart = build(mode: WidgetPhotoMode.smart, members: [me, posted]);
+        expect(slotIds(smart), slotIds(hiddenSnapshot));
+        expect(smart.squads.single.members.last.checkedInToday, isTrue);
+        expect(smart.squads.single.members.last.todayThumbFile, isNull);
+
+        final blocked = build(members: [me, posted], blocked: {partner.userId});
+        expect(slotIds(blocked), [me.userId, 'vacant']);
+        expect(blocked.thumbRequests, isEmpty);
+
+        // 17:00 UTC is the next day in the journey's time zone.
+        final nextDay = build(
+          members: [me, posted],
+          cached: [older, hidden],
+          now: DateTime.utc(2026, 11, 24, 17),
+        );
+        expect(slotIds(nextDay), slotIds(hiddenSnapshot));
+        expect(nextDay.squads.single.doneCount, 0);
+        expect(nextDay.squads.single.members.last.checkedInToday, isFalse);
+        expect(nextDay.squads.single.members.last.todayThumbFile, isNull);
+      },
+    );
+  });
 
   group('WidgetSnapshotBuilder priority & schema (§4.3, §8.3)', () {
     test(

@@ -37,26 +37,6 @@ final myCheckInsProvider = StreamProvider.autoDispose
           );
     }, retry: _noRetry);
 
-/// The other members' check-ins of [journeyId], newest first (their photos
-/// feed the couple "half frame" camera HUD: take `.first` for the latest).
-/// The server already filters blocked / reported / hidden rows (RLS); the
-/// local-only mode has no partner, so it is empty there. Display a photo with
-/// `mediaFileProvider(checkIn.thumbPath)` (or `photoPath`).
-final partnerCheckInPhotosProvider = StreamProvider.autoDispose
-    .family<List<CheckIn>, String>((ref, id) {
-      final uid = ref.watch(currentUserIdProvider);
-      if (uid == null) return Stream.value(const <CheckIn>[]);
-      return ref
-          .watch(checkInRepositoryProvider)
-          .watchForJourney(id)
-          .map(
-            (all) => [
-              for (final c in all)
-                if (c.userId != uid && c.uploaded) c,
-            ]..sort((a, b) => b.capturedAt.compareTo(a.capturedAt)),
-          );
-    }, retry: _noRetry);
-
 /// The caller's membership (join date for streaks, metric privacy).
 final myMembershipProvider = StreamProvider.autoDispose
     .family<Membership?, String>(
@@ -121,7 +101,6 @@ class CheckInPoster {
     String? caption,
     double? metricValue,
     CheckInExtras extras = CheckInExtras.empty,
-    String? partnerPhotoPath,
   }) async {
     final CompressedPhoto files;
     try {
@@ -130,21 +109,6 @@ class CheckInPoster {
       debugPrint('check-in: compressing the photo failed: $e');
       throw CheckInPostException(CheckInFailure.photo, e);
     }
-    // Couple journeys: the partner's photo goes through the same pipeline.
-    CompressedPhoto? partner;
-    if (partnerPhotoPath != null) {
-      try {
-        partner = await compressor.compress(partnerPhotoPath);
-      } on Object catch (e) {
-        debugPrint('check-in: compressing the partner photo failed: $e');
-        _discard([files.photoFile, files.thumbFile]);
-        throw CheckInPostException(CheckInFailure.photo, e);
-      }
-    }
-    final partnerFiles = [
-      if (partner != null) ...[partner.photoFile, partner.thumbFile],
-    ];
-
     final day = dayOf(journey, photo);
     final today = clock.today(journey.timezone);
     final dates = [for (final c in mine) c.localDate];
@@ -169,12 +133,11 @@ class CheckInPoster {
           caption: caption,
           metricValue: metricValue,
           extras: extras,
-          partnerPhotoFile: partner?.photoFile,
         ),
       );
     } on OurneyException catch (e) {
       debugPrint('check-in: submit failed: $e');
-      _discard([files.photoFile, files.thumbFile, ...partnerFiles]);
+      _discard([files.photoFile, files.thumbFile]);
       throw CheckInPostException(
         e.error == OurneyErrorCode.ended
             ? CheckInFailure.ended
@@ -183,17 +146,11 @@ class CheckInPoster {
       );
     } on Object catch (e) {
       debugPrint('check-in: submit failed unexpectedly: $e');
-      _discard([files.photoFile, files.thumbFile, ...partnerFiles]);
+      _discard([files.photoFile, files.thumbFile]);
       throw CheckInPostException(CheckInFailure.generic, e);
     }
     // The repository copied the files into the media store.
-    _discard([
-      files.photoFile,
-      files.thumbFile,
-      ...partnerFiles,
-      photo.path,
-      ?partnerPhotoPath,
-    ]);
+    _discard([files.photoFile, files.thumbFile, photo.path]);
 
     final after = memberStreak(
       journey: journey,

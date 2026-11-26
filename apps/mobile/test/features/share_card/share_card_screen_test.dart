@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
+import 'package:ourney/data/group_daily_checkins_provider.dart';
 import 'package:ourney/features/camera/capture_services.dart';
 import 'package:ourney/features/profile/settings_providers.dart';
 import 'package:ourney/features/share_card/data/share_card_providers.dart';
@@ -48,6 +49,96 @@ void main() {
     await pumpShare(tester, journey: j, checkIns: streakCheckIns(j.id));
     await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
     handle.dispose();
+  });
+
+  testWidgets('Couple shares select only eligible authored main photos', (
+    tester,
+  ) async {
+    final j = testJourney(
+      ownerId: 'u2',
+      kind: JourneyKind.group,
+      templateId: TemplateId.custom,
+      maxMembers: 2,
+      status: JourneyStatus.ended,
+      publicToken: testToken,
+      visibility: JourneyVisibility.link,
+    );
+    const today = LocalDate(2026, 10, 16);
+    CheckIn checkIn(String id, String userId, int hour) => CheckIn(
+      id: id,
+      journeyId: j.id,
+      userId: userId,
+      localDate: today,
+      capturedAt: DateTime.utc(2026, 10, 16, hour),
+      photoPath: checkInPhotoPath(j.id, userId, id),
+      thumbPath: checkInThumbPath(j.id, userId, id),
+      partnerPhotoPath: checkInPartnerPhotoPath(j.id, userId, id),
+      uploaded: true,
+    );
+    final partner = checkIn('partner', 'u2', 1);
+    final earlier = checkIn('earlier', 'u1', 2);
+    final eligible = checkIn('eligible', 'u1', 2);
+    final hidden = checkIn('hidden', 'u1', 3);
+    final repo = sharing.FakeSharingRepository();
+    await repo.setHiddenInShare(hidden.id, hidden: true);
+    final media = FakeMediaStore(resolve: true);
+    final harness = await pumpShare(
+      tester,
+      journey: j,
+      membership: testMembership(j, blurMedia: true),
+      backend: true,
+      mediaStore: media,
+      locale: const Locale('en'),
+      checkIns: [partner, hidden, earlier, eligible],
+      overrides: [
+        sharingRepositoryProvider.overrideWithValue(repo),
+        groupMembersTodaySafeProvider(j.id).overrideWith(
+          (ref) => Stream.value([
+            MemberToday(
+              userId: partner.userId,
+              displayName: 'Partner',
+              role: MemberRole.owner,
+              todayCheckIn: partner,
+            ),
+            const MemberToday(
+              userId: 'u1',
+              displayName: 'Caller',
+              role: MemberRole.member,
+            ),
+          ]),
+        ),
+      ],
+    );
+
+    expect(media.requested, [eligible.photoPath]);
+    expect(find.text('7 DAYS TOGETHER · 1 MOMENT'), findsNWidgets(2));
+    expect(find.text('This card shows only your photos.'), findsOneWidget);
+    expect(_key('share-card-photo-eligible'), findsNothing);
+    final card = tester.widget<ShareCard>(find.byType(ShareCard));
+    expect(card.blur, isTrue);
+    final tiles = card.couplePhotos!;
+    expect(tiles.first, isNull);
+    expect(
+      tiles[1],
+      isA<ResizeImage>().having(
+        (image) => (image.imageProvider as FileImage).file.path,
+        'main photo',
+        endsWith(eligible.photoPath),
+      ),
+    );
+    expect(tiles.skip(2), everyElement(isNull));
+    expect(_key('share-card-couple-placeholder-0'), findsOneWidget);
+    expect(_key('share-card-couple-placeholder-1'), findsOneWidget);
+    expect(find.text('Public view link'), findsNothing);
+
+    await _tap(tester, _key('share-card-share'));
+    await _tap(tester, _key('share-card-sheet-share'));
+    expect(harness.exporter.exports, hasLength(1));
+    expect(harness.sharer.shared, hasLength(1));
+    expect(harness.sharer.shared.single.text, isNot(contains(testToken)));
+    expect(_key('share-card-couple-placeholder-0'), findsOneWidget);
+    expect(_key('share-card-couple-placeholder-1'), findsOneWidget);
+    expect(media.requested, [eligible.photoPath]);
   });
 
   group('layout (FR-E1)', () {

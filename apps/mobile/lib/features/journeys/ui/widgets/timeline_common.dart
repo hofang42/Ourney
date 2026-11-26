@@ -30,6 +30,9 @@ String timelineDayLabel(BuildContext context, TimelineDay day) {
   final l10n = JourneysL10n.of(context);
   final date = MaterialLocalizations.of(context)
       .formatMediumDate(displayDate(day.date));
+  if (day.state != DayState.checkedIn && day.canOpen) {
+    return l10n.journeys_cellChecked(day.dayNumber, date);
+  }
   return switch (day.state) {
     DayState.checkedIn => l10n.journeys_cellChecked(day.dayNumber, date),
     DayState.missed => l10n.journeys_cellMissed(day.dayNumber, date),
@@ -57,7 +60,7 @@ class TimelineDayTap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tappable = day.state == DayState.checkedIn;
+    final tappable = day.canOpen;
     return Semantics(
       key: ValueKey('day-${day.date}'),
       label: timelineDayLabel(context, day),
@@ -528,14 +531,12 @@ class ChainRowPainter extends CustomPainter {
 
 /// One day of a 7-column grid (minimal calendar, month archive): the tile
 /// with the date number on top of it, in a [hit] x [hit] (>= 48dp) tap box.
-/// [partner] adds a small heart where the partner's half exists (couple).
 class TimelineGridCell extends StatelessWidget {
   const TimelineGridCell({
     required this.day,
     required this.size,
     required this.hit,
     required this.onTap,
-    this.partner = false,
     this.cacheWidth = 200,
     super.key,
   });
@@ -546,13 +547,12 @@ class TimelineGridCell extends StatelessWidget {
   /// Side of the (>= 48dp) tap box; the tile sits in its top-left corner.
   final double hit;
   final ValueChanged<TimelineDay> onTap;
-  final bool partner;
   final int cacheWidth;
 
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final photo = day.state == DayState.checkedIn;
+    final photo = day.canOpen;
     final color = photo
         ? UiCamera.onPhoto
         : day.state == DayState.today
@@ -570,7 +570,29 @@ class TimelineGridCell extends StatelessWidget {
           dimension: size,
           child: Stack(
             children: [
-              TimelineTile(day: day, size: size, cacheWidth: cacheWidth),
+              if (day.coupleSlots.isEmpty)
+                TimelineTile(day: day, size: size, cacheWidth: cacheWidth)
+              else
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(UiRadius.otp),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final slot in day.coupleSlots)
+                        Expanded(
+                          child: ColoredBox(
+                            color: ui.fill,
+                            child: slot.checkIn == null || !photo
+                                ? null
+                                : JourneyPhoto(
+                                    checkIn: slot.checkIn!,
+                                    cacheWidth: cacheWidth,
+                                  ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               Positioned(
                 left: 3,
                 top: 2,
@@ -593,19 +615,6 @@ class TimelineGridCell extends StatelessWidget {
                   ),
                 ),
               ),
-              if (partner)
-                Positioned(
-                  right: 3,
-                  bottom: 3,
-                  child: ExcludeSemantics(
-                    child: OurneyIcon(
-                      key: const ValueKey('grid-partner-dot'),
-                      name: 'heart',
-                      size: 12,
-                      color: timelineAccent(context),
-                    ),
-                  ),
-                ),
             ],
           ),
         ),

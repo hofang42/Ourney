@@ -618,6 +618,24 @@ data class WidgetSquadItem(
     val isOpenEnded: Boolean
         get() = totalDays == null || totalDays <= 0
 
+    // Cached snapshots from older versions may contain only the joined sides.
+    val coupleSlots: List<WidgetSquadMember>
+        get() = List(2) { index ->
+            members.getOrNull(index) ?: WidgetSquadMember(
+                displayName = "",
+                initial = "",
+                avatarColorIndex = 0,
+                isMe = false,
+                checkedInToday = false,
+                streak = 0,
+                avatarFile = null,
+                todayThumbFile = null,
+                todayThumbBlurred = false,
+                slotId = "vacant-$index",
+                isVacant = true,
+            )
+        }
+
     fun evaluateAt(nowEpochMs: Long): WidgetSquadItem {
         val midnightMs = WidgetSnapshot.parseIsoEpochMs(midnightRolloverUtc)
         if (midnightMs != null && nowEpochMs >= midnightMs) {
@@ -634,6 +652,7 @@ data class WidgetSquadItem(
                         checkedInToday = false,
                         streak = if (daysPassed == 1 && member.checkedInToday) member.streak else 0,
                         todayThumbFile = null,
+                        todayThumbBlurred = false,
                     )
                 },
             )
@@ -678,6 +697,8 @@ data class WidgetSquadMember(
     val avatarFile: String?,
     val todayThumbFile: String?,
     val todayThumbBlurred: Boolean,
+    val slotId: String? = null,
+    val isVacant: Boolean = false,
 ) {
     companion object {
         fun fromJson(obj: JSONObject): WidgetSquadMember {
@@ -693,6 +714,8 @@ data class WidgetSquadMember(
                 avatarFile = obj.optNullableString("avatarFile"),
                 todayThumbFile = obj.optNullableString("todayThumbFile"),
                 todayThumbBlurred = obj.optBooleanCompat("todayThumbBlurred", false),
+                slotId = obj.optNullableString("slotId"),
+                isVacant = obj.optBooleanCompat("isVacant", false),
             )
         }
     }

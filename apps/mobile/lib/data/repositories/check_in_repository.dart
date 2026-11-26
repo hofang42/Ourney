@@ -132,17 +132,9 @@ class DataCheckInRepository implements CheckInRepository {
     final id = clientId ?? ctx.newId();
     final photoPath = checkInPhotoPath(journey.id, me, id);
     final thumbPath = checkInThumbPath(journey.id, me, id);
-    final partnerFile = draft.partnerPhotoFile;
-    final partnerPath = partnerFile == null
-        ? null
-        : checkInPartnerPhotoPath(journey.id, me, id);
-    final written = <String>[photoPath, thumbPath, ?partnerPath];
     try {
       await ctx.files.importFile(draft.photoFile, photoPath);
       await ctx.files.importFile(draft.thumbFile, thumbPath);
-      if (partnerFile != null) {
-        await ctx.files.importFile(partnerFile, partnerPath!);
-      }
 
       // The row and its outbox item commit together: a crash between the
       // two must not leave a check-in that is never uploaded.
@@ -165,7 +157,6 @@ class DataCheckInRepository implements CheckInRepository {
                 caption: Value(draft.caption),
                 metricValue: Value(draft.metricValue),
                 extras: Value(draft.extras.normalized().toJsonString()),
-                partnerPhotoPath: Value(partnerPath),
               ),
             );
         // One upload per check-in, upserted on its id.
@@ -176,7 +167,7 @@ class DataCheckInRepository implements CheckInRepository {
     } on Object catch (e) {
       debugPrint('check-in: save failed, removing its media: $e');
       try {
-        await ctx.files.delete(written);
+        await ctx.files.delete([photoPath, thumbPath]);
       } on Object catch (cleanup) {
         debugPrint('check-in: media cleanup failed: $cleanup');
       }

@@ -514,7 +514,9 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
     final byMonth = st.mode == LongTimelineMode.month;
     final current = index.months.isEmpty ? null : index.months.last.id;
     final open = st.open ?? {?current};
-    final window = skin == 'minimal' ? index.recentMinimal : index.recent;
+    final window = skin == 'minimal' && index.progress.couple.memberIds.isEmpty
+        ? index.recentMinimal
+        : index.recent;
     void openDay(TimelineDay d) =>
         context.push(JourneysPaths.day(journey.id, d.date));
     final modeSwitch = _modeSwitch(l10n, st.mode, notifier);
@@ -555,7 +557,6 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
             index: index,
             open: open,
             headerKeys: _headerKeys,
-            skinId: skin,
             paper: pal.paper,
             accent: pal.accent,
             onToggle: (id) => notifier.toggleMonth(id, current: current),

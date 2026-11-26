@@ -63,4 +63,8 @@
     <string name="widget_live_dismiss">Dismiss today</string>
     <string name="widget_live_chip_hours">Tonight</string>
     <string name="widget_live_chip_mins">Tonight</string>
+    <string name="widget_couple_partner">Partner</string>
+    <string name="widget_couple_waiting">Waiting</string>
+    <string name="widget_couple_no_preview">No preview</string>
+    <string name="widget_couple_checked_in">Checked in</string>
 </resources>

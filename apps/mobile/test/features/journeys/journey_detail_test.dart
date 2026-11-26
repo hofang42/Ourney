@@ -5,8 +5,11 @@ import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/app_shell.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/data/group_daily_checkins_provider.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
+import 'package:ourney/features/journeys/ui/day_viewer_screen.dart';
+import 'package:ourney/features/journeys/ui/journey_photo.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
@@ -65,6 +68,43 @@ Future<JourneysHarness> _pumpDetail(
 
 void main() {
   group('Journey detail (FR-B4/B5)', () {
+    testWidgets('a partner-only day opens with two authored viewer slots', (
+      tester,
+    ) async {
+      final j = testJourney(kind: JourneyKind.group, maxMembers: 2);
+      const date = LocalDate(2026, 10, 12);
+      final partner = testCheckIn(j.id, date, userId: 'u2', metricValue: 88);
+      await pumpJourneys(
+        tester,
+        config: testBackendConfig,
+        userId: 'u1',
+        locale: const Locale('en'),
+        location: AppRoutes.journey(j.id),
+        journeys: FakeJourneyRepository(
+          journeys: [j],
+          memberships: {j.id: testMembership(j)},
+        ),
+        checkIns: FakeCheckInRepository([partner]),
+        extraOverrides: [
+          groupMembersTodaySafeProvider(j.id).overrideWith(
+            (ref) => Stream.value(const [
+              MemberToday(userId: 'u1', displayName: 'An', role: MemberRole.owner),
+              MemberToday(userId: 'u2', displayName: 'Binh', role: MemberRole.member),
+            ]),
+          ),
+        ],
+      );
+      await _tap(tester, _day(date));
+      final viewer = find.byType(DayViewerScreen);
+      expect(viewer, findsOneWidget);
+      expect(find.descendant(of: viewer, matching: find.text('An')), findsOneWidget);
+      expect(find.descendant(of: viewer, matching: find.text('Binh')), findsOneWidget);
+      expect(find.text('No photo for this day'), findsOneWidget);
+      final photos = find.descendant(of: viewer, matching: find.byType(JourneyPhoto));
+      expect(tester.widget<JourneyPhoto>(photos).checkIn, same(partner));
+      expect(_key('journey-day-metric'), findsNothing);
+    });
+
     testWidgets('home: day/streak line, milestones, actions', (tester) async {
       await _pumpDetail(tester);
       expect(_key('journey-detail'), findsOneWidget);

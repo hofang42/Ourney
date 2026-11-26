@@ -1328,11 +1328,17 @@ abstract class JourneysL10n {
   /// **'Hơi mệt'**
   String get journeys_extraMoodTired;
 
-  /// Check-in extras on the journey screens.
+  /// No description provided for @journeys_uploaderAttachment.
   ///
   /// In vi, this message translates to:
-  /// **'Ảnh của người ấy'**
-  String get journeys_partnerPhotoSemantics;
+  /// **'Ảnh bạn đã đính kèm vào bài này'**
+  String get journeys_uploaderAttachment;
+
+  /// No description provided for @journeys_coupleNoPhoto.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa có ảnh cho ngày này'**
+  String get journeys_coupleNoPhoto;
 
   /// No description provided for @journeys_inviteAction.
   ///

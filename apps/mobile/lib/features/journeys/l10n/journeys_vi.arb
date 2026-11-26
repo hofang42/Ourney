@@ -805,10 +805,8 @@
   "@journeys_extraMoodTired": {
     "description": "Check-in extras on the journey screens."
   },
-  "journeys_partnerPhotoSemantics": "Ảnh của người ấy",
-  "@journeys_partnerPhotoSemantics": {
-    "description": "Check-in extras on the journey screens."
-  },
+  "journeys_uploaderAttachment": "Ảnh bạn đã đính kèm vào bài này",
+  "journeys_coupleNoPhoto": "Chưa có ảnh cho ngày này",
   "journeys_inviteAction": "Mời bạn",
   "journeys_renameCouple": "Sửa tên",
   "journeys_renameCoupleTitle": "Sửa tên cặp đôi",

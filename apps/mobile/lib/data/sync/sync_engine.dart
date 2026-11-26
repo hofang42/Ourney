@@ -233,30 +233,49 @@ class SyncEngine {
       db.checkIns,
     )..where((t) => t.id.equals(id))).getSingleOrNull();
     if (row == null || row.uploaded) return; // replaced by a retake, or done
-    final photo = store.files.fileFor(row.photoPath);
-    final thumb = store.files.fileFor(row.thumbPath);
-    if (!photo.existsSync() || !thumb.existsSync()) {
-      throw OurneyException(OurneyErrorCode.invalid, 'missing media for $id');
+
+    Future<RemoteRow?> findCommittedLegacyRow() async {
+      check();
+      final matches = await remote.select(
+        'check_ins',
+        eq: {'id': id, 'user_id': row.userId, 'journey_id': row.journeyId},
+        limit: 1,
+      );
+      return matches.singleOrNull;
     }
-    // Media first so nobody sees a row without its photo.
-    check();
-    await remote.uploadFile(row.photoPath, photo);
-    check();
-    await remote.uploadFile(row.thumbPath, thumb);
-    check();
-    final partnerPath = row.partnerPhotoPath;
-    if (partnerPath != null) {
-      final partner = store.files.fileFor(partnerPath);
-      if (!partner.existsSync()) {
-        throw OurneyException(
-          OurneyErrorCode.invalid,
-          'missing partner media for $id',
-        );
+
+    final legacyPath = row.partnerPhotoPath;
+    // The old writer could have committed this row before a companion
+    // write failed. Its media fields are immutable once it is on the server.
+    var committed = legacyPath == null ? null : await findCommittedLegacyRow();
+    if (committed == null) {
+      final photo = store.files.fileFor(row.photoPath);
+      final thumb = store.files.fileFor(row.thumbPath);
+      if (!photo.existsSync() || !thumb.existsSync()) {
+        throw OurneyException(OurneyErrorCode.invalid, 'missing media for $id');
       }
-      await remote.uploadFile(partnerPath, partner);
+      // Media first so nobody sees a row without its photo.
+      check();
+      await remote.uploadFile(row.photoPath, photo);
+      check();
+      await remote.uploadFile(row.thumbPath, thumb);
+      check();
+      final body = checkInToRemote(row);
+      if (legacyPath == null) {
+        await remote.upsert('check_ins', body, onConflict: 'id');
+      } else {
+        try {
+          await remote.insert('check_ins', body);
+        } on OurneyException catch (e) {
+          // A concurrent legacy write can win between the lookup and
+          // insert. Reconcile only when that row actually exists.
+          if (e.error != OurneyErrorCode.invalid) rethrow;
+          committed = await findCommittedLegacyRow();
+          if (committed == null) rethrow;
+        }
+      }
     }
-    check();
-    await remote.upsert('check_ins', checkInToRemote(row), onConflict: 'id');
+
     // Metrics live in their own table (RLS honours hide_metric, 0005).
     check();
     await remote.upsert(
@@ -271,10 +290,43 @@ class SyncEngine {
       checkInExtrasToRemote(row),
       onConflict: 'checkin_id',
     );
-    check();
-    await (db.update(db.checkIns)..where((t) => t.id.equals(id))).write(
-      const CheckInsCompanion(uploaded: Value(true)),
-    );
+    final committedAttachment = committed?['partner_photo_path'] as String?;
+    final discardedAttachment =
+        legacyPath != null &&
+            committedAttachment == null &&
+            legacyPath == checkInPartnerPhotoPath(row.journeyId, row.userId, id)
+        ? legacyPath
+        : null;
+    await db.transaction(() async {
+      check();
+      final updated =
+          await (db.update(db.checkIns)..where((t) => t.id.equals(id))).write(
+            CheckInsCompanion(
+              uploaded: const Value(true),
+              partnerPhotoPath: legacyPath == null
+                  ? const Value.absent()
+                  : Value(committedAttachment),
+            ),
+          );
+      if (updated > 0 && discardedAttachment != null) {
+        // An old attempt might have uploaded the object without its row.
+        // Persist cleanup with reconciliation so it can retry independently.
+        await outbox.enqueue(
+          OutboxKind.deleteMedia,
+          '${checkInKey(id)}:legacy-media',
+          {
+            'paths': [discardedAttachment],
+          },
+        );
+      }
+    });
+    if (discardedAttachment != null) {
+      try {
+        await store.files.delete([discardedAttachment]);
+      } on Object catch (e) {
+        debugPrint('sync: legacy attachment cache cleanup failed: $e');
+      }
+    }
   }
 
   /// Own check-ins that were never uploaded and have no queue item at all

@@ -11,10 +11,12 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/providers.dart';
+import '../../data/group_daily_checkins_provider.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
 import '../camera/capture_services.dart' show galleryPickerProvider;
+import '../groups/ui/invite_sheet.dart' show showGroupInviteSheet;
 import '../journeys/data/journeys_providers.dart'
     show journeyStartingWeightPrefKey, recentTripPlacesProvider;
 import '../reminders/data/reminder_scheduler.dart';
@@ -22,6 +24,7 @@ import '../reminders/ui/reminder_permission_prompt.dart';
 import '../widgets/data/widget_sync_controller.dart' show syncWidgetsNow;
 import 'captured_photo.dart';
 import 'checkin_audience.dart';
+import 'checkin_clock.dart' show checkinClockProvider;
 import 'checkin_controller.dart';
 import 'checkin_progress.dart';
 import 'checkin_success.dart';
@@ -188,11 +191,6 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
     setState(() {});
   }
 
-  Future<void> _pickPartnerPhoto() async {
-    final path = await ref.read(galleryPickerProvider).pickPhoto();
-    if (path != null && mounted) _extras.setPartnerPhoto(path);
-  }
-
   /// Pops this screen and opens the share card on top of the camera:
   /// a `pushReplacement` would leave the capture screen's push future
   /// pending forever (go_router 18), so the screen below is told first.
@@ -336,9 +334,6 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
         caption: caption.isEmpty ? null : caption,
         metricValue: metric,
         extras: extras,
-        partnerPhotoPath: skin == PersonaSkinId.coupleRituals
-            ? _extras.partnerPhotoPath
-            : null,
       );
       if (!mounted) return;
       // Today is done: skip its reminder, move the 21:00 alert (FR-G1/G2).
@@ -495,6 +490,39 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
     );
   }
 
+  Widget? _couplePartnerPrompt(
+    BuildContext context,
+    Journey journey,
+    CapturedPhoto photo,
+  ) {
+    if (!isCoupleGroup(journey) || journey.status != JourneyStatus.active) {
+      return null;
+    }
+    final group = ref.watch(groupDailySnapshotProvider(journey));
+    final l10n = CheckinL10n.of(context);
+    if (group.canInvitePartner) {
+      return UiButton.secondary(
+        key: const ValueKey('checkin-couple-invite'),
+        label: l10n.checkin_coupleInvite,
+        glyph: const OurneyIcon(name: 'user-plus', size: 20),
+        onPressed: _posting
+            ? null
+            : () => unawaited(showGroupInviteSheet(context, journey.id)),
+      );
+    }
+    if (group.partnerId == null) return null;
+    final date = ref
+        .watch(checkinClockProvider)
+        .localDate(photo.capturedAt, journey.timezone);
+    if (group.partnerPostedOn(date)) return null;
+    return Text(
+      l10n.checkin_coupleWaiting,
+      style: UiText.body(color: context.ui.inkMuted),
+      overflow: TextOverflow.ellipsis,
+      maxLines: 2,
+    );
+  }
+
   Widget _compose(BuildContext context, Journey journey, CapturedPhoto photo) {
     final l10n = CheckinL10n.of(context);
     final ui = context.ui;
@@ -514,6 +542,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
         : journey.metricUnit == null
         ? metricName
         : '$metricName (${journey.metricUnit})';
+    final partnerPrompt = _couplePartnerPrompt(context, journey, photo);
     final privacy = switch (watchCheckinAudience(ref, journey)) {
       CheckinAudience.unknown => null,
       CheckinAudience.private => (
@@ -524,7 +553,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
       CheckinAudience.couple => (UiPrivacy.couple, l10n.checkin_privacyCouple),
       CheckinAudience.squad => (UiPrivacy.squad, l10n.checkin_privacySquad),
       CheckinAudience.futureMembers => (
-        isCoupleJourney(journey) ? UiPrivacy.couple : UiPrivacy.squad,
+        isCoupleGroup(journey) ? UiPrivacy.couple : UiPrivacy.squad,
         l10n.checkin_privacyFutureMembers,
       ),
     };
@@ -797,13 +826,16 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
                 controller: _extras,
                 selfName: journey.coupleSelfName,
                 partnerName: journey.couplePartnerName,
-                onPickPartnerPhoto: _pickPartnerPhoto,
                 ritual: journey.dna?['ritual'] as String?,
                 isRunning: isRun,
                 destination: journey.dna?['place'] as String?,
                 recentPlaces: recentPlaces,
               ),
             ),
+            if (partnerPrompt != null) ...[
+              const SizedBox(height: UiSpace.md),
+              partnerPrompt,
+            ],
             if (skin == PersonaSkinId.minimalistHabit) ...[
               const SizedBox(height: UiSpace.md),
               _CountdownHint(

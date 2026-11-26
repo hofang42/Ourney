@@ -196,6 +196,32 @@ class WidgetSnapshotStoreTest {
     }
 
     @Test
+    fun `decodes Couple slot IDs and preserves them through rollover`() {
+        val squad = WidgetSnapshot.fromJson(
+            """
+            {"schemaVersion":1,"squads":[{
+              "journeyId":"couple","isCouple":true,"memberCount":1,"doneCount":1,
+              "midnightRolloverUtc":"2026-11-24T17:00:00Z",
+              "members":[
+                {"slotId":"owner","displayName":"Minh","checkedInToday":true,
+                 "todayThumbBlurred":true,"todayThumbFile":"thumbs/owner.jpg"},
+                {"slotId":"vacant","isVacant":true}
+              ]
+            }]}
+            """.trimIndent(),
+        ).squads.single()
+        assertEquals(listOf("owner", "vacant"), squad.coupleSlots.map { it.slotId })
+        assertTrue(squad.coupleSlots.last().isVacant)
+        assertTrue(squad.copy(members = squad.members.take(1)).coupleSlots.last().isVacant)
+
+        val rolled = squad.evaluateAt(Instant.parse("2026-11-24T17:00:00Z").toEpochMilli())
+        assertEquals(squad.coupleSlots.map { it.slotId }, rolled.coupleSlots.map { it.slotId })
+        assertFalse(rolled.coupleSlots.first().checkedInToday)
+        assertFalse(rolled.coupleSlots.first().todayThumbBlurred)
+        assertNull(rolled.coupleSlots.first().todayThumbFile)
+    }
+
+    @Test
     fun `evaluates post-midnight rollover natively for completed and missed journeys`() {
         val store = WidgetSnapshotStore(tempFolder.newFolder("ourney_widgets_rollover"))
         store.writeSnapshotAtomically(sampleSnapshotJson)

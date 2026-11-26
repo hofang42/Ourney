@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/providers.dart';
-import '../checkin/checkin_controller.dart' show partnerCheckInPhotosProvider;
+import '../../data/group_daily_checkins_provider.dart';
 import '../journeys/data/journeys_providers.dart';
 import '../journeys/domain/journey_progress.dart';
 
@@ -36,24 +36,13 @@ class CaptureJourneyData {
       if (c.localDate == progress.today) c,
   ];
 
-  /// Latest partner photo of a couple journey: the local file when the
-  /// check-in still has it, else the downloaded copy of the storage path.
+  /// Thumbnail of the other active member's latest visible check-in.
   String? get partnerPhoto {
-    final partner =
-        ref.watch(partnerCheckInPhotosProvider(journey.id)).value ??
-        const <CheckIn>[];
-    if (partner.isNotEmpty) {
-      final f = ref.watch(mediaFileProvider(partner.first.thumbPath)).value;
-      if (f != null && f.isNotEmpty) return f;
-    }
-    for (final c in recent) {
-      final local = c.localPartnerPhotoFile;
-      if (local != null && local.isNotEmpty) return local;
-      final remote = c.partnerPhotoPath;
-      if (remote != null && remote.isNotEmpty) {
-        return ref.watch(mediaFileProvider(remote)).value;
-      }
-    }
-    return null;
+    final photo = ref
+        .watch(groupDailySnapshotProvider(journey))
+        .latestPartnerCheckIn;
+    return photo == null
+        ? null
+        : ref.watch(mediaFileProvider(photo.thumbPath)).value;
   }
 }

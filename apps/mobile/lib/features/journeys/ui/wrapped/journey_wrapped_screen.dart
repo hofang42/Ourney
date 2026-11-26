@@ -10,6 +10,7 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../../../app/app_routes.dart';
 import '../../../../app/providers.dart'
     show appConfigProvider, sharingRepositoryProvider;
+import '../../../../data/group_daily_checkins_provider.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../personas/persona_contract.dart';
 import '../../../../ui/ui.dart';
@@ -26,6 +27,7 @@ import '../../../share_card/data/share_card_providers.dart'
         shareCardSharerProvider;
 import '../../../share_card/domain/share_card_content.dart'
     show ShareCardFormat, publicAddressForCaption, shareMetricHidden;
+import '../../../sharing/data/sharing_providers.dart' show shareStateProvider;
 import '../../data/journeys_providers.dart';
 import '../../domain/journey_progress.dart';
 import '../../domain/wrapped_story.dart';
@@ -149,6 +151,7 @@ class JourneyWrappedScreen extends ConsumerWidget {
       membership: ref.watch(myMembershipProvider(journeyId)).value,
       checkIns: checkIns,
       now: ref.watch(journeysNowProvider),
+      couple: ref.watch(groupDailySnapshotProvider(journey)),
     );
     return _WrappedBody(journey: journey, stats: WrappedStats.from(progress));
   }
@@ -624,6 +627,21 @@ class _SummaryState extends ConsumerState<_Summary> {
     final quiet = skin == PersonaSkinId.quietTransformer;
     final weights = quiet ? _Summary._weights(stats) : null;
     final membershipProvider = myMembershipProvider(journey.id);
+    final authoredPair = stats.coupleSlots.isNotEmpty;
+    final hasBackend = ref.watch(appConfigProvider).hasBackend;
+    final shareState = authoredPair && hasBackend
+        ? ref.watch(shareStateProvider(journey.id)).asData?.value
+        : null;
+    final membership = authoredPair
+        ? ref.watch(membershipProvider).asData?.value
+        : null;
+    final hiddenCouplePhotoIds = <String>{
+      ...?shareState?.hiddenCheckInIds,
+      if (authoredPair &&
+          hasBackend &&
+          (shareState == null || membership == null))
+        for (final slot in stats.coupleSlots) ?slot.checkIn?.id,
+    };
     // The preview's boundary is also the source for shared and saved PNGs.
     final exportWeights =
         weights != null &&
@@ -825,7 +843,11 @@ class _SummaryState extends ConsumerState<_Summary> {
                                       skin: skin,
                                       stats: stats,
                                       page: 3,
-                                      blurPhotos: quiet,
+                                      blurPhotos:
+                                          quiet ||
+                                          (membership?.blurMedia ?? false),
+                                      exporting: true,
+                                      hiddenPhotoIds: hiddenCouplePhotoIds,
                                     ),
                                   ),
                                 ),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/data/group_daily_checkins_provider.dart';
 import 'package:ourney/features/journeys/domain/journey_progress.dart';
 import 'package:ourney/features/journeys/domain/timeline_window.dart';
 import 'package:ourney/features/journeys/l10n/generated/journeys_localizations.dart';
+import 'package:ourney/features/journeys/ui/journey_photo.dart';
 import 'package:ourney/features/journeys/ui/journey_style.dart';
 import 'package:ourney/features/journeys/ui/widgets/journey_timeline.dart';
 import 'package:ourney/features/journeys/ui/widgets/timeline_common.dart';
@@ -131,7 +133,7 @@ void main() {
     expect(find.text('Partner'), findsNWidgets(14));
   });
 
-  testWidgets('couple shows persisted names and the partner photo', (
+  testWidgets('a legacy attachment leaves the partner slot empty', (
     tester,
   ) async {
     final j = testJourney();
@@ -175,9 +177,70 @@ void main() {
     );
     expect(find.text('An'), findsNWidgets(2));
     expect(find.text('Bình'), findsNWidgets(2));
-    expect(find.byKey(const ValueKey('couple-partner-photo')), findsOneWidget);
-    // the day without a partner photo keeps its waiting slot
-    expect(find.byKey(const ValueKey('couple-partner-slot')), findsOneWidget);
+    expect(find.byKey(const ValueKey('couple-partner-photo')), findsNothing);
+    expect(find.byKey(const ValueKey('couple-partner-slot')), findsNWidgets(2));
+  });
+
+  testWidgets('authored Couple slots render and open a partner-only day', (
+    tester,
+  ) async {
+    final mine = testCheckIn('j', const LocalDate(2026, 10, 10));
+    final partner = testCheckIn(
+      'j',
+      const LocalDate(2026, 10, 11),
+      userId: 'partner',
+    );
+    final days = [
+      TimelineDay(
+        date: mine.localDate,
+        dayNumber: 1,
+        state: DayState.checkedIn,
+        isToday: false,
+        checkIn: mine,
+        coupleSlots: [
+          const CouplePhotoSlot(userId: 'partner', displayName: 'Binh'),
+          CouplePhotoSlot(userId: mine.userId, isMine: true, checkIn: mine),
+        ],
+      ),
+      TimelineDay(
+        date: partner.localDate,
+        dayNumber: 2,
+        state: DayState.missed,
+        isToday: false,
+        coupleSlots: [
+          CouplePhotoSlot(
+            userId: 'partner',
+            displayName: 'Binh',
+            checkIn: partner,
+          ),
+          CouplePhotoSlot(userId: mine.userId, isMine: true),
+        ],
+      ),
+    ];
+    final tapped = <TimelineDay>[];
+    await tester.pumpWidget(
+      _host(
+        'minimal',
+        days: days,
+        brightness: Brightness.light,
+        scale: 1,
+        onTap: tapped.add,
+      ),
+    );
+    final partnerPhoto = find.byKey(const ValueKey('couple-partner-photo'));
+    final ownPhoto = find.byKey(const ValueKey('couple-own-photo'));
+    expect(
+      tester.getCenter(partnerPhoto).dx,
+      lessThan(tester.getCenter(ownPhoto).dx),
+    );
+    expect(
+      tester
+          .widgetList<JourneyPhoto>(find.byType(JourneyPhoto))
+          .map((photo) => photo.checkIn),
+      [mine, partner],
+    );
+    await tester.tap(partnerPhoto);
+    expect(tapped, [days.last]);
   });
 
   testWidgets('minimal draws the chain line', (tester) async {

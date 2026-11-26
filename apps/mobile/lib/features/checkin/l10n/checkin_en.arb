@@ -134,10 +134,8 @@
       }
     }
   },
-  "checkin_extraPartnerPhoto": "Add your partner's photo",
-  "checkin_extraPartnerPhotoChange": "Change partner's photo",
-  "checkin_extraPartnerPhotoRemove": "Remove partner's photo",
-  "checkin_extraPartnerPhotoSemantics": "Your partner's photo",
+  "checkin_coupleInvite": "Invite your partner to join",
+  "checkin_coupleWaiting": "Waiting for your partner’s photo",
   "checkin_extraPaceLabel": "Pace (min/km)",
   "checkin_extraPaceInvalid": "Invalid pace, seconds must be under 60",
   "checkin_extraKmLabel": "Distance (km)",
