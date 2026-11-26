@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ourney_core/ourney_core.dart' show Journey;
 
 import '../../../app/providers.dart';
 import '../domain/reminder_plan.dart';
@@ -106,6 +107,11 @@ class ReminderSettingsController
   ReminderSetting of(String journeyId) =>
       state[journeyId] ?? ReminderSetting.off;
 
+  /// Effective setting for [journey], falling back to synced
+  /// [Journey.reminderTime] when no local override exists on this device (F-32).
+  ReminderSetting ofJourney(Journey journey) =>
+      effectiveReminderSettingFor(journey, state);
+
   Future<void> save(String journeyId, ReminderSetting setting) async {
     state = {...state, journeyId: setting};
     await ref
@@ -127,6 +133,22 @@ final reminderSettingsProvider =
     NotifierProvider<ReminderSettingsController, Map<String, ReminderSetting>>(
       ReminderSettingsController.new,
     );
+
+/// Effective reminder setting for [journey]: a local preference in [settings]
+/// takes precedence over the journey's synced [Journey.reminderTime], which
+/// serves as the default after re-sign-in, reinstall, or on a new device (F-32).
+ReminderSetting effectiveReminderSettingFor(
+  Journey journey,
+  Map<String, ReminderSetting> settings,
+) {
+  final local = settings[journey.id];
+  if (local != null) return local;
+  final synced = ReminderTime.tryParse(journey.reminderTime);
+  if (synced != null) {
+    return ReminderSetting(enabled: true, time: synced);
+  }
+  return ReminderSetting.off;
+}
 
 /// FR-G2 switch (default on).
 class StreakAlertsController extends Notifier<bool> {

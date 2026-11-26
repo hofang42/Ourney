@@ -170,14 +170,8 @@ class _EditBodyState extends ConsumerState<_EditBody> {
     setState(() => _link = true);
   }
 
-  ReminderSetting _readInitialReminder() {
-    final map = ref.read(reminderSettingsProvider);
-    final existing = map[j.id];
-    if (existing != null) return existing;
-    final saved = ReminderTime.tryParse(j.reminderTime);
-    if (saved != null) return ReminderSetting(enabled: true, time: saved);
-    return ReminderSetting.off;
-  }
+  ReminderSetting _readInitialReminder() =>
+      effectiveReminderSettingFor(j, ref.read(reminderSettingsProvider));
 
   @override
   void dispose() {
@@ -283,7 +277,7 @@ class _EditBodyState extends ConsumerState<_EditBody> {
         );
       }
       final reminders = ref.read(reminderSettingsProvider.notifier);
-      final current = reminders.of(j.id);
+      final current = reminders.ofJourney(j);
       final next = ReminderSetting(enabled: _reminderEnabled, time: _time);
       final reminderChanged =
           next.enabled != current.enabled || next.time != current.time;

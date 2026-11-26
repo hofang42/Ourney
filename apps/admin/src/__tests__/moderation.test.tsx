@@ -244,4 +244,67 @@ describe('ModerationPage & Action Gating (UX-28)', () => {
       screen.queryByRole('button', { name: /Reopen Review/i }),
     ).toBeNull()
   })
+
+  it('re-fetches detail after quarantining or resolving an item that remains selected in statusFilter="all" (F-15) and shows modal RPC error inside the modal (F-42)', async () => {
+    let itemState = { ...SQL_FIXTURE_MODERATION_DETAIL }
+    vi.spyOn(adminApi, 'getModerationItem').mockImplementation(
+      async () => itemState,
+    )
+    vi.spyOn(adminApi, 'quarantineModerationTarget').mockImplementation(
+      async () => {
+        itemState = {
+          ...itemState,
+          reported_content: {
+            ...(itemState.reported_content as Extract<
+              typeof itemState.reported_content,
+              { target_type: 'checkin' }
+            >),
+            moderated_at: '2026-11-26T09:00:00Z',
+          },
+        }
+      },
+    )
+
+    render(
+      <MemoryRouter initialEntries={['/moderation?status=all']}>
+        <I18nProvider initialLang="en">
+          <ModerationPage />
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /Quarantine Target/i }),
+      ).not.toBeDisabled()
+    })
+
+    const user = userEvent.setup()
+    await user.click(
+      screen.getByRole('button', { name: /Quarantine Target/i }),
+    )
+    await user.click(screen.getByRole('button', { name: /Confirm Action/i }))
+
+    // F-15: Because loadDetail('mq-01') ran after loadQueue, Quarantine Target is now disabled with "already quarantined"
+    await waitFor(() => {
+      const qBtn = screen.getByRole('button', { name: /Quarantine Target/i })
+      expect(qBtn).toBeDisabled()
+      expect(qBtn).toHaveAttribute(
+        'title',
+        expect.stringMatching(/already quarantined/i),
+      )
+    })
+
+    // F-42: Modal error renders inside open dialog
+    vi.spyOn(adminApi, 'resolveModeration').mockRejectedValueOnce(
+      Object.assign(new Error('rate_limited'), { code: 'P0001' }),
+    )
+    await user.click(screen.getByRole('button', { name: /Dismiss Report/i }))
+    await user.click(screen.getByRole('button', { name: /Confirm Action/i }))
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toHaveTextContent(
+        /Rate limit exceeded/i,
+      )
+    })
+  })
 })

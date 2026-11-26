@@ -6,7 +6,12 @@ import {
   type AdminRole,
   type SystemHealth,
 } from '../lib/adminRpc'
-import { formatAdminError, formatAdminRole, useI18n } from '../lib/i18n'
+import {
+  formatAdminError,
+  formatAdminRole,
+  formatTechnicalDiagnostic,
+  useI18n,
+} from '../lib/i18n'
 import { OIcon } from '../ui/Icon'
 import { AccessibleModal } from '../ui/Modal'
 
@@ -19,11 +24,14 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
   const [note, setNote] = useState('')
   const [statusMsg, setStatusMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
 
   const [removeTarget, setRemoveTarget] = useState<AdminIdentity | null>(null)
   const [removeReason, setRemoveReason] = useState('')
 
   const loadData = async () => {
+    setLoading(true)
     setErrorMsg(null)
     try {
       const [list, hl] = await Promise.all([
@@ -35,6 +43,8 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
     } catch (err) {
       const msg = await handleRpcError(err, 'system_health', lang)
       setErrorMsg(msg)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -45,7 +55,8 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
 
   const handleUpsertAdmin = async (e: FormEvent) => {
     e.preventDefault()
-    if (!emailOrUid.trim()) return
+    if (!emailOrUid.trim() || submitting) return
+    setSubmitting(true)
     setErrorMsg(null)
     try {
       await adminApi.upsertAdminUser({
@@ -66,11 +77,14 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
     } catch (err) {
       const msg = await handleRpcError(err, 'upsert_admin_user', lang)
       setErrorMsg(msg)
+    } finally {
+      setSubmitting(false)
     }
   }
 
   const handleConfirmRemoveAdmin = async () => {
-    if (!removeTarget) return
+    if (!removeTarget || submitting) return
+    setSubmitting(true)
     setErrorMsg(null)
     try {
       await adminApi.removeAdminUser(
@@ -84,10 +98,14 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
     } catch (err) {
       const msg = await handleRpcError(err, 'remove_admin_user', lang)
       setErrorMsg(msg)
+    } finally {
+      setSubmitting(false)
     }
   }
 
   const handleRunStorageSweep = async () => {
+    if (submitting) return
+    setSubmitting(true)
     setErrorMsg(null)
     try {
       await adminApi.invokeAdminAction({ action: 'run_storage_sweep' })
@@ -101,10 +119,14 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
     } catch (err) {
       const msg = await handleRpcError(err, 'run_storage_sweep', lang)
       setErrorMsg(msg)
+    } finally {
+      setSubmitting(false)
     }
   }
 
   const handleResetStuckPurge = async () => {
+    if (submitting) return
+    setSubmitting(true)
     setErrorMsg(null)
     try {
       await adminApi.resetStuckStoragePurge(
@@ -124,10 +146,14 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
         lang,
       )
       setErrorMsg(msg)
+    } finally {
+      setSubmitting(false)
     }
   }
 
   const handleTriggerModerationNotify = async () => {
+    if (submitting) return
+    setSubmitting(true)
     setErrorMsg(null)
     try {
       await adminApi.invokeAdminAction({ action: 'trigger_moderation_notify' })
@@ -145,6 +171,8 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
         lang,
       )
       setErrorMsg(msg)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -167,7 +195,7 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
         </div>
       </div>
 
-      {errorMsg && (
+      {errorMsg && !removeTarget && (
         <div className="status-banner error" role="alert">
           <span>{errorMsg}</span>
         </div>
@@ -226,26 +254,34 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
                     'Recent Sample Purge Errors (Redacted Path Prefix):',
                   )}
                 </div>
-                {health.storage_purge.sample_errors.map((err, idx) => (
-                  <div
-                    key={`${err.bucket}:${err.path_prefix}:${idx}`}
-                    style={{ fontSize: '0.8rem' }}
-                  >
-                    <strong>
-                      {err.bucket}/{err.path_prefix}
-                    </strong>{' '}
-                    ({err.attempts} {t('lần thử', 'attempts')}):{' '}
-                    {formatAdminError(err.last_error, lang)}
-                    <details style={{ marginTop: 2, fontSize: '0.75rem' }}>
-                      <summary
-                        style={{ cursor: 'pointer', color: 'var(--muted)' }}
-                      >
-                        {t('Chi tiết kỹ thuật', 'Technical details')}
-                      </summary>
-                      <code>{err.last_error}</code>
-                    </details>
-                  </div>
-                ))}
+                {health.storage_purge.sample_errors.map((err, idx) => {
+                  const techDiagnostic =
+                    admin.role === 'owner' && err.last_error
+                      ? formatTechnicalDiagnostic(err.last_error)
+                      : null
+                  return (
+                    <div
+                      key={`${err.bucket}:${err.path_prefix}:${idx}`}
+                      style={{ fontSize: '0.8rem' }}
+                    >
+                      <strong>
+                        {err.bucket}/{err.path_prefix}
+                      </strong>{' '}
+                      ({err.attempts} {t('lần thử', 'attempts')}):{' '}
+                      {formatAdminError(err.last_error, lang)}
+                      {techDiagnostic && (
+                        <details style={{ marginTop: 2, fontSize: '0.75rem' }}>
+                          <summary
+                            style={{ cursor: 'pointer', color: 'var(--muted)' }}
+                          >
+                            {t('Chi tiết kỹ thuật', 'Technical details')}
+                          </summary>
+                          <code>{techDiagnostic}</code>
+                        </details>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
 
@@ -253,6 +289,7 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
               <button
                 type="button"
                 className="btn btn-primary"
+                disabled={submitting}
                 onClick={() => void handleRunStorageSweep()}
               >
                 <OIcon name="trash" size={18} />
@@ -267,6 +304,7 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
               <button
                 type="button"
                 className="btn"
+                disabled={submitting}
                 onClick={() => void handleResetStuckPurge()}
               >
                 <OIcon name="refresh" size={18} />
@@ -315,6 +353,7 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn btn-warn"
+              disabled={submitting}
               onClick={() => void handleTriggerModerationNotify()}
             >
               <OIcon name="activity" size={18} />
@@ -383,7 +422,11 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
-            <button type="submit" className="btn btn-primary">
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={submitting}
+            >
               <OIcon name="plus" size={18} />
               <span>{t('Thêm / Cập nhật', 'Add / Update Admin')}</span>
             </button>
@@ -401,39 +444,66 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
               </tr>
             </thead>
             <tbody>
-              {admins.map((a) => (
-                <tr key={a.user_id}>
-                  <td>
-                    <div style={{ fontWeight: 700 }}>{a.email}</div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>
-                      {a.username ? `@${a.username}` : a.user_id}
-                    </div>
-                  </td>
-                  <td>
-                    <span
-                      className={`badge ${
-                        a.role === 'owner' ? 'badge-primary' : 'badge-sky'
-                      }`}
-                    >
-                      {formatAdminRole(a.role, lang)}
-                    </span>
-                  </td>
-                  <td>{a.note || '—'}</td>
-                  <td>
-                    {admin.role === 'owner' && a.user_id !== admin.user_id && (
-                      <button
-                        type="button"
-                        className="btn btn-danger"
-                        aria-label={`${t('Gỡ quyền', 'Remove')} ${a.email}`}
-                        onClick={() => setRemoveTarget(a)}
-                      >
-                        <OIcon name="trash" size={16} />
-                        <span>{t('Gỡ quyền', 'Remove')}</span>
-                      </button>
+              {loading && admins.length === 0 ? (
+                <tr>
+                  <td colSpan={4} style={{ textAlign: 'center', padding: 28 }}>
+                    {t(
+                      'Đang tải danh sách quản trị viên...',
+                      'Loading admin team...',
                     )}
                   </td>
                 </tr>
-              ))}
+              ) : admins.length === 0 ? (
+                <tr>
+                  <td colSpan={4} style={{ textAlign: 'center', padding: 28 }}>
+                    {t(
+                      'Chưa có quản trị viên nào.',
+                      'No admin users found.',
+                    )}
+                  </td>
+                </tr>
+              ) : (
+                admins.map((a) => (
+                  <tr key={a.user_id}>
+                    <td>
+                      <div style={{ fontWeight: 700 }}>{a.email}</div>
+                      <div
+                        style={{ fontSize: '0.78rem', color: 'var(--muted)' }}
+                      >
+                        {a.username ? `@${a.username}` : a.user_id}
+                      </div>
+                    </td>
+                    <td>
+                      <span
+                        className={`badge ${
+                          a.role === 'owner' ? 'badge-primary' : 'badge-sky'
+                        }`}
+                      >
+                        {formatAdminRole(a.role, lang)}
+                      </span>
+                    </td>
+                    <td>{a.note || '—'}</td>
+                    <td>
+                      {admin.role === 'owner' &&
+                        a.user_id !== admin.user_id && (
+                          <button
+                            type="button"
+                            className="btn btn-danger"
+                            disabled={submitting}
+                            aria-label={`${t('Gỡ quyền', 'Remove')} ${a.email}`}
+                            onClick={() => {
+                              setErrorMsg(null)
+                              setRemoveTarget(a)
+                            }}
+                          >
+                            <OIcon name="trash" size={16} />
+                            <span>{t('Gỡ quyền', 'Remove')}</span>
+                          </button>
+                        )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -446,13 +516,20 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
             'Confirm Admin Removal',
           )}
           onClose={() => {
+            if (submitting) return
             setRemoveTarget(null)
             setRemoveReason('')
+            setErrorMsg(null)
           }}
         >
           <h3>
             {t('Xác nhận gỡ quyền quản trị viên', 'Confirm Admin Removal')}
           </h3>
+          {errorMsg && (
+            <div className="status-banner error" role="alert">
+              <span>{errorMsg}</span>
+            </div>
+          )}
           <p className="page-subtitle">
             {removeTarget.email} ({formatAdminRole(removeTarget.role, lang)}) —{' '}
             {t(
@@ -479,9 +556,11 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn"
+              disabled={submitting}
               onClick={() => {
                 setRemoveTarget(null)
                 setRemoveReason('')
+                setErrorMsg(null)
               }}
             >
               {t('Hủy', 'Cancel')}
@@ -489,6 +568,7 @@ export function SettingsPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn btn-danger"
+              disabled={submitting}
               onClick={() => void handleConfirmRemoveAdmin()}
             >
               {t('Xác nhận gỡ quyền', 'Confirm Remove')}

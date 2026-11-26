@@ -97,16 +97,18 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
 
   Future<void> _toggle(Journey journey, {required bool on}) async {
     final controller = ref.read(reminderSettingsProvider.notifier);
-    final current = controller.of(journey.id);
+    final current = controller.ofJourney(journey);
     if (on && !await _ensurePermissionAsked()) return;
-    await controller.save(journey.id, current.copyWith(enabled: on));
+    final next = current.copyWith(enabled: on);
+    await controller.save(journey.id, next);
+    await _syncToJourney(journey, next);
     await _reschedule();
   }
 
   Future<void> _pickTime(Journey journey) async {
     final l10n = RemindersL10n.of(context);
     final controller = ref.read(reminderSettingsProvider.notifier);
-    final current = controller.of(journey.id);
+    final current = controller.ofJourney(journey);
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(
@@ -116,11 +118,35 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
       helpText: l10n.reminders_pickTimeHelp,
     );
     if (picked == null) return;
-    await controller.save(
-      journey.id,
-      current.copyWith(time: ReminderTime(picked.hour, picked.minute)),
+    final next = current.copyWith(
+      time: ReminderTime(picked.hour, picked.minute),
     );
+    await controller.save(journey.id, next);
+    await _syncToJourney(journey, next);
     await _reschedule();
+  }
+
+  Future<void> _syncToJourney(Journey journey, ReminderSetting next) async {
+    try {
+      final me = ref.read(currentUserIdProvider);
+      if (me != null && journey.ownerId != me) return;
+      final repo = ref.read(journeyRepositoryProvider);
+      if (next.enabled) {
+        final hhmm =
+            '${next.time.hour.toString().padLeft(2, '0')}:'
+            '${next.time.minute.toString().padLeft(2, '0')}';
+        if (journey.reminderTime != hhmm) {
+          await repo.update(journey.id, JourneyUpdate(reminderTime: hhmm));
+        }
+      } else if (journey.reminderTime != null) {
+        await repo.update(
+          journey.id,
+          const JourneyUpdate(clear: {'reminder_time'}),
+        );
+      }
+    } on Object {
+      // Best-effort sync to journey metadata; local reminder setting is saved.
+    }
   }
 
   Future<void> _setStreakAlerts(bool enabled) async {
@@ -136,7 +162,12 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
     final settings = ref.watch(reminderSettingsProvider);
     final streakAlerts = ref.watch(streakAlertsEnabledProvider);
     final permission = ref.watch(reminderPermissionProvider).value;
-    final anyOn = streakAlerts || settings.values.any((s) => s.enabled);
+    final anyJourneyOn =
+        journeys.asData?.value.any(
+          (j) => effectiveReminderSettingFor(j, settings).enabled,
+        ) ??
+        settings.values.any((s) => s.enabled);
+    final anyOn = streakAlerts || anyJourneyOn;
     final ui = context.ui;
 
     return KeyedSubtree(
@@ -209,8 +240,10 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
                                 for (final j in list)
                                   _JourneyReminderTile(
                                     journey: j,
-                                    setting:
-                                        settings[j.id] ?? ReminderSetting.off,
+                                    setting: effectiveReminderSettingFor(
+                                      j,
+                                      settings,
+                                    ),
                                     onToggle: (on) => _toggle(j, on: on),
                                     onPickTime: () => _pickTime(j),
                                   ),

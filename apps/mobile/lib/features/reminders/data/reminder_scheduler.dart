@@ -113,7 +113,7 @@ class ReminderScheduler {
     final inputs = <JourneyReminderInput>[];
     for (final j in journeys) {
       if (j.status != JourneyStatus.active) continue;
-      final time = settings[j.id]?.activeTime;
+      final time = effectiveReminderSettingFor(j, settings).activeTime;
       if (time == null && !streakAlerts) continue;
       inputs.add(await _inputFor(j, time));
     }

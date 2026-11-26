@@ -300,18 +300,9 @@
   "@journeys_streakWord": {
     "description": "Word after the streak count on the Today card."
   },
-  "journeys_endsInHours": "{hours, plural, other{Còn {hours} giờ}}",
-  "@journeys_endsInHours": {
-    "description": "Time left to post today, in whole hours.",
-    "placeholders": {
-      "hours": {
-        "type": "int"
-      }
-    }
-  },
-  "journeys_endsSoon": "Còn chưa tới 1 giờ",
-  "@journeys_endsSoon": {
-    "description": "Less than one hour left to post today."
+  "journeys_openToday": "Hôm nay đang mở",
+  "@journeys_openToday": {
+    "description": "Calm non-countdown status on the Today card when today is open for check-in."
   },
   "journeys_startsToday": "Bắt đầu hôm nay",
   "@journeys_startsToday": {

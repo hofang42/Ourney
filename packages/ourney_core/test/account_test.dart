@@ -73,6 +73,36 @@ void main() {
       expect(all.every((x) => x.unlocked), isTrue);
     });
   });
+
+  group('DeleteCodeChallenge (F-29 / CS-05)', () {
+    test('parses OTP and password fallback responses', () {
+      final pwFallback = DeleteCodeChallenge.fromJson({
+        'sent': false,
+        'channel': 'password',
+        'has_password': true,
+      });
+      expect(pwFallback.sent, isFalse);
+      expect(pwFallback.channel, 'password');
+      expect(pwFallback.hasPassword, isTrue);
+      expect(pwFallback.usePasswordByDefault, isTrue);
+
+      final emailOtp = DeleteCodeChallenge.fromJson({
+        'sent': true,
+        'channel': 'email',
+        'has_password': true,
+      });
+      expect(emailOtp.sent, isTrue);
+      expect(emailOtp.channel, 'email');
+      expect(emailOtp.hasPassword, isTrue);
+      expect(emailOtp.usePasswordByDefault, isFalse);
+
+      final fallbackDefault = DeleteCodeChallenge.fromJson(null);
+      expect(fallbackDefault.sent, isTrue);
+      expect(fallbackDefault.channel, 'email');
+      expect(fallbackDefault.hasPassword, isFalse);
+      expect(fallbackDefault.usePasswordByDefault, isFalse);
+    });
+  });
 }
 
 void localStatsTests() {

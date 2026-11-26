@@ -190,11 +190,13 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> requestDeleteCode() async {}
+  Future<DeleteCodeChallenge> requestDeleteCode({bool resend = false}) async =>
+      DeleteCodeChallenge(hasPassword: hasPasswordValue);
 
   @override
   Future<void> signOut() async => emit(null);
 
   @override
-  Future<void> deleteAccount({String? code}) async => emit(null);
+  Future<void> deleteAccount({String? code, String? password}) async =>
+      emit(null);
 }

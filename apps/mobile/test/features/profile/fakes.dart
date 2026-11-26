@@ -45,13 +45,16 @@ class RecordingAuthRepository extends FakeAuthRepository {
   }
 
   Object? requestDeleteCodeError;
+  DeleteCodeChallenge? deleteCodeChallenge;
   Object? signInError;
   Object? phoneError;
 
   @override
-  Future<void> requestDeleteCode() async {
-    calls.add('requestDeleteCode');
+  Future<DeleteCodeChallenge> requestDeleteCode({bool resend = false}) async {
+    calls.add(resend ? 'requestDeleteCode:resend' : 'requestDeleteCode');
     if (requestDeleteCodeError case final e?) throw e;
+    return deleteCodeChallenge ??
+        DeleteCodeChallenge(hasPassword: hasPasswordValue);
   }
 
   @override
@@ -121,8 +124,12 @@ class RecordingAuthRepository extends FakeAuthRepository {
   }
 
   @override
-  Future<void> deleteAccount({String? code}) async {
-    calls.add('deleteAccount:${code ?? ''}');
+  Future<void> deleteAccount({String? code, String? password}) async {
+    if (password != null && password.isNotEmpty) {
+      calls.add('deleteAccount:password=$password');
+    } else {
+      calls.add('deleteAccount:${code ?? ''}');
+    }
     if (deleteError case final e?) throw e;
     emit(null);
   }

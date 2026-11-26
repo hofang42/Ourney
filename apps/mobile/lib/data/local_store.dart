@@ -41,6 +41,7 @@ class LocalStore {
                   journeyKey(journeyId),
                   '${journeyKey(journeyId)}:extras',
                   '${journeyKey(journeyId)}:edit',
+                  '${journeyKey(journeyId)}:couple',
                   membershipKey(journeyId),
                   for (final id in ids) ...[checkInKey(id), reactionKey(id)],
                 ]),
@@ -233,6 +234,7 @@ class LocalStore {
             updatedAt: Value(r['updated_at'] as String?),
           ),
         );
+    await forgetUserContent(blocked);
   }
 
   Future<void> applyProfile(RemoteRow r) async {

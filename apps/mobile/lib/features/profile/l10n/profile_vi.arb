@@ -309,6 +309,30 @@
   "@profile_deleteOtpWrong": {
     "description": "Delete OTP error."
   },
+  "profile_deletePasswordTitle": "xác nhận bằng mật khẩu.",
+  "@profile_deletePasswordTitle": {
+    "description": "Delete step 2 title when confirming with password (CS-05)."
+  },
+  "profile_deletePasswordLead": "Nhập mật khẩu tài khoản để xác nhận xóa vĩnh viễn.",
+  "@profile_deletePasswordLead": {
+    "description": "Delete step 2 lead when confirming with password (CS-05)."
+  },
+  "profile_deletePasswordLabel": "Mật khẩu",
+  "@profile_deletePasswordLabel": {
+    "description": "Password field label in delete account dialog."
+  },
+  "profile_deletePasswordWrong": "Mật khẩu chưa đúng. Kiểm tra lại nhé.",
+  "@profile_deletePasswordWrong": {
+    "description": "Delete password error."
+  },
+  "profile_deleteUsePassword": "Xác nhận bằng mật khẩu",
+  "@profile_deleteUsePassword": {
+    "description": "Switch to password confirmation in delete account dialog."
+  },
+  "profile_deleteUseCode": "Dùng mã 6 số",
+  "@profile_deleteUseCode": {
+    "description": "Switch to 6-digit code confirmation in delete account dialog."
+  },
   "profile_deleteResend": "Gửi lại mã",
   "@profile_deleteResend": {
     "description": "Resend."

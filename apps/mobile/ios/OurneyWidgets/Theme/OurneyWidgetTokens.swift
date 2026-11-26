@@ -775,7 +775,7 @@ public struct OurneyWeekStripView: View {
   private static func fallbackDays(locale: String) -> [WidgetWeekDay] {
     let isEn = WidgetL10n.isEnglish(locale)
     let labels = isEn
-      ? ["We", "Th", "Fr", "Sa", "Su", "Mo", "TD"]
+      ? ["W", "T", "F", "S", "S", "M", "TD"]
       : ["T4", "T5", "T6", "T7", "CN", "T2", "HN"]
     return [
       WidgetWeekDay(date: "1", day: 18, label: labels[0], state: "done"),

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   adminApi,
@@ -83,7 +83,21 @@ export function ModerationPage({ admin }: { admin?: AdminIdentity } = {}) {
   const [resolutionNote, setResolutionNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const loadQueue = async (nextOffset = offset) => {
+  const loadDetail = useCallback(
+    async (id: string) => {
+      try {
+        const d = await adminApi.getModerationItem(id)
+        setDetail(d)
+      } catch (err) {
+        const msg = await handleRpcError(err, 'get_moderation_item', lang)
+        setErrorMsg(msg)
+        setDetail(null)
+      }
+    },
+    [lang],
+  )
+
+  const loadQueue = async (nextOffset = offset): Promise<string | null> => {
     setLoading(true)
     setErrorMsg(null)
     try {
@@ -103,13 +117,16 @@ export function ModerationPage({ admin }: { admin?: AdminIdentity } = {}) {
             ? selectedId
             : res.items[0].id
         setSelectedId(nextId)
+        return nextId
       } else {
         setSelectedId(null)
         setDetail(null)
+        return null
       }
     } catch (err) {
       const msg = await handleRpcError(err, 'list_moderation_queue', lang)
       setErrorMsg(msg)
+      return null
     } finally {
       setLoading(false)
     }
@@ -129,18 +146,8 @@ export function ModerationPage({ admin }: { admin?: AdminIdentity } = {}) {
     setRevealedObjects([])
     setUnblurred(false)
     setReopened(false)
-    void (async () => {
-      try {
-        const d = await adminApi.getModerationItem(selectedId)
-        setDetail(d)
-      } catch (err) {
-        const msg = await handleRpcError(err, 'get_moderation_item', lang)
-        setErrorMsg(msg)
-        setDetail(null)
-      }
-    })()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId])
+    void loadDetail(selectedId)
+  }, [selectedId, loadDetail])
 
   const handleRevealMedia = async () => {
     if (!selectedId) return
@@ -168,15 +175,16 @@ export function ModerationPage({ admin }: { admin?: AdminIdentity } = {}) {
   }
 
   const handleConfirmResolution = async () => {
-    if (!selectedId || !modalAction) return
+    if (!selectedId || !modalAction || submitting) return
     setSubmitting(true)
     setErrorMsg(null)
     try {
+      const currentId = selectedId
       const note = resolutionNote.trim() || null
       if (modalAction === 'quarantine') {
-        await adminApi.quarantineModerationTarget(selectedId, note)
+        await adminApi.quarantineModerationTarget(currentId, note)
       } else {
-        await adminApi.resolveModeration(selectedId, modalAction, note)
+        await adminApi.resolveModeration(currentId, modalAction, note)
       }
       const actionLabel = formatModerationAction(modalAction, lang)
       setBannerMsg(
@@ -188,7 +196,10 @@ export function ModerationPage({ admin }: { admin?: AdminIdentity } = {}) {
       setModalAction(null)
       setResolutionNote('')
       setReopened(false)
-      await loadQueue(offset)
+      const nextId = await loadQueue(offset)
+      if (nextId && nextId === currentId) {
+        await loadDetail(currentId)
+      }
     } catch (err) {
       const msg = await handleRpcError(err, 'resolve_moderation', lang)
       setErrorMsg(msg)
@@ -427,7 +438,7 @@ export function ModerationPage({ admin }: { admin?: AdminIdentity } = {}) {
         </div>
       </div>
 
-      {errorMsg && (
+      {errorMsg && !modalAction && (
         <div className="status-banner error" role="alert">
           <span>{errorMsg}</span>
         </div>
@@ -499,7 +510,16 @@ export function ModerationPage({ admin }: { admin?: AdminIdentity } = {}) {
                 </tr>
               </thead>
               <tbody>
-                {rows.length === 0 && !loading ? (
+                {loading && rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: 'center', padding: 28 }}>
+                      {t(
+                        'Đang tải hàng đợi kiểm duyệt...',
+                        'Loading moderation queue...',
+                      )}
+                    </td>
+                  </tr>
+                ) : rows.length === 0 ? (
                   <tr>
                     <td colSpan={4} style={{ textAlign: 'center', padding: 28 }}>
                       {t(
@@ -820,7 +840,10 @@ export function ModerationPage({ admin }: { admin?: AdminIdentity } = {}) {
                   className="btn btn-success"
                   disabled={Boolean(dismissDisabledReason)}
                   title={dismissDisabledReason}
-                  onClick={() => setModalAction('dismiss')}
+                  onClick={() => {
+                    setErrorMsg(null)
+                    setModalAction('dismiss')
+                  }}
                 >
                   <OIcon name="check" size={18} />
                   <span>{t('Bác bỏ báo cáo', 'Dismiss Report')}</span>
@@ -832,7 +855,10 @@ export function ModerationPage({ admin }: { admin?: AdminIdentity } = {}) {
                     className="btn btn-warn"
                     disabled={Boolean(quarantineDisabledReason)}
                     title={quarantineDisabledReason}
-                    onClick={() => setModalAction('quarantine')}
+                    onClick={() => {
+                      setErrorMsg(null)
+                      setModalAction('quarantine')
+                    }}
                   >
                     <OIcon name="eye-off" size={18} />
                     <span>
@@ -846,7 +872,10 @@ export function ModerationPage({ admin }: { admin?: AdminIdentity } = {}) {
                   className="btn btn-danger"
                   disabled={Boolean(removeContentDisabledReason)}
                   title={removeContentDisabledReason}
-                  onClick={() => setModalAction('remove_content')}
+                  onClick={() => {
+                    setErrorMsg(null)
+                    setModalAction('remove_content')
+                  }}
                 >
                   <OIcon name="trash" size={18} />
                   <span>
@@ -859,7 +888,10 @@ export function ModerationPage({ admin }: { admin?: AdminIdentity } = {}) {
                   className="btn btn-danger"
                   disabled={Boolean(banUserDisabledReason)}
                   title={banUserDisabledReason}
-                  onClick={() => setModalAction('ban_user')}
+                  onClick={() => {
+                    setErrorMsg(null)
+                    setModalAction('ban_user')
+                  }}
                 >
                   <OIcon name="ban" size={18} />
                   <span>
@@ -879,14 +911,21 @@ export function ModerationPage({ admin }: { admin?: AdminIdentity } = {}) {
         <AccessibleModal
           title={`${t('Xác nhận quyết định kiểm duyệt', 'Confirm Moderation Action')}: ${formatModerationAction(modalAction, lang)}`}
           onClose={() => {
+            if (submitting) return
             setModalAction(null)
             setResolutionNote('')
+            setErrorMsg(null)
           }}
         >
           <h3>
             {t('Xác nhận quyết định kiểm duyệt', 'Confirm Moderation Action')}:{' '}
             {formatModerationAction(modalAction, lang)}
           </h3>
+          {errorMsg && (
+            <div className="status-banner error" role="alert">
+              <span>{errorMsg}</span>
+            </div>
+          )}
           <p className="page-subtitle">
             {modalAction === 'ban_user'
               ? t(
@@ -927,9 +966,11 @@ export function ModerationPage({ admin }: { admin?: AdminIdentity } = {}) {
             <button
               type="button"
               className="btn"
+              disabled={submitting}
               onClick={() => {
                 setModalAction(null)
                 setResolutionNote('')
+                setErrorMsg(null)
               }}
             >
               {t('Hủy', 'Cancel')}

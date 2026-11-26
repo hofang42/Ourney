@@ -348,6 +348,56 @@ void main() {
         );
       },
     );
+
+    test(
+      'F-32: schedules reminders from synced journey.reminderTime when local prefs have no entry',
+      () async {
+        final gateway = FakeNotificationGateway(granted: true);
+        final syncedJourney = Journey(
+          id: 'j-synced',
+          ownerId: 'u1',
+          kind: JourneyKind.solo,
+          templateId: TemplateId.custom,
+          title: 'Đọc sách',
+          emoji: '📖',
+          startDate: const LocalDate(2026, 10, 1),
+          durationDays: 30,
+          timezone: hcm,
+          visibility: JourneyVisibility.private,
+          status: JourneyStatus.active,
+          reminderTime: '19:30',
+        );
+        final h = await reminderHarness(
+          journeys: [syncedJourney],
+          gateway: gateway,
+          // No `reminders.j-synced` in SharedPreferences (e.g. after re-sign-in).
+          prefs: {ReminderPrefs.streakAlerts: false},
+        );
+        addTearDown(h.container.dispose);
+
+        await h.container.read(reminderSchedulerProvider).reschedule();
+
+        expect(gateway.scheduled, hasLength(14));
+        // 19:30 in Ho Chi Minh (UTC+7) = 12:30Z.
+        expect(
+          gateway.scheduled[kReminderIdBase]!.fireAt,
+          DateTime.utc(2026, 10, 16, 12, 30),
+        );
+
+        // Turning it off locally overrides the synced journey.reminderTime.
+        await h.container
+            .read(reminderSettingsProvider.notifier)
+            .save(
+              'j-synced',
+              const ReminderSetting(
+                enabled: false,
+                time: ReminderTime(19, 30),
+              ),
+            );
+        await h.container.read(reminderSchedulerProvider).reschedule();
+        expect(gateway.scheduled, isEmpty);
+      },
+    );
   });
 
   group('ReminderLifecycleHook', () {
