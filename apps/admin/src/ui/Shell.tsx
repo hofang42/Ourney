@@ -84,12 +84,18 @@ export function AdminAuthGuard({
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [infoMsg, setInfoMsg] = useState<string | null>(null)
+  const [authError, setAuthError] = useState<
+    | { kind: 'not_admin' }
+    | { kind: 'revoked_forbidden' }
+    | { kind: 'revoked_expired' }
+    | { kind: 'rpc'; err: unknown }
+    | null
+  >(null)
+  const [otpSentInfo, setOtpSentInfo] = useState(false)
 
   const verifyAdminSession = async () => {
     setLoading(true)
-    setErrorMsg(null)
+    setAuthError(null)
     try {
       const identity = await adminApi.me()
       setAdmin(identity)
@@ -97,12 +103,7 @@ export function AdminAuthGuard({
       setAdmin(null)
       if (isForbiddenError(err)) {
         await adminApi.signOut()
-        setErrorMsg(
-          t(
-            'Tài khoản này không có quyền quản trị viên. Đã tự động đăng xuất.',
-            'This account does not have admin privileges. Signed out automatically.',
-          ),
-        )
+        setAuthError({ kind: 'not_admin' })
       }
     } finally {
       setLoading(false)
@@ -116,18 +117,11 @@ export function AdminAuthGuard({
       setAdmin(null)
       setOtp('')
       setStep('email')
+      setOtpSentInfo(false)
       void adminApi.signOut()
-      setErrorMsg(
-        reason === 'forbidden'
-          ? t(
-              'Quyền quản trị viên đã bị thu hồi hoặc tài khoản bị khóa. Đã tự động đăng xuất.',
-              'Admin privileges were revoked or account was suspended. Signed out automatically.',
-            )
-          : t(
-              'Phiên đăng nhập đã hết hạn. Vui lòng xác thực lại.',
-              'Your session has expired. Please sign in again.',
-            ),
-      )
+      setAuthError({
+        kind: reason === 'forbidden' ? 'revoked_forbidden' : 'revoked_expired',
+      })
     })
 
     const authListener = supabase?.auth?.onAuthStateChange?.((event) => {
@@ -142,28 +136,22 @@ export function AdminAuthGuard({
       unsubRevoked()
       authListener?.data?.subscription?.unsubscribe()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleSendOtp = async (e: FormEvent) => {
     e.preventDefault()
     if (!email.trim()) return
     setSubmitting(true)
-    setErrorMsg(null)
-    setInfoMsg(null)
+    setAuthError(null)
+    setOtpSentInfo(false)
     try {
       await adminApi.signInWithOtp(email)
       setOtp('')
       setStep('otp')
-      setInfoMsg(
-        t(
-          'Mã OTP 6 chữ số đã được gửi tới email của bạn.',
-          'A 6-digit OTP code has been sent to your email.',
-        ),
-      )
+      setOtpSentInfo(true)
     } catch (err) {
       console.debug('[OurneyAdmin Auth Error] signInWithOtp', err)
-      setErrorMsg(formatAdminError(err, lang))
+      setAuthError({ kind: 'rpc', err })
     } finally {
       setSubmitting(false)
     }
@@ -173,18 +161,46 @@ export function AdminAuthGuard({
     e.preventDefault()
     if (otp.trim().length < 6) return
     setSubmitting(true)
-    setErrorMsg(null)
+    setAuthError(null)
     try {
       await adminApi.verifyOtp(email, otp)
       setOtp('')
+      setOtpSentInfo(false)
       await verifyAdminSession()
     } catch (err) {
       console.debug('[OurneyAdmin Auth Error] verifyOtp', err)
-      setErrorMsg(formatAdminError(err, lang))
+      setAuthError({ kind: 'rpc', err })
     } finally {
       setSubmitting(false)
     }
   }
+
+  const errorMsg =
+    authError === null
+      ? null
+      : authError.kind === 'not_admin'
+        ? t(
+            'Tài khoản này không có quyền quản trị viên. Đã tự động đăng xuất.',
+            'This account does not have admin privileges. Signed out automatically.',
+          )
+        : authError.kind === 'revoked_forbidden'
+          ? t(
+              'Quyền quản trị viên đã bị thu hồi hoặc tài khoản bị khóa. Đã tự động đăng xuất.',
+              'Admin privileges were revoked or account was suspended. Signed out automatically.',
+            )
+          : authError.kind === 'revoked_expired'
+            ? t(
+                'Phiên đăng nhập đã hết hạn. Vui lòng xác thực lại.',
+                'Your session has expired. Please sign in again.',
+              )
+            : formatAdminError(authError.err, lang)
+
+  const infoMsg = otpSentInfo
+    ? t(
+        'Mã OTP 6 chữ số đã được gửi tới email của bạn.',
+        'A 6-digit OTP code has been sent to your email.',
+      )
+    : null
 
   if (loading) {
     return (
@@ -324,8 +340,8 @@ export function AdminAuthGuard({
                   className="btn"
                   onClick={() => {
                     setOtp('')
-                    setErrorMsg(null)
-                    setInfoMsg(null)
+                    setAuthError(null)
+                    setOtpSentInfo(false)
                     setStep('email')
                   }}
                 >

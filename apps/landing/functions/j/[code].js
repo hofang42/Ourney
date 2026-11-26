@@ -22,30 +22,6 @@ function serializeEmbeddedJson(payload) {
   });
 }
 
-function putEdgeCache(context, edgeCache, cacheKey, assetResponse, responseToCache) {
-  if (!assetResponse || !assetResponse.ok || !edgeCache || !cacheKey) return;
-  let cloned = null;
-  try {
-    cloned = responseToCache.clone();
-    const putPromise = Promise.resolve(edgeCache.put(cacheKey, cloned)).catch(() => {
-      if (cloned && cloned.body && typeof cloned.body.cancel === 'function') {
-        try {
-          Promise.resolve(cloned.body.cancel()).catch(() => {});
-        } catch (_) {}
-      }
-    });
-    if (context && typeof context.waitUntil === 'function') {
-      context.waitUntil(putPromise);
-    }
-  } catch (_) {
-    if (cloned && cloned.body && typeof cloned.body.cancel === 'function') {
-      try {
-        Promise.resolve(cloned.body.cancel()).catch(() => {});
-      } catch (_) {}
-    }
-  }
-}
-
 async function fetchStaticSquadPage(context) {
   const { request, env } = context;
   if (env && env.ASSETS && typeof env.ASSETS.fetch === 'function') {
@@ -101,13 +77,6 @@ async function lookupGroupInvite(code, env) {
   }
 }
 
-function getEdgeCache() {
-  if (typeof caches !== 'undefined' && caches && caches.default) {
-    return caches.default;
-  }
-  return null;
-}
-
 export async function handleSquadInviteRequest(context, routePrefix = 'j') {
   const rawCode = (context.params && context.params.code) ? String(context.params.code) : '';
   let code = '';
@@ -118,17 +87,6 @@ export async function handleSquadInviteRequest(context, routePrefix = 'j') {
   }
 
   const validFormat = SQUAD_CODE_RE.test(code);
-  const edgeCache = validFormat ? getEdgeCache() : null;
-  const cacheKey = edgeCache && context.request
-    ? new Request(new URL(`/${routePrefix}/${encodeURIComponent(code)}`, context.request.url).toString(), { method: 'GET' })
-    : null;
-
-  if (edgeCache && cacheKey) {
-    try {
-      const cached = await edgeCache.match(cacheKey);
-      if (cached) return cached;
-    } catch (_) {}
-  }
 
   const [assetResponse, lookup] = await Promise.all([
     fetchStaticSquadPage(context),
@@ -140,11 +98,8 @@ export async function handleSquadInviteRequest(context, routePrefix = 'j') {
   const headers = new Headers(assetResponse.headers);
   headers.delete('ETag');
   headers.delete('Last-Modified');
-  if (lookup.status === 'error' || !assetResponse.ok) {
-    headers.set('Cache-Control', 'no-store');
-  } else {
-    headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
-  }
+  headers.set('Cache-Control', 'private, no-store');
+  headers.set('Referrer-Policy', 'no-referrer');
 
   const baseResponse = new Response(assetResponse.body, {
     status: assetResponse.status,
@@ -166,7 +121,6 @@ export async function handleSquadInviteRequest(context, routePrefix = 'j') {
       })
       .transform(baseResponse);
 
-    putEdgeCache(context, edgeCache, cacheKey, assetResponse, emptyRewritten);
     return emptyRewritten;
   }
 
@@ -242,8 +196,6 @@ export async function handleSquadInviteRequest(context, routePrefix = 'j') {
       }
     })
     .transform(baseResponse);
-
-  putEdgeCache(context, edgeCache, cacheKey, assetResponse, rewritten);
 
   return rewritten;
 }

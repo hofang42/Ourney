@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   adminApi,
@@ -29,7 +29,7 @@ const STATUS_TABS: Array<{
   visibility?: 'active' | 'hidden' | 'merged' | 'all'
   statKey?: keyof Omit<FeatureRequestStats, 'new_this_week' | 'top_voted'>
 }> = [
-  { id: 'all_active', vi: 'Đang mở', en: 'All Active', visibility: 'active' },
+  { id: 'all_active', vi: 'Đang mở', en: 'All Active' },
   {
     id: 'new',
     vi: 'Mới (Cần phân loại)',
@@ -132,7 +132,43 @@ export function FeatureRequestsPage() {
     useState<FeatureRequestDetail | null>(null)
   const [mergeReason, setMergeReason] = useState('')
 
-  const loadList = async (nextOffset = offset) => {
+  const loadDetail = useCallback(
+    async (
+      id: string,
+      committedOverrides?: Partial<FeatureRequestDetail>,
+      syncForm = true,
+    ) => {
+      try {
+        const fetched = await adminApi.getFeatureRequestDetail(id)
+        const d: FeatureRequestDetail = committedOverrides
+          ? { ...fetched, ...committedOverrides }
+          : fetched
+        setDetail(d)
+        if (syncForm) {
+          setEditStatus(d.status)
+          setEditCategory(d.category)
+          setEditReply(d.admin_reply ?? '')
+          setEditHidden(d.hidden)
+          setEditReason('')
+          setFilterCheckMsg(null)
+        }
+      } catch (err) {
+        if (isFeatureRequestsNotInstalledError(err)) {
+          setNotInstalled(true)
+        } else {
+          const msg = await handleRpcError(
+            err,
+            'get_feature_request_detail',
+            lang,
+          )
+          setErrorMsg(msg)
+        }
+      }
+    },
+    [lang],
+  )
+
+  const loadList = async (nextOffset = offset): Promise<string | null> => {
     setLoading(true)
     setNotInstalled(false)
     setErrorMsg(null)
@@ -165,9 +201,11 @@ export function FeatureRequestsPage() {
             ? selectedId
             : listRes.items[0].id
         setSelectedId(nextId)
+        return nextId
       } else {
         setSelectedId(null)
         setDetail(null)
+        return null
       }
     } catch (err) {
       if (isFeatureRequestsNotInstalledError(err)) {
@@ -176,6 +214,7 @@ export function FeatureRequestsPage() {
         const msg = await handleRpcError(err, 'list_feature_requests', lang)
         setErrorMsg(msg)
       }
+      return null
     } finally {
       setLoading(false)
     }
@@ -192,31 +231,8 @@ export function FeatureRequestsPage() {
       setDetail(null)
       return
     }
-    void (async () => {
-      try {
-        const d = await adminApi.getFeatureRequestDetail(selectedId)
-        setDetail(d)
-        setEditStatus(d.status)
-        setEditCategory(d.category)
-        setEditReply(d.admin_reply ?? '')
-        setEditHidden(d.hidden)
-        setEditReason('')
-        setFilterCheckMsg(null)
-      } catch (err) {
-        if (isFeatureRequestsNotInstalledError(err)) {
-          setNotInstalled(true)
-        } else {
-          const msg = await handleRpcError(
-            err,
-            'get_feature_request_detail',
-            lang,
-          )
-          setErrorMsg(msg)
-        }
-      }
-    })()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, notInstalled])
+    void loadDetail(selectedId, undefined, true)
+  }, [selectedId, notInstalled, loadDetail])
 
   useEffect(() => {
     if (!mergeModalOpen) return
@@ -297,26 +313,38 @@ export function FeatureRequestsPage() {
   }
 
   const handleSaveUpdate = async () => {
-    if (!detail) return
+    if (!detail || saving) return
     setSaving(true)
     setErrorMsg(null)
     try {
+      const currentId = detail.id
       const replyVal = editReply.trim() || null
+      const committed: Partial<FeatureRequestDetail> = {
+        status: editStatus,
+        category: editCategory,
+        admin_reply: replyVal,
+        hidden: editHidden,
+      }
       await adminApi.updateFeatureRequest({
-        p_id: detail.id,
+        p_id: currentId,
         p_status: editStatus,
         p_category: editCategory,
         p_admin_reply: replyVal,
         p_hidden: editHidden,
         p_reason: editReason.trim() || null,
       })
+      setDetail((prev) => (prev ? { ...prev, ...committed } : prev))
+      setEditReason('')
       setBannerMsg(
         t(
           'Đã cập nhật đề xuất tính năng và phản hồi công khai.',
           'Saved feature request update and official Ourney reply.',
         ),
       )
-      await loadList(offset)
+      const nextId = await loadList(offset)
+      if (nextId === currentId) {
+        await loadDetail(currentId, committed, true)
+      }
     } catch (err) {
       const msg = await handleRpcError(err, 'update_feature_request', lang)
       setErrorMsg(msg)
@@ -326,13 +354,20 @@ export function FeatureRequestsPage() {
   }
 
   const handleConfirmHide = async () => {
-    if (!detail) return
+    if (!detail || saving) return
     setSaving(true)
     setErrorMsg(null)
     try {
+      const currentId = detail.id
+      const committed: Partial<FeatureRequestDetail> = {
+        status: detail.status,
+        category: detail.category,
+        admin_reply: detail.admin_reply,
+        hidden: true,
+      }
       // Preserve persisted status/category/reply so hiding does not silently commit unsaved drafts
       await adminApi.updateFeatureRequest({
-        p_id: detail.id,
+        p_id: currentId,
         p_status: detail.status,
         p_category: detail.category,
         p_admin_reply: detail.admin_reply,
@@ -341,7 +376,7 @@ export function FeatureRequestsPage() {
           hideReason.trim() || 'Hidden from public roadmap via Admin Console',
       })
       setEditHidden(true)
-      setDetail({ ...detail, hidden: true })
+      setDetail({ ...detail, ...committed })
       setHideModalOpen(false)
       setHideReason('')
       setBannerMsg(
@@ -350,7 +385,10 @@ export function FeatureRequestsPage() {
           'Hidden feature request from the public board.',
         ),
       )
-      await loadList(offset)
+      const nextId = await loadList(offset)
+      if (nextId === currentId) {
+        await loadDetail(currentId, committed, false)
+      }
     } catch (err) {
       const msg = await handleRpcError(err, 'update_feature_request', lang)
       setErrorMsg(msg)
@@ -360,12 +398,19 @@ export function FeatureRequestsPage() {
   }
 
   const handleUnhide = async () => {
-    if (!detail) return
+    if (!detail || saving) return
     setSaving(true)
     setErrorMsg(null)
     try {
+      const currentId = detail.id
+      const committed: Partial<FeatureRequestDetail> = {
+        status: detail.status,
+        category: detail.category,
+        admin_reply: detail.admin_reply,
+        hidden: false,
+      }
       await adminApi.updateFeatureRequest({
-        p_id: detail.id,
+        p_id: currentId,
         p_status: detail.status,
         p_category: detail.category,
         p_admin_reply: detail.admin_reply,
@@ -373,14 +418,17 @@ export function FeatureRequestsPage() {
         p_reason: 'Restored visibility on public roadmap via Admin Console',
       })
       setEditHidden(false)
-      setDetail({ ...detail, hidden: false })
+      setDetail({ ...detail, ...committed })
       setBannerMsg(
         t(
           'Đã hiển thị lại đề xuất tính năng trên bảng công khai.',
           'Restored feature request visibility on the public board.',
         ),
       )
-      await loadList(offset)
+      const nextId = await loadList(offset)
+      if (nextId === currentId) {
+        await loadDetail(currentId, committed, false)
+      }
     } catch (err) {
       const msg = await handleRpcError(err, 'update_feature_request', lang)
       setErrorMsg(msg)
@@ -390,12 +438,20 @@ export function FeatureRequestsPage() {
   }
 
   const handleConfirmClearReply = async () => {
-    if (!detail) return
+    if (!detail || saving) return
     setSaving(true)
     setErrorMsg(null)
     try {
+      const currentId = detail.id
+      const committed: Partial<FeatureRequestDetail> = {
+        status: detail.status,
+        category: detail.category,
+        admin_reply: null,
+        admin_replied_at: null,
+        hidden: detail.hidden,
+      }
       await adminApi.updateFeatureRequest({
-        p_id: detail.id,
+        p_id: currentId,
         p_status: detail.status,
         p_category: detail.category,
         p_admin_reply: null,
@@ -405,7 +461,7 @@ export function FeatureRequestsPage() {
           'Cleared official public reply via Admin Console',
       })
       setEditReply('')
-      setDetail({ ...detail, admin_reply: null, admin_replied_at: null })
+      setDetail({ ...detail, ...committed })
       setClearReplyModalOpen(false)
       setClearReplyReason('')
       setBannerMsg(
@@ -414,7 +470,10 @@ export function FeatureRequestsPage() {
           'Cleared official Ourney public reply.',
         ),
       )
-      await loadList(offset)
+      const nextId = await loadList(offset)
+      if (nextId === currentId) {
+        await loadDetail(currentId, committed, false)
+      }
     } catch (err) {
       const msg = await handleRpcError(err, 'update_feature_request', lang)
       setErrorMsg(msg)
@@ -424,11 +483,13 @@ export function FeatureRequestsPage() {
   }
 
   const handleConfirmMerge = async () => {
-    if (!detail || !mergeTargetId) return
+    if (!detail || !mergeTargetId || saving) return
+    setSaving(true)
     setErrorMsg(null)
     try {
+      const currentId = detail.id
       await adminApi.mergeFeatureRequest({
-        p_source_id: detail.id,
+        p_source_id: currentId,
         p_target_id: mergeTargetId,
         p_reason: mergeReason.trim() || 'Merged duplicate request',
       })
@@ -442,10 +503,15 @@ export function FeatureRequestsPage() {
           'Merged duplicate feature request and consolidated unique votes.',
         ),
       )
-      await loadList(offset)
+      const nextId = await loadList(offset)
+      if (nextId === currentId) {
+        await loadDetail(currentId, undefined, true)
+      }
     } catch (err) {
       const msg = await handleRpcError(err, 'merge_feature_request', lang)
       setErrorMsg(msg)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -511,11 +577,14 @@ export function FeatureRequestsPage() {
         )}
       </div>
 
-      {errorMsg && (
-        <div className="status-banner error" role="alert">
-          <span>{errorMsg}</span>
-        </div>
-      )}
+      {errorMsg &&
+        !hideModalOpen &&
+        !clearReplyModalOpen &&
+        !mergeModalOpen && (
+          <div className="status-banner error" role="alert">
+            <span>{errorMsg}</span>
+          </div>
+        )}
 
       {bannerMsg && (
         <div className="status-banner success" role="status">
@@ -590,17 +659,28 @@ export function FeatureRequestsPage() {
           ))}
         </select>
 
-        <select
-          aria-label={t('Trạng thái hiển thị', 'Filter visibility')}
-          className="select"
-          value={visibilityFilter}
-          onChange={(e) => setVisibilityFilter(e.target.value)}
-        >
-          <option value="active">{t('Đang hiển thị', 'Visible')}</option>
-          <option value="hidden">{t('Đã ẩn / Tạm khóa', 'Hidden / Quarantined')}</option>
-          <option value="merged">{t('Trùng lặp đã gộp', 'Merged Duplicates')}</option>
-          <option value="all">{t('Tất cả', 'All')}</option>
-        </select>
+        {(() => {
+          const activeTabObj = STATUS_TABS.find((x) => x.id === activeTab)
+          const pinnedVisibility = activeTabObj?.visibility
+          return (
+            <select
+              aria-label={t('Trạng thái hiển thị', 'Filter visibility')}
+              className="select"
+              value={pinnedVisibility ?? visibilityFilter}
+              disabled={Boolean(pinnedVisibility)}
+              onChange={(e) => setVisibilityFilter(e.target.value)}
+            >
+              <option value="active">{t('Đang hiển thị', 'Visible')}</option>
+              <option value="hidden">
+                {t('Đã ẩn / Tạm khóa', 'Hidden / Quarantined')}
+              </option>
+              <option value="merged">
+                {t('Trùng lặp đã gộp', 'Merged Duplicates')}
+              </option>
+              <option value="all">{t('Tất cả', 'All')}</option>
+            </select>
+          )
+        })()}
 
         <select
           aria-label={t('Sắp xếp đề xuất', 'Sort requests')}
@@ -640,7 +720,16 @@ export function FeatureRequestsPage() {
                 </tr>
               </thead>
               <tbody>
-                {rows.length === 0 && !loading ? (
+                {loading && rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: 'center', padding: 28 }}>
+                      {t(
+                        'Đang tải đề xuất tính năng...',
+                        'Loading feature requests...',
+                      )}
+                    </td>
+                  </tr>
+                ) : rows.length === 0 ? (
                   <tr>
                     <td colSpan={5} style={{ textAlign: 'center', padding: 28 }}>
                       {t(
@@ -783,6 +872,7 @@ export function FeatureRequestsPage() {
                     if (detail.hidden) {
                       void handleUnhide()
                     } else {
+                      setErrorMsg(null)
                       setHideModalOpen(true)
                     }
                   }}
@@ -953,7 +1043,10 @@ export function FeatureRequestsPage() {
                   <button
                     type="button"
                     className="btn btn-danger"
-                    onClick={() => setClearReplyModalOpen(true)}
+                    onClick={() => {
+                      setErrorMsg(null)
+                      setClearReplyModalOpen(true)
+                    }}
                     disabled={saving}
                   >
                     <OIcon name="trash" size={18} />
@@ -965,7 +1058,11 @@ export function FeatureRequestsPage() {
                   <button
                     type="button"
                     className="btn btn-warn"
-                    onClick={() => setMergeModalOpen(true)}
+                    disabled={saving}
+                    onClick={() => {
+                      setErrorMsg(null)
+                      setMergeModalOpen(true)
+                    }}
                   >
                     <OIcon name="merge" size={18} />
                     <span>
@@ -1062,13 +1159,20 @@ export function FeatureRequestsPage() {
             'Confirm Hide Feature Request',
           )}
           onClose={() => {
+            if (saving) return
             setHideModalOpen(false)
             setHideReason('')
+            setErrorMsg(null)
           }}
         >
           <h3>
             {t('Xác nhận ẩn đề xuất tính năng', 'Confirm Hide Feature Request')}
           </h3>
+          {errorMsg && (
+            <div className="status-banner error" role="alert">
+              <span>{errorMsg}</span>
+            </div>
+          )}
           <p className="page-subtitle">
             <strong>{detail.title}</strong> —{' '}
             {t(
@@ -1095,9 +1199,11 @@ export function FeatureRequestsPage() {
             <button
               type="button"
               className="btn"
+              disabled={saving}
               onClick={() => {
                 setHideModalOpen(false)
                 setHideReason('')
+                setErrorMsg(null)
               }}
             >
               {t('Hủy', 'Cancel')}
@@ -1121,8 +1227,10 @@ export function FeatureRequestsPage() {
             'Confirm Clear Official Reply',
           )}
           onClose={() => {
+            if (saving) return
             setClearReplyModalOpen(false)
             setClearReplyReason('')
+            setErrorMsg(null)
           }}
         >
           <h3>
@@ -1131,6 +1239,11 @@ export function FeatureRequestsPage() {
               'Confirm Clear Official Reply',
             )}
           </h3>
+          {errorMsg && (
+            <div className="status-banner error" role="alert">
+              <span>{errorMsg}</span>
+            </div>
+          )}
           <p className="page-subtitle">
             {t(
               'Phản hồi chính thức từ Ourney trên đề xuất này sẽ bị gỡ bỏ khỏi ứng dụng.',
@@ -1156,9 +1269,11 @@ export function FeatureRequestsPage() {
             <button
               type="button"
               className="btn"
+              disabled={saving}
               onClick={() => {
                 setClearReplyModalOpen(false)
                 setClearReplyReason('')
+                setErrorMsg(null)
               }}
             >
               {t('Hủy', 'Cancel')}
@@ -1182,10 +1297,12 @@ export function FeatureRequestsPage() {
             'Merge Duplicate into Canonical Request',
           )}
           onClose={() => {
+            if (saving) return
             setMergeModalOpen(false)
             setMergeTargetId('')
             setMergeReason('')
             setMergeSearch('')
+            setErrorMsg(null)
           }}
         >
           <h3>
@@ -1194,6 +1311,11 @@ export function FeatureRequestsPage() {
               'Merge Duplicate into Canonical Request',
             )}
           </h3>
+          {errorMsg && (
+            <div className="status-banner error" role="alert">
+              <span>{errorMsg}</span>
+            </div>
+          )}
           <p className="page-subtitle">
             {t(
               'Tất cả phiếu bầu duy nhất sẽ được chuyển sang đề xuất đích (người bình chọn cả 2 bài chỉ tính 1 lần).',
@@ -1285,11 +1407,13 @@ export function FeatureRequestsPage() {
             <button
               type="button"
               className="btn"
+              disabled={saving}
               onClick={() => {
                 setMergeModalOpen(false)
                 setMergeTargetId('')
                 setMergeReason('')
                 setMergeSearch('')
+                setErrorMsg(null)
               }}
             >
               {t('Hủy', 'Cancel')}
@@ -1297,7 +1421,7 @@ export function FeatureRequestsPage() {
             <button
               type="button"
               className="btn btn-primary"
-              disabled={!mergeTargetId}
+              disabled={!mergeTargetId || saving}
               onClick={() => void handleConfirmMerge()}
             >
               <OIcon name="merge" size={18} />

@@ -186,4 +186,113 @@ describe('FeatureRequestsPage', () => {
       p_reason: 'Merged duplicate request',
     })
   })
+
+  it('refreshes detail state after Save Update so subsequent Hide Request or Clear Reply does not revert saved edits (F-15), and wires Visibility select on All Active tab + modal error inside dialog (F-42)', async () => {
+    let currentDetail = { ...SQL_FIXTURE_FR_DETAIL }
+    vi.spyOn(adminApi, 'featureRequestStats').mockResolvedValue(
+      SQL_FIXTURE_FR_STATS,
+    )
+    const listSpy = vi
+      .spyOn(adminApi, 'listFeatureRequests')
+      .mockResolvedValue(SQL_FIXTURE_FR_LIST)
+    const detailSpy = vi
+      .spyOn(adminApi, 'getFeatureRequestDetail')
+      .mockImplementation(async () => currentDetail)
+    const updateSpy = vi
+      .spyOn(adminApi, 'updateFeatureRequest')
+      .mockImplementation(async (payload) => {
+        currentDetail = {
+          ...currentDetail,
+          status: payload.p_status,
+          category: payload.p_category,
+          admin_reply: payload.p_admin_reply ?? null,
+          hidden: payload.p_hidden,
+        }
+      })
+
+    render(
+      <MemoryRouter>
+        <I18nProvider initialLang="en">
+          <FeatureRequestsPage />
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /Save Update/i }),
+      ).toBeInTheDocument()
+    })
+
+    const user = userEvent.setup()
+
+    // F-42: Visibility select controls p_visibility on All Active tab
+    const visSelect = screen.getByLabelText(/Filter visibility/i)
+    expect(visSelect).not.toBeDisabled()
+    await user.selectOptions(visSelect, 'all')
+    await waitFor(() => {
+      expect(listSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          p_status: 'all_active',
+          p_visibility: 'all',
+        }),
+      )
+    })
+
+    // F-42: Switching to Merged tab pins and disables Visibility select
+    await user.click(screen.getByRole('tab', { name: /Merged Duplicates/i }))
+    expect(visSelect).toBeDisabled()
+    expect(visSelect).toHaveValue('merged')
+    await user.click(screen.getByRole('tab', { name: /All Active/i }))
+    expect(visSelect).not.toBeDisabled()
+
+    // F-15: Save status = 'in_progress' and a new reply, then Hide Request must preserve 'in_progress' and new reply
+    await user.selectOptions(
+      screen.getByLabelText(/Select roadmap status/i),
+      'in_progress',
+    )
+    const replyInput = screen.getByLabelText(/Official Ourney Public Reply/i)
+    await user.clear(replyInput)
+    await user.type(replyInput, 'Shipped in beta build 42')
+    await user.click(screen.getByRole('button', { name: /Save Update/i }))
+
+    await waitFor(() => {
+      expect(updateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          p_id: 'fr-101',
+          p_status: 'in_progress',
+          p_admin_reply: 'Shipped in beta build 42',
+        }),
+      )
+      expect(detailSpy).toHaveBeenCalledWith('fr-101')
+    })
+
+    updateSpy.mockClear()
+    await user.click(screen.getByRole('button', { name: /Hide Request/i }))
+    await user.click(
+      screen.getByRole('button', { name: /Confirm Hide Request/i }),
+    )
+
+    expect(updateSpy).toHaveBeenCalledWith({
+      p_id: 'fr-101',
+      p_status: 'in_progress',
+      p_category: 'squad',
+      p_admin_reply: 'Shipped in beta build 42',
+      p_hidden: true,
+      p_reason: 'Hidden from public roadmap via Admin Console',
+    })
+
+    // F-42: Failed modal RPC renders error alert inside open modal dialog
+    updateSpy.mockRejectedValueOnce(
+      Object.assign(new Error('rate_limited'), { code: 'P0001' }),
+    )
+    await user.click(screen.getByRole('button', { name: /Clear Reply/i }))
+    await user.click(
+      screen.getByRole('button', { name: /Confirm Clear Reply/i }),
+    )
+    await waitFor(() => {
+      const dialog = screen.getByRole('dialog')
+      expect(dialog).toHaveTextContent(/Rate limit exceeded/i)
+    })
+  })
 })
