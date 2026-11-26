@@ -42,7 +42,7 @@ class AestheticFlexerL10nVi extends AestheticFlexerL10n {
 
   @override
   String aesthetic_flexer_milestoneStar(String day) {
-    return 'NGÀY $day ★ CỘT MỐC';
+    return 'NGÀY $day · CỘT MỐC';
   }
 
   @override
@@ -56,13 +56,13 @@ class AestheticFlexerL10nVi extends AestheticFlexerL10n {
   }
 
   @override
-  String get aesthetic_flexer_styleBoldHud => 'Bold HUD';
+  String get aesthetic_flexer_styleBoldHud => 'HUD đậm';
 
   @override
-  String get aesthetic_flexer_styleMinimalStamp => 'Minimal Stamp';
+  String get aesthetic_flexer_styleMinimalStamp => 'Dấu tối giản';
 
   @override
-  String get aesthetic_flexer_styleFilmStrip => 'Film Strip';
+  String get aesthetic_flexer_styleFilmStrip => 'Dải phim';
 
   @override
   String aesthetic_flexer_daysActiveBadge(int count) {

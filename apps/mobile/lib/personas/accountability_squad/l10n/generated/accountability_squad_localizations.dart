@@ -134,7 +134,7 @@ abstract class AccountabilitySquadL10n {
   /// Nhãn Polaroid ở các mốc 7, 14, 21...
   ///
   /// In vi, this message translates to:
-  /// **'NGÀY {day} ★ TUẦN {week}'**
+  /// **'NGÀY {day} · TUẦN {week}'**
   String accountability_squad_dayWeekMilestone(String day, int week);
 
   /// Nhãn Polaroid cho ngày thường

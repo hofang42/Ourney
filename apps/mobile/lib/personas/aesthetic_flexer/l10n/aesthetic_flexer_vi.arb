@@ -62,7 +62,7 @@
   "@aesthetic_flexer_milestoneStart": {
     "description": "Nhãn mốc ngày 1"
   },
-  "aesthetic_flexer_milestoneStar": "NGÀY {day} ★ CỘT MỐC",
+  "aesthetic_flexer_milestoneStar": "NGÀY {day} · CỘT MỐC",
   "@aesthetic_flexer_milestoneStar": {
     "description": "Nhãn mốc ngày 7, 14, 21...",
     "placeholders": {
@@ -89,15 +89,15 @@
       }
     }
   },
-  "aesthetic_flexer_styleBoldHud": "Bold HUD",
+  "aesthetic_flexer_styleBoldHud": "HUD đậm",
   "@aesthetic_flexer_styleBoldHud": {
     "description": "Kiểu lớp phủ Bold HUD"
   },
-  "aesthetic_flexer_styleMinimalStamp": "Minimal Stamp",
+  "aesthetic_flexer_styleMinimalStamp": "Dấu tối giản",
   "@aesthetic_flexer_styleMinimalStamp": {
     "description": "Kiểu lớp phủ Minimal Stamp"
   },
-  "aesthetic_flexer_styleFilmStrip": "Film Strip",
+  "aesthetic_flexer_styleFilmStrip": "Dải phim",
   "@aesthetic_flexer_styleFilmStrip": {
     "description": "Kiểu lớp phủ Film Strip"
   },

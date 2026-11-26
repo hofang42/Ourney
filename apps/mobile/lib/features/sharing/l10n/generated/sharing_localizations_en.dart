@@ -164,7 +164,7 @@ class SharingL10nEn extends SharingL10n {
       '1': '1 view',
       'other': '$views views',
     });
-    return '$_temp0 · $likes ❤️ · $started started';
+    return '$_temp0 · $likes likes · $started started';
   }
 
   @override
@@ -391,12 +391,18 @@ class SharingL10nEn extends SharingL10n {
   @override
   String sharing_counts(int likes, int follows) {
     String _temp0 = intl.Intl.pluralLogic(
+      likes,
+      locale: localeName,
+      other: '$likes likes',
+      one: '1 like',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
       follows,
       locale: localeName,
       other: '$follows people did this journey',
       one: '1 person did this journey',
     );
-    return '❤️ $likes · $_temp0';
+    return '$_temp0 · $_temp1';
   }
 
   @override

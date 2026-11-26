@@ -292,21 +292,24 @@ class _JourneyHomeChartState extends State<JourneyHomeChart> {
           if (widget.maskable) ...[
             const SizedBox(height: UiSpace.sm),
             Align(
-              child: GestureDetector(
-                key: const ValueKey('journey-chart-hold'),
-                behavior: HitTestBehavior.opaque,
-                onTapDown: (_) => setState(() => _revealed = true),
-                onTapUp: (_) => setState(() => _revealed = false),
-                onTapCancel: () => setState(() => _revealed = false),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minHeight: UiSize.tap,
-                    minWidth: UiSize.tap,
-                  ),
-                  child: Semantics(
-                    button: true,
-                    label: l10n.journeys_home_holdReveal,
-                    excludeSemantics: true,
+              child: Semantics(
+                button: true,
+                toggled: _revealed,
+                label: l10n.journeys_home_holdReveal,
+                onTap: () => setState(() => _revealed = !_revealed),
+                excludeSemantics: true,
+                child: GestureDetector(
+                  key: const ValueKey('journey-chart-hold'),
+                  excludeFromSemantics: true,
+                  behavior: HitTestBehavior.opaque,
+                  onTapDown: (_) => setState(() => _revealed = true),
+                  onTapUp: (_) => setState(() => _revealed = false),
+                  onTapCancel: () => setState(() => _revealed = false),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minHeight: UiSize.tap,
+                      minWidth: UiSize.tap,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

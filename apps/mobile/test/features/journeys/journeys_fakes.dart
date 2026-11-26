@@ -289,6 +289,8 @@ class FakeJourneyRepository implements JourneyRepository {
     ]);
   }
 
+  final List<({String id, bool enabled, bool hideWeight})> publicLinkCalls = [];
+
   @override
   Future<PublicLinkResult> setPublicLink(
     String journeyId, {
@@ -298,7 +300,43 @@ class FakeJourneyRepository implements JourneyRepository {
     bool existingOnly = false,
     bool reset = false,
     String? expectedAddress,
-  }) => throw UnimplementedError();
+  }) async {
+    calls.add('setPublicLink:$journeyId:$enabled');
+    publicLinkCalls.add((id: journeyId, enabled: enabled, hideWeight: hideWeight));
+    final token = enabled ? 'pub${'0' * 37}' : null;
+    _replace(
+      journeyId,
+      (j) => Journey(
+        id: j.id,
+        ownerId: j.ownerId,
+        kind: j.kind,
+        templateId: j.templateId,
+        title: j.title,
+        emoji: j.emoji,
+        startDate: j.startDate,
+        durationDays: j.durationDays,
+        timezone: j.timezone,
+        visibility: enabled
+            ? JourneyVisibility.link
+            : JourneyVisibility.private,
+        status: j.status,
+        origin: j.origin,
+        publicToken: token,
+        metricName: j.metricName,
+        metricUnit: j.metricUnit,
+        hideMetricDefault: j.hideMetricDefault,
+        layout: j.layout,
+        cover: j.cover,
+        color: j.color,
+        reminderTime: j.reminderTime,
+        dna: j.dna,
+        coupleSelfName: j.coupleSelfName,
+        couplePartnerName: j.couplePartnerName,
+        maxMembers: j.maxMembers,
+      ),
+    );
+    return PublicLinkResult(issued: enabled, slug: token, title: approvedTitle);
+  }
 
   @override
   Future<void> updateMyMembership(

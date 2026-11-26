@@ -457,5 +457,64 @@ void main() {
         );
       },
     );
+
+    testWidgets(
+      'F-07: edit-vis-link is disabled on live active journey (S9)',
+      (tester) async {
+        await _open(tester);
+        await tester.ensureVisible(_key('edit-vis-link'));
+        await tester.tap(_key('edit-vis-link'), warnIfMissed: false);
+        await tester.pumpAndSettle();
+        expect(_key('share-sensitive-warning'), findsNothing);
+        expect(
+          tester.widget<Semantics>(
+            find.descendant(
+              of: _key('edit-vis-link'),
+              matching: find.byType(Semantics),
+            ).first,
+          ).properties.selected,
+          isFalse,
+        );
+      },
+    );
+
+    testWidgets(
+      'F-07: edit-vis-link enforces sensitive warning and passes hideWeight on imported journey',
+      (tester) async {
+        final base = testJourney(templateId: TemplateId.weightLoss);
+        final importedWeight = Journey(
+          id: base.id,
+          ownerId: base.ownerId,
+          kind: base.kind,
+          templateId: base.templateId,
+          title: base.title,
+          emoji: base.emoji,
+          startDate: base.startDate,
+          durationDays: base.durationDays,
+          timezone: base.timezone,
+          visibility: JourneyVisibility.private,
+          status: JourneyStatus.active,
+          origin: JourneyOrigin.imported,
+        );
+        final h = await _open(tester, journey: importedWeight);
+        await tester.runAsync(
+          () => h.container.read(hideWeightOnShareProvider.notifier).set(true),
+        );
+        await tester.ensureVisible(_key('edit-vis-link'));
+        await tester.tap(_key('edit-vis-link'));
+        await tester.pumpAndSettle();
+        expect(_key('share-sensitive-warning'), findsOneWidget);
+
+        await tester.tap(_key('share-warning-confirm'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(_key('edit-save-bottom'));
+        await tester.tap(_key('edit-save-bottom'));
+        await tester.pumpAndSettle();
+
+        expect(h.journeys.publicLinkCalls, [
+          (id: importedWeight.id, enabled: true, hideWeight: true),
+        ]);
+      },
+    );
   });
 }

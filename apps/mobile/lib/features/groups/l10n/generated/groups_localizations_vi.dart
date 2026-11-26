@@ -125,7 +125,7 @@ class GroupsL10nVi extends GroupsL10n {
 
   @override
   String get groups_endedBanner =>
-      'Hành trình đã kết thúc. Ảnh và streak chỉ còn để xem.';
+      'Hành trình đã kết thúc. Ảnh và chuỗi chỉ còn để xem.';
 
   @override
   String get groups_notFoundTitle => 'Không tìm thấy nhóm';
@@ -176,7 +176,7 @@ class GroupsL10nVi extends GroupsL10n {
 
   @override
   String get groups_endMessage =>
-      'Sau đó không ai check-in được nữa. Ảnh và streak vẫn còn để mọi người xem lại.';
+      'Sau đó không ai check-in được nữa. Ảnh và chuỗi vẫn còn để mọi người xem lại.';
 
   @override
   String get groups_actionDelete => 'Xóa hành trình';

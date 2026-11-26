@@ -266,8 +266,34 @@ void main() {
     expect(gallery.calls, 1);
     await tapPost(tester);
     expect(checkIns.submitted.single.fromLibrary, isTrue);
+    expect(checkIns.submitted.single.capturedAt, testNowUtc);
     await finishSuccess(tester);
   });
+
+  testWidgets(
+    'F-40: library repick failure shows photo error toast and keeps existing photo',
+    (tester) async {
+      await pump(
+        tester,
+        extra: CapturedPhoto(
+          journeyId: 'j1',
+          path: '/tmp/lib.jpg',
+          capturedAt: testNowUtc,
+          fromLibrary: true,
+        ),
+        overrides: [
+          galleryPickerProvider.overrideWithValue(_ThrowingGalleryPicker()),
+        ],
+      );
+      await tester.tap(find.byKey(const ValueKey('checkin-retake')));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text('Không xử lý được ảnh này. Thử ảnh khác nhé.'),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('caption field is a 48dp tap target (U5)', (tester) async {
     await pump(tester);
@@ -763,4 +789,10 @@ class _SlowGateway extends FakeNotificationGateway {
     granted = await answer;
     return granted;
   }
+}
+
+class _ThrowingGalleryPicker extends FakeGalleryPicker {
+  @override
+  Future<String?> pickPhoto() async =>
+      throw const OurneyException(OurneyErrorCode.unknown);
 }

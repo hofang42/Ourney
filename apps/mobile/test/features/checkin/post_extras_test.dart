@@ -12,6 +12,7 @@ import 'package:ourney/features/checkin/photo_compressor.dart';
 import 'package:ourney/features/checkin/post_extras.dart';
 import 'package:ourney/features/checkin/routes.dart';
 import 'package:ourney/features/groups/data/groups_providers.dart';
+import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
@@ -100,6 +101,16 @@ void main() {
 
   testWidgets('study skin posts the picked minutes', (tester) async {
     await pump(tester, testJourney(templateId: TemplateId.englishDaily));
+    await tapKey(tester, 'checkin-minutes-other');
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('checkin-minutes-less')),
+        matching: find.byWidgetPredicate(
+          (w) => w is OurneyIcon && w.name == 'minus',
+        ),
+      ),
+      findsOneWidget,
+    );
     await tapKey(tester, 'checkin-minutes-45');
     await post(tester);
     expect(checkIns.submitted.single.extras, const CheckInExtras(minutes: 45));

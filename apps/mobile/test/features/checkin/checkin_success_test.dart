@@ -313,5 +313,30 @@ void main() {
     );
     expect(find.text('DAY 1. 1 DAY STRAIGHT.'), findsOneWidget);
     await tester.pump(CheckinSuccessView.autoCloseDelay);
+
+    // F-41: Vietnamese fallback celebration calendar shows distinct T2..T7, CN headers.
+    await tester.pumpWidget(
+      ProviderScope(
+        key: UniqueKey(),
+        child: testApp(
+          CheckinSuccessView(
+            outcome: CheckInOutcome(
+              checkIn: testCheckIn(const LocalDate(2026, 10, 10)),
+              streakBefore: 2,
+              streakAfter: 3,
+            ),
+            haptics: false,
+            onDone: () {},
+            onShare: () {},
+          ),
+          locale: const Locale('vi'),
+        ),
+      ),
+    );
+    await tester.pump();
+    for (final day in ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']) {
+      expect(find.text(day), findsOneWidget);
+    }
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
   });
 }

@@ -11,6 +11,7 @@ import '../../../app/providers.dart';
 import '../../../ui/ui.dart';
 import '../../journeys/ui/journey_actions.dart';
 import '../../profile/share_privacy_sync.dart';
+import '../../reminders/data/reminder_scheduler.dart';
 import '../data/groups_providers.dart';
 import '../domain/invite_code.dart';
 import '../groups_paths.dart';
@@ -198,7 +199,8 @@ class SquadTodayCard extends ConsumerWidget {
         if (!blocked.contains(m.userId)) m,
     ];
     final done = members.where((m) => m.checkedIn).length;
-    final shown = members.take(5).toList();
+    final maxShown = MediaQuery.sizeOf(context).width < 360 ? 4 : 5;
+    final shown = members.take(maxShown).toList();
     final status = journey.status != JourneyStatus.active
         ? l10n.groups_statusEnded
         : l10n.groups_checkedInCount(
@@ -278,14 +280,14 @@ class SquadTodayCard extends ConsumerWidget {
                       Expanded(
                         child: _MemberChip(journey: journey, member: m),
                       ),
-                    if (members.length > 5)
+                    if (members.length > maxShown)
                       Padding(
                         padding: const EdgeInsets.only(left: 4),
                         // Part of the card's tap area, but kept out of its
                         // spoken label (the label names the group only).
                         child: ExcludeSemantics(
                           child: Text(
-                            l10n.groups_overflowMore(members.length - 5),
+                            l10n.groups_overflowMore(members.length - maxShown),
                             key: ValueKey('squad-overflow-${journey.id}'),
                             style: UiText.body(
                               size: 12,
@@ -654,11 +656,14 @@ class _SquadPendingInvitesState extends ConsumerState<SquadPendingInvites> {
 
   Future<void> _respond(GroupInvitation inv, {required bool accept}) async {
     if (!_busy.add(inv.id)) return;
+    setState(() {});
     final repo = ref.read(groupInviteRepositoryProvider);
+    final reminders = ref.read(reminderSchedulerProvider);
     try {
       if (accept) {
         final id = await repo.accept(inv.id);
         unawaited(pushSharePrivacyToJourney(ref, id));
+        unawaited(reminders.reschedule());
         ref.invalidate(groupInvitationsProvider);
         if (mounted) context.go(GroupsPaths.today(id));
       } else {
@@ -668,7 +673,11 @@ class _SquadPendingInvitesState extends ConsumerState<SquadPendingInvites> {
     } on Object catch (e) {
       if (mounted) showGroupSnack(context, groupErrorMessage(context, e));
     } finally {
-      _busy.remove(inv.id);
+      if (mounted) {
+        setState(() => _busy.remove(inv.id));
+      } else {
+        _busy.remove(inv.id);
+      }
     }
   }
 
@@ -728,7 +737,9 @@ class _SquadPendingInvitesState extends ConsumerState<SquadPendingInvites> {
                           key: ValueKey('squad-invite-accept-${inv.id}'),
                           compact: true,
                           label: l10n.groups_inviteAccept,
-                          onPressed: () => _respond(inv, accept: true),
+                          onPressed: _busy.contains(inv.id)
+                              ? null
+                              : () => _respond(inv, accept: true),
                         ),
                       ),
                       const SizedBox(width: UiSpace.sm),
@@ -737,7 +748,9 @@ class _SquadPendingInvitesState extends ConsumerState<SquadPendingInvites> {
                           key: ValueKey('squad-invite-skip-${inv.id}'),
                           compact: true,
                           label: l10n.groups_inviteSkip,
-                          onPressed: () => _respond(inv, accept: false),
+                          onPressed: _busy.contains(inv.id)
+                              ? null
+                              : () => _respond(inv, accept: false),
                         ),
                       ),
                     ],

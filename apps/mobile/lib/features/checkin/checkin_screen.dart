@@ -237,14 +237,23 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
   Future<void> _repickFromLibrary(CapturedPhoto current) async {
     if (_posting) return;
     _stopCountdown();
-    final path = await ref.read(galleryPickerProvider).pickPhoto();
-    if (path == null || !mounted) return;
+    final String? picked;
+    try {
+      picked = await ref.read(galleryPickerProvider).pickPhoto();
+    } on Object {
+      if (mounted) {
+        showUiToast(context, CheckinL10n.of(context).checkin_errorPhoto);
+      }
+      return;
+    }
+    if (picked == null || !mounted) return;
+    final String path = picked;
     unawaited(_drafts.discard([current.path]));
     setState(() {
       _overridePhoto = CapturedPhoto(
         journeyId: current.journeyId,
         path: path,
-        capturedAt: DateTime.now(),
+        capturedAt: ref.read(checkinClockProvider).nowUtc(),
         fromLibrary: true,
         initialMetricValue: current.initialMetricValue,
       );
@@ -932,7 +941,7 @@ class _CountdownHintState extends State<_CountdownHint>
     final l10n = CheckinL10n.of(context);
     final ui = context.ui;
     final reduced = widget.reduced || UiMotion.reduced(context);
-    if (!widget.active && !reduced) return const SizedBox.shrink();
+    if (!widget.active) return const SizedBox.shrink();
     return Semantics(
       liveRegion: true,
       child: Column(

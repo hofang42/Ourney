@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -9,11 +10,25 @@ import 'package:ourney/features/journeys/ui/create/dna_questions.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
+double _relativeLuminance(Color c) {
+  double chan(double v) =>
+      v <= 0.03928 ? v / 12.92 : math.pow((v + 0.055) / 1.055, 2.4).toDouble();
+  return 0.2126 * chan(c.r) + 0.7152 * chan(c.g) + 0.0722 * chan(c.b);
+}
+
+double _contrastRatio(Color a, Color b) {
+  final la = _relativeLuminance(a);
+  final lb = _relativeLuminance(b);
+  return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
+}
+
 Widget _host(
   Widget child, {
   required Brightness brightness,
   required double scale,
   required Locale locale,
+  String? skinId,
+  int variant = 0,
 }) => MaterialApp(
   debugShowCheckedModeBanner: false,
   theme: OurneyTheme.build(brightness),
@@ -33,7 +48,9 @@ Widget _host(
     child: Scaffold(
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: child,
+        child: skinId == null
+            ? child
+            : UiSkinScope(skinId: skinId, variant: variant, child: child),
       ),
     ),
   ),
@@ -69,6 +86,52 @@ void main() {
       expect(find.byKey(const ValueKey('dna-dates-max-note')), findsOneWidget);
       expect(find.byKey(const ValueKey('dna-dates-min-note')), findsNothing);
       expect(dnaTripDays(value!.start, value!.end!), durationMax);
+    },
+  );
+
+  testWidgets(
+    'F-18: DnaDateRange selected date text uses onAccent with >= 4.5:1 contrast across skins and modes',
+    (tester) async {
+      for (final skin in uiSkins) {
+        for (var v = 0; v < skin.variants.length; v++) {
+          for (final b in Brightness.values) {
+            await tester.pumpWidget(
+              _host(
+                DnaDateRange(
+                  today: DateTime(2026, 11, 15),
+                  value: DnaDates(
+                    DateTime(2026, 11, 20),
+                    DateTime(2026, 11, 25),
+                  ),
+                  locale: 'en',
+                  onChanged: (_) {},
+                ),
+                brightness: b,
+                scale: 1,
+                locale: const Locale('en'),
+                skinId: skin.id,
+                variant: v,
+              ),
+            );
+            await tester.pumpAndSettle();
+            final uiTokens = skin.apply(
+              b == Brightness.dark ? OurneyUi.dark : OurneyUi.light,
+              variantIndex: v,
+            );
+            final cell = find.byKey(const ValueKey('dna-day-20'));
+            final text = tester.widget<Text>(
+              find.descendant(of: cell, matching: find.text('20')),
+            );
+            expect(text.style?.color, uiTokens.onAccent);
+            expect(
+              _contrastRatio(text.style!.color!, uiTokens.accent),
+              greaterThanOrEqualTo(4.5),
+              reason:
+                  '${skin.id} v$v $b selected date text must be >= 4.5:1 on accent',
+            );
+          }
+        }
+      }
     },
   );
 

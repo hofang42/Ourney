@@ -11,11 +11,16 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../personas/persona_contract.dart';
 import '../../../../ui/ui.dart';
 import '../../../groups/data/groups_providers.dart';
+import '../../../profile/settings_providers.dart' show hideWeightOnShareProvider;
 import '../../../profile/share_privacy_sync.dart' show reconcileHiddenWeight;
 import '../../../reminders/data/reminder_scheduler.dart';
 import '../../../reminders/data/reminder_settings.dart';
 import '../../../reminders/domain/reminder_plan.dart';
 import '../../../reminders/ui/reminder_permission_prompt.dart';
+import '../../../share_card/domain/share_card_content.dart'
+    show publicLinkEligible;
+import '../../../sharing/ui/share_journey_sheet.dart'
+    show isSensitiveTemplate, showSensitiveLinkWarning;
 import '../../data/journeys_providers.dart';
 import '../../domain/journey_layouts.dart';
 import '../../journeys_paths.dart';
@@ -144,12 +149,26 @@ class _EditBodyState extends ConsumerState<_EditBody> {
   late bool _reminderEnabled = _initialReminder.enabled;
   late ReminderTime _time = _initialReminder.time;
   bool _busy = false;
+  bool _sensitiveLinkConfirmed = false;
 
   /// Saved or ended: leaving needs no "discard changes?" question.
   bool _saved = false;
 
   Journey get j => widget.journey;
   bool get _owner => widget.perms.isOwner && widget.perms.isActive;
+  bool get _linkEligible => publicLinkEligible(j);
+  bool get _isSensitive =>
+      isSensitiveTemplate(j.templateId) ||
+      skinOfCurrent == PersonaSkinId.quietTransformer;
+
+  Future<void> _selectPublicLink() async {
+    if (_link || !_owner || !_linkEligible) return;
+    if (_isSensitive && !_sensitiveLinkConfirmed) {
+      if (!await showSensitiveLinkWarning(context) || !mounted) return;
+      _sensitiveLinkConfirmed = true;
+    }
+    setState(() => _link = true);
+  }
 
   ReminderSetting _readInitialReminder() =>
       effectiveReminderSettingFor(j, ref.read(reminderSettingsProvider));
@@ -205,6 +224,14 @@ class _EditBodyState extends ConsumerState<_EditBody> {
 
   Future<void> _save() async {
     if (!_owner || !_changed || !_nameOk || !_coupleOk || _busy) return;
+    final linkChanged = _link != (j.visibility == JourneyVisibility.link);
+    if (linkChanged && _link) {
+      if (!_linkEligible) return;
+      if (_isSensitive && !_sensitiveLinkConfirmed) {
+        if (!await showSensitiveLinkWarning(context) || !mounted) return;
+        _sensitiveLinkConfirmed = true;
+      }
+    }
     setState(() => _busy = true);
     final repo = ref.read(journeyRepositoryProvider);
     final container = ProviderScope.containerOf(context, listen: false);
@@ -242,8 +269,12 @@ class _EditBodyState extends ConsumerState<_EditBody> {
             .read(groupInviteAdminRepositoryProvider)
             .renameCouple(j.id, _self.text, _partner.text);
       }
-      if (_link != (j.visibility == JourneyVisibility.link)) {
-        await repo.setPublicLink(j.id, enabled: _link);
+      if (linkChanged) {
+        await repo.setPublicLink(
+          j.id,
+          enabled: _link,
+          hideWeight: ref.read(hideWeightOnShareProvider),
+        );
       }
       final reminders = ref.read(reminderSettingsProvider.notifier);
       final current = reminders.ofJourney(j);
@@ -405,9 +436,11 @@ class _EditBodyState extends ConsumerState<_EditBody> {
                         children: [
                           const OurneyIcon(name: 'lock', size: 16),
                           const SizedBox(width: 6),
-                          Text(
-                            l10n.journeys_edit_quietLock,
-                            style: UiText.eyebrow(color: ui.inkMuted),
+                          Expanded(
+                            child: Text(
+                              l10n.journeys_edit_quietLock,
+                              style: UiText.eyebrow(color: ui.inkMuted),
+                            ),
                           ),
                         ],
                       ),
@@ -480,10 +513,11 @@ class _EditBodyState extends ConsumerState<_EditBody> {
                             label: skinColorName(l10n, uiSkin.id, i),
                             selected: _color == i,
                             glyph: _color == i
-                                ? const OurneyIcon(
+                                ? OurneyIcon(
                                     name: 'check',
                                     size: 15,
                                     flat: true,
+                                    color: ui.onAccent,
                                   )
                                 : null,
                             onPressed: _owner
@@ -601,15 +635,18 @@ class _EditBodyState extends ConsumerState<_EditBody> {
                                     label: l10n.journeys_edit_visPrivate,
                                     selected: !_link,
                                     onPressed: _owner
-                                        ? () => setState(() => _link = false)
+                                        ? () => setState(() {
+                                            _link = false;
+                                            _sensitiveLinkConfirmed = false;
+                                          })
                                         : null,
                                   ),
                                   UiChip(
                                     key: const ValueKey('edit-vis-link'),
                                     label: l10n.journeys_edit_visLink,
                                     selected: _link,
-                                    onPressed: _owner
-                                        ? () => setState(() => _link = true)
+                                    onPressed: _owner && _linkEligible
+                                        ? () => unawaited(_selectPublicLink())
                                         : null,
                                   ),
                                 ],
