@@ -76,7 +76,7 @@ class RemindersL10nEn extends RemindersL10n {
 
   @override
   String get reminders_permissionMessage =>
-      'Ourney only sends the reminders you choose, plus a gentle 21:00 nudge for active streaks. No ads.';
+      'Ourney only sends the reminders you choose, plus a gentle 21:00 reminder if you haven\'t snapped today. No ads.';
 
   @override
   String get reminders_permissionContinue => 'Continue';
@@ -93,16 +93,16 @@ class RemindersL10nEn extends RemindersL10n {
   }
 
   @override
-  String get reminders_alertTitle => 'Still time for today';
+  String get reminders_alertTitle => 'A moment for today';
 
   @override
   String reminders_alertBody(String journey, int count) {
-    return '$journey: your $count-day streak is open until midnight. One photo is enough.';
+    return '$journey: $count-day streak — one photo today is plenty.';
   }
 
   @override
   String reminders_alertBodyAt(String journey, int count, String time) {
-    return '$journey: your $count-day streak is open until $time (journey midnight). One photo is enough.';
+    return '$journey: $count-day streak — one photo today is plenty (new journey day starts at $time).';
   }
 
   @override
@@ -110,5 +110,5 @@ class RemindersL10nEn extends RemindersL10n {
 
   @override
   String get reminders_channelDescription =>
-      'Daily check-in reminders and evening streak nudges.';
+      'Daily check-in reminders and gentle evening reminders.';
 }

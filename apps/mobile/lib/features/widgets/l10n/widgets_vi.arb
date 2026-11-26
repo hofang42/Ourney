@@ -98,7 +98,7 @@
   "@widgets_previewDoneBadge": {
     "description": "Badge shown in widget preview when today's check-in is complete."
   },
-  "widgets_previewAtRiskBadge": "Vẫn kịp hôm nay · đến nửa đêm",
+  "widgets_previewAtRiskBadge": "Hôm nay vẫn còn kịp",
   "@widgets_previewAtRiskBadge": {
     "description": "Urgent badge shown in widget preview when streak is at risk."
   },

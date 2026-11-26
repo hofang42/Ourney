@@ -171,33 +171,32 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String reminderBanner_streak_quiet(int streak, String time) {
-    return 'Your $streak-day streak is open until $time. Still time.';
+  String reminderBanner_streak_quiet(int streak) {
+    return '$streak-day streak so far. One photo today is plenty.';
   }
 
   @override
-  String reminderBanner_streak_squad(int streak, String time) {
-    return 'Streak $streak stays open until $time. Add yours today.';
+  String reminderBanner_streak_squad(int streak) {
+    return '$streak-day streak going. Add your photo today.';
   }
 
   @override
-  String reminderBanner_streak_memory(String time) {
-    return 'The film roll stays open until $time.';
+  String get reminderBanner_streak_memory =>
+      'Room for one more frame on today\'s film roll.';
+
+  @override
+  String reminderBanner_streak_couple(int streak) {
+    return '$streak days together. Save a moment for today.';
   }
 
   @override
-  String reminderBanner_streak_couple(int streak, String time) {
-    return 'Your $streak-day streak stays open until $time.';
+  String reminderBanner_streak_flexer(int streak) {
+    return 'STREAK $streak. ONE PHOTO FOR TODAY.';
   }
 
   @override
-  String reminderBanner_streak_flexer(int streak, String time) {
-    return 'STREAK $streak. OPEN UNTIL $time.';
-  }
-
-  @override
-  String reminderBanner_streak_minimal(int streak, String time) {
-    return 'STREAK $streak · UNTIL $time.';
+  String reminderBanner_streak_minimal(int streak) {
+    return 'STREAK $streak · TODAY.';
   }
 
   @override

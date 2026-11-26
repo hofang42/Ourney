@@ -107,72 +107,52 @@
       }
     }
   },
-  "reminderBanner_streak_quiet": "Your {streak}-day streak is open until {time}. Still time.",
+  "reminderBanner_streak_quiet": "{streak}-day streak so far. One photo today is plenty.",
   "@reminderBanner_streak_quiet": {
     "description": "Streak-at-risk reminder banner copy, quiet skin.",
     "placeholders": {
       "streak": {
         "type": "int"
-      },
-      "time": {
-        "type": "String"
       }
     }
   },
-  "reminderBanner_streak_squad": "Streak {streak} stays open until {time}. Add yours today.",
+  "reminderBanner_streak_squad": "{streak}-day streak going. Add your photo today.",
   "@reminderBanner_streak_squad": {
     "description": "Streak-at-risk reminder banner copy, squad skin.",
     "placeholders": {
       "streak": {
         "type": "int"
-      },
-      "time": {
-        "type": "String"
       }
     }
   },
-  "reminderBanner_streak_memory": "The film roll stays open until {time}.",
+  "reminderBanner_streak_memory": "Room for one more frame on today's film roll.",
   "@reminderBanner_streak_memory": {
-    "description": "Streak-at-risk reminder banner copy, memory skin.",
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
+    "description": "Streak-at-risk reminder banner copy, memory skin."
   },
-  "reminderBanner_streak_couple": "Your {streak}-day streak stays open until {time}.",
+  "reminderBanner_streak_couple": "{streak} days together. Save a moment for today.",
   "@reminderBanner_streak_couple": {
     "description": "Streak-at-risk reminder banner copy, couple skin.",
     "placeholders": {
       "streak": {
         "type": "int"
-      },
-      "time": {
-        "type": "String"
       }
     }
   },
-  "reminderBanner_streak_flexer": "STREAK {streak}. OPEN UNTIL {time}.",
+  "reminderBanner_streak_flexer": "STREAK {streak}. ONE PHOTO FOR TODAY.",
   "@reminderBanner_streak_flexer": {
     "description": "Streak-at-risk reminder banner copy, flexer skin.",
     "placeholders": {
       "streak": {
         "type": "int"
-      },
-      "time": {
-        "type": "String"
       }
     }
   },
-  "reminderBanner_streak_minimal": "STREAK {streak} · UNTIL {time}.",
+  "reminderBanner_streak_minimal": "STREAK {streak} · TODAY.",
   "@reminderBanner_streak_minimal": {
     "description": "Streak-at-risk reminder banner copy, minimal skin.",
     "placeholders": {
       "streak": {
         "type": "int"
-      },
-      "time": {
-        "type": "String"
       }
     }
   },

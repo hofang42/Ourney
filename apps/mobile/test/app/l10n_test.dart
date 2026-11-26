@@ -189,7 +189,12 @@ void main() {
       );
       final bannedReminderWidget = RegExp(
         r'sắp mất|sắp đứt|sắp hết hạn|sẽ mất|cảnh báo streak|TẬP ĐI|đang chờ|'
-        r'about to break|streak at risk|streak alert|GO TRAIN|whole squad is waiting',
+        r'about to break|streak at risk|streak alert|GO TRAIN|whole squad is waiting|'
+        r'midnight|nửa đêm|ends at|keeps it going',
+        caseSensitive: false,
+      );
+      final bannedStreakDeadline = RegExp(
+        r'\buntil\b|\bends\b|mất|còn mở đến|còn đến|mở đến',
         caseSensitive: false,
       );
 
@@ -216,6 +221,21 @@ void main() {
                 isFalse,
                 reason:
                     '$name.$key ($locale) contains banned reminder/widget phrase: "$raw"',
+              );
+            }
+            final isStreakAlertOrBannerKey =
+                (name == 'reminders' &&
+                    (key.startsWith('reminders_alert') ||
+                        key == 'reminders_permissionMessage' ||
+                        key == 'reminders_channelDescription')) ||
+                key.startsWith('reminderBanner_streak_') ||
+                key == 'widgets_previewAtRiskBadge';
+            if (isStreakAlertOrBannerKey) {
+              expect(
+                bannedStreakDeadline.hasMatch(raw),
+                isFalse,
+                reason:
+                    '$name.$key ($locale) contains loss/deadline wording: "$raw"',
               );
             }
           }

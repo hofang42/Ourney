@@ -209,7 +209,7 @@ abstract class RemindersL10n {
   /// Body of the in-context dialog shown before the OS notification prompt.
   ///
   /// In vi, this message translates to:
-  /// **'Ourney chỉ gửi giờ nhắc bạn chọn và lời nhắc nhẹ lúc 21:00 khi đang có chuỗi. Không quảng cáo.'**
+  /// **'Ourney chỉ gửi giờ nhắc bạn chọn và một lời nhắc nhẹ lúc 21:00 nếu hôm nay bạn chưa chụp. Không quảng cáo.'**
   String get reminders_permissionMessage;
 
   /// Button that continues to the OS notification prompt.
@@ -239,19 +239,19 @@ abstract class RemindersL10n {
   /// Title of the 21:00 streak alert notification.
   ///
   /// In vi, this message translates to:
-  /// **'Vẫn kịp cho hôm nay'**
+  /// **'Hôm nay vẫn còn kịp'**
   String get reminders_alertTitle;
 
   /// Body of the 21:00 streak alert notification.
   ///
   /// In vi, this message translates to:
-  /// **'{journey}: chuỗi {count} ngày còn mở đến nửa đêm. Một tấm ảnh nhỏ là đủ.'**
+  /// **'{journey}: chuỗi {count} ngày — một tấm ảnh hôm nay là đủ rồi.'**
   String reminders_alertBody(String journey, int count);
 
   /// Body of the 21:00 streak alert notification when the device timezone differs from the journey timezone.
   ///
   /// In vi, this message translates to:
-  /// **'{journey}: chuỗi {count} ngày còn mở đến {time} (00:00 theo múi giờ hành trình). Một tấm ảnh nhỏ là đủ.'**
+  /// **'{journey}: chuỗi {count} ngày — một tấm ảnh hôm nay là đủ rồi (ngày mới của hành trình bắt đầu lúc {time}).'**
   String reminders_alertBodyAt(String journey, int count, String time);
 
   /// Android notification channel name (shown in system settings).
@@ -263,7 +263,7 @@ abstract class RemindersL10n {
   /// Android notification channel description.
   ///
   /// In vi, this message translates to:
-  /// **'Lời nhắc check-in hằng ngày và nhắc giữ chuỗi buổi tối.'**
+  /// **'Lời nhắc check-in hằng ngày và lời nhắc nhẹ buổi tối.'**
   String get reminders_channelDescription;
 }
 

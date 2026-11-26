@@ -168,7 +168,7 @@ void main() {
       expect(plan.channelPayload!['redactLockScreenTitles'], isTrue);
       expect(
         plan.channelPayload!['statusText'],
-        'Chuỗi 14 ngày · còn mở đến nửa đêm',
+        'Chuỗi 14 ngày · một tấm ảnh là đủ',
       );
 
       final enPlan = LiveActivityWindowPlanner.plan(
@@ -182,7 +182,7 @@ void main() {
       );
       expect(
         enPlan.channelPayload!['statusText'],
-        '14-day streak · open until midnight',
+        '14-day streak · one photo is enough',
       );
     });
 
