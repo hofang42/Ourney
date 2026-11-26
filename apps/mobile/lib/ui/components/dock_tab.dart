@@ -26,9 +26,10 @@ Color dockSelectionFill(Color accent, Color surface) =>
     Color.alphaBlend(accent.withValues(alpha: 0.30), surface);
 
 /// Corner radius of the selection pill: a full capsule, as in V2 `app.css`
-/// (`.dock-selection-capsule`, `border-radius: 999px`). On a narrow ~63dp pill
-/// the curve eats into the label row, so the tab keeps its content high and
-/// squeezes the label into the capsule's chord (see `UiDock`, U17).
+/// (`.dock-selection-capsule`, `border-radius: 999px`). On a 52dp-tall E4
+/// capsule (`r = 26dp`), the semicolon-shaped ends curve inward at the label
+/// row, so [dockLabelChordWidth] and [dockLabelFit] size the label from the
+/// horizontal chord at the label's baseline (U17).
 const double dockSelectionRadius = UiRadius.capsule;
 
 /// The non-liquid selection capsule.
@@ -47,7 +48,8 @@ BoxDecoration dockSelectionDecoration({
   boxShadow: UiShadow.hard(shadow, UiShadow.tiny),
 );
 
-/// How far the tab content sits above the pill's centre (dp).
+/// Default vertical lift of tab content for legacy non-E4 callers (dp); E4
+/// passes `lift: 0` and uses optical capsule centring (`-0.48dp`).
 const double dockTabLift = 6;
 
 /// Largest text scale the tab label follows (Dynamic Type cap).
@@ -56,27 +58,64 @@ const double dockLabelMaxScale = 1.35;
 /// Label font size at 1x text scale.
 const double dockLabelSize = 10.5;
 
-/// Label line height at 1x (10.5 * 1.35).
-const double dockLabelLineHeight = 10.5 * 1.35;
+/// Label line-height multiplier.
+const double dockLabelHeightRatio = 1.35;
 
-/// Usable horizontal chord inside a 56dp-tall selection capsule of width
-/// [pillW] (within a tab slot of width [slotW]) when the label renders at
-/// [effectiveScale] x of its 1x size.
+/// Label line height at 1x (`10.5 * 1.35`).
+const double dockLabelLineHeight = dockLabelSize * dockLabelHeightRatio;
+
+/// Fraction of the `1.35` label line box sitting below the alphabetic baseline.
+const double dockBaselineDescenderRatio = 0.22;
+
+/// Default E4 capsule height at 1x text scale (dp).
+const double _kDefaultCapsuleHeight = 52.0;
+
+/// Default E4 glyph size (dp).
+const double _kDefaultGlyphSize = 24.0;
+
+/// Default E4 glyph-to-label gap (dp).
+const double _kDefaultLabelGap = 3.0;
+
+/// Default E4 vertical padding inside the capsule (`2 * 5.2dp`).
+const double _kDefaultCapsuleVertPad = 10.4;
+
+/// Default E4 optical capsule lift (`24 * (1.08 - 1) / 4 = 0.48dp`).
+const double _kDefaultCapsuleOpticalLift = 0.48;
+
+/// Usable horizontal chord at the label's baseline inside an E4 selection
+/// capsule of width [pillW] and base height [pillH] (within a tab slot of
+/// width [slotW]) when the label renders at [effectiveScale]x of its 1x size.
 double dockLabelChordWidth(
   double slotW,
   double pillW, {
   double effectiveScale = 1.0,
+  double pillH = _kDefaultCapsuleHeight,
+  double labelGap = _kDefaultLabelGap,
+  double lift = 0.0,
+  double capsuleOpticalLift = _kDefaultCapsuleOpticalLift,
 }) {
-  const r = 28.0;
-  final growth = math.max(0.0, effectiveScale - 1.0) * dockLabelLineHeight / 2;
-  final labelBottom = (19.0 - dockTabLift + growth).clamp(0.0, r - 1.0);
-  final inset = r - math.sqrt(r * r - labelBottom * labelBottom);
-  return math.min(slotW, math.max(0.0, pillW - 2 * inset - 3.0));
+  final clampedScale = math.max(1.0, effectiveScale);
+  final lineH = dockLabelLineHeight * clampedScale;
+  final resolvedPillH = math.max(
+    pillH,
+    _kDefaultGlyphSize + labelGap + lineH + _kDefaultCapsuleVertPad,
+  );
+  final r = math.min(pillW, resolvedPillH) / 2;
+  final rInner = math.max(1.0, r - UiBorder.thin);
+  final labelBottom =
+      (_kDefaultGlyphSize + labelGap + lineH) / 2 - lift + capsuleOpticalLift;
+  final baselineFromCenter = labelBottom - dockBaselineDescenderRatio * lineH;
+  final capCenterY = resolvedPillH / 2 - r;
+  final dy = math
+      .max(0.0, baselineFromCenter - capCenterY)
+      .clamp(0.0, rInner - 0.5);
+  final inset = r - math.sqrt(rInner * rInner - dy * dy);
+  return math.min(slotW, math.max(0.0, pillW - 2 * inset));
 }
 
 /// One shrink factor for all tab labels: the largest `f <= 1` at which the
-/// widest label still fits [maxWidth] (or the capsule chord of [pillW] within
-/// [slotW] at the actual fitted label height).
+/// widest label still fits [maxWidth] (or the baseline capsule chord of
+/// [pillW] within [slotW] at the actual fitted label height).
 double dockLabelFit(
   BuildContext context,
   Iterable<String> labels,
@@ -98,7 +137,7 @@ double dockLabelFit(
             UiText.body(
               size: dockLabelSize * fit,
               weight: FontWeight.w700,
-              height: 1.35,
+              height: dockLabelHeightRatio,
             ).copyWith(letterSpacing: 0),
           ),
         ),
@@ -197,47 +236,54 @@ class DockTab extends StatelessWidget {
       );
     }
     final t = compactT.clamp(0.0, 1.0);
+    final clampedScaler = MediaQuery.textScalerOf(context)
+        .clamp(maxScaleFactor: dockLabelMaxScale);
+    final textScale = clampedScaler.scale(1);
+    final strutFontSize = math.max(
+      dockLabelSize / textScale,
+      dockLabelSize * labelFit,
+    );
     final Widget labelBox = ConstrainedBox(
       constraints: BoxConstraints(maxWidth: labelMaxWidth ?? double.infinity),
       child: FittedBox(
         fit: BoxFit.scaleDown,
         child: MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: MediaQuery.textScalerOf(context)
-                .clamp(maxScaleFactor: dockLabelMaxScale),
-          ),
+          data: MediaQuery.of(context).copyWith(textScaler: clampedScaler),
           child: Text(
             item.label,
             maxLines: 1,
             softWrap: false,
             textAlign: TextAlign.center,
+            strutStyle: StrutStyle(
+              fontSize: strutFontSize,
+              height: dockLabelHeightRatio,
+              forceStrutHeight: true,
+            ),
             style: UiText.body(
               size: dockLabelSize * labelFit,
               weight: active ? FontWeight.w700 : FontWeight.w600,
-              height: 1.35,
+              height: dockLabelHeightRatio,
               color: labelColor,
             ).copyWith(letterSpacing: 0),
           ),
         ),
       ),
     );
+    final Widget clippedLabel = ClipRect(
+      child: Align(
+        alignment: Alignment.topCenter,
+        heightFactor: 1 - t,
+        child: Visibility(
+          visible: t < 1,
+          maintainState: true,
+          maintainSize: false,
+          child: labelBox,
+        ),
+      ),
+    );
     final Widget labelWidget = t > 0
-        ? Opacity(
-            opacity: 1 - t,
-            child: ClipRect(
-              child: Align(
-                alignment: Alignment.topCenter,
-                heightFactor: 1 - t,
-                child: Visibility(
-                  visible: t < 1,
-                  maintainState: true,
-                  maintainSize: false,
-                  child: labelBox,
-                ),
-              ),
-            ),
-          )
-        : labelBox;
+        ? Opacity(opacity: 1 - t, child: clippedLabel)
+        : clippedLabel;
     final effectiveGap = labelGap * (1 - t);
     return UiPressable(
       key: item.itemKey,

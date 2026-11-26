@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/ui/components/dock.dart';
+import 'package:ourney/ui/components/dock_tab.dart'
+    show dockBaselineDescenderRatio;
 import 'package:ourney/ui/components/glass.dart';
 import 'package:ourney/ui/components/ourney_icons.dart';
 import 'package:ourney/ui/components/pressable.dart';
@@ -235,11 +237,25 @@ void main() {
           final label = tester.getRect(
             find.text(activeTab == 0 ? 'Hành trình' : 'Hoạt động'),
           );
-          expect(label.width, lessThanOrEqualTo(pill.width - 6 + 0.5));
-          expect(label.left, greaterThanOrEqualTo(pill.left - 0.5));
-          expect(label.right, lessThanOrEqualTo(pill.right + 0.5));
-          expect(label.top, greaterThanOrEqualTo(pill.top - 0.5));
-          expect(label.bottom, lessThanOrEqualTo(pill.bottom + 0.5));
+          final r = (pill.width < pill.height ? pill.width : pill.height) / 2;
+          bool inside(Offset p) {
+            final cx = p.dx.clamp(pill.left + r, pill.right - r);
+            final cy = p.dy.clamp(pill.top + r, pill.bottom - r);
+            return (p - Offset(cx, cy)).distance <= r - UiBorder.thin + 0.5;
+          }
+
+          final baselineY =
+              label.bottom - dockBaselineDescenderRatio * label.height;
+          for (final p in [
+            Offset(label.left, baselineY),
+            Offset(label.right, baselineY),
+            label.topLeft,
+            label.topRight,
+          ]) {
+            expect(inside(p), isTrue, reason: 'label point $p vs $pill');
+          }
+          expect(label.top, greaterThanOrEqualTo(pill.top));
+          expect(label.bottom, lessThanOrEqualTo(pill.bottom));
         },
       );
     }
