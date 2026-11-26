@@ -14,6 +14,7 @@
 import { adminClient, json } from "../_shared/admin.ts";
 
 const DEFAULT_LIMIT = 50;
+const WEBHOOK_TIMEOUT_MS = 8000;
 
 export type ModerationQueueItem = {
   id: string;
@@ -35,7 +36,16 @@ export type ModerationQueueItem = {
   checkin_caption?: string | null;
   target_message_id: string | null;
   message_body?: string | null;
+  target_feature_request_id?: string | null;
+  feature_request_title?: string | null;
+  feature_request_body?: string | null;
   distinct_open_reporters?: number;
+};
+
+export type NotifyModerationDeps = {
+  createAdmin?: typeof adminClient;
+  fetchFn?: typeof fetch;
+  envGet?: (key: string) => string | undefined;
 };
 
 async function sha256(input: string): Promise<Uint8Array> {
@@ -51,8 +61,8 @@ async function sameSecret(given: string, expected: string): Promise<boolean> {
   return diff === 0;
 }
 
-function configuredServiceKey(): string {
-  const raw = Deno.env.get("SUPABASE_SECRET_KEYS");
+function configuredServiceKey(envGet: (key: string) => string | undefined = Deno.env.get): string {
+  const raw = envGet("SUPABASE_SECRET_KEYS");
   if (raw) {
     try {
       const key = (JSON.parse(raw) as Record<string, string>)["default"];
@@ -61,13 +71,16 @@ function configuredServiceKey(): string {
       // fall through
     }
   }
-  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  return envGet("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 }
 
-async function isAuthorized(req: Request): Promise<boolean> {
-  const modSecret = Deno.env.get("MODERATION_WEBHOOK_TOKEN") ?? "";
-  const sweepSecret = Deno.env.get("SWEEP_TOKEN") ?? "";
-  const serviceSecret = configuredServiceKey();
+async function isAuthorized(
+  req: Request,
+  envGet: (key: string) => string | undefined = Deno.env.get,
+): Promise<boolean> {
+  const modSecret = envGet("MODERATION_WEBHOOK_TOKEN") ?? "";
+  const sweepSecret = envGet("SWEEP_TOKEN") ?? "";
+  const serviceSecret = configuredServiceKey(envGet);
 
   const givenMod = req.headers.get("x-moderation-token") ?? "";
   if (modSecret && await sameSecret(givenMod, modSecret)) return true;
@@ -102,8 +115,13 @@ export function formatModerationDigest(items: ModerationQueueItem[]): { subject:
         ? `checkin=${item.target_checkin_id}`
         : item.target_message_id
         ? `message=${item.target_message_id}`
+        : item.target_feature_request_id
+        ? `feature_request=${item.target_feature_request_id}`
         : `user=${item.target_user_id ?? "unknown"}`;
-      const excerpt = item.checkin_caption ?? item.message_body ?? item.note ?? "";
+      const frExcerpt = item.feature_request_title && item.feature_request_body
+        ? `${item.feature_request_title}: ${item.feature_request_body}`
+        : item.feature_request_title ?? item.feature_request_body ?? null;
+      const excerpt = item.checkin_caption ?? item.message_body ?? frExcerpt ?? item.note ?? "";
       return `${idx + 1}. [${item.kind.toUpperCase()}] id=${item.id} reason=${item.reason ?? "n/a"} ${target} ` +
         `target_user=${item.target_username ?? item.target_user_id ?? "n/a"} ` +
         `reporters=${item.distinct_open_reporters ?? 1} due_at=${item.due_at}` +
@@ -115,9 +133,11 @@ export function formatModerationDigest(items: ModerationQueueItem[]): { subject:
   return { subject, text: lines.join("\n") };
 }
 
-export async function handle(req: Request): Promise<Response> {
+export async function handle(req: Request, deps: NotifyModerationDeps = {}): Promise<Response> {
+  const envGet = deps.envGet ?? ((k: string) => Deno.env.get(k));
+  const fetchFn = deps.fetchFn ?? fetch;
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405, { Allow: "POST" });
-  if (!(await isAuthorized(req))) return json({ error: "unauthenticated" }, 401);
+  if (!(await isAuthorized(req, envGet))) return json({ error: "unauthenticated" }, 401);
 
   let payload: { limit?: number } = {};
   try {
@@ -130,7 +150,7 @@ export async function handle(req: Request): Promise<Response> {
     ? Math.max(1, Math.min(200, Math.trunc(payload.limit)))
     : DEFAULT_LIMIT;
 
-  const admin = adminClient();
+  const admin = (deps.createAdmin ?? adminClient)();
   const { data, error } = await admin.rpc("claim_moderation_notifications", { p_limit: limit });
   if (error) {
     console.error(JSON.stringify({ event: "moderation_claim_failed", error: error.message }));
@@ -140,11 +160,11 @@ export async function handle(req: Request): Promise<Response> {
   const items = ((data ?? []) as ModerationQueueItem[]).slice();
   const itemIds = items.map((i) => i.id);
 
-  const recipient = (Deno.env.get("MODERATION_NOTIFY_EMAIL") ?? "support@ourney.tech").trim() || "support@ourney.tech";
-  const sender = (Deno.env.get("MODERATION_FROM_EMAIL") ?? "moderation@ourney.tech").trim() ||
+  const recipient = (envGet("MODERATION_NOTIFY_EMAIL") ?? "support@ourney.tech").trim() || "support@ourney.tech";
+  const sender = (envGet("MODERATION_FROM_EMAIL") ?? "moderation@ourney.tech").trim() ||
     "moderation@ourney.tech";
-  const webhookUrl = (Deno.env.get("MODERATION_WEBHOOK_URL") ?? "").trim();
-  const webhookKey = (Deno.env.get("MODERATION_WEBHOOK_API_KEY") ?? "").trim();
+  const webhookUrl = (envGet("MODERATION_WEBHOOK_URL") ?? "").trim();
+  const webhookKey = (envGet("MODERATION_WEBHOOK_API_KEY") ?? "").trim();
 
   if (items.length === 0) {
     return json({
@@ -206,12 +226,14 @@ export async function handle(req: Request): Promise<Response> {
     };
 
   try {
-    const resp = await fetch(webhookUrl, {
+    const resp = await fetchFn(webhookUrl, {
       method: "POST",
       headers,
       body: JSON.stringify(webhookBody),
+      signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
     });
     if (!resp.ok) {
+      await resp.body?.cancel();
       console.error(JSON.stringify({
         event: "moderation_webhook_failed",
         status: resp.status,
@@ -233,6 +255,7 @@ export async function handle(req: Request): Promise<Response> {
         webhook_status: resp.status,
       }, 502);
     }
+    await resp.body?.cancel();
   } catch (e) {
     console.error(JSON.stringify({
       event: "moderation_webhook_unreachable",
