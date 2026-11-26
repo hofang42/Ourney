@@ -4,20 +4,18 @@
     "ios": "1.0.0"
   },
   "recommended": {
-    "android": "1.2.0",
-    "ios": "1.2.0"
+    "android": "1.2.1",
+    "ios": "1.2.1"
   },
   "force_on_major": true,
   "notes": {
     "vi": [
-      "Chọn điểm đến cho chuyến đi từ danh sách, gõ tìm bằng tiếng Việt hoặc tiếng Anh",
-      "Link chia sẻ hành trình dễ đọc hơn, tự ẩn tên khi bạn ẩn chỉ số",
-      "Mở link chia sẻ ổn định và an toàn hơn"
+      "Tiện ích iOS đã hiển thị đúng nội dung hành trình",
+      "Chạm vào tiện ích mở camera đúng hành trình đang hiện"
     ],
     "en": [
-      "Pick trip destinations from a searchable list in Vietnamese or English",
-      "Readable journey share links that hide the title when you hide your stats",
-      "Steadier, safer shared link pages"
+      "iOS widgets now show your journey content",
+      "Tapping a widget opens the camera for the journey it shows"
     ]
   }
 }
