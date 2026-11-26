@@ -132,3 +132,60 @@ Deno.test("waitlist-signup passes keyed cf-connecting-ip hash to RPC and returns
     "identical p_ip_hash despite different X-Forwarded-For headers",
   );
 });
+
+Deno.test("waitlist signup succeeds when confirmation mail fails and keeps the public reply uniform", async () => {
+  let signupStatus = "created";
+  let mailStatus = 503;
+  let mailCalls = 0;
+  const recordedErrors: unknown[] = [];
+  const admin = {
+    rpc(fn: string, args: Record<string, unknown>) {
+      if (fn === "waitlist_signup") {
+        return Promise.resolve({
+          data: { status: signupStatus, id: "11111111-1111-4111-8111-111111111111" },
+          error: null,
+        });
+      }
+      assertEquals(fn, "waitlist_mark_confirmation", "confirmation RPC");
+      recordedErrors.push(args.p_error);
+      return Promise.resolve({ data: null, error: null });
+    },
+  } as unknown as SupabaseClient;
+  const env: Record<string, string> = {
+    RESEND_API_KEY: "re_test",
+    WAITLIST_FROM: "Ourney <hello@ourney.tech>",
+  };
+  const signup = () =>
+    handle(
+      new Request("https://waitlist.example.test/functions/v1/waitlist-signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "reader@example.test", platforms: ["ios"] }),
+      }),
+      {
+        createAdmin: () => admin,
+        envGet: (key) => env[key],
+        fetchFn: () => {
+          mailCalls++;
+          return Promise.resolve(new Response("mail stub", { status: mailStatus }));
+        },
+      },
+    );
+
+  const failedMail = await signup();
+  assertEquals(failedMail.status, 200, "enrollment persisted despite mail error");
+  assertEquals(await failedMail.text(), '{"ok":true}', "failed mail response");
+  assertEquals(recordedErrors[0], "resend_503: mail stub", "recorded mail failure");
+
+  mailStatus = 200;
+  const sentMail = await signup();
+  assertEquals(sentMail.status, 200, "successful mail enrollment status");
+  assertEquals(await sentMail.text(), '{"ok":true}', "successful mail response");
+  assertEquals(recordedErrors[1], null, "successful mail recorded");
+
+  signupStatus = "exists";
+  const existing = await signup();
+  assertEquals(existing.status, 200, "existing enrollment status");
+  assertEquals(await existing.text(), '{"ok":true}', "existing enrollment response");
+  assertEquals(mailCalls, 2, "existing enrollment did not send mail");
+});
