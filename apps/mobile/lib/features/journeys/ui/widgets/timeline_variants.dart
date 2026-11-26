@@ -1038,6 +1038,9 @@ class _CouplePair extends StatelessWidget {
           ? wrapTimelineDayHero(day, tile)
           : tile;
     }
+    if (slot.isMine && day.state == DayState.today) {
+      return TimelineTile(day: day, size: size);
+    }
     final label = slot.photoUnavailable
         ? l10n.journeys_photoUnavailable
         : !slot.isMine && day.isToday
