@@ -16,7 +16,7 @@ import '../../../../personas/persona_contract.dart';
 import '../../../../ui/ui.dart';
 import '../../../camera/capture_services.dart' show appSettingsOpenerProvider;
 import '../../../profile/settings_providers.dart'
-    show hideWeightOnShareProvider;
+    show blurPhotosOnShareProvider, hideWeightOnShareProvider;
 import '../../../share_card/data/share_card_exporter.dart'
     show shareCardBaseName;
 import '../../../share_card/data/share_card_providers.dart'
@@ -26,7 +26,11 @@ import '../../../share_card/data/share_card_providers.dart'
         shareCardSaverProvider,
         shareCardSharerProvider;
 import '../../../share_card/domain/share_card_content.dart'
-    show ShareCardFormat, publicAddressForCaption, shareMetricHidden;
+    show
+        ShareCardFormat,
+        isWeightMetric,
+        publicAddressForCaption,
+        shareMetricHidden;
 import '../../../sharing/data/sharing_providers.dart' show shareStateProvider;
 import '../../data/journeys_providers.dart';
 import '../../domain/journey_progress.dart';
@@ -38,8 +42,9 @@ import 'wrapped_visuals.dart';
 
 /// Builds the text caption shared from the Wrapped summary sheet (DE-17).
 ///
-/// Honors [hideKg] (for the quiet persona's weight range) and [hideBrand]
-/// (omitting the `ourney` wordmark / generic brand URL when enabled).
+/// Honors [hideKg] (for the quiet persona's weight range), [hideBrand]
+/// (omitting the `ourney` wordmark / generic brand URL when enabled), and
+/// [hideTitle] (omitting sensitive journey titles from the shared caption).
 String wrappedShareText(
   JourneysL10n l10n,
   Journey journey,
@@ -48,8 +53,11 @@ String wrappedShareText(
   String? publicAddress,
   bool hideKg = true,
   bool hideBrand = false,
+  bool hideTitle = false,
 }) {
-  final summary = wrappedSummaryTitle(l10n, journey, skin, stats);
+  final summary = hideTitle && skin == PersonaSkinId.memoryCollectors
+      ? l10n.journeys_wrapped_sumQuiet(stats.total)
+      : wrappedSummaryTitle(l10n, journey, skin, stats);
   final weights = skin == PersonaSkinId.quietTransformer && !hideKg
       ? _Summary._weights(stats)
       : null;
@@ -60,8 +68,11 @@ String wrappedShareText(
   } else {
     footer = hideBrand ? null : 'ourney · https://ourney.tech';
   }
+  final lead = hideTitle
+      ? (journey.emoji.isEmpty ? summary : '${journey.emoji} $summary')
+      : '${journey.emoji} ${journey.title} — $summary';
   return [
-    '${journey.emoji} ${journey.title} — $summary',
+    lead,
     ?weights,
     ?footer,
   ].join('\n');
@@ -627,26 +638,25 @@ class _SummaryState extends ConsumerState<_Summary> {
     final quiet = skin == PersonaSkinId.quietTransformer;
     final weights = quiet ? _Summary._weights(stats) : null;
     final membershipProvider = myMembershipProvider(journey.id);
-    final authoredPair = stats.coupleSlots.isNotEmpty;
     final hasBackend = ref.watch(appConfigProvider).hasBackend;
-    final shareState = authoredPair && hasBackend
+    final shareState = hasBackend
         ? ref.watch(shareStateProvider(journey.id)).asData?.value
         : null;
-    final membership = authoredPair
-        ? ref.watch(membershipProvider).asData?.value
-        : null;
-    final hiddenCouplePhotoIds = <String>{
+    final membershipAsync = ref.watch(membershipProvider);
+    final membership = membershipAsync.asData?.value;
+    final blurPhotosOnShare = ref.watch(blurPhotosOnShareProvider);
+    final hiddenPhotoIds = <String>{
       ...?shareState?.hiddenCheckInIds,
-      if (authoredPair &&
-          hasBackend &&
-          (shareState == null || membership == null))
+      if (hasBackend && (shareState == null || membership == null)) ...[
+        for (final c in stats.photos) c.id,
         for (final slot in stats.coupleSlots) ?slot.checkIn?.id,
+      ],
     };
     // The preview's boundary is also the source for shared and saved PNGs.
     final exportWeights =
         weights != null &&
             !_hideExportKg(
-              ref.watch(membershipProvider),
+              membershipAsync,
               ref.watch(hideWeightOnShareProvider),
             )
         ? weights
@@ -683,19 +693,26 @@ class _SummaryState extends ConsumerState<_Summary> {
           baseName: shareCardBaseName(journey.id, format),
         );
         if (!context.mounted) return;
+        bool shouldHideTitle() {
+          if (!context.mounted) return true;
+          final m = ref.read(membershipProvider);
+          final hideW = ref.read(hideWeightOnShareProvider);
+          return ((quiet || isWeightMetric(journey) || journey.hideMetricDefault) &&
+                  (m.isLoading || m.hasError || m.value == null)) ||
+              shareMetricHidden(
+                journey,
+                m.value,
+                forceHideMetric: quiet && hideKg,
+                hideWeight: hideW,
+              );
+        }
+
         final address = await publicAddressForCaption(
           journey,
           () => ref.read(appConfigProvider).hasBackend
               ? ref.read(sharingRepositoryProvider)
               : null,
-          hideTitle: () =>
-              !context.mounted ||
-              shareMetricHidden(
-                journey,
-                ref.read(membershipProvider).value,
-                forceHideMetric: quiet && hideKg,
-                hideWeight: ref.read(hideWeightOnShareProvider),
-              ),
+          hideTitle: shouldHideTitle,
         );
         if (!context.mounted) return;
         final text = wrappedShareText(
@@ -709,6 +726,7 @@ class _SummaryState extends ConsumerState<_Summary> {
             ref.read(hideWeightOnShareProvider),
           ),
           hideBrand: hideWordmark,
+          hideTitle: shouldHideTitle(),
         );
         await sharer.shareImage(
           path: file.path,
@@ -845,9 +863,10 @@ class _SummaryState extends ConsumerState<_Summary> {
                                       page: 3,
                                       blurPhotos:
                                           quiet ||
-                                          (membership?.blurMedia ?? false),
+                                          (membership?.blurMedia ?? false) ||
+                                          blurPhotosOnShare,
                                       exporting: true,
-                                      hiddenPhotoIds: hiddenCouplePhotoIds,
+                                      hiddenPhotoIds: hiddenPhotoIds,
                                     ),
                                   ),
                                 ),

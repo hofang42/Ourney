@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_dock.dart';
 import 'package:ourney/app/app_routes.dart';
@@ -7,9 +10,14 @@ import 'package:ourney/app/config.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/data/group_daily_checkins_provider.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
+import 'package:ourney/features/journeys/domain/journey_progress.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
+import 'package:ourney/features/journeys/l10n/generated/journeys_localizations.dart';
 import 'package:ourney/features/journeys/ui/day_viewer_screen.dart';
 import 'package:ourney/features/journeys/ui/journey_photo.dart';
+import 'package:ourney/features/journeys/ui/widgets/timeline_common.dart';
+import 'package:ourney/l10n/generated/app_localizations.dart';
+import 'package:ourney/ui/ui.dart' show OurneyTheme, UiCamera;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
@@ -672,6 +680,152 @@ void main() {
           tester.getRect(_key('profile-stats')).bottom,
           lessThanOrEqualTo(tester.getRect(find.byType(AppDock)).top),
         );
+      },
+    );
+
+    testWidgets(
+      'F-38: DayViewerScreen lands on page 0 (authored pair) even when myCheckInsProvider emits before journeyByIdProvider',
+      (tester) async {
+        final j = testJourney(kind: JourneyKind.group, maxMembers: 2);
+        const date = LocalDate(2026, 10, 12);
+        final firstTake = testCheckIn(
+          j.id,
+          date,
+          userId: 'u1',
+          hour: 8,
+        );
+        final secondTake = testCheckIn(
+          j.id,
+          date,
+          userId: 'u1',
+          hour: 9,
+        );
+        final partnerTake = testCheckIn(
+          j.id,
+          date,
+          userId: 'u2',
+          hour: 10,
+        );
+        final journeyController = StreamController<Journey?>();
+        addTearDown(journeyController.close);
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              appConfigProvider.overrideWithValue(testBackendConfig),
+              currentUserIdProvider.overrideWithValue('u1'),
+              mediaStoreProvider.overrideWithValue(FakeMediaStore()),
+              checkInRepositoryProvider.overrideWithValue(
+                FakeCheckInRepository([firstTake, secondTake, partnerTake]),
+              ),
+              journeyByIdProvider(j.id).overrideWith(
+                (_) => journeyController.stream,
+              ),
+              myCheckInsProvider(j.id).overrideWith(
+                (_) => Stream.value([firstTake, secondTake]),
+              ),
+              groupMembersTodaySafeProvider(j.id).overrideWith(
+                (_) => Stream.value(const [
+                  MemberToday(
+                    userId: 'u1',
+                    displayName: 'An',
+                    role: MemberRole.owner,
+                  ),
+                  MemberToday(
+                    userId: 'u2',
+                    displayName: 'Binh',
+                    role: MemberRole.member,
+                  ),
+                ]),
+              ),
+            ],
+            child: MaterialApp(
+              localizationsDelegates: const [
+                ...JourneysL10n.localizationsDelegates,
+                ...AppLocalizations.localizationsDelegates,
+              ],
+              supportedLocales: JourneysL10n.supportedLocales,
+              theme: OurneyTheme.build(Brightness.light),
+              home: DayViewerScreen(journeyId: j.id, date: date),
+            ),
+          ),
+        );
+        // Check-ins have already emitted while journeyByIdProvider is loading.
+        await tester.pump();
+        journeyController.add(j);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(
+            const ValueKey<(String, int, String?)>(('day-viewer-slot', 0, 'u1')),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(
+            const ValueKey<(String, int, String?)>(('day-viewer-slot', 1, 'u2')),
+          ),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'F-39: Couple timeline grid cell renders Today ring and readable day number when only right-side partner posted today',
+      (tester) async {
+        final j = testJourney(
+          kind: JourneyKind.group,
+          maxMembers: 2,
+          templateId: TemplateId.custom,
+        );
+        final partnerToday = testCheckIn(j.id, testToday, userId: 'u2');
+        final day = TimelineDay(
+          date: testToday,
+          dayNumber: 7,
+          state: DayState.today,
+          isToday: true,
+          coupleSlots: [
+            const CouplePhotoSlot(
+              userId: 'u1',
+              displayName: 'An',
+              isMine: true,
+            ),
+            CouplePhotoSlot(
+              userId: 'u2',
+              displayName: 'Binh',
+              checkIn: partnerToday,
+            ),
+          ],
+        );
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              localizationsDelegates: JourneysL10n.localizationsDelegates,
+              supportedLocales: JourneysL10n.supportedLocales,
+              theme: OurneyTheme.build(Brightness.light),
+              home: Scaffold(
+                body: TimelineGridCell(
+                  day: day,
+                  size: 44,
+                  hit: 48,
+                  onTap: (_) {},
+                ),
+              ),
+            ),
+          ),
+        );
+        final todayCell = _day(testToday);
+        expect(todayCell, findsOneWidget);
+        expect(
+          find.descendant(
+            of: todayCell,
+            matching: _key('journey-today-ring'),
+          ),
+          findsOneWidget,
+        );
+        final numeral = tester.widget<Text>(
+          find.descendant(of: todayCell, matching: find.text('${testToday.day}')),
+        );
+        expect(numeral.style?.color, isNot(equals(UiCamera.onPhoto)));
       },
     );
   });

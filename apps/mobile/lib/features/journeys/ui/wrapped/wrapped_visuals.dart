@@ -54,7 +54,7 @@ class WrappedVisual extends StatelessWidget {
               )
             : _Photos(
                 key: const ValueKey('wrapped-quiet-photos'),
-                photos: _firstLast(stats.photos),
+                photos: _firstLast(_visiblePhotos),
                 blur: blurPhotos,
               ),
       PersonaSkinId.accountabilitySquad =>
@@ -84,7 +84,8 @@ class WrappedVisual extends StatelessWidget {
               ),
       PersonaSkinId.memoryCollectors => _Film(
         key: const ValueKey('wrapped-memory-film'),
-        photos: stats.photos.reversed.take(4).toList(),
+        photos: _visiblePhotos.reversed.take(4).toList(),
+        blur: blurPhotos,
       ),
       PersonaSkinId.coupleRituals => Row(
         key: const ValueKey('wrapped-couple-frame'),
@@ -130,6 +131,14 @@ class WrappedVisual extends StatelessWidget {
     return RepaintBoundary(child: visual);
   }
 
+  List<CheckIn> get _visiblePhotos =>
+      exporting && hiddenPhotoIds.isNotEmpty
+      ? [
+          for (final c in stats.photos)
+            if (!hiddenPhotoIds.contains(c.id)) c,
+        ]
+      : stats.photos;
+
   static List<CheckIn> _firstLast(List<CheckIn> all) => all.isEmpty
       ? const []
       : all.length == 1
@@ -137,14 +146,16 @@ class WrappedVisual extends StatelessWidget {
       : [all.first, all.last];
 
   CheckIn? _couplePhoto(int index) {
+    final ownPhotos = _visiblePhotos;
     if (stats.coupleSlots.isEmpty) {
-      return index == 0 ? stats.photos.lastOrNull : null;
+      return index == 0 ? ownPhotos.lastOrNull : null;
     }
     final slot = stats.coupleSlots[index];
     final photo = slot.checkIn;
-    return exporting && (!slot.isMine || hiddenPhotoIds.contains(photo?.id))
-        ? null
-        : photo;
+    if (!exporting) return photo;
+    if (!slot.isMine) return null;
+    if (photo != null && !hiddenPhotoIds.contains(photo.id)) return photo;
+    return ownPhotos.lastOrNull;
   }
 }
 
@@ -357,9 +368,10 @@ class _Photos extends StatelessWidget {
 }
 
 class _Film extends StatelessWidget {
-  const _Film({required this.photos, super.key});
+  const _Film({required this.photos, this.blur = false, super.key});
 
   final List<CheckIn> photos;
+  final bool blur;
 
   @override
   Widget build(BuildContext context) {
@@ -383,7 +395,19 @@ class _Film extends StatelessWidget {
               ),
               child: c == null
                   ? null
-                  : JourneyPhoto(checkIn: c, fallback: const SizedBox.shrink()),
+                  : ClipRect(
+                      child: ImageFiltered(
+                        enabled: blur,
+                        imageFilter: ui_.ImageFilter.blur(
+                          sigmaX: 14,
+                          sigmaY: 14,
+                        ),
+                        child: JourneyPhoto(
+                          checkIn: c,
+                          fallback: const SizedBox.shrink(),
+                        ),
+                      ),
+                    ),
             ),
           ),
       ],

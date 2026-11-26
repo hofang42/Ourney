@@ -9,6 +9,7 @@ import 'package:ourney/data/local_store.dart' show journeyKey;
 import 'package:ourney/data/mapping.dart' show updateJourneyParams;
 import 'package:ourney/data/media_store.dart' show MediaWipe;
 import 'package:ourney/data/remote/remote_api.dart';
+import 'package:ourney/data/repositories/group_repository.dart';
 import 'package:ourney/data/repositories/journey_repository.dart';
 import 'package:ourney/data/sync/outbox.dart';
 import 'package:ourney/data/sync/sync_engine.dart';
@@ -1154,4 +1155,55 @@ void main() {
     await pumpEventQueue();
     expect(changes, greaterThan(0));
   });
+
+  test(
+    'F-13: watchCachedMembers returns active members in join order while offline',
+    () async {
+      remote.tables['journeys'] = [
+        journeyRow(jid, ownerId: me, kind: 'group', visibility: 'group'),
+      ];
+      remote.tables['memberships'] = [
+        membershipRow(jid, me)..['joined_at'] = '2026-10-01T00:00:00Z',
+        membershipRow(jid, other, role: 'member')
+          ..['joined_at'] = '2026-10-01T01:00:00Z',
+      ];
+      remote.tables['profiles'] = [
+        {'id': me, 'username': 'an', 'display_name': 'An'},
+      ];
+      remote.rpcHandlers['group_today'] = (_) => [
+        {
+          'user_id': me,
+          'username': 'an',
+          'display_name': 'An',
+          'avatar_path': null,
+          'role': 'owner',
+          'checked_in': false,
+          'checkin_id': null,
+          'thumb_path': null,
+          'captured_at': null,
+          'current_streak': 0,
+        },
+        {
+          'user_id': other,
+          'username': 'binh',
+          'display_name': 'Binh',
+          'avatar_path': null,
+          'role': 'member',
+          'checked_in': false,
+          'checkin_id': null,
+          'thumb_path': null,
+          'captured_at': null,
+          'current_streak': 0,
+        },
+      ];
+      await layer.syncNow();
+      await layer.groups.watchToday(jid).first;
+      remote.failure = offline;
+      final cached = await (layer.groups as DataGroupRepository)
+          .watchCachedMembers(jid)
+          .first;
+      expect([for (final m in cached) m.userId], [me, other]);
+      expect([for (final m in cached) m.displayName], ['An', 'Binh']);
+    },
+  );
 }

@@ -147,6 +147,41 @@ class DataGroupRepository implements GroupRepository {
     return controller.stream;
   }
 
+  /// Cached active roster for [journeyId] in join order, used when offline so
+  /// partner slots and cached history stay available without `group_today`.
+  Stream<List<MemberToday>> watchCachedMembers(String journeyId) {
+    final query = _db.select(_db.memberships).join([
+      leftOuterJoin(
+        _db.profiles,
+        _db.profiles.id.equalsExp(_db.memberships.userId),
+      ),
+    ])
+      ..where(
+        _db.memberships.journeyId.equals(journeyId) &
+            _db.memberships.status.equals(MemberStatus.active.wireName),
+      )
+      ..orderBy([
+        OrderingTerm.asc(_db.memberships.joinedAt),
+        OrderingTerm.asc(_db.memberships.userId),
+      ]);
+    return query.watch().map(
+      (rows) => [
+        for (final row in rows)
+          () {
+            final m = row.readTable(_db.memberships);
+            final p = row.readTableOrNull(_db.profiles);
+            return MemberToday(
+              userId: m.userId,
+              username: p?.username,
+              displayName: p?.displayName ?? '',
+              avatarPath: p?.avatarPath,
+              role: MemberRole.fromWire(m.role),
+            );
+          }(),
+      ],
+    );
+  }
+
   Future<List<MemberToday>> _fetchToday(String journeyId) => _group((
     remote,
   ) async {
@@ -157,9 +192,10 @@ class DataGroupRepository implements GroupRepository {
     final list = (rows as List? ?? const []).cast<Map<dynamic, dynamic>>();
     final today = journey == null ? null : ctx.clock.today(journey.timezone);
     final me = ctx.userId;
+    final baseJoinedAt = ctx.now();
     final result = <MemberToday>[];
-    for (final raw in list) {
-      final r = raw.cast<String, dynamic>();
+    for (var i = 0; i < list.length; i++) {
+      final r = list[i].cast<String, dynamic>();
       final captured = r['captured_at'];
       final day =
           today ??
@@ -167,6 +203,41 @@ class DataGroupRepository implements GroupRepository {
               ? ctx.clock.localDate(ctx.now(), 'UTC')
               : LocalDate.parse((captured as String).substring(0, 10)));
       var member = memberTodayFromRemote(r, journeyId: journeyId, today: day);
+      if (member.displayName.isNotEmpty ||
+          member.username != null ||
+          member.avatarPath != null) {
+        final existingProfile = await (_db.select(
+          _db.profiles,
+        )..where((t) => t.id.equals(member.userId))).getSingleOrNull();
+        await _db.into(_db.profiles).insertOnConflictUpdate(
+          ProfilesCompanion(
+            id: Value(member.userId),
+            username: Value(
+              member.username ?? existingProfile?.username ?? '',
+            ),
+            displayName: Value(
+              member.displayName.isNotEmpty
+                  ? member.displayName
+                  : (existingProfile?.displayName ?? ''),
+            ),
+            avatarPath: Value(member.avatarPath ?? existingProfile?.avatarPath),
+            termsVersion: Value(existingProfile?.termsVersion ?? 0),
+            updatedAt: Value(existingProfile?.updatedAt),
+          ),
+        );
+      }
+      if (journey != null || member.userId != me) {
+        await _db.into(_db.memberships).insert(
+          MembershipsCompanion.insert(
+            journeyId: journeyId,
+            userId: member.userId,
+            role: member.role.wireName,
+            status: MemberStatus.active.wireName,
+            joinedAt: baseJoinedAt.add(Duration(microseconds: i)),
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+      }
       if (member.userId == me && today != null) {
         // Since 0014 a day can hold several photos: show the newest one, which
         // may still be waiting in the outbox.
