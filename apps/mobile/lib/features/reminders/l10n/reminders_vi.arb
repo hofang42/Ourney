@@ -90,7 +90,7 @@
   "@reminders_permissionTitle": {
     "description": "Title of the in-context dialog shown before the OS notification prompt."
   },
-  "reminders_permissionMessage": "Ourney chỉ gửi giờ nhắc bạn chọn và lời nhắc nhẹ lúc 21:00 khi đang có chuỗi. Không quảng cáo.",
+  "reminders_permissionMessage": "Ourney chỉ gửi giờ nhắc bạn chọn và một lời nhắc nhẹ lúc 21:00 nếu hôm nay bạn chưa chụp. Không quảng cáo.",
   "@reminders_permissionMessage": {
     "description": "Body of the in-context dialog shown before the OS notification prompt."
   },
@@ -116,11 +116,11 @@
       }
     }
   },
-  "reminders_alertTitle": "Vẫn kịp cho hôm nay",
+  "reminders_alertTitle": "Hôm nay vẫn còn kịp",
   "@reminders_alertTitle": {
     "description": "Title of the 21:00 streak alert notification."
   },
-  "reminders_alertBody": "{journey}: chuỗi {count} ngày còn mở đến nửa đêm. Một tấm ảnh nhỏ là đủ.",
+  "reminders_alertBody": "{journey}: chuỗi {count} ngày — một tấm ảnh hôm nay là đủ rồi.",
   "@reminders_alertBody": {
     "description": "Body of the 21:00 streak alert notification.",
     "placeholders": {
@@ -134,7 +134,7 @@
       }
     }
   },
-  "reminders_alertBodyAt": "{journey}: chuỗi {count} ngày còn mở đến {time} (00:00 theo múi giờ hành trình). Một tấm ảnh nhỏ là đủ.",
+  "reminders_alertBodyAt": "{journey}: chuỗi {count} ngày — một tấm ảnh hôm nay là đủ rồi (ngày mới của hành trình bắt đầu lúc {time}).",
   "@reminders_alertBodyAt": {
     "description": "Body of the 21:00 streak alert notification when the device timezone differs from the journey timezone.",
     "placeholders": {
@@ -156,7 +156,7 @@
   "@reminders_channelName": {
     "description": "Android notification channel name (shown in system settings)."
   },
-  "reminders_channelDescription": "Lời nhắc check-in hằng ngày và nhắc giữ chuỗi buổi tối.",
+  "reminders_channelDescription": "Lời nhắc check-in hằng ngày và lời nhắc nhẹ buổi tối.",
   "@reminders_channelDescription": {
     "description": "Android notification channel description."
   }

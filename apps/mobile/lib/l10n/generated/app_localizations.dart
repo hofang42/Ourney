@@ -371,38 +371,38 @@ abstract class AppLocalizations {
   /// Streak-at-risk reminder banner copy, quiet skin.
   ///
   /// In vi, this message translates to:
-  /// **'Chuỗi {streak} ngày còn đến {time}. Vẫn kịp.'**
-  String reminderBanner_streak_quiet(int streak, String time);
+  /// **'Chuỗi {streak} ngày rồi. Một tấm ảnh hôm nay là đủ.'**
+  String reminderBanner_streak_quiet(int streak);
 
   /// Streak-at-risk reminder banner copy, squad skin.
   ///
   /// In vi, this message translates to:
-  /// **'Chuỗi {streak} ngày mở đến {time}. Cùng giữ nhịp nhé.'**
-  String reminderBanner_streak_squad(int streak, String time);
+  /// **'Chuỗi {streak} ngày cùng nhau. Góp một tấm hôm nay nhé.'**
+  String reminderBanner_streak_squad(int streak);
 
   /// Streak-at-risk reminder banner copy, memory skin.
   ///
   /// In vi, this message translates to:
-  /// **'Cuộn phim còn mở đến {time}.'**
-  String reminderBanner_streak_memory(String time);
+  /// **'Thêm một khung hình cho cuộn phim hôm nay nhé.'**
+  String get reminderBanner_streak_memory;
 
   /// Streak-at-risk reminder banner copy, couple skin.
   ///
   /// In vi, this message translates to:
-  /// **'Chuỗi {streak} ngày còn mở đến {time}.'**
-  String reminderBanner_streak_couple(int streak, String time);
+  /// **'Chuỗi {streak} ngày của hai đứa. Lưu một khoảnh khắc hôm nay nhé.'**
+  String reminderBanner_streak_couple(int streak);
 
   /// Streak-at-risk reminder banner copy, flexer skin.
   ///
   /// In vi, this message translates to:
-  /// **'CHUỖI {streak}. CÒN ĐẾN {time}.'**
-  String reminderBanner_streak_flexer(int streak, String time);
+  /// **'CHUỖI {streak} NGÀY. MỘT TẤM CHO HÔM NAY.'**
+  String reminderBanner_streak_flexer(int streak);
 
   /// Streak-at-risk reminder banner copy, minimal skin.
   ///
   /// In vi, this message translates to:
-  /// **'CHUỖI {streak} · ĐẾN {time}.'**
-  String reminderBanner_streak_minimal(int streak, String time);
+  /// **'CHUỖI {streak} NGÀY · HÔM NAY.'**
+  String reminderBanner_streak_minimal(int streak);
 
   /// Missed-day chip, squad skin.
   ///

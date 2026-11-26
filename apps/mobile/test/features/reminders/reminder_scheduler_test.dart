@@ -10,6 +10,7 @@ import 'package:ourney/features/reminders/data/notification_gateway.dart';
 import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
 import 'package:ourney/features/reminders/data/reminder_settings.dart';
 import 'package:ourney/features/reminders/domain/reminder_plan.dart';
+import 'package:ourney/features/reminders/l10n/generated/reminders_localizations.dart';
 import 'package:ourney/shared/time_zones.dart';
 import 'package:ourney_core/ourney_core.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -186,7 +187,7 @@ void main() {
         ..sort((a, b) => a.fireAt.compareTo(b.fireAt));
       expect(before.first.fireAt, DateTime.utc(2026, 10, 16, 13));
       final alert = before[1];
-      expect(alert.title, 'Vẫn kịp cho hôm nay');
+      expect(alert.title, 'Hôm nay vẫn còn kịp');
       expect(alert.body, contains('1 ngày'));
       expect(alert.fireAt, DateTime.utc(2026, 10, 16, 14)); // 21:00 local
 
@@ -339,13 +340,45 @@ void main() {
 
         await h.container.read(reminderSchedulerProvider).reschedule();
         final alerts = gateway.scheduled.values
-            .where((n) => n.title == 'Still time for today')
+            .where((n) => n.title == 'A moment for today')
             .toList();
         expect(alerts, hasLength(1));
         expect(
           alerts.single.body,
-          contains('is open until 02:00 (journey midnight)'),
+          contains('(new journey day starts at 02:00)'),
         );
+      },
+    );
+
+    test(
+      'gentle streak-alert copy (vi + en) contains no loss, midnight, or deadline wording',
+      () {
+        final forbidden = RegExp(
+          r'mất|midnight|nửa đêm|\bends\b|\buntil\b|keeps it going',
+          caseSensitive: false,
+        );
+        for (final locale in [const Locale('vi'), const Locale('en')]) {
+          final l10n = lookupRemindersL10n(locale);
+          final samples = {
+            'reminders_alertTitle': l10n.reminders_alertTitle,
+            'reminders_alertBody': l10n.reminders_alertBody('Weight loss', 3),
+            'reminders_alertBodyAt': l10n.reminders_alertBodyAt(
+              'Weight loss',
+              3,
+              '02:00',
+            ),
+            'reminders_permissionMessage': l10n.reminders_permissionMessage,
+            'reminders_channelDescription': l10n.reminders_channelDescription,
+          };
+          for (final entry in samples.entries) {
+            expect(
+              forbidden.hasMatch(entry.value),
+              isFalse,
+              reason:
+                  '${locale.languageCode} ${entry.key} must be gentle: "${entry.value}"',
+            );
+          }
+        }
       },
     );
 
@@ -435,10 +468,10 @@ void main() {
         await tester.pumpAndSettle();
 
         NotificationRequest alert() => gateway.scheduled.values.singleWhere(
-          (n) => n.title == 'Still time for today',
+          (n) => n.title == 'A moment for today',
         );
         final fireAt = alert().fireAt;
-        expect(alert().body, contains('is open until 02:00'));
+        expect(alert().body, contains('(new journey day starts at 02:00)'));
 
         Future<void> resumeIn(String newZone) async {
           tester.binding.handleAppLifecycleStateChanged(
@@ -458,7 +491,7 @@ void main() {
           'Asia/Singapore',
         );
         expect(alert().fireAt, fireAt);
-        expect(alert().body, contains('is open until 01:00'));
+        expect(alert().body, contains('(new journey day starts at 01:00)'));
 
         await tester.pump(const Duration(hours: 11));
         await tester.pump();
@@ -470,7 +503,8 @@ void main() {
 
         await resumeIn('Asia/Bangkok');
         expect(alert().fireAt, fireAt);
-        expect(alert().body, contains('is open until midnight'));
+        expect(alert().body, contains('one photo today is plenty.'));
+        expect(alert().body, isNot(contains('starts at')));
         expect(h.container.read(reminderBannerProvider)?.deadline, '00:00');
       },
     );

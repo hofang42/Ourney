@@ -207,8 +207,8 @@ abstract final class LiveActivityWindowPlanner {
       final shortCritical = _formatShortCriticalText(isEn: isEn);
       final statusText = j.atRisk
           ? (isEn
-                ? '${j.currentStreak}-day streak · open until midnight'
-                : 'Chuỗi ${j.currentStreak} ngày · còn mở đến nửa đêm')
+                ? '${j.currentStreak}-day streak · one photo is enough'
+                : 'Chuỗi ${j.currentStreak} ngày · một tấm ảnh là đủ')
           : (isEn
                 ? 'Day ${j.dayNumber} check-in window is open'
                 : 'Khung giờ check-in ngày ${j.dayNumber} đang mở');

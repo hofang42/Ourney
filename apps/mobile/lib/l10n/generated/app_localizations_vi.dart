@@ -170,33 +170,32 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String reminderBanner_streak_quiet(int streak, String time) {
-    return 'Chuỗi $streak ngày còn đến $time. Vẫn kịp.';
+  String reminderBanner_streak_quiet(int streak) {
+    return 'Chuỗi $streak ngày rồi. Một tấm ảnh hôm nay là đủ.';
   }
 
   @override
-  String reminderBanner_streak_squad(int streak, String time) {
-    return 'Chuỗi $streak ngày mở đến $time. Cùng giữ nhịp nhé.';
+  String reminderBanner_streak_squad(int streak) {
+    return 'Chuỗi $streak ngày cùng nhau. Góp một tấm hôm nay nhé.';
   }
 
   @override
-  String reminderBanner_streak_memory(String time) {
-    return 'Cuộn phim còn mở đến $time.';
+  String get reminderBanner_streak_memory =>
+      'Thêm một khung hình cho cuộn phim hôm nay nhé.';
+
+  @override
+  String reminderBanner_streak_couple(int streak) {
+    return 'Chuỗi $streak ngày của hai đứa. Lưu một khoảnh khắc hôm nay nhé.';
   }
 
   @override
-  String reminderBanner_streak_couple(int streak, String time) {
-    return 'Chuỗi $streak ngày còn mở đến $time.';
+  String reminderBanner_streak_flexer(int streak) {
+    return 'CHUỖI $streak NGÀY. MỘT TẤM CHO HÔM NAY.';
   }
 
   @override
-  String reminderBanner_streak_flexer(int streak, String time) {
-    return 'CHUỖI $streak. CÒN ĐẾN $time.';
-  }
-
-  @override
-  String reminderBanner_streak_minimal(int streak, String time) {
-    return 'CHUỖI $streak · ĐẾN $time.';
+  String reminderBanner_streak_minimal(int streak) {
+    return 'CHUỖI $streak NGÀY · HÔM NAY.';
   }
 
   @override

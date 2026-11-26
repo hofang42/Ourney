@@ -649,7 +649,7 @@ void main() {
                   ),
                   UiSwitchRow(
                     label: 'Nhắc tôi mỗi ngày vào lúc tối muộn',
-                    subtitle: 'Chỉ khi chuỗi ngày sắp mất',
+                    subtitle: 'Nhắc nhẹ lúc 21:00 nếu hôm nay bạn chưa chụp',
                     value: true,
                     onChanged: (_) {},
                   ),

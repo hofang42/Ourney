@@ -52,7 +52,6 @@ final reminderBannerProvider =
 /// The localized banner line for [data] (per-skin voice, V2 `reminderCopy`).
 String reminderBannerCopy(AppLocalizations l, ReminderBannerData data) {
   final streak = data.streak;
-  final time = data.deadline;
   if (data.kind == ReminderBannerKind.daily) {
     return switch (data.skinId) {
       'squad' => l.reminderBanner_daily_squad,
@@ -64,12 +63,12 @@ String reminderBannerCopy(AppLocalizations l, ReminderBannerData data) {
     };
   }
   return switch (data.skinId) {
-    'squad' => l.reminderBanner_streak_squad(streak, time),
-    'memory' => l.reminderBanner_streak_memory(time),
-    'couple' => l.reminderBanner_streak_couple(streak, time),
-    'flexer' => l.reminderBanner_streak_flexer(streak, time),
-    'minimal' => l.reminderBanner_streak_minimal(streak, time),
-    _ => l.reminderBanner_streak_quiet(streak, time),
+    'squad' => l.reminderBanner_streak_squad(streak),
+    'memory' => l.reminderBanner_streak_memory,
+    'couple' => l.reminderBanner_streak_couple(streak),
+    'flexer' => l.reminderBanner_streak_flexer(streak),
+    'minimal' => l.reminderBanner_streak_minimal(streak),
+    _ => l.reminderBanner_streak_quiet(streak),
   };
 }
 

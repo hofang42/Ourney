@@ -151,72 +151,52 @@
       }
     }
   },
-  "reminderBanner_streak_quiet": "Chuỗi {streak} ngày còn đến {time}. Vẫn kịp.",
+  "reminderBanner_streak_quiet": "Chuỗi {streak} ngày rồi. Một tấm ảnh hôm nay là đủ.",
   "@reminderBanner_streak_quiet": {
     "description": "Streak-at-risk reminder banner copy, quiet skin.",
     "placeholders": {
       "streak": {
         "type": "int"
-      },
-      "time": {
-        "type": "String"
       }
     }
   },
-  "reminderBanner_streak_squad": "Chuỗi {streak} ngày mở đến {time}. Cùng giữ nhịp nhé.",
+  "reminderBanner_streak_squad": "Chuỗi {streak} ngày cùng nhau. Góp một tấm hôm nay nhé.",
   "@reminderBanner_streak_squad": {
     "description": "Streak-at-risk reminder banner copy, squad skin.",
     "placeholders": {
       "streak": {
         "type": "int"
-      },
-      "time": {
-        "type": "String"
       }
     }
   },
-  "reminderBanner_streak_memory": "Cuộn phim còn mở đến {time}.",
+  "reminderBanner_streak_memory": "Thêm một khung hình cho cuộn phim hôm nay nhé.",
   "@reminderBanner_streak_memory": {
-    "description": "Streak-at-risk reminder banner copy, memory skin.",
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
+    "description": "Streak-at-risk reminder banner copy, memory skin."
   },
-  "reminderBanner_streak_couple": "Chuỗi {streak} ngày còn mở đến {time}.",
+  "reminderBanner_streak_couple": "Chuỗi {streak} ngày của hai đứa. Lưu một khoảnh khắc hôm nay nhé.",
   "@reminderBanner_streak_couple": {
     "description": "Streak-at-risk reminder banner copy, couple skin.",
     "placeholders": {
       "streak": {
         "type": "int"
-      },
-      "time": {
-        "type": "String"
       }
     }
   },
-  "reminderBanner_streak_flexer": "CHUỖI {streak}. CÒN ĐẾN {time}.",
+  "reminderBanner_streak_flexer": "CHUỖI {streak} NGÀY. MỘT TẤM CHO HÔM NAY.",
   "@reminderBanner_streak_flexer": {
     "description": "Streak-at-risk reminder banner copy, flexer skin.",
     "placeholders": {
       "streak": {
         "type": "int"
-      },
-      "time": {
-        "type": "String"
       }
     }
   },
-  "reminderBanner_streak_minimal": "CHUỖI {streak} · ĐẾN {time}.",
+  "reminderBanner_streak_minimal": "CHUỖI {streak} NGÀY · HÔM NAY.",
   "@reminderBanner_streak_minimal": {
     "description": "Streak-at-risk reminder banner copy, minimal skin.",
     "placeholders": {
       "streak": {
         "type": "int"
-      },
-      "time": {
-        "type": "String"
       }
     }
   },
