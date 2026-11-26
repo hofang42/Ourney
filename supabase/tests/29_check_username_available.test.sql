@@ -68,10 +68,10 @@ select ok(
 
 -- 2. Function metadata
 select ok(
-  (select p.prosecdef and p.provolatile = 's' and p.pronargs = 1 and 'search_path=""' = any(p.proconfig)
+  (select p.prosecdef and p.provolatile = 'v' and p.pronargs = 1 and 'search_path=""' = any(p.proconfig)
      from pg_proc p
     where p.oid = 'public.check_username_available(text)'::regprocedure),
-  'check_username_available(text) is STABLE, SECURITY DEFINER, search_path='''''
+  'check_username_available(text) is VOLATILE, SECURITY DEFINER, search_path='''''
 );
 
 -- 3. Calling as anon fails with permission denied (42501)
