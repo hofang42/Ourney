@@ -60,15 +60,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
   bool _posting = false;
   bool _limitAnnounced = false;
 
-  /// Minimal skin: posts by itself after 3 s unless touched (Figma).
-  static const int _countdownFrom = 3;
-
   /// The caption counter appears from this many code points.
   static const int _counterFrom = 120;
-  Timer? _countdown;
-  int _secondsLeft = _countdownFrom;
-  bool _countdownStarted = false;
-  bool _countdownStopped = false;
   late final DraftFiles _drafts;
   bool _metricError = false;
   CheckInOutcome? _outcome;
@@ -132,7 +125,6 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
       ..dispose();
     _metric.dispose();
     _extras.dispose();
-    _countdown?.cancel();
     // Left without posting (close, back gesture): the raw camera/picker
     // file is not needed. After a post the poster already cleaned up.
     final photo = _activePhoto;
@@ -160,36 +152,6 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
   }
 
   void _onCaptionFocus() => setState(() {});
-
-  void _stopCountdown() {
-    _countdown?.cancel();
-    _countdown = null;
-    if (!_countdownStopped) setState(() => _countdownStopped = true);
-  }
-
-  /// Starts the optional 3 s auto-post of the minimal skin. Skipped under
-  /// reduce motion (the screen then shows a static hint) and once touched.
-  void _startCountdown(Journey journey, CapturedPhoto photo) {
-    if (_countdownStarted) return;
-    _countdownStarted = true;
-    if (UiMotion.reduced(context)) return;
-    _countdown = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted || _posting) {
-        t.cancel();
-        return;
-      }
-      if (_secondsLeft <= 1) {
-        t.cancel();
-        _countdown = null;
-        setState(() => _secondsLeft = 0);
-        unawaited(_post(journey, photo));
-      } else {
-        unawaited(UiHaptics.selection());
-        setState(() => _secondsLeft -= 1);
-      }
-    });
-    setState(() {});
-  }
 
   /// Pops this screen and opens the share card on top of the camera:
   /// a `pushReplacement` would leave the capture screen's push future
@@ -236,7 +198,6 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
 
   Future<void> _repickFromLibrary(CapturedPhoto current) async {
     if (_posting) return;
-    _stopCountdown();
     final String? picked;
     try {
       picked = await ref.read(galleryPickerProvider).pickPhoto();
@@ -580,7 +541,6 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
         (unit.isEmpty || unit == 'km');
     final postLabel = switch (skin) {
       PersonaSkinId.memoryCollectors => l10n.checkin_postMemory,
-      PersonaSkinId.minimalistHabit => l10n.checkin_postMinimal,
       _ => l10n.checkin_post,
     };
     final captionSemantics = switch (skin) {
@@ -591,462 +551,248 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
     };
     final width = MediaQuery.sizeOf(context).width;
     final gutter = UiSpace.gutter(width);
-    if (skin == PersonaSkinId.minimalistHabit && !_countdownStopped) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _startCountdown(journey, photo);
-      });
-    }
 
-    return Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerDown: (_) {
-        if (_countdown != null) _stopCountdown();
-      },
-      child: UiScaffold(
-        key: const ValueKey('checkin-screen'),
-        padTop: 0,
-        padBottom: UiSpace.lg,
-        bottom: Center(
-          child: Padding(
-            // UiScaffold's pinned slot already clears the safe area; the
-            // bar hugs the keyboard while it is up.
-            padding: EdgeInsets.fromLTRB(
-              gutter,
-              UiSpace.sm,
-              gutter,
-              keyboardUp ? UiSpace.sm : UiSpace.lg,
-            ),
-            child: UiButton(
-              key: const ValueKey('checkin-post'),
-              label: _posting ? l10n.checkin_posting : postLabel,
-              glyph: const OurneyIcon(name: 'send', size: 20),
-              accent: style.accent,
-              onAccent: style.onAccent,
-              onPressed: _posting ? null : () => _post(journey, photo),
-            ),
+    return UiScaffold(
+      key: const ValueKey('checkin-screen'),
+      padTop: 0,
+      padBottom: UiSpace.lg,
+      bottom: Center(
+        child: Padding(
+          // UiScaffold's pinned slot already clears the safe area; the
+          // bar hugs the keyboard while it is up.
+          padding: EdgeInsets.fromLTRB(
+            gutter,
+            UiSpace.sm,
+            gutter,
+            keyboardUp ? UiSpace.sm : UiSpace.lg,
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // `.compose-header`: close | journey + privacy | (empty).
-            Row(
-              children: [
-                UiIconButton(
-                  key: const ValueKey('checkin-close'),
-                  glyph: const OurneyIcon(name: 'close', size: 20),
-                  label: AppLocalizations.of(context).common_close,
-                  onPressed: _posting ? null : _close,
-                ),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        journey.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: UiText.body(
-                          size: 13,
-                          weight: FontWeight.w700,
-                          height: 1.4,
-                          color: ui.ink,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      if (privacy == null)
-                        Text(
-                          l10n.checkin_privacyPending,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: UiText.body(
-                            size: 11,
-                            height: 1.4,
-                            weight: FontWeight.w500,
-                            color: ui.inkMuted,
-                          ),
-                        )
-                      else
-                        UiPrivacyTag(type: privacy.$1, label: privacy.$2),
-                    ],
-                  ),
-                ),
-                // Keeps the title centred (U21: the bottom Post button is the
-                // only Post action).
-                const SizedBox(width: UiSize.tap),
-              ],
-            ),
-            const SizedBox(height: UiSpace.sm),
-            // Photo + caption (Rank #1 Phase 1c): smoothly morphs between the
-            // 520dp preview above the caption and the 72x96 thumbnail beside
-            // the caption via AnimatedSize + AnimatedSwitcher while keeping
-            // the caption TextField mounted in a single permanent slot so
-            // focus and GlobalKey state never teleport or duplicate.
-            Align(
-              alignment: Alignment.topCenter,
-              child: Builder(
-                builder: (context) {
-                  final reduced = UiMotion.reduced(context);
-                  final previewSwitcher = AnimatedSwitcher(
-                    duration: UiMotion.fadeOf(context, UiMotion.medium),
-                    switchInCurve: reduced
-                        ? Curves.linear
-                        : UiCurves.easeOutStrong,
-                    switchOutCurve: reduced
-                        ? Curves.linear
-                        : UiCurves.easeOutStrong.flipped,
-                    transitionBuilder: (child, animation) => FadeTransition(
-                      opacity: animation,
-                      child: reduced
-                          ? child
-                          : SizeTransition(
-                              axis: Axis.vertical,
-                              alignment: Alignment.topCenter,
-                              sizeFactor: animation,
-                              child: child,
-                            ),
-                    ),
-                    child: typing
-                        ? const SizedBox.shrink(
-                            key: ValueKey('checkin-preview-collapsed'),
-                          )
-                        : Padding(
-                            key: const ValueKey('checkin-compose-idle'),
-                            padding: const EdgeInsets.only(
-                              bottom: UiSpace.lg,
-                            ),
-                            child: _PhotoPreview(
-                              photo: photo,
-                              onRetake: _posting
-                                  ? null
-                                  : photo.fromLibrary
-                                  ? () => _repickFromLibrary(photo)
-                                  : _close,
-                            ),
-                          ),
-                  );
-
-                  final thumbSwitcher = AnimatedSwitcher(
-                    duration: UiMotion.fadeOf(context, UiMotion.medium),
-                    switchInCurve: reduced
-                        ? Curves.linear
-                        : UiCurves.easeOutStrong,
-                    switchOutCurve: reduced
-                        ? Curves.linear
-                        : UiCurves.easeOutStrong.flipped,
-                    transitionBuilder: (child, animation) => FadeTransition(
-                      opacity: animation,
-                      child: reduced
-                          ? child
-                          : SizeTransition(
-                              axis: Axis.horizontal,
-                              alignment: AlignmentDirectional.topStart,
-                              sizeFactor: animation,
-                              child: child,
-                            ),
-                    ),
-                    child: typing
-                        ? Padding(
-                            key: const ValueKey(
-                              'checkin-compose-typing',
-                            ),
-                            padding: const EdgeInsetsDirectional.only(
-                              end: UiSpace.md,
-                            ),
-                            child: _PhotoThumb(
-                              photo: photo,
-                              onTap: () => FocusManager
-                                  .instance
-                                  .primaryFocus
-                                  ?.unfocus(),
-                            ),
-                          )
-                        : const SizedBox.shrink(
-                            key: ValueKey('checkin-thumb-collapsed'),
-                          ),
-                  );
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      KeyedSubtree(
-                        key: const ValueKey('checkin-preview-size'),
-                        child: previewSwitcher,
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          KeyedSubtree(
-                            key: const ValueKey('checkin-thumb-size'),
-                            child: thumbSwitcher,
-                          ),
-                          Expanded(
-                            child: _captionField(
-                              l10n,
-                              vi: vi,
-                              template: template,
-                              semanticsLabel: captionSemantics,
-                              count: count,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-            if (metricLabel != null) ...[
-              const SizedBox(height: UiSpace.lg),
-              KeyedSubtree(
-                key: _metricKey,
-                child: UiTextField(
-                  fieldKey: const ValueKey('checkin-metric'),
-                  label: metricLabel,
-                  hint: _lastMetricHint(l10n, vi, journey.id),
-                  controller: _metric,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
-                  ],
-                  onChanged: (_) {
-                    if (_metricError) setState(() => _metricError = false);
-                  },
-                  error: _metricError ? l10n.checkin_metricInvalid : null,
-                  helper: hideMetric ? l10n.checkin_metricPrivate : null,
-                  trailing: hideMetric
-                      ? OurneyIcon(
-                          name: 'lock',
-                          flat: true,
-                          size: 18,
-                          color: ui.inkMuted,
-                        )
-                      : null,
-                ),
-              ),
-            ],
-            KeyedSubtree(
-              key: _extrasKey,
-              child: PostExtrasSection(
-                skin: skin,
-                controller: _extras,
-                selfName: journey.coupleSelfName,
-                partnerName: journey.couplePartnerName,
-                ritual: journey.dna?['ritual'] as String?,
-                isRunning: isRun,
-                destination: journey.dna?['place'] as String?,
-                recentPlaces: recentPlaces,
-              ),
-            ),
-            if (partnerPrompt != null) ...[
-              const SizedBox(height: UiSpace.md),
-              partnerPrompt,
-            ],
-            if (skin == PersonaSkinId.minimalistHabit) ...[
-              const SizedBox(height: UiSpace.md),
-              _CountdownHint(
-                seconds: _secondsLeft,
-                active: _countdown != null,
-                reduced: UiMotion.reduced(context),
-              ),
-            ],
-          ],
+          child: UiButton(
+            key: const ValueKey('checkin-post'),
+            label: _posting ? l10n.checkin_posting : postLabel,
+            glyph: const OurneyIcon(name: 'send', size: 20),
+            accent: style.accent,
+            onAccent: style.onAccent,
+            onPressed: _posting ? null : () => _post(journey, photo),
+          ),
         ),
       ),
-    );
-  }
-}
-
-/// Minimal skin: the 3 s auto-post hint with a `RepaintBoundary`-isolated
-/// `CustomPaint` progress ring and rolling digit tick (static text under
-/// Reduce Motion).
-class _CountdownHint extends StatefulWidget {
-  const _CountdownHint({
-    required this.seconds,
-    required this.active,
-    required this.reduced,
-  });
-
-  final int seconds;
-  final bool active;
-  final bool reduced;
-
-  @override
-  State<_CountdownHint> createState() => _CountdownHintState();
-}
-
-class _CountdownHintState extends State<_CountdownHint>
-    with SingleTickerProviderStateMixin {
-  AnimationController? _ringCtrl;
-  CurvedAnimation? _ringCurved;
-
-  late double _fromProgress;
-  late double _toProgress;
-
-  static double _progressFor(int s) =>
-      (s / _CheckinScreenState._countdownFrom).clamp(0.0, 1.0);
-
-  CurvedAnimation _ensureRingAnimation() {
-    var curved = _ringCurved;
-    if (curved != null) return curved;
-    final ctrl = AnimationController(
-      vsync: this,
-      duration: UiMotion.medium,
-    );
-    _ringCtrl = ctrl;
-    curved = CurvedAnimation(
-      parent: ctrl,
-      curve: UiCurves.easeOutStrong,
-    );
-    _ringCurved = curved;
-    return curved;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    final initial = _progressFor(widget.seconds);
-    _fromProgress = initial;
-    _toProgress = initial;
-  }
-
-  @override
-  void didUpdateWidget(covariant _CountdownHint oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.seconds != oldWidget.seconds) {
-      _fromProgress = _progressFor(oldWidget.seconds);
-      _toProgress = _progressFor(widget.seconds);
-      if (widget.reduced || UiMotion.reduced(context)) {
-        _fromProgress = _toProgress;
-        _ringCtrl?.value = 1.0;
-      } else {
-        _ensureRingAnimation();
-        _ringCtrl!.forward(from: 0.0);
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _ringCurved?.dispose();
-    _ringCtrl?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = CheckinL10n.of(context);
-    final ui = context.ui;
-    final reduced = widget.reduced || UiMotion.reduced(context);
-    if (!widget.active) return const SizedBox.shrink();
-    return Semantics(
-      liveRegion: true,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (!reduced) ...[
-            RepaintBoundary(
-              key: const ValueKey('checkin-countdown-ring-boundary'),
-              child: SizedBox(
-                width: 68,
-                height: 68,
-                child: CustomPaint(
-                  key: const ValueKey('checkin-countdown-ring'),
-                  painter: _CountdownRingPainter(
-                    animation: _ringCurved ?? kAlwaysCompleteAnimation,
-                    fromProgress: _fromProgress,
-                    toProgress: _toProgress,
-                    trackColor: ui.border,
-                    progressColor: ui.accent,
-                  ),
-                  child: Center(
-                    child: KeyedSubtree(
-                      key: const ValueKey('checkin-countdown'),
-                      child: UiCountRoll(
-                        value: widget.seconds,
-                        duration: UiMotion.medium,
-                        curve: UiCurves.easeOutStrong,
-                        style: UiText.h2(color: ui.ink, size: 32),
+          // `.compose-header`: close | journey + privacy | (empty).
+          Row(
+            children: [
+              UiIconButton(
+                key: const ValueKey('checkin-close'),
+                glyph: const OurneyIcon(name: 'close', size: 20),
+                label: AppLocalizations.of(context).common_close,
+                onPressed: _posting ? null : _close,
+              ),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      journey.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: UiText.body(
+                        size: 13,
+                        weight: FontWeight.w700,
+                        height: 1.4,
+                        color: ui.ink,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 2),
+                    if (privacy == null)
+                      Text(
+                        l10n.checkin_privacyPending,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: UiText.body(
+                          size: 11,
+                          height: 1.4,
+                          weight: FontWeight.w500,
+                          color: ui.inkMuted,
+                        ),
+                      )
+                    else
+                      UiPrivacyTag(type: privacy.$1, label: privacy.$2),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: UiSpace.xs),
-          ],
-          Text(
-            reduced
-                ? l10n.checkin_extraCountdown(
-                    _CheckinScreenState._countdownFrom,
-                  )
-                : l10n.checkin_extraCountdownStop,
-            textAlign: TextAlign.center,
-            style: UiText.muted(color: ui.inkMuted, size: 13),
+              // Keeps the title centred (U21: the bottom Post button is the
+              // only Post action).
+              const SizedBox(width: UiSize.tap),
+            ],
           ),
+          const SizedBox(height: UiSpace.sm),
+          // Photo + caption (Rank #1 Phase 1c): smoothly morphs between the
+          // 520dp preview above the caption and the 72x96 thumbnail beside
+          // the caption via AnimatedSize + AnimatedSwitcher while keeping
+          // the caption TextField mounted in a single permanent slot so
+          // focus and GlobalKey state never teleport or duplicate.
+          Align(
+            alignment: Alignment.topCenter,
+            child: Builder(
+              builder: (context) {
+                final reduced = UiMotion.reduced(context);
+                final previewSwitcher = AnimatedSwitcher(
+                  duration: UiMotion.fadeOf(context, UiMotion.medium),
+                  switchInCurve: reduced
+                      ? Curves.linear
+                      : UiCurves.easeOutStrong,
+                  switchOutCurve: reduced
+                      ? Curves.linear
+                      : UiCurves.easeOutStrong.flipped,
+                  transitionBuilder: (child, animation) => FadeTransition(
+                    opacity: animation,
+                    child: reduced
+                        ? child
+                        : SizeTransition(
+                            axis: Axis.vertical,
+                            alignment: Alignment.topCenter,
+                            sizeFactor: animation,
+                            child: child,
+                          ),
+                  ),
+                  child: typing
+                      ? const SizedBox.shrink(
+                          key: ValueKey('checkin-preview-collapsed'),
+                        )
+                      : Padding(
+                          key: const ValueKey('checkin-compose-idle'),
+                          padding: const EdgeInsets.only(bottom: UiSpace.lg),
+                          child: _PhotoPreview(
+                            photo: photo,
+                            onRetake: _posting
+                                ? null
+                                : photo.fromLibrary
+                                ? () => _repickFromLibrary(photo)
+                                : _close,
+                          ),
+                        ),
+                );
+
+                final thumbSwitcher = AnimatedSwitcher(
+                  duration: UiMotion.fadeOf(context, UiMotion.medium),
+                  switchInCurve: reduced
+                      ? Curves.linear
+                      : UiCurves.easeOutStrong,
+                  switchOutCurve: reduced
+                      ? Curves.linear
+                      : UiCurves.easeOutStrong.flipped,
+                  transitionBuilder: (child, animation) => FadeTransition(
+                    opacity: animation,
+                    child: reduced
+                        ? child
+                        : SizeTransition(
+                            axis: Axis.horizontal,
+                            alignment: AlignmentDirectional.topStart,
+                            sizeFactor: animation,
+                            child: child,
+                          ),
+                  ),
+                  child: typing
+                      ? Padding(
+                          key: const ValueKey('checkin-compose-typing'),
+                          padding: const EdgeInsetsDirectional.only(
+                            end: UiSpace.md,
+                          ),
+                          child: _PhotoThumb(
+                            photo: photo,
+                            onTap: () =>
+                                FocusManager.instance.primaryFocus?.unfocus(),
+                          ),
+                        )
+                      : const SizedBox.shrink(
+                          key: ValueKey('checkin-thumb-collapsed'),
+                        ),
+                );
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    KeyedSubtree(
+                      key: const ValueKey('checkin-preview-size'),
+                      child: previewSwitcher,
+                    ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        KeyedSubtree(
+                          key: const ValueKey('checkin-thumb-size'),
+                          child: thumbSwitcher,
+                        ),
+                        Expanded(
+                          child: _captionField(
+                            l10n,
+                            vi: vi,
+                            template: template,
+                            semanticsLabel: captionSemantics,
+                            count: count,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          if (metricLabel != null) ...[
+            const SizedBox(height: UiSpace.lg),
+            KeyedSubtree(
+              key: _metricKey,
+              child: UiTextField(
+                fieldKey: const ValueKey('checkin-metric'),
+                label: metricLabel,
+                hint: _lastMetricHint(l10n, vi, journey.id),
+                controller: _metric,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
+                ],
+                onChanged: (_) {
+                  if (_metricError) setState(() => _metricError = false);
+                },
+                error: _metricError ? l10n.checkin_metricInvalid : null,
+                helper: hideMetric ? l10n.checkin_metricPrivate : null,
+                trailing: hideMetric
+                    ? OurneyIcon(
+                        name: 'lock',
+                        flat: true,
+                        size: 18,
+                        color: ui.inkMuted,
+                      )
+                    : null,
+              ),
+            ),
+          ],
+          KeyedSubtree(
+            key: _extrasKey,
+            child: PostExtrasSection(
+              skin: skin,
+              controller: _extras,
+              selfName: journey.coupleSelfName,
+              partnerName: journey.couplePartnerName,
+              ritual: journey.dna?['ritual'] as String?,
+              isRunning: isRun,
+              destination: journey.dna?['place'] as String?,
+              recentPlaces: recentPlaces,
+            ),
+          ),
+          if (partnerPrompt != null) ...[
+            const SizedBox(height: UiSpace.md),
+            partnerPrompt,
+          ],
         ],
       ),
     );
   }
-}
-
-class _CountdownRingPainter extends CustomPainter {
-  _CountdownRingPainter({
-    required this.animation,
-    required this.fromProgress,
-    required this.toProgress,
-    required this.trackColor,
-    required this.progressColor,
-  }) : _trackPaint = Paint()
-         ..color = trackColor
-         ..style = PaintingStyle.stroke
-         ..strokeWidth = _kStrokeWidth,
-       _arcPaint = Paint()
-         ..color = progressColor
-         ..style = PaintingStyle.stroke
-         ..strokeCap = StrokeCap.round
-         ..strokeWidth = _kStrokeWidth,
-       super(repaint: animation);
-
-  static const double _kStrokeWidth = 4.0;
-
-  final Animation<double> animation;
-  final double fromProgress;
-  final double toProgress;
-  final Color trackColor;
-  final Color progressColor;
-
-  final Paint _trackPaint;
-  final Paint _arcPaint;
-
-  double get currentProgress =>
-      fromProgress + (toProgress - fromProgress) * animation.value;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = (math.min(size.width, size.height) - _kStrokeWidth) / 2;
-    canvas.drawCircle(center, radius, _trackPaint);
-    final progress = currentProgress.clamp(0.0, 1.0);
-    if (progress > 0.0) {
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        -math.pi / 2,
-        2 * math.pi * progress,
-        false,
-        _arcPaint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_CountdownRingPainter oldDelegate) =>
-      oldDelegate.fromProgress != fromProgress ||
-      oldDelegate.toProgress != toProgress ||
-      oldDelegate.trackColor != trackColor ||
-      oldDelegate.progressColor != progressColor;
 }
 
 /// `.compose-photo`: 3:4 photo with 20dp corners, up to 55% of the height

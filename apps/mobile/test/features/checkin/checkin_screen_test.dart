@@ -14,6 +14,7 @@ import 'package:ourney/features/checkin/checkin_success.dart';
 import 'package:ourney/features/checkin/photo_compressor.dart';
 import 'package:ourney/features/checkin/routes.dart';
 import 'package:ourney/features/reminders/data/notification_gateway.dart';
+import 'package:ourney/features/reminders/data/reminder_settings.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -93,6 +94,35 @@ void main() {
   Future<void> finishSuccess(WidgetTester tester) async {
     await tester.pump(CheckinSuccessView.autoCloseDelay);
     await tester.pumpAndSettle();
+  }
+
+  for (final skin in PersonaSkinId.values) {
+    testWidgets('${skin.name} posts only after tapping Post', (tester) async {
+      journeys = FakeJourneyRepository(
+        journeys: [testJourney().copyWith(layout: skin)],
+      );
+      await pump(
+        tester,
+        prefsValues: {ReminderPrefs.permissionAsked: true},
+        overrides: [
+          notificationGatewayProvider.overrideWithValue(
+            FakeNotificationGateway(),
+          ),
+        ],
+      );
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      expect(compressor.sources, isEmpty);
+      expect(checkIns.submitted, isEmpty);
+
+      if (skin == PersonaSkinId.minimalistHabit) {
+        expect(find.text('Đăng'), findsOneWidget);
+      }
+      await tapPost(tester);
+      expect(checkIns.submitted, hasLength(1));
+      await finishSuccess(tester);
+    });
   }
 
   testWidgets('UX-03: post while audience stream is loading, then resolve it', (

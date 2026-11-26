@@ -158,12 +158,6 @@ abstract class CheckinL10n {
   /// **'Dán vào sổ'**
   String get checkin_postMemory;
 
-  /// No description provided for @checkin_postMinimal.
-  ///
-  /// In vi, this message translates to:
-  /// **'Đăng ngay'**
-  String get checkin_postMinimal;
-
   /// No description provided for @checkin_captionLabelMemory.
   ///
   /// In vi, this message translates to:
@@ -637,18 +631,6 @@ abstract class CheckinL10n {
   /// In vi, this message translates to:
   /// **'Xóa một số'**
   String get checkin_extraBackspace;
-
-  /// No description provided for @checkin_extraCountdown.
-  ///
-  /// In vi, this message translates to:
-  /// **'Tự đăng sau {seconds} giây'**
-  String checkin_extraCountdown(int seconds);
-
-  /// Post screen per-skin input.
-  ///
-  /// In vi, this message translates to:
-  /// **'Chạm bất kỳ đâu để dừng'**
-  String get checkin_extraCountdownStop;
 
   /// No description provided for @checkin_details.
   ///

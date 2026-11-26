@@ -10,7 +10,6 @@
   "checkin_metricPrivate": "Only you can see this number",
   "checkin_post": "Post",
   "checkin_postMemory": "Stick in the book",
-  "checkin_postMinimal": "Post now",
   "checkin_captionLabelMemory": "Write one line",
   "checkin_captionLabelFlexer": "How was today's run?",
   "checkin_posting": "Posting…",
@@ -142,15 +141,6 @@
   "checkin_extraKmHint": "e.g. 5.3",
   "checkin_extraKmInvalid": "Distance must be 0.1 to 500 km, one decimal",
   "checkin_extraBackspace": "Delete one digit",
-  "checkin_extraCountdown": "Posting in {seconds} s",
-  "@checkin_extraCountdown": {
-    "placeholders": {
-      "seconds": {
-        "type": "int"
-      }
-    }
-  },
-  "checkin_extraCountdownStop": "Tap anywhere to stop",
   "checkin_details": "Details",
   "checkin_captionLimitReached": "Limit reached: {max} characters",
   "@checkin_captionLimitReached": {

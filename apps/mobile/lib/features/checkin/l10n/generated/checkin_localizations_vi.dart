@@ -44,9 +44,6 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_postMemory => 'Dán vào sổ';
 
   @override
-  String get checkin_postMinimal => 'Đăng ngay';
-
-  @override
   String get checkin_captionLabelMemory => 'Ghi lại một dòng';
 
   @override
@@ -310,14 +307,6 @@ class CheckinL10nVi extends CheckinL10n {
 
   @override
   String get checkin_extraBackspace => 'Xóa một số';
-
-  @override
-  String checkin_extraCountdown(int seconds) {
-    return 'Tự đăng sau $seconds giây';
-  }
-
-  @override
-  String get checkin_extraCountdownStop => 'Chạm bất kỳ đâu để dừng';
 
   @override
   String get checkin_details => 'Chi tiết';
