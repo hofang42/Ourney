@@ -845,4 +845,103 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
     XCTAssertFalse(failedOutcome.succeeded)
     XCTAssertFalse(failedOutcome.didChange)
   }
+
+  func testMultiWeekClosedAppRolloverCapsDayNumberAndRollsTrailingSevenDays() throws {
+    let data = try XCTUnwrap(sampleJson.data(using: .utf8))
+    var snapshot = try JSONDecoder().decode(WidgetSnapshot.self, from: data)
+    // Open-ended journey without totalDays should not cap dayNumber.
+    let openJourney = WidgetJourneyItem(
+      id: "open-1",
+      title: "Open Habit",
+      timezone: "Asia/Ho_Chi_Minh",
+      utcOffsetMinutes: 420,
+      dayNumber: 28,
+      totalDays: nil,
+      currentStreak: 5,
+      bestStreak: 5,
+      checkedInToday: true,
+      midnightRolloverUtc: "2026-11-24T17:00:00.000Z",
+      weekStrip: snapshot.journeys[0].weekStrip
+    )
+    snapshot.journeys.append(openJourney)
+
+    // 10 midnights later: 2026-12-03T17:05:00.000Z == 2026-12-04 00:05 ICT (extraDays = 10).
+    let tenDaysLater = try XCTUnwrap(WidgetDateParser.parseISO8601("2026-12-03T17:05:00.000Z"))
+    let rolled = snapshot.evaluated(at: tenDaysLater)
+
+    // Fixed 30-day journey on Day 21 + 10 days must cap at 30 (F-35).
+    let runJourney = try XCTUnwrap(rolled.journeys.first(where: { $0.id == "8a10b220-run" }))
+    XCTAssertEqual(runJourney.dayNumber, 30)
+    XCTAssertEqual(runJourney.weekStrip.count, 7)
+    XCTAssertEqual(
+      runJourney.weekStrip.map(\.date),
+      [
+        "2026-11-28",
+        "2026-11-29",
+        "2026-11-30",
+        "2026-12-01",
+        "2026-12-02",
+        "2026-12-03",
+        "2026-12-04",
+      ]
+    )
+    XCTAssertEqual(
+      runJourney.weekStrip.map(\.state),
+      ["missed", "missed", "missed", "missed", "missed", "missed", "today"]
+    )
+    XCTAssertEqual(runJourney.weekStrip.last?.label, "HN")
+
+    // Fixed 30-day squad on Day 15 + 20 days also caps at 30 (F-35).
+    let twentyDaysLater = try XCTUnwrap(WidgetDateParser.parseISO8601("2026-12-13T17:05:00.000Z"))
+    let rolled20 = snapshot.evaluated(at: twentyDaysLater)
+    let cappedSquad = try XCTUnwrap(rolled20.squads.first)
+    XCTAssertEqual(cappedSquad.dayNumber, 30)
+
+    // Open-ended journey (totalDays == nil) advances uncapped: 28 + 10 = 38.
+    let rolledOpen = try XCTUnwrap(rolled.journeys.first(where: { $0.id == "open-1" }))
+    XCTAssertEqual(rolledOpen.dayNumber, 38)
+  }
+
+  func testLiveActivityDisplayTitleRedactionAndGentleStaticCopy() {
+    // F-06: Sensitive journeys (quiet / weightLoss / type-weight) always redact to "Ourney"
+    // on Dynamic Island Expanded and Lock Screen Banner even when redactTitleOnLockScreen is false.
+    XCTAssertEqual(
+      WidgetL10n.liveActivityDisplayTitle(
+        rawTitle: "Giảm 10kg sau sinh",
+        redactTitleOnLockScreen: false,
+        skinId: "quiet",
+        typeIcon: "type-weight",
+        locale: "vi"
+      ),
+      "Ourney"
+    )
+    // Explicit Lock Screen redaction toggle redacts non-sensitive journeys to "Ourney".
+    XCTAssertEqual(
+      WidgetL10n.liveActivityDisplayTitle(
+        rawTitle: "30-Day IELTS Study",
+        redactTitleOnLockScreen: true,
+        skinId: "squad",
+        typeIcon: "type-study",
+        locale: "en"
+      ),
+      "Ourney"
+    )
+    // Non-sensitive journey with toggle off displays the trimmed title.
+    XCTAssertEqual(
+      WidgetL10n.liveActivityDisplayTitle(
+        rawTitle: "  30-Day IELTS Study  ",
+        redactTitleOnLockScreen: false,
+        skinId: "squad",
+        typeIcon: "type-study",
+        locale: "en"
+      ),
+      "30-Day IELTS Study"
+    )
+
+    // F-17: Gentle static Live Activity status copy (no countdown numbers).
+    XCTAssertEqual(WidgetL10n.liveActivityOpenStatus(locale: "en"), "Still time for today")
+    XCTAssertEqual(WidgetL10n.liveActivityOpenStatus(locale: "vi"), "Vẫn kịp cho hôm nay")
+    XCTAssertEqual(WidgetL10n.liveActivityCompactStatus(locale: "en"), "Tonight")
+    XCTAssertEqual(WidgetL10n.liveActivityCompactStatus(locale: "vi"), "Tối nay")
+  }
 }

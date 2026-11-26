@@ -214,6 +214,29 @@ public enum WidgetL10n {
     "Ourney"
   }
 
+  public static func liveActivityDisplayTitle(
+    rawTitle: String,
+    redactTitleOnLockScreen: Bool,
+    skinId: String,
+    typeIcon: String,
+    locale: String
+  ) -> String {
+    let trimmed = rawTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+    let effectiveRedact = redactTitleOnLockScreen
+      || WidgetJourneyItem.isImplicitlySensitive(skinId: skinId, typeIcon: typeIcon)
+    return (effectiveRedact || trimmed.isEmpty)
+      ? lockScreenRedactedTitle(locale: locale)
+      : trimmed
+  }
+
+  public static func liveActivityOpenStatus(locale: String) -> String {
+    isEnglish(locale) ? "Still time for today" : "Vẫn kịp cho hôm nay"
+  }
+
+  public static func liveActivityCompactStatus(locale: String) -> String {
+    isEnglish(locale) ? "Tonight" : "Tối nay"
+  }
+
   public static func lockScreenRemaining(pending: Int, locale: String) -> String {
     let en = isEnglish(locale)
     if pending <= 0 {

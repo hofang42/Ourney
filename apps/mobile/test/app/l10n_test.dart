@@ -246,6 +246,78 @@ void main() {
           reason: '$relPath contains countdown/"left" widget copy',
         );
       }
+
+      // F-17 & F-06: native iOS Live Activity & Android Live Update views must
+      // never render ticking countdown timers (countsDown / setUsesChronometer /
+      // setChronometerCountDown) and Dynamic Island Expanded must use shared
+      // title redaction (liveActivityDisplayTitle) rather than relying solely
+      // on .privacySensitive().
+      final iosLiveActivity = File(
+        'ios/OurneyWidgets/Views/CheckInLiveActivity.swift',
+      ).readAsStringSync();
+      expect(
+        iosLiveActivity.contains('countsDown'),
+        isFalse,
+        reason: 'CheckInLiveActivity.swift must not use ticking countsDown timer',
+      );
+      expect(
+        iosLiveActivity.contains('timerInterval:'),
+        isFalse,
+        reason: 'CheckInLiveActivity.swift must not use timerInterval countdown',
+      );
+      expect(
+        iosLiveActivity.contains('.privacySensitive('),
+        isFalse,
+        reason:
+            'CheckInLiveActivity.swift must redact displayTitle directly to "Ourney" '
+            'instead of relying on .privacySensitive() which unredacts on Face ID',
+      );
+      expect(
+        RegExp(r'WidgetL10n\.liveActivityDisplayTitle\(')
+            .allMatches(iosLiveActivity)
+            .length,
+        greaterThanOrEqualTo(2),
+        reason:
+            'Both Dynamic Island Expanded and Lock Screen Banner must redact via '
+            'WidgetL10n.liveActivityDisplayTitle',
+      );
+
+      final androidLiveUpdate = File(
+        'android/app/src/main/kotlin/com/hofang42/ourney/widgets/CheckInLiveUpdateManager.kt',
+      ).readAsStringSync();
+      expect(
+        androidLiveUpdate.contains('setChronometerCountDown(true)'),
+        isFalse,
+        reason:
+            'CheckInLiveUpdateManager.kt must not enable countdown chronometer',
+      );
+      expect(
+        androidLiveUpdate.contains('setUsesChronometer(true)'),
+        isFalse,
+        reason: 'CheckInLiveUpdateManager.kt must not enable ticking chronometer',
+      );
+
+      // F-17: journeys ARBs must not contain "Xh left today" / "Còn X giờ" copy.
+      for (final locale in ['vi', 'en']) {
+        final journeysArb = readArb(
+          'lib/features/journeys/l10n/journeys_$locale.arb',
+        );
+        expect(journeysArb.containsKey('journeys_endsInHours'), isFalse);
+        expect(journeysArb.containsKey('journeys_endsSoon'), isFalse);
+        expect(journeysArb.containsKey('journeys_openToday'), isTrue);
+        for (final key in messageKeys(journeysArb)) {
+          final val = journeysArb[key];
+          if (val is! String) continue;
+          expect(
+            RegExp(
+              r'left today|Còn \{hours\} giờ|Còn chưa tới 1 giờ',
+              caseSensitive: false,
+            ).hasMatch(val),
+            isFalse,
+            reason: 'journeys_$locale.arb.$key contains countdown copy: "$val"',
+          );
+        }
+      }
     },
   );
 }

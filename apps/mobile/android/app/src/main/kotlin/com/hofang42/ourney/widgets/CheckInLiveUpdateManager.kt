@@ -23,10 +23,11 @@ import com.hofang42.ourney.R
  *   with per-journey segments, `setOngoing(true)`, `setRequestPromotedOngoing(true)`,
  *   and `setShortCriticalText(...)` (`<= 7` chars) for status-bar chip & lock-screen
  *   Live Update promotion.
- * - **Android 8.0–15 (`API 26–35`)**: Posts a silent ongoing countdown chronometer
- *   notification (`setUsesChronometer(true)`, `setChronometerCountDown(true)`).
+ * - **Android 8.0–15 (`API 26–35`)**: Posts a silent ongoing progress
+ *   notification without a countdown timer.
  * - **Privacy (`§7.1`)**: Uses `VISIBILITY_PRIVATE` + redacted `publicVersion` when
- *   `redactLockScreenTitles` is enabled. Never displays photos or weight/metrics.
+ *   `redactLockScreenTitles` is enabled. Never displays photos, weight/metrics, or
+ *   countdown timers.
  */
 object CheckInLiveUpdateManager {
 
@@ -269,10 +270,7 @@ object CheckInLiveUpdateManager {
             .setOngoing(true)
             .setSilent(true)
             .setOnlyAlertOnce(true)
-            .setUsesChronometer(true)
-            .setChronometerCountDown(true)
-            .setWhen(deadlineMs)
-            .setShowWhen(true)
+            .setShowWhen(false)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
 
@@ -283,10 +281,7 @@ object CheckInLiveUpdateManager {
             .setOngoing(true)
             .setSilent(true)
             .setOnlyAlertOnce(true)
-            .setUsesChronometer(true)
-            .setChronometerCountDown(true)
-            .setWhen(deadlineMs)
-            .setShowWhen(true)
+            .setShowWhen(false)
             .setTimeoutAfter(remainingMs)
             .setProgress(total, done, false)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
@@ -413,10 +408,7 @@ object CheckInLiveUpdateManager {
                 .setContentText(l10n.getString(R.string.widget_live_public_body))
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
-                .setUsesChronometer(true)
-                .setChronometerCountDown(true)
-                .setWhen(deadlineMs)
-                .setShowWhen(true)
+                .setShowWhen(false)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .build()
 
@@ -450,10 +442,7 @@ object CheckInLiveUpdateManager {
                 .addExtras(promotedExtras)
                 .setShortCriticalText(shortChipText)
                 .setOnlyAlertOnce(true)
-                .setUsesChronometer(true)
-                .setChronometerCountDown(true)
-                .setWhen(deadlineMs)
-                .setShowWhen(true)
+                .setShowWhen(false)
                 .setTimeoutAfter(remainingMs)
                 .setCategory(Notification.CATEGORY_PROGRESS)
                 .setVisibility(

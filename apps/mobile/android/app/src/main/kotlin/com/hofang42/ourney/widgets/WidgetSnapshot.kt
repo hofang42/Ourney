@@ -5,8 +5,11 @@ import org.json.JSONObject
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.util.Locale
 
 /**
  * Frozen contract (§4.3) representation of `snapshot_v1.json`.
@@ -41,8 +44,15 @@ data class WidgetSnapshot(
      *   on the next morning.
      */
     fun evaluateAt(nowEpochMs: Long): WidgetSnapshot {
-        val evaluatedJourneys = journeys.map { it.evaluateAt(nowEpochMs) }
-        val evaluatedSquads = squads.map { it.evaluateAt(nowEpochMs) }
+        val evaluatedJourneys = journeys.map { it.evaluateAt(nowEpochMs, locale) }
+        val evaluatedSquads = squads.map { squad ->
+            val matchingJourney = journeys.firstOrNull { it.id == squad.journeyId }
+            squad.evaluateAt(
+                nowEpochMs = nowEpochMs,
+                timezone = matchingJourney?.timezone,
+                utcOffsetMinutes = matchingJourney?.utcOffsetMinutes ?: 0,
+            )
+        }
         val evaluatedWindow = liveWindow?.takeIf { window ->
             val deadlineMs = parseIsoEpochMs(window.deadlineUtc)
             deadlineMs == null || nowEpochMs < deadlineMs
@@ -391,8 +401,11 @@ data class WidgetJourneyItem(
         val cueMs = WidgetSnapshot.parseIsoEpochMs(eveningCueAtUtc) ?: return false
         val midnightMs = WidgetSnapshot.parseIsoEpochMs(midnightRolloverUtc)
         if (midnightMs != null && nowEpochMs >= midnightMs) {
-            val daysPassed = ((nowEpochMs - midnightMs) / 86_400_000L) + 1L
-            return nowEpochMs >= (cueMs + daysPassed * 86_400_000L)
+            val zone = resolveZoneId(timezone, utcOffsetMinutes)
+            val daysPassed = extraDaysPassed(midnightMs, nowEpochMs, zone)
+            val shiftedCueUtc = shiftIsoUtcByDays(eveningCueAtUtc, daysPassed, zone)
+            val shiftedCueMs = WidgetSnapshot.parseIsoEpochMs(shiftedCueUtc) ?: return false
+            return nowEpochMs >= shiftedCueMs
         }
         return nowEpochMs >= cueMs
     }
@@ -408,30 +421,38 @@ data class WidgetJourneyItem(
         if (alertMs != null) {
             val midnightMs = WidgetSnapshot.parseIsoEpochMs(midnightRolloverUtc)
             if (midnightMs != null && nowEpochMs >= midnightMs) {
-                val daysPassed = ((nowEpochMs - midnightMs) / 86_400_000L) + 1L
-                return nowEpochMs >= (alertMs + daysPassed * 86_400_000L)
+                val zone = resolveZoneId(timezone, utcOffsetMinutes)
+                val daysPassed = extraDaysPassed(midnightMs, nowEpochMs, zone)
+                val shiftedAlertUtc = shiftIsoUtcByDays(streakAlertAtUtc, daysPassed, zone)
+                val shiftedAlertMs = WidgetSnapshot.parseIsoEpochMs(shiftedAlertUtc) ?: return false
+                return nowEpochMs >= shiftedAlertMs
             }
             return nowEpochMs >= alertMs
         }
         return atRisk
     }
 
-    fun evaluateAt(nowEpochMs: Long): WidgetJourneyItem {
+    fun evaluateAt(nowEpochMs: Long, locale: String? = null): WidgetJourneyItem {
         val midnightMs = WidgetSnapshot.parseIsoEpochMs(midnightRolloverUtc)
         if (midnightMs != null && nowEpochMs >= midnightMs) {
-            val daysPassed = ((nowEpochMs - midnightMs) / 86_400_000L).toInt() + 1
+            val zone = resolveZoneId(timezone, utcOffsetMinutes)
+            val daysPassed = extraDaysPassed(midnightMs, nowEpochMs, zone)
             val survivedFirstRollover = daysPassed == 1 && checkedInToday
             val newStreak = if (survivedFirstRollover) currentStreak else 0
             val newAtRisk = newStreak > 0
             val rawNewDay = dayNumber + daysPassed
             val cap = totalDays
             val newDayNumber = if (cap != null && cap > 0) minOf(rawNewDay, cap) else rawNewDay
-            val rolledStrip = rollWeekStrip(weekStrip, daysPassed, checkedInToday)
+            val rolledStrip = rollWeekStrip(weekStrip, daysPassed, checkedInToday, locale)
             return copy(
                 dayNumber = newDayNumber,
                 currentStreak = newStreak,
                 checkedInToday = false,
                 atRisk = newAtRisk,
+                eveningCueAtUtc = shiftIsoUtcByDays(eveningCueAtUtc, daysPassed, zone),
+                streakAlertAtUtc = shiftIsoUtcByDays(streakAlertAtUtc, daysPassed, zone),
+                midnightRolloverUtc = shiftIsoUtcByDays(midnightRolloverUtc, daysPassed, zone),
+                reminderAtUtc = shiftIsoUtcByDays(reminderAtUtc, daysPassed, zone),
                 weekStrip = rolledStrip,
             )
         }
@@ -447,16 +468,63 @@ data class WidgetJourneyItem(
     }
 
     companion object {
-        private fun rollWeekStrip(
+        private val VI_WEEK_LABELS = setOf("T2", "T3", "T4", "T5", "T6", "T7", "CN", "HN")
+
+        internal fun resolveZoneId(timezone: String?, utcOffsetMinutes: Int = 0): ZoneId {
+            val trimmed = timezone?.trim()
+            if (!trimmed.isNullOrEmpty() && (!trimmed.equals("UTC", ignoreCase = true) || utcOffsetMinutes == 0)) {
+                try {
+                    return ZoneId.of(trimmed)
+                } catch (_: Exception) {
+                }
+            }
+            return try {
+                ZoneOffset.ofTotalSeconds(utcOffsetMinutes * 60)
+            } catch (_: Exception) {
+                ZoneOffset.UTC
+            }
+        }
+
+        internal fun extraDaysPassed(midnightMs: Long, nowEpochMs: Long, zone: ZoneId): Int {
+            if (nowEpochMs < midnightMs) return 0
+            return try {
+                val midnightZdt = Instant.ofEpochMilli(midnightMs).atZone(zone)
+                val nowZdt = Instant.ofEpochMilli(nowEpochMs).atZone(zone)
+                val dayDiff = midnightZdt.until(nowZdt, ChronoUnit.DAYS).toInt()
+                maxOf(0, dayDiff) + 1
+            } catch (_: Exception) {
+                ((nowEpochMs - midnightMs) / 86_400_000L).toInt().coerceAtLeast(0) + 1
+            }
+        }
+
+        internal fun shiftIsoUtcByDays(iso: String?, days: Int, zone: ZoneId): String? {
+            if (iso.isNullOrBlank() || days <= 0) return iso
+            return try {
+                val zdt = Instant.parse(iso.trim()).atZone(zone).plusDays(days.toLong())
+                DateTimeFormatter.ISO_INSTANT.format(zdt.toInstant())
+            } catch (_: Exception) {
+                iso
+            }
+        }
+
+        internal fun rollWeekStrip(
             strip: List<WidgetWeekDay>,
             daysPassed: Int,
             wasCheckedInBeforeMidnight: Boolean,
+            locale: String? = null,
         ): List<WidgetWeekDay> {
             if (strip.isEmpty() || daysPassed <= 0) return strip
-            val isViStrip = strip.any {
-                it.label == "HN" || it.label == "CN" || (it.label.length == 2 && it.label.startsWith("T"))
+            val hasExplicitEnLabel = strip.any {
+                it.label == "TD" || it.label.equals("Today", ignoreCase = true)
             }
-            val todayLabel = strip.last().label.ifBlank { if (isViStrip) "HN" else "TD" }
+            val hasExplicitViLabel = strip.any { it.label in VI_WEEK_LABELS }
+            val isViStrip = when {
+                hasExplicitEnLabel && !hasExplicitViLabel -> false
+                hasExplicitViLabel && !hasExplicitEnLabel -> true
+                !locale.isNullOrBlank() -> !locale.trim().lowercase(Locale.ROOT).startsWith("en")
+                else -> hasExplicitViLabel
+            }
+            val todayLabel = if (isViStrip) "HN" else "TD"
 
             val finalized = strip.mapIndexed { index, item ->
                 val parsedDate = parseLocalDate(item.date)
@@ -537,13 +605,13 @@ data class WidgetJourneyItem(
                 }
             } else {
                 when (dayOfWeek) {
-                    DayOfWeek.MONDAY -> "Mon"
-                    DayOfWeek.TUESDAY -> "Tue"
-                    DayOfWeek.WEDNESDAY -> "Wed"
-                    DayOfWeek.THURSDAY -> "Thu"
-                    DayOfWeek.FRIDAY -> "Fri"
-                    DayOfWeek.SATURDAY -> "Sat"
-                    DayOfWeek.SUNDAY -> "Sun"
+                    DayOfWeek.MONDAY -> "M"
+                    DayOfWeek.TUESDAY -> "T"
+                    DayOfWeek.WEDNESDAY -> "W"
+                    DayOfWeek.THURSDAY -> "T"
+                    DayOfWeek.FRIDAY -> "F"
+                    DayOfWeek.SATURDAY -> "S"
+                    DayOfWeek.SUNDAY -> "S"
                 }
             }
         }
@@ -636,10 +704,15 @@ data class WidgetSquadItem(
             )
         }
 
-    fun evaluateAt(nowEpochMs: Long): WidgetSquadItem {
+    fun evaluateAt(
+        nowEpochMs: Long,
+        timezone: String? = null,
+        utcOffsetMinutes: Int = 0,
+    ): WidgetSquadItem {
         val midnightMs = WidgetSnapshot.parseIsoEpochMs(midnightRolloverUtc)
         if (midnightMs != null && nowEpochMs >= midnightMs) {
-            val daysPassed = ((nowEpochMs - midnightMs) / 86_400_000L).toInt() + 1
+            val zone = WidgetJourneyItem.resolveZoneId(timezone, utcOffsetMinutes)
+            val daysPassed = WidgetJourneyItem.extraDaysPassed(midnightMs, nowEpochMs, zone)
             val rawNewDay = dayNumber + daysPassed
             val cap = totalDays
             val newDayNumber = if (cap != null && cap > 0) minOf(rawNewDay, cap) else rawNewDay
@@ -647,6 +720,7 @@ data class WidgetSquadItem(
                 dayNumber = newDayNumber,
                 doneCount = 0,
                 meCheckedInToday = false,
+                midnightRolloverUtc = WidgetJourneyItem.shiftIsoUtcByDays(midnightRolloverUtc, daysPassed, zone),
                 members = members.map { member ->
                     member.copy(
                         checkedInToday = false,
