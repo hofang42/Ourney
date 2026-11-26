@@ -1,59 +1,71 @@
-import AppIntents
 import Foundation
 import WidgetKit
 import XCTest
 @testable import Runner
 
 final class WidgetTimelineProviderTests: XCTestCase {
-  func testStaticPreviewCompletesWithFixtureWithinFiveSeconds() {
-    let delivered = expectation(description: "static preview")
+  func testStaticGallerySnapshotsReturnFixturesWithinFiveSeconds() {
+    let delivered = expectation(description: "static gallery snapshots")
+    let kinds = [
+      OurneyWidgetKind.today, OurneyWidgetKind.streak, OurneyWidgetKind.squad, OurneyWidgetKind.lockScreen,
+    ]
+    delivered.expectedFulfillmentCount = kinds.count
     DispatchQueue.global().async {
-      OurneyTimelineProvider(kind: OurneyWidgetKind.todayBasic).getSnapshot(isPreview: true) { entry in
-        XCTAssertTrue(entry.isPreview)
-        XCTAssertNotNil(entry.snapshot)
-        delivered.fulfill()
+      for kind in kinds {
+        OurneyTimelineProvider(kind: kind, rootDirectory: { nil }).getSnapshot(isPreview: true) { entry in
+          XCTAssertTrue(entry.isPreview)
+          XCTAssertFalse(entry.snapshot?.journeys.isEmpty ?? true)
+          XCTAssertFalse(entry.snapshot?.squads.isEmpty ?? true)
+          delivered.fulfill()
+        }
       }
     }
     wait(for: [delivered], timeout: 5)
   }
 
-  func testStaticTimelineCompletesWithEntryWithinFiveSeconds() {
-    let delivered = expectation(description: "static timeline")
+  func testStaticLiveSnapshotAndTimelineReadTheSharedStoreWithinFiveSeconds() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    try WidgetSnapshotStore.ensureDirectoryPrepared(root)
+
+    let liveTitle = "Synced journey title"
+    var saved = WidgetPreviewFixtures.sampleTodaySnapshot(locale: "vi")
+    saved.journeys[0].title = liveTitle
+    try JSONEncoder().encode(saved).write(to: root.appendingPathComponent(OurneyWidgetConstants.snapshotFileName))
+    let selectedId = saved.journeys[2].id
+    XCTAssertTrue(WidgetSnapshotStore.saveState(
+      WidgetInteractiveState(selectedTodayJourneyId: selectedId),
+      rootDirectory: root
+    ))
+
+    let snapshotDelivered = expectation(description: "live snapshot")
+    let timelineDelivered = expectation(description: "live timeline")
     DispatchQueue.global().async {
-      OurneyTimelineProvider(kind: OurneyWidgetKind.todayBasic).getTimeline { timeline in
-        XCTAssertFalse(timeline.entries.isEmpty)
-        delivered.fulfill()
+      let provider = OurneyTimelineProvider(kind: OurneyWidgetKind.today, rootDirectory: { root })
+      provider.getSnapshot(isPreview: false) { entry in
+        XCTAssertFalse(entry.isPreview)
+        XCTAssertEqual(entry.snapshot?.journeys.first?.title, liveTitle)
+        XCTAssertEqual(entry.state.selectedTodayJourneyId, selectedId)
+        XCTAssertTrue(entry.appGroupAvailable)
+        snapshotDelivered.fulfill()
+      }
+      provider.getTimeline { timeline in
+        XCTAssertEqual(timeline.entries.first?.snapshot?.journeys.first?.title, liveTitle)
+        XCTAssertEqual(timeline.entries.first?.state.selectedTodayJourneyId, selectedId)
+        timelineDelivered.fulfill()
       }
     }
-    wait(for: [delivered], timeout: 5)
+    wait(for: [snapshotDelivered, timelineDelivered], timeout: 5)
   }
 
-  func testAppIntentPreviewReturnsFixtureWithinFiveSeconds() throws {
-    guard #available(iOS 17.0, *) else { throw XCTSkip("AppIntent widgets require iOS 17.") }
-    let delivered = expectation(description: "AppIntent preview")
-    let task = Task.detached {
-      let provider = OurneyAppIntentTimelineProvider<TestWidgetConfigurationIntent>(kind: OurneyWidgetKind.today)
-      let entry = provider.snapshot(for: TestWidgetConfigurationIntent(), isPreview: true)
-      XCTAssertTrue(entry.isPreview)
-      XCTAssertNotNil(entry.snapshot)
-      XCTAssertNil(entry.pinnedId)
+  func testStaticTimelineShipsFallbackWhenAppGroupIsUnavailable() {
+    let delivered = expectation(description: "unavailable timeline")
+    OurneyTimelineProvider(kind: OurneyWidgetKind.streak, rootDirectory: { nil }).getTimeline { timeline in
+      XCTAssertEqual(timeline.entries.count, 1)
+      XCTAssertEqual(timeline.entries.first?.appGroupAvailable, false)
+      XCTAssertNil(timeline.entries.first?.snapshot)
       delivered.fulfill()
     }
-    defer { task.cancel() }
-    wait(for: [delivered], timeout: 5)
-  }
-
-  func testAppIntentTimelineReturnsPinnedEntryWithinFiveSeconds() throws {
-    guard #available(iOS 17.0, *) else { throw XCTSkip("AppIntent widgets require iOS 17.") }
-    let delivered = expectation(description: "AppIntent timeline")
-    let task = Task.detached {
-      let provider = OurneyAppIntentTimelineProvider<TestWidgetConfigurationIntent>(kind: OurneyWidgetKind.today)
-      let intent = TestWidgetConfigurationIntent()
-      let timeline = provider.timeline(for: intent)
-      XCTAssertEqual(timeline.entries.first?.pinnedId, intent.pinnedEntityId)
-      delivered.fulfill()
-    }
-    defer { task.cancel() }
     wait(for: [delivered], timeout: 5)
   }
 
@@ -61,11 +73,11 @@ final class WidgetTimelineProviderTests: XCTestCase {
     let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
     defer { try? FileManager.default.removeItem(at: root) }
 
-    WidgetDiagnostics.recordSynchronously("test snapshot enter", rootDirectory: { root })
+    WidgetDiagnostics.record("test snapshot ready", rootDirectory: root)
 
     let recent = WidgetDiagnostics.recentLines(rootDirectory: root)
     XCTAssertEqual(recent.count, 1)
-    XCTAssertTrue(recent.first?.hasSuffix("test snapshot enter") == true)
+    XCTAssertTrue(recent.first?.hasSuffix("test snapshot ready") == true)
   }
 
   func testDiagnosticsBoundStorageAndReturnLatestTwentyLines() throws {
@@ -88,10 +100,4 @@ final class WidgetTimelineProviderTests: XCTestCase {
     })
     XCTAssertEqual(WidgetDiagnostics.recentLines(rootDirectory: nil), [])
   }
-}
-
-@available(iOS 17.0, *)
-struct TestWidgetConfigurationIntent: WidgetConfigurationIntent, OurneyPinningConfigurationIntent {
-  static var title: LocalizedStringResource = "Test Widget Configuration"
-  var pinnedEntityId: String? { "test-pin" }
 }

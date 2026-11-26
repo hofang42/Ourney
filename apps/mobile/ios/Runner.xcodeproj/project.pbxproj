@@ -39,7 +39,6 @@
 		7D0B002F2F10000100000001 /* LockScreenWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B000C2F10000100000001 /* LockScreenWidget.swift */; };
 		7D0B00302F10000100000001 /* CheckInLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B000D2F10000100000001 /* CheckInLiveActivity.swift */; };
 		7D0B00312F10000100000001 /* WidgetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B000E2F10000100000001 /* WidgetIntents.swift */; };
-		7D0B004E2F10000100000001 /* WidgetConfigIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B001C2F10000100000001 /* WidgetConfigIntents.swift */; };
 		7D0B00322F10000100000001 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D0B00182F10000100000001 /* WidgetKit.framework */; };
 		7D0B00332F10000100000001 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D0B00192F10000100000001 /* SwiftUI.framework */; };
 		7D0B00342F10000100000001 /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D0B001A2F10000100000001 /* ActivityKit.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
@@ -58,7 +57,6 @@
 		7D0B00672F10000100000001 /* WidgetTimelineProviders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B006A2F10000100000001 /* WidgetTimelineProviders.swift */; };
 		7D0B00692F10000100000001 /* WidgetTimelineProviders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B006A2F10000100000001 /* WidgetTimelineProviders.swift */; };
 		7D0B006B2F10000100000001 /* WidgetTimelineProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B006C2F10000100000001 /* WidgetTimelineProviderTests.swift */; };
-		7D0B006D2F10000100000001 /* HelloWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B006E2F10000100000001 /* HelloWidget.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -138,7 +136,6 @@
 		7D0B000C2F10000100000001 /* LockScreenWidget.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Views/LockScreenWidget.swift; sourceTree = "<group>"; };
 		7D0B000D2F10000100000001 /* CheckInLiveActivity.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Views/CheckInLiveActivity.swift; sourceTree = "<group>"; };
 		7D0B000E2F10000100000001 /* WidgetIntents.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Intents/WidgetIntents.swift; sourceTree = "<group>"; };
-		7D0B001C2F10000100000001 /* WidgetConfigIntents.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Intents/WidgetConfigIntents.swift; sourceTree = "<group>"; };
 		7D0B000F2F10000100000001 /* Localizable.xcstrings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		7D0B00102F10000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7D0B00112F10000100000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -157,7 +154,6 @@
 		7D0B00682F10000100000001 /* WidgetDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDiagnostics.swift; sourceTree = "<group>"; };
 		7D0B006A2F10000100000001 /* WidgetTimelineProviders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetTimelineProviders.swift; sourceTree = "<group>"; };
 		7D0B006C2F10000100000001 /* WidgetTimelineProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetTimelineProviderTests.swift; sourceTree = "<group>"; };
-		7D0B006E2F10000100000001 /* HelloWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/HelloWidget.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -216,13 +212,11 @@
 				7D0B00072F10000100000001 /* OurneyWidgetIcons.swift */,
 				7D0B00082F10000100000001 /* WidgetL10n.swift */,
 				7D0B00092F10000100000001 /* TodayWidget.swift */,
-				7D0B006E2F10000100000001 /* HelloWidget.swift */,
 				7D0B000A2F10000100000001 /* StreakWidget.swift */,
 				7D0B000B2F10000100000001 /* SquadWidget.swift */,
 				7D0B000C2F10000100000001 /* LockScreenWidget.swift */,
 				7D0B000D2F10000100000001 /* CheckInLiveActivity.swift */,
 				7D0B000E2F10000100000001 /* WidgetIntents.swift */,
-				7D0B001C2F10000100000001 /* WidgetConfigIntents.swift */,
 				7D0B000F2F10000100000001 /* Localizable.xcstrings */,
 				7D0B00102F10000100000001 /* Assets.xcassets */,
 				7D0B00112F10000100000001 /* PrivacyInfo.xcprivacy */,
@@ -506,13 +500,11 @@
 				7D0B002A2F10000100000001 /* OurneyWidgetIcons.swift in Sources */,
 				7D0B002B2F10000100000001 /* WidgetL10n.swift in Sources */,
 				7D0B002C2F10000100000001 /* TodayWidget.swift in Sources */,
-				7D0B006D2F10000100000001 /* HelloWidget.swift in Sources */,
 				7D0B002D2F10000100000001 /* StreakWidget.swift in Sources */,
 				7D0B002E2F10000100000001 /* SquadWidget.swift in Sources */,
 				7D0B002F2F10000100000001 /* LockScreenWidget.swift in Sources */,
 				7D0B00302F10000100000001 /* CheckInLiveActivity.swift in Sources */,
 				7D0B00312F10000100000001 /* WidgetIntents.swift in Sources */,
-				7D0B004E2F10000100000001 /* WidgetConfigIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

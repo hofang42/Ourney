@@ -21,28 +21,13 @@ public struct TodayWidget: Widget {
   }
 }
 
-struct TodayBasicWidget: Widget {
-  let kind = OurneyWidgetKind.todayBasic
-
-  var body: some WidgetConfiguration {
-    StaticConfiguration(kind: kind, provider: OurneyTimelineProvider(kind: kind)) { entry in
-      TodayWidgetEntryView(entry: entry, allowsCycling: false)
-    }
-    .configurationDisplayName(WidgetL10n.tr("widget.today.basic.gallery.title"))
-    .description(WidgetL10n.tr("widget.today.basic.gallery.desc"))
-    .supportedFamilies([.systemSmall, .systemMedium])
-  }
-}
-
 public struct TodayWidgetEntryView: View {
   @Environment(\.widgetFamily) private var family
   @Environment(\.colorScheme) private var colorScheme
   public let entry: OurneyWidgetEntry
-  private let allowsCycling: Bool
 
-  public init(entry: OurneyWidgetEntry, allowsCycling: Bool = true) {
+  public init(entry: OurneyWidgetEntry) {
     self.entry = entry
-    self.allowsCycling = allowsCycling
   }
 
   public var body: some View {
@@ -51,7 +36,6 @@ public struct TodayWidgetEntryView: View {
     let themeMode = snapshot?.themeMode ?? "system"
     let cardState = WidgetSnapshot.resolveTodayCardState(
       snapshot: snapshot,
-      pinnedId: entry.pinnedId,
       state: entry.state,
       appGroupAvailable: entry.appGroupAvailable
     )
@@ -59,7 +43,6 @@ public struct TodayWidgetEntryView: View {
       if case .ready(let journey) = cardState { return journey }
       return nil
     }()
-    let canCycle = allowsCycling && !(snapshot?.isTodayJourneyPinned(entry.pinnedId) ?? false)
     let theme = OurneyWidgetTheme.resolve(
       skinId: featured?.skinId,
       colorVariant: featured?.colorVariant ?? 0,
@@ -92,7 +75,6 @@ public struct TodayWidgetEntryView: View {
               snapshot: snap,
               journey: journey,
               entryDate: entry.date,
-              allowsCycling: canCycle,
               theme: theme
             )
           case .systemLarge:
@@ -100,7 +82,6 @@ public struct TodayWidgetEntryView: View {
               snapshot: snap,
               journey: journey,
               entryDate: entry.date,
-              allowsCycling: canCycle,
               theme: theme
             )
           default:
@@ -108,7 +89,6 @@ public struct TodayWidgetEntryView: View {
               snapshot: snap,
               journey: journey,
               entryDate: entry.date,
-              allowsCycling: canCycle,
               theme: theme
             )
           }
@@ -162,7 +142,6 @@ private struct TodaySmallView: View {
   let snapshot: WidgetSnapshot
   let journey: WidgetJourneyItem
   let entryDate: Date
-  let allowsCycling: Bool
   let theme: OurneyWidgetTheme
 
   var body: some View {
@@ -170,7 +149,7 @@ private struct TodaySmallView: View {
     let phase = journey.phase(at: entryDate)
     let pendingList = snapshot.journeys.filter { !$0.checkedInToday }
     let pendingIndex = (pendingList.firstIndex(where: { $0.id == journey.id }) ?? 0) + 1
-    let showCycleControl = allowsCycling && pendingList.count >= 2 && !journey.checkedInToday
+    let showCycleControl = pendingList.count >= 2 && !journey.checkedInToday
     let destination = journey.checkedInToday
       ? OurneyDeepLinks.journey(id: journey.id)
       : OurneyDeepLinks.capture(journeyId: journey.id)
@@ -326,7 +305,6 @@ private struct TodayMediumView: View {
   let snapshot: WidgetSnapshot
   let journey: WidgetJourneyItem
   let entryDate: Date
-  let allowsCycling: Bool
   let theme: OurneyWidgetTheme
 
   var body: some View {
@@ -351,7 +329,7 @@ private struct TodayMediumView: View {
 
           Spacer(minLength: 2)
 
-          if allowsCycling && pendingList.count >= 2 && !journey.checkedInToday {
+          if pendingList.count >= 2 && !journey.checkedInToday {
             TodayCycleJourneyButton(
               currentIndex: pendingIndex,
               totalPending: pendingList.count,
@@ -482,7 +460,6 @@ private struct TodayLargeView: View {
   let snapshot: WidgetSnapshot
   let journey: WidgetJourneyItem
   let entryDate: Date
-  let allowsCycling: Bool
   let theme: OurneyWidgetTheme
 
   var body: some View {
@@ -511,7 +488,7 @@ private struct TodayLargeView: View {
 
         Spacer()
 
-        if allowsCycling && pendingList.count >= 2 && !journey.checkedInToday {
+        if pendingList.count >= 2 && !journey.checkedInToday {
           TodayCycleJourneyButton(
             currentIndex: pendingIndex,
             totalPending: pendingList.count,

@@ -164,17 +164,6 @@ class WidgetsL10nVi extends WidgetsL10n {
       'Hiện khung giờ chụp trên thanh trạng thái và Màn hình khóa từ 30 phút trước giờ nhắc (hoặc từ 18:00 khi đang có chuỗi) và tự tắt ngay khi bạn chụp xong.';
 
   @override
-  String get widgets_secDefaultJourney => 'hành trình ưu tiên trên tiện ích';
-
-  @override
-  String get widgets_defaultJourneyAuto =>
-      'Tự động (ưu tiên hành trình chưa chụp hôm nay)';
-
-  @override
-  String get widgets_defaultJourneyAutoSub =>
-      'Áp dụng cho tiện ích ở chế độ Tự động. Nhấn giữ tiện ích trên Màn hình chính để chọn riêng từng hành trình.';
-
-  @override
   String get widgets_secSetup => 'cách thêm ra màn hình chính';
 
   @override

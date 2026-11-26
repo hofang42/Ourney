@@ -58,24 +58,13 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
     final photoMode = ref.watch(widgetPhotoModeProvider);
     final redactTitles = ref.watch(redactLockScreenTitlesProvider);
     final liveEnabled = ref.watch(liveActivityEnabledProvider);
-    final defaultJourneyId = ref.watch(defaultWidgetJourneyIdProvider);
     final journeysAsync = ref.watch(journeysListProvider);
     final activeJourneys = [
       for (final j in journeysAsync.asData?.value ?? const <Journey>[])
         if (j.status == JourneyStatus.active) j,
     ];
 
-    Journey? featuredJourney;
-    if (defaultJourneyId != null) {
-      for (final j in activeJourneys) {
-        if (j.id == defaultJourneyId) {
-          featuredJourney = j;
-          break;
-        }
-      }
-    }
-    featuredJourney ??= activeJourneys.firstOrNull;
-
+    final featuredJourney = activeJourneys.firstOrNull;
     Journey? featuredSquadJourney;
     if (featuredJourney != null && featuredJourney.kind == JourneyKind.group) {
       featuredSquadJourney = featuredJourney;
@@ -284,57 +273,6 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
               },
             ),
           ),
-          if (activeJourneys.isNotEmpty) ...[
-            const SizedBox(height: UiSpace.xl),
-            UiListHeading(title: l10n.widgets_secDefaultJourney),
-            const SizedBox(height: UiSpace.xs),
-            UiCard(
-              radius: UiRadius.card,
-              shadowOffset: 0,
-              padding: const EdgeInsets.symmetric(horizontal: UiSpace.md),
-              child: Column(
-                children: [
-                  _DefaultJourneyOptionRow(
-                    rowKey: const ValueKey('widgets-default-journey-auto'),
-                    title: l10n.widgets_defaultJourneyAuto,
-                    subtitle: l10n.widgets_defaultJourneyAutoSub,
-                    leading: const OurneyIcon(name: 'sparkle', size: 22),
-                    selected: defaultJourneyId == null,
-                    divider: true,
-                    onTap: () {
-                      OurneyHaptics.selection();
-                      unawaited(
-                        ref
-                            .read(defaultWidgetJourneyIdProvider.notifier)
-                            .set(null),
-                      );
-                    },
-                  ),
-                  for (var i = 0; i < activeJourneys.length; i++)
-                    _DefaultJourneyOptionRow(
-                      rowKey: ValueKey(
-                        'widgets-default-journey-${activeJourneys[i].id}',
-                      ),
-                      title: activeJourneys[i].title,
-                      leading: UiTypeBadge(
-                        type: journeyTypeId(activeJourneys[i]),
-                        size: 32,
-                      ),
-                      selected: defaultJourneyId == activeJourneys[i].id,
-                      divider: i < activeJourneys.length - 1,
-                      onTap: () {
-                        OurneyHaptics.selection();
-                        unawaited(
-                          ref
-                              .read(defaultWidgetJourneyIdProvider.notifier)
-                              .set(activeJourneys[i].id),
-                        );
-                      },
-                    ),
-                ],
-              ),
-            ),
-          ],
           const SizedBox(height: UiSpace.xl),
           UiListHeading(title: l10n.widgets_secSetup),
           const SizedBox(height: UiSpace.xs),
@@ -465,55 +403,6 @@ class _WidgetDiagnosticsCardState
             ),
         ],
       ),
-    );
-  }
-}
-
-class _DefaultJourneyOptionRow extends StatelessWidget {
-  const _DefaultJourneyOptionRow({
-    required this.rowKey,
-    required this.title,
-    required this.leading,
-    required this.selected,
-    required this.divider,
-    required this.onTap,
-    this.subtitle,
-  });
-
-  final Key rowKey;
-  final String title;
-  final String? subtitle;
-  final Widget leading;
-  final bool selected;
-  final bool divider;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    return UiRow(
-      key: rowKey,
-      leading: leading,
-      title: title,
-      subtitle: subtitle == null
-          ? null
-          : Text(
-              subtitle!,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: UiText.body(size: 12, height: 1.4, color: ui.inkMuted),
-            ),
-      selected: selected,
-      inMutuallyExclusiveGroup: true,
-      showChevron: false,
-      divider: divider,
-      trailing: OurneyIcon(
-        name: selected ? 'radio-on' : 'radio-off',
-        size: 20,
-        flat: !selected,
-        color: selected ? ui.brand : ui.inkMuted,
-      ),
-      onPressed: onTap,
     );
   }
 }

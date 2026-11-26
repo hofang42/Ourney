@@ -2,61 +2,25 @@ import Foundation
 import OSLog
 
 /// The extension writes fixed event names and the resolved App Group identifier.
-/// Runner reads the atomic file. Callback entry and launch writes finish before returning.
+/// Runner reads the atomic file. Events are saved before the extension returns.
 enum WidgetDiagnostics {
   private static let fileName = "widget-diagnostics.log"
   private static let capacity = 48
   private static let writer = DispatchQueue(label: "com.hofang42.ourney.widgets.diagnostics")
   private static let logger = Logger(subsystem: "com.hofang42.ourney.widgets", category: "provider")
 
-  static func trace<T>(_ operation: String, _ body: () -> T) -> T {
-    logger.info("\(operation, privacy: .public) enter")
-    let timestamp = Date()
-    writer.async {
-      let identifier = WidgetAppGroup.current?.identifier ?? "nil"
-      logger.info("\(operation, privacy: .public) appGroup=\(identifier, privacy: .public)")
-      append(
-        "\(operation) enter appGroup=\(identifier)",
-        at: timestamp,
-        rootDirectory: WidgetSnapshotStore.sharedRootDirectory()
-      )
-    }
-    defer { record("\(operation) exit") }
-    return body()
-  }
-
-  static func record(_ event: String) {
+  static func record(_ event: String, rootDirectory: URL?) {
     // Unified logging can still explain a missing ring file if the extension has no container.
-    logger.info("\(event, privacy: .public)")
-    let timestamp = Date()
-    writer.async {
-      append(event, at: timestamp, rootDirectory: WidgetSnapshotStore.sharedRootDirectory())
-    }
-  }
-
-  static func traceSynchronously<T>(_ operation: String, _ body: () -> T) -> T {
-    recordSynchronously("\(operation) enter")
-    defer { record("\(operation) exit") }
-    return body()
-  }
-
-  static func recordSynchronously(
-    _ event: String,
-    rootDirectory: () -> URL? = { WidgetSnapshotStore.sharedRootDirectory() }
-  ) {
     logger.notice("\(event, privacy: .public)")
     let timestamp = Date()
     writer.sync {
-      append(event, at: timestamp, rootDirectory: rootDirectory())
+      append(event, at: timestamp, rootDirectory: rootDirectory)
     }
   }
 
   static func recordProcessLaunch() {
-    let bundle = Bundle.main
-    let bundleID = bundle.bundleIdentifier ?? "nil"
-    let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
-    let isExtension = bundle.bundleURL.pathExtension == "appex"
-    recordSynchronously("process launch bundleID=\(bundleID) os=\(osVersion) isExtension=\(isExtension)")
+    let identifier = WidgetAppGroup.current?.identifier ?? "unavailable"
+    record("process launch appGroup=\(identifier)", rootDirectory: WidgetSnapshotStore.sharedRootDirectory())
   }
 
   static func append(_ event: String, at timestamp: Date = Date(), rootDirectory: URL?) {

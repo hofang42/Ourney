@@ -162,17 +162,6 @@ class WidgetsL10nEn extends WidgetsL10n {
       'Shows your check-in window on the status bar and Lock Screen starting 30 minutes before your reminder (or 18:00 for active streaks) and clears right after you post.';
 
   @override
-  String get widgets_secDefaultJourney => 'featured widget journey';
-
-  @override
-  String get widgets_defaultJourneyAuto =>
-      'Automatic (prioritize next unchecked)';
-
-  @override
-  String get widgets_defaultJourneyAutoSub =>
-      'Used by widgets set to Automatic. Long-press any widget on your Home Screen to pin a specific journey.';
-
-  @override
   String get widgets_secSetup => 'how to add to your home screen';
 
   @override

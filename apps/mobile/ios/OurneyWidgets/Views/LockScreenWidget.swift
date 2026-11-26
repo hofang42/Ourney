@@ -40,43 +40,18 @@ public struct LockScreenWidgetEntryView: View {
     let locale = snapshot?.locale ?? ""
     let cardState = WidgetSnapshot.resolveTodayCardState(
       snapshot: snapshot,
-      pinnedId: entry.pinnedId,
       state: entry.state,
       appGroupAvailable: entry.appGroupAvailable
     )
-    let isPinned = snapshot?.isTodayJourneyPinned(entry.pinnedId) ?? false
     let featured: WidgetJourneyItem? = {
       if case .ready(let item) = cardState { return item }
       return nil
     }()
 
-    let bestStreak: Int = {
-      if let item = featured, isPinned {
-        return item.currentStreak
-      }
-      return max(snapshot?.totals.bestActiveStreak ?? 0, featured?.currentStreak ?? 0)
-    }()
-
-    let pendingCount: Int = {
-      if let item = featured, isPinned {
-        return item.checkedInToday ? 0 : 1
-      }
-      return snapshot?.totals.pendingTodayCount ?? 0
-    }()
-
-    let activeCount: Int = {
-      if featured != nil && isPinned {
-        return 1
-      }
-      return max(snapshot?.totals.activeCount ?? 1, 1)
-    }()
-
-    let completedCount: Int = {
-      if let item = featured, isPinned {
-        return item.checkedInToday ? 1 : 0
-      }
-      return snapshot?.totals.completedTodayCount ?? 0
-    }()
+    let bestStreak = max(snapshot?.totals.bestActiveStreak ?? 0, featured?.currentStreak ?? 0)
+    let pendingCount = snapshot?.totals.pendingTodayCount ?? 0
+    let activeCount = max(snapshot?.totals.activeCount ?? 1, 1)
+    let completedCount = snapshot?.totals.completedTodayCount ?? 0
 
     let redactTitle = snapshot?.shouldRedactLockScreenTitle(for: featured) ?? true
 
