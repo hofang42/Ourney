@@ -44,9 +44,6 @@ class CheckinL10nEn extends CheckinL10n {
   String get checkin_postMemory => 'Stick in the book';
 
   @override
-  String get checkin_postMinimal => 'Post now';
-
-  @override
   String get checkin_captionLabelMemory => 'Write one line';
 
   @override
@@ -330,14 +327,6 @@ class CheckinL10nEn extends CheckinL10n {
 
   @override
   String get checkin_extraBackspace => 'Delete one digit';
-
-  @override
-  String checkin_extraCountdown(int seconds) {
-    return 'Posting in $seconds s';
-  }
-
-  @override
-  String get checkin_extraCountdownStop => 'Tap anywhere to stop';
 
   @override
   String get checkin_details => 'Details';

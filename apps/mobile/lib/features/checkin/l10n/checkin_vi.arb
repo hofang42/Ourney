@@ -43,7 +43,6 @@
   },
   "checkin_post": "Đăng",
   "checkin_postMemory": "Dán vào sổ",
-  "checkin_postMinimal": "Đăng ngay",
   "checkin_captionLabelMemory": "Ghi lại một dòng",
   "checkin_captionLabelFlexer": "Hôm nay chạy thế nào?",
   "@checkin_post": {
@@ -293,18 +292,6 @@
   },
   "checkin_extraBackspace": "Xóa một số",
   "@checkin_extraBackspace": {
-    "description": "Post screen per-skin input."
-  },
-  "checkin_extraCountdown": "Tự đăng sau {seconds} giây",
-  "@checkin_extraCountdown": {
-    "placeholders": {
-      "seconds": {
-        "type": "int"
-      }
-    }
-  },
-  "checkin_extraCountdownStop": "Chạm bất kỳ đâu để dừng",
-  "@checkin_extraCountdownStop": {
     "description": "Post screen per-skin input."
   },
   "checkin_details": "Chi tiết",

@@ -228,7 +228,7 @@ void main() {
     );
   });
 
-  group('Moment #1c — Compose Caption Focus Morph & Minimal 3..2..1 Countdown Ring', () {
+  group('Moment #1c — Compose Caption Focus Morph', () {
     final photo = CapturedPhoto(
       journeyId: 'j1',
       path: '/tmp/shot.jpg',
@@ -333,123 +333,6 @@ void main() {
         expect(tester.getSize(thumbSizeBox).width, 0.0);
         expect(tester.getSize(previewSizeBox).height, closeTo(initialPreviewHeight, 0.5));
         expect(tester.binding.transientCallbackCount, 0);
-      },
-    );
-
-    testWidgets(
-      'Minimalist 3..2..1 countdown uses RepaintBoundary + CustomPaint progress ring + UiCountRoll digit tick',
-      (tester) async {
-        final haptics = recordHaptics();
-        final prefs = await testPrefs(const {});
-        final container = ProviderContainer(
-          overrides: [
-            ...baseOverrides(
-              prefs: prefs,
-              journeys: FakeJourneyRepository(
-                journeys: [testJourney(templateId: TemplateId.custom)],
-              ),
-              checkIns: FakeCheckInRepository(),
-            ),
-            photoCompressorProvider.overrideWithValue(FakePhotoCompressor()),
-            checkinClockProvider.overrideWithValue(FakeCheckinClock()),
-          ],
-        );
-        addTearDown(container.dispose);
-
-        await tester.pumpWidget(
-          routedTestApp(
-            container: container,
-            routes: checkinRoutes,
-            initialLocation: '/checkin',
-            initialExtra: photo,
-            log: RouteLog(),
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        expect(
-          find.byKey(const ValueKey('checkin-countdown-ring-boundary')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey('checkin-countdown-ring')),
-          findsOneWidget,
-        );
-        expect(find.text('3'), findsOneWidget);
-
-        // 1. Advance 1s to trigger tick 3 -> 2.
-        haptics.clear();
-        await tester.pump(const Duration(seconds: 1));
-        expect(haptics, contains('HapticFeedbackType.selectionClick'));
-
-        // 2. Mid-flight (t = 80ms into 220ms tick): both '3' and '2' are rolling.
-        await tester.pump(const Duration(milliseconds: 80));
-        expect(find.text('3'), findsOneWidget);
-        expect(find.text('2'), findsOneWidget);
-
-        // 3. Settled tick: only '2' remains.
-        await tester.pumpAndSettle();
-        expect(find.text('3'), findsNothing);
-        expect(find.text('2'), findsOneWidget);
-
-        // Touching screen stops countdown cleanly.
-        await tester.tap(find.byKey(const ValueKey('checkin-caption')));
-        await tester.pumpAndSettle();
-        expect(
-          find.byKey(const ValueKey('checkin-countdown-ring')),
-          findsNothing,
-        );
-      },
-    );
-
-    testWidgets(
-      'Minimalist countdown Reduce Motion parity (Android disableAnimations + iOS reduceMotion): static hint with zero ring tickers allocated',
-      (tester) async {
-        for (final iosOnly in [false, true]) {
-          tester.platformDispatcher.accessibilityFeaturesTestValue =
-              FakeAccessibilityFeatures(
-                disableAnimations: !iosOnly,
-                reduceMotion: iosOnly,
-              );
-          addTearDown(tester.platformDispatcher.clearAllTestValues);
-
-          final prefs = await testPrefs(const {});
-          final container = ProviderContainer(
-            overrides: [
-              ...baseOverrides(
-                prefs: prefs,
-                journeys: FakeJourneyRepository(
-                  journeys: [testJourney(templateId: TemplateId.custom)],
-                ),
-                checkIns: FakeCheckInRepository(),
-              ),
-              photoCompressorProvider.overrideWithValue(FakePhotoCompressor()),
-              checkinClockProvider.overrideWithValue(FakeCheckinClock()),
-            ],
-          );
-          addTearDown(container.dispose);
-
-          await tester.pumpWidget(
-            routedTestApp(
-              container: container,
-              routes: checkinRoutes,
-              initialLocation: '/checkin',
-              initialExtra: photo,
-              log: RouteLog(),
-            ),
-          );
-          await tester.pumpAndSettle();
-
-          expect(
-            find.byKey(const ValueKey('checkin-countdown-ring')),
-            findsNothing,
-          );
-          expect(find.textContaining('Tự đăng sau'), findsNothing);
-          expect(tester.binding.transientCallbackCount, 0);
-          await tester.pumpWidget(const SizedBox.shrink());
-          container.dispose();
-          await tester.pump();
-        }
       },
     );
   });

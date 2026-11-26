@@ -128,7 +128,7 @@ Date 2026-11-20. Read-only research on worktree `review-previous-context-ca1461`
 - **Persona extras** (`post_extras.dart`).
   - They stay below the caption under a muted "Chi tiết" / "Details" label: mood chips (quiet), minutes chips (squad), place field (memory), couple names and partner photo (couple), distance and pace keypad (flexer).
   - The metric field moves directly under the caption. It holds the weight that the camera slider used to provide; the prefill from the last value stays.
-  - The minimal persona keeps its 3s countdown hint above the button.
+  - The Minimal skin posts only when the user taps Post.
   - All text inputs use the new rounded filled style.
 - **Primary action.** `UiButton` 52dp in the accent colour, label `postLabel` (per persona copy). It sits in a bottom bar that follows `MediaQuery.viewInsetsOf` so it rides on the keyboard; the field scrolls if needed. Remove the always-visible header Post (already removed per U21).
 - **Light/dark.** All colours come from `context.ui` and `style.accent`, so both themes are covered.
