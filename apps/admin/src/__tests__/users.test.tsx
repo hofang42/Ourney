@@ -212,4 +212,51 @@ describe('UsersPage & Moderation State Gating (UX-28)', () => {
       ).toBeDisabled()
     })
   })
+
+  it('renders empty state row when listUsers returns 0 items and renders modal RPC errors inside the open modal dialog (F-42)', async () => {
+    vi.spyOn(adminApi, 'listUsers').mockResolvedValueOnce({
+      total: 0,
+      items: [],
+    })
+    vi.spyOn(adminApi, 'revokeUserSessions').mockRejectedValueOnce(
+      Object.assign(new Error('rate_limited'), { code: 'P0001' }),
+    )
+
+    render(
+      <MemoryRouter initialEntries={['/users/usr-10']}>
+        <I18nProvider initialLang="en">
+          <Routes>
+            <Route
+              path="/users/:id"
+              element={<UsersPage admin={SQL_FIXTURE_OWNER} />}
+            />
+          </Routes>
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/No users match the current filters/i),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: /Revoke Sessions/i }),
+      ).toBeInTheDocument()
+    })
+
+    const user = userEvent.setup()
+    await user.click(
+      screen.getByRole('button', { name: /Revoke Sessions/i }),
+    )
+    await user.click(
+      screen.getByRole('button', { name: /Confirm Revoke Sessions/i }),
+    )
+
+    await waitFor(() => {
+      const dialog = screen.getByRole('dialog', {
+        name: /Confirm Revoke Active Sessions/i,
+      })
+      expect(dialog).toHaveTextContent(/Rate limit exceeded/i)
+    })
+  })
 })

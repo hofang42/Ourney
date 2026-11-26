@@ -31,10 +31,13 @@ export function JourneysPage() {
 
   const [revokeTarget, setRevokeTarget] = useState<AdminJourneyRow | null>(null)
   const [revokeReason, setRevokeReason] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
   const [bannerMsg, setBannerMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const loadData = async (nextOffset = offset) => {
+    setLoading(true)
     setErrorMsg(null)
     try {
       const [st, listRes] = await Promise.all([
@@ -55,6 +58,8 @@ export function JourneysPage() {
     } catch (err) {
       const msg = await handleRpcError(err, 'list_journeys', lang)
       setErrorMsg(msg)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -65,7 +70,7 @@ export function JourneysPage() {
   }, [search, kindFilter, templateFilter, statusFilter, publicOnly])
 
   const handleConfirmRevoke = async () => {
-    if (!revokeTarget) return
+    if (!revokeTarget || submitting) return
     const trimmed = revokeReason.trim()
     if (trimmed.length < 3) {
       setErrorMsg(
@@ -76,6 +81,7 @@ export function JourneysPage() {
       )
       return
     }
+    setSubmitting(true)
     setErrorMsg(null)
     try {
       await adminApi.revokeJourneyPublicLink(revokeTarget.id, trimmed)
@@ -91,6 +97,8 @@ export function JourneysPage() {
     } catch (err) {
       const msg = await handleRpcError(err, 'revoke_journey_public_link', lang)
       setErrorMsg(msg)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -113,7 +121,7 @@ export function JourneysPage() {
         </div>
       </div>
 
-      {errorMsg && (
+      {errorMsg && !revokeTarget && (
         <div className="status-banner error" role="alert">
           <span>{errorMsg}</span>
         </div>
@@ -266,7 +274,26 @@ export function JourneysPage() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((j) => {
+            {loading && rows.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: 28 }}>
+                  {t(
+                    'Đang tải danh sách hành trình...',
+                    'Loading journeys...',
+                  )}
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: 28 }}>
+                  {t(
+                    'Không tìm thấy hành trình nào khớp với bộ lọc.',
+                    'No journeys match the current filters.',
+                  )}
+                </td>
+              </tr>
+            ) : (
+              rows.map((j) => {
               const kindLabel = j.is_couple ? 'couple' : j.kind
               const membersLabel =
                 j.max_members !== null && j.max_members !== undefined
@@ -328,8 +355,12 @@ export function JourneysPage() {
                         <button
                           type="button"
                           className="btn btn-danger"
+                          disabled={submitting}
                           aria-label={`${t('Thu hồi link', 'Revoke Link')} ${j.id}`}
-                          onClick={() => setRevokeTarget(j)}
+                          onClick={() => {
+                            setErrorMsg(null)
+                            setRevokeTarget(j)
+                          }}
                         >
                           <OIcon name="ban" size={16} />
                           <span>{t('Thu hồi link', 'Revoke Link')}</span>
@@ -343,7 +374,8 @@ export function JourneysPage() {
                   </td>
                 </tr>
               )
-            })}
+            })
+            )}
           </tbody>
         </table>
       </div>
@@ -365,13 +397,20 @@ export function JourneysPage() {
             'Revoke Public Journey Link',
           )}
           onClose={() => {
+            if (submitting) return
             setRevokeTarget(null)
             setRevokeReason('')
+            setErrorMsg(null)
           }}
         >
           <h3>
             {t('Thu hồi liên kết công khai', 'Revoke Public Journey Link')}
           </h3>
+          {errorMsg && (
+            <div className="status-banner error" role="alert">
+              <span>{errorMsg}</span>
+            </div>
+          )}
           <label className="field-group">
             <span className="field-label">
               {t(
@@ -396,9 +435,11 @@ export function JourneysPage() {
             <button
               type="button"
               className="btn"
+              disabled={submitting}
               onClick={() => {
                 setRevokeTarget(null)
                 setRevokeReason('')
+                setErrorMsg(null)
               }}
             >
               {t('Hủy', 'Cancel')}
@@ -406,7 +447,7 @@ export function JourneysPage() {
             <button
               type="button"
               className="btn btn-danger"
-              disabled={revokeReason.trim().length < 3}
+              disabled={submitting || revokeReason.trim().length < 3}
               onClick={() => void handleConfirmRevoke()}
             >
               {t('Xác nhận thu hồi', 'Confirm Revoke')}
