@@ -32,26 +32,57 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
+  static const double _minCompactScrollSpan = 56;
+  static const double _topExpandThreshold = 4;
+  static const double _compactMinPixels = 40;
+  static const double _scrollDeltaThreshold = 1;
+
   String? _promptedTermsKey;
   bool _termsSheetOpen = false;
   final ValueNotifier<bool> _dockCompact = ValueNotifier<bool>(false);
   bool _userScrolling = false;
-  int? _lastBranchIndex;
+  GoRouter? _router;
+  GoRouterDelegate? _routerDelegate;
+  String? _lastRouteSignature;
+
+  String? _routeSignature(GoRouter? router) {
+    if (router == null) return null;
+    final config = router.routerDelegate.currentConfiguration;
+    if (config.isEmpty) return null;
+    return '${router.state.uri}#${router.state.matchedLocation}#'
+        '${config.last.matchedLocation}#${config.matches.length}';
+  }
+
+  void _onRouteChanged() {
+    final sig = _routeSignature(_router);
+    if (sig != _lastRouteSignature) {
+      _lastRouteSignature = sig;
+      _userScrolling = false;
+      _setCompact(false);
+    }
+  }
 
   @override
-  void initState() {
-    super.initState();
-    _lastBranchIndex = widget.navigationShell.currentIndex;
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final router = GoRouter.maybeOf(context);
+    final delegate = router?.routerDelegate;
+    _router = router;
+    if (!identical(delegate, _routerDelegate)) {
+      _routerDelegate?.removeListener(_onRouteChanged);
+      _routerDelegate = delegate;
+      _lastRouteSignature = _routeSignature(router);
+      _routerDelegate?.addListener(_onRouteChanged);
+    }
   }
 
   @override
   void didUpdateWidget(covariant AppShell oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _onRouteChanged();
     final idx = widget.navigationShell.currentIndex;
     if (idx != oldWidget.navigationShell.currentIndex ||
-        idx != _lastBranchIndex ||
         idx == AppShell.captureIndex) {
-      _lastBranchIndex = idx;
       _userScrolling = false;
       _setCompact(false);
     }
@@ -59,6 +90,7 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   @override
   void dispose() {
+    _routerDelegate?.removeListener(_onRouteChanged);
     _dockCompact.dispose();
     super.dispose();
   }
@@ -73,14 +105,18 @@ class _AppShellState extends ConsumerState<AppShell> {
       _userScrolling = n.direction != ScrollDirection.idle;
       return false;
     }
+    if (n is ScrollEndNotification) {
+      _userScrolling = false;
+      return false;
+    }
     if (n is! ScrollUpdateNotification) return false;
     final m = n.metrics;
-    if (m.maxScrollExtent - m.minScrollExtent < 56) {
+    if (m.maxScrollExtent - m.minScrollExtent < _minCompactScrollSpan) {
       _setCompact(false);
       return false;
     }
     final p = m.pixels;
-    if (p <= m.minScrollExtent + 4) {
+    if (p <= m.minScrollExtent + _topExpandThreshold) {
       _setCompact(false);
       return false;
     }
@@ -88,9 +124,9 @@ class _AppShellState extends ConsumerState<AppShell> {
     final userDriven = n.dragDetails != null || _userScrolling;
     if (!userDriven) return false;
     final dy = n.scrollDelta ?? 0;
-    if (dy > 1 && p > 40) {
+    if (dy > _scrollDeltaThreshold && p > _compactMinPixels) {
       _setCompact(true);
-    } else if (dy < -1) {
+    } else if (dy < -_scrollDeltaThreshold) {
       _setCompact(false);
     }
     return false;
@@ -140,11 +176,6 @@ class _AppShellState extends ConsumerState<AppShell> {
     final navigationShell = widget.navigationShell;
     final currentIndex = navigationShell.currentIndex;
     final onCamera = currentIndex == AppShell.captureIndex;
-    if (_lastBranchIndex != currentIndex || onCamera) {
-      _lastBranchIndex = currentIndex;
-      _userScrolling = false;
-      _setCompact(false);
-    }
     final termsBlocking =
         _termsSheetOpen ||
         (userId != null && needsTermsUpdate && _promptedTermsKey == null);
