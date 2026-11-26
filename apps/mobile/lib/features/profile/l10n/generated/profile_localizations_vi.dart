@@ -245,6 +245,26 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_deleteOtpWrong => 'Mã chưa đúng. Kiểm tra lại nhé.';
 
   @override
+  String get profile_deletePasswordTitle => 'xác nhận bằng mật khẩu.';
+
+  @override
+  String get profile_deletePasswordLead =>
+      'Nhập mật khẩu tài khoản để xác nhận xóa vĩnh viễn.';
+
+  @override
+  String get profile_deletePasswordLabel => 'Mật khẩu';
+
+  @override
+  String get profile_deletePasswordWrong =>
+      'Mật khẩu chưa đúng. Kiểm tra lại nhé.';
+
+  @override
+  String get profile_deleteUsePassword => 'Xác nhận bằng mật khẩu';
+
+  @override
+  String get profile_deleteUseCode => 'Dùng mã 6 số';
+
+  @override
   String get profile_deleteResend => 'Gửi lại mã';
 
   @override

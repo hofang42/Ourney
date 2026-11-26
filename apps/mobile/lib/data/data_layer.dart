@@ -117,17 +117,23 @@ class DataLayer {
         connectivity: connectivity,
         listenLifecycle: listenLifecycle,
       );
-      layer._authSub = remote.watchUserId().listen((id) {
-        if (id != null && !sync.isPaused) {
-          final authRepo = layer.auth;
-          if (authRepo is SupabaseAuthRepository) {
-            unawaited(authRepo.syncWhenProfileReady());
-          } else {
-            unawaited(layer.syncNow());
-          }
-        }
-      });
     }
+    layer._authSub = remote.watchUserId().listen((id) {
+      if (id == null) {
+        if (!ctx.isExplicitAuthWipeInProgress) {
+          unawaited(ctx.handleSessionExpired());
+        }
+        return;
+      }
+      if (autoSync && !sync.isPaused) {
+        final authRepo = layer.auth;
+        if (authRepo is SupabaseAuthRepository) {
+          unawaited(authRepo.syncWhenProfileReady());
+        } else {
+          unawaited(layer.syncNow());
+        }
+      }
+    });
     return layer;
   }
 

@@ -112,6 +112,7 @@ class FakeReminderJourneyRepository implements JourneyRepository {
   List<Journey> journeys;
   bool fail;
   final Map<String, Membership> memberships = {};
+  final List<(String, JourneyUpdate)> updates = [];
 
   @override
   Stream<List<Journey>> watchActive() =>
@@ -124,6 +125,36 @@ class FakeReminderJourneyRepository implements JourneyRepository {
   @override
   Stream<Membership?> watchMyMembership(String journeyId) =>
       Stream.value(memberships[journeyId]);
+
+  @override
+  Future<Journey> update(String journeyId, JourneyUpdate update) async {
+    updates.add((journeyId, update));
+    final idx = journeys.indexWhere((j) => j.id == journeyId);
+    if (idx < 0) throw const OurneyException(OurneyErrorCode.notFound);
+    final old = journeys[idx];
+    final nextReminder = update.clear.contains('reminder_time')
+        ? null
+        : (update.reminderTime ?? old.reminderTime);
+    final updated = Journey(
+      id: old.id,
+      ownerId: old.ownerId,
+      kind: old.kind,
+      templateId: old.templateId,
+      title: update.title ?? old.title,
+      emoji: old.emoji,
+      startDate: old.startDate,
+      durationDays: old.durationDays,
+      timezone: old.timezone,
+      visibility: old.visibility,
+      status: old.status,
+      reminderTime: nextReminder,
+    );
+    journeys = [
+      for (var i = 0; i < journeys.length; i++)
+        i == idx ? updated : journeys[i],
+    ];
+    return updated;
+  }
 
   @override
   Object? noSuchMethod(Invocation invocation) =>

@@ -5,14 +5,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/account_reset.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/auth/auth_providers.dart';
+import 'package:ourney/features/feedback/data/feedback_providers.dart';
+import 'package:ourney/features/onboarding/onboarding_providers.dart';
 import 'package:ourney/features/profile/avatar_picker.dart';
 import 'package:ourney/features/profile/profile_providers.dart';
 import 'package:ourney/features/profile/routes.dart';
 import 'package:ourney/features/profile/settings_screen.dart'
     show profileSettingsPath;
+import 'package:ourney/features/profile/widgets/delete_account_dialog.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -631,6 +635,133 @@ void main() {
       );
       expect(byKey('profile-delete-otp'), findsNothing);
     });
+
+    testWidgets(
+      'F-11: deleteAccount succeeds cleanly when accountSessionResetProvider invalidates notifiers during signOut',
+      (tester) async {
+        final auth = RecordingAuthRepository(userId: 'u1');
+        final c = await signedIn(tester, auth: auth);
+        c.listen(accountSessionResetProvider, (_, _) {});
+        final prefs = c.read(sharedPreferencesProvider);
+        await prefs.setString(
+          OnboardingQuizNotifier.prefsKey,
+          jsonEncode(const OnboardingQuiz(goal: QuizGoal.weightLoss).toJson()),
+        );
+        await prefs.setString(
+          FeedbackPrefs.draftFor('u1'),
+          jsonEncode(
+            const FeedbackComposeDraft(title: 'Draft', body: 'Body').toJson(),
+          ),
+        );
+        await prefs.setString(
+          FeedbackPrefs.cacheFor('u1', mineOnly: false),
+          '[{"id":"req-1"}]',
+        );
+        // Prime the notifiers so they are alive before deleteAccount invalidates them.
+        expect(c.read(eulaAcceptedProvider), isTrue);
+        expect(c.read(onboardingQuizProvider), isNotNull);
+        expect(c.read(feedbackDraftProvider), isNotNull);
+
+        await toCodeStep(tester);
+        await tester.enterText(byKey('profile-delete-otp'), '123456');
+        await tester.pump();
+        await tapVisible(tester, 'profile-delete-confirm');
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(c.read(onboardingCompleteProvider), isFalse);
+        expect(c.read(eulaAcceptedProvider), isFalse);
+        expect(c.read(onboardingQuizProvider), isNull);
+        expect(c.read(feedbackDraftProvider), isNull);
+        expect(
+          prefs.containsKey(FeedbackPrefs.cacheFor('u1', mineOnly: false)),
+          isFalse,
+        );
+      },
+    );
+
+    testWidgets(
+      'F-11: local-only deleteAccount error Retry re-runs deletion instead of opening OTP step',
+      (tester) async {
+        final auth = _LocalOnlyFailingAuthRepository(failFirst: true);
+        final c = await pumpOurneyApp(tester, auth: auth);
+        final ctx = tester.element(find.byType(Scaffold).first);
+        unawaited(DeleteAccountDialog.show(ctx));
+        await tester.pumpAndSettle();
+
+        await tapVisible(tester, 'profile-delete-understand');
+        await tester.pump();
+        await tapVisible(tester, 'profile-delete-continue');
+        await tester.pumpAndSettle();
+
+        // First attempt failed -> shows Retry button on progress stage.
+        expect(byKey('profile-delete-retry'), findsOneWidget);
+        expect(auth.deleteCalls, 1);
+
+        // Tapping Retry in local-only mode retries _delete(null) directly.
+        await tapVisible(tester, 'profile-delete-retry');
+        await tester.pumpAndSettle();
+        expect(auth.deleteCalls, 2);
+        expect(byKey('profile-delete-otp'), findsNothing);
+        expect(c.read(onboardingCompleteProvider), isFalse);
+        expect(c.read(eulaAcceptedProvider), isFalse);
+      },
+    );
+
+    testWidgets(
+      'F-29: honours CS-05 password-reauth fallback when OTP is unavailable',
+      (tester) async {
+        final auth = RecordingAuthRepository(
+          userId: 'u1',
+          hasPasswordValue: true,
+        )
+          ..deleteCodeChallenge = const DeleteCodeChallenge(
+            sent: false,
+            channel: 'password',
+            hasPassword: true,
+          )
+          ..deleteError = const OurneyException(OurneyErrorCode.invalid);
+        final c = await signedIn(tester, auth: auth);
+
+        await tapVisible(tester, 'profile-settings');
+        await tapVisible(tester, 'settings-delete');
+        await tapVisible(tester, 'profile-delete-understand');
+        await tester.pump();
+        await tapVisible(tester, 'profile-delete-continue');
+        await tester.pumpAndSettle();
+
+        // Step 2 renders password input instead of stranding on 6-digit OTP.
+        expect(byKey('profile-delete-password'), findsOneWidget);
+        expect(byKey('profile-delete-otp'), findsNothing);
+
+        await tester.enterText(
+          byKey('profile-delete-password-input'),
+          'wrong-pw',
+        );
+        await tester.pump();
+        await tapVisible(tester, 'profile-delete-confirm');
+        await tester.pumpAndSettle();
+
+        expect(auth.calls.last, 'deleteAccount:password=wrong-pw');
+        expect(
+          find.text('Mật khẩu chưa đúng. Kiểm tra lại nhé.'),
+          findsOneWidget,
+        );
+        expect(byKey('profile-delete-password'), findsOneWidget);
+
+        auth.deleteError = null;
+        await tester.enterText(
+          byKey('profile-delete-password-input'),
+          'correct-password',
+        );
+        await tester.pump();
+        await tapVisible(tester, 'profile-delete-confirm');
+        await tester.pumpAndSettle();
+
+        expect(auth.calls.last, 'deleteAccount:password=correct-password');
+        expect(c.read(onboardingCompleteProvider), isFalse);
+      },
+    );
   });
 
   group('profile stats and badges', () {
@@ -646,4 +777,23 @@ void main() {
       expect(find.text('Có mặt đủ 7 ngày liên tiếp.'), findsOneWidget);
     });
   });
+}
+
+class _LocalOnlyFailingAuthRepository extends FakeAuthRepository {
+  _LocalOnlyFailingAuthRepository({this.failFirst = true});
+
+  bool failFirst;
+  int deleteCalls = 0;
+
+  @override
+  bool get isLocalOnly => true;
+
+  @override
+  Future<void> deleteAccount({String? code, String? password}) async {
+    deleteCalls++;
+    if (failFirst) {
+      failFirst = false;
+      throw const OurneyException(OurneyErrorCode.internal);
+    }
+  }
 }

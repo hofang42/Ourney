@@ -247,6 +247,26 @@ class ProfileL10nEn extends ProfileL10n {
       'That code is not right. Check it and try again.';
 
   @override
+  String get profile_deletePasswordTitle => 'confirm with password.';
+
+  @override
+  String get profile_deletePasswordLead =>
+      'Enter your account password to confirm permanent deletion.';
+
+  @override
+  String get profile_deletePasswordLabel => 'Password';
+
+  @override
+  String get profile_deletePasswordWrong =>
+      'That password is not right. Try again.';
+
+  @override
+  String get profile_deleteUsePassword => 'Confirm with password instead';
+
+  @override
+  String get profile_deleteUseCode => 'Use a 6-digit code instead';
+
+  @override
   String get profile_deleteResend => 'Resend code';
 
   @override

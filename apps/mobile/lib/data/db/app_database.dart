@@ -188,6 +188,13 @@ class UploadQueue extends Table {
 /// (see `MediaWipe`).
 const String pendingTrashCursorKey = 'media.pendingTrash';
 
+/// Prefix for isolated per-account unsynced outbox/post bundles kept across
+/// account switches when an earlier session expired with unsynced local work.
+const String isolatedOutboxCursorPrefix = 'outbox.isolated.';
+
+String isolatedOutboxCursorKey(String userId) =>
+    '$isolatedOutboxCursorPrefix$userId';
+
 @DataClassName('SyncCursorRow')
 class SyncCursor extends Table {
   TextColumn get tableKey => text()();
@@ -354,14 +361,20 @@ class AppDatabase extends _$AppDatabase {
   );
 
   /// Removes every cached row (sign-out, account deletion, user switch).
-  /// Keeps [pendingTrashCursorKey]: the media-wipe record must survive the
-  /// wipe it is written alongside.
+  /// Keeps [pendingTrashCursorKey] (the media-wipe record must survive the
+  /// wipe it is written alongside) and any [isolatedOutboxCursorPrefix]
+  /// records (unsynced work of a previous account isolated across user switch).
   Future<void> wipe() => transaction(() async {
     for (final table in allTables) {
       if (table.actualTableName == syncCursor.actualTableName) {
         await (delete(
           syncCursor,
-        )..where((t) => t.tableKey.equals(pendingTrashCursorKey).not())).go();
+        )..where(
+              (t) =>
+                  t.tableKey.equals(pendingTrashCursorKey).not() &
+                  t.tableKey.like('$isolatedOutboxCursorPrefix%').not(),
+            ))
+            .go();
         continue;
       }
       await delete(table).go();

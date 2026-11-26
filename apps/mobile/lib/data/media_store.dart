@@ -95,6 +95,15 @@ abstract final class MediaWipe {
     }
   }
 
+  /// Tracks an asynchronous wipe/expiry cleanup [job] so [settled] waits for
+  /// it before test teardowns close the database or inspect disk state.
+  static Future<T> track<T>(Future<T> job) {
+    final tracked = job.then<void>((_) {}, onError: (Object _) {});
+    _background.add(tracked);
+    unawaited(tracked.whenComplete(() => _background.remove(tracked)));
+    return job;
+  }
+
   static Future<T> _locked<T>(Future<T> Function() body) async {
     final previous = _tail;
     final done = Completer<void>();

@@ -94,14 +94,16 @@ class LocalAuthRepository implements AuthRepository {
   Future<void> cancelPasswordFlow() async {}
 
   @override
-  Future<void> requestDeleteCode() async {}
+  Future<DeleteCodeChallenge> requestDeleteCode({bool resend = false}) async =>
+      const DeleteCodeChallenge();
 
   @override
   Future<void> signOut() async {}
 
   /// Nothing lives on a server: wipes the local database and media.
   @override
-  Future<void> deleteAccount({String? code}) => ctx.wipeLocal();
+  Future<void> deleteAccount({String? code, String? password}) =>
+      ctx.wipeLocal();
 }
 
 /// Supabase email-OTP auth. The cache is tied to the signed-in user (see
@@ -179,8 +181,15 @@ class SupabaseAuthRepository implements AuthRepository {
           ctx.db.profiles,
         )..where((t) => t.id.equals(me))).getSingleOrNull();
       }
-      if (row != null && remote.currentUserId == me) {
-        await sync.syncNow();
+      final hasPendingOutbox =
+          (await ctx.outbox?.pendingRows() ?? const []).isNotEmpty;
+      if ((row != null || hasPendingOutbox) && remote.currentUserId == me) {
+        if (row != null) {
+          await sync.syncNow();
+        }
+        if (!sync.isPaused && remote.currentUserId == me) {
+          await ctx.outbox?.flush(force: true);
+        }
       }
     } on Object {
       // Offline or no profile yet: sync runs after profile setup or reconnect.
@@ -251,14 +260,18 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> cancelPasswordFlow() => remote.cancelPasswordFlow();
 
   @override
-  Future<void> requestDeleteCode() async {
+  Future<DeleteCodeChallenge> requestDeleteCode({bool resend = false}) async {
     if (remote.currentUserId == null) {
       throw const OurneyException(OurneyErrorCode.unauthenticated);
     }
-    await remote.invokeFunction(
+    final res = await remote.invokeFunction(
       deleteAccountFunction,
-      body: const {'action': 'send'},
+      body: {
+        'action': 'send',
+        if (resend) 'resend': true,
+      },
     );
+    return DeleteCodeChallenge.fromJson(res);
   }
 
   /// Global sign-out (every device's refresh token is revoked, local-only
@@ -267,23 +280,29 @@ class SupabaseAuthRepository implements AuthRepository {
   /// on the device.
   @override
   Future<void> signOut() async {
+    final partingUser = remote.currentUserId;
     // Unsent check-ins are lost with the wipe: give the outbox one last short
     // chance while the session is still valid (offline fails fast).
     final outbox = ctx.outbox;
-    if (outbox != null && remote.currentUserId != null) {
+    if (outbox != null && partingUser != null) {
       try {
         await outbox.flush(force: true).timeout(signOutFlushTimeout);
       } on Object catch (e) {
         debugPrint('auth: outbox flush before sign-out skipped: $e');
       }
     }
+    ctx.beginExplicitAuthWipe();
     try {
-      await remote.signOut(global: true).timeout(signOutFlushTimeout);
-    } on Object catch (e) {
-      debugPrint('auth: global sign-out timed out or failed ($e); falling back to local sign-out');
-      await remote.signOut();
+      try {
+        await remote.signOut(global: true).timeout(signOutFlushTimeout);
+      } on Object catch (e) {
+        debugPrint('auth: global sign-out timed out or failed ($e); falling back to local sign-out');
+        await remote.signOut();
+      }
+      await ctx.wipeLocal(clearIsolatedUserId: partingUser);
+    } finally {
+      ctx.endExplicitAuthWipe();
     }
-    await ctx.wipeLocal();
   }
 
   /// Edge Function `delete-account` (POST with the user's JWT), then wipes
@@ -291,14 +310,23 @@ class SupabaseAuthRepository implements AuthRepository {
   /// (`unauthenticated`, `storage*`, `deleteFailed`, `offline`); nothing local
   /// is touched when the server call fails, so it is safe to retry.
   @override
-  Future<void> deleteAccount({String? code}) async {
-    if (remote.currentUserId == null) {
+  Future<void> deleteAccount({String? code, String? password}) async {
+    final partingUser = remote.currentUserId;
+    if (partingUser == null) {
       throw const OurneyException(OurneyErrorCode.unauthenticated);
     }
+    final hasPw = password != null && password.isNotEmpty;
     try {
       await remote.invokeFunction(
         deleteAccountFunction,
-        body: {'action': 'delete', 'code': code ?? ''},
+        body: {
+          'action': 'delete',
+          'code': code ?? '',
+          if (hasPw) ...{
+            'password': password,
+            'method': 'password',
+          },
+        },
       );
     } on OurneyException catch (e) {
       // Only the server's explicit "that account no longer exists" (410) is
@@ -311,7 +339,12 @@ class SupabaseAuthRepository implements AuthRepository {
     }
     // Sign out first: a sync starting between the wipe and the sign-out
     // would pull the deleted account's rows back into the cache.
-    await remote.signOut();
-    await ctx.wipeLocal();
+    ctx.beginExplicitAuthWipe();
+    try {
+      await remote.signOut();
+      await ctx.wipeLocal(clearIsolatedUserId: partingUser);
+    } finally {
+      ctx.endExplicitAuthWipe();
+    }
   }
 }
