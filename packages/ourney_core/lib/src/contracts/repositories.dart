@@ -44,6 +44,36 @@ class SyncFailed extends SyncResult {
   final String message;
 }
 
+/// Response from Edge Function `delete-account` `{action: "send"}` (CS-05).
+class DeleteCodeChallenge {
+  const DeleteCodeChallenge({
+    this.sent = true,
+    this.channel = 'email',
+    this.hasPassword = false,
+  });
+
+  factory DeleteCodeChallenge.fromJson(Object? raw) {
+    if (raw is! Map) return const DeleteCodeChallenge();
+    final sent = raw['sent'];
+    final channel = raw['channel'];
+    final hasPassword = raw['has_password'];
+    return DeleteCodeChallenge(
+      sent: sent is! bool || sent,
+      channel: channel is String && channel.isNotEmpty ? channel : 'email',
+      hasPassword: hasPassword == true || channel == 'password',
+    );
+  }
+
+  final bool sent;
+  final String channel;
+  final bool hasPassword;
+
+  /// True when the server fell back to password re-auth (`channel == "password"`
+  /// or OTP delivery was skipped for a password-enabled account).
+  bool get usePasswordByDefault =>
+      channel == 'password' || (!sent && hasPassword);
+}
+
 abstract interface class AuthRepository {
   /// Null when signed out or when running in local-only mode.
   String? get currentUserId;
@@ -109,14 +139,17 @@ abstract interface class AuthRepository {
   /// Throws [OurneyException] with `unauthenticated` or one of the
   /// `storage*` / `deleteFailed` codes (safe to retry).
   ///
-  /// Server-side the call is gated by a one-time [code] (3-step delete:
-  /// confirm, OTP, final). Get one with [requestDeleteCode]; a wrong or
-  /// missing code throws `invalid`, too many requests `rateLimited`.
-  Future<void> deleteAccount({String? code});
+  /// Server-side the call is gated by a one-time [code] or [password] (3-step
+  /// delete: confirm, OTP or password fallback CS-05, final). Get a code with
+  /// [requestDeleteCode]; a wrong or missing code/password throws `invalid`,
+  /// too many requests `rateLimited`.
+  Future<void> deleteAccount({String? code, String? password});
 
   /// Sends the delete-confirmation code to the account's own email (or phone
   /// when it has no email). Edge Function `delete-account` `{action: send}`.
-  Future<void> requestDeleteCode();
+  /// Returns [DeleteCodeChallenge] describing whether an OTP was sent or if
+  /// the server fell back to password re-authentication (`CS-05`).
+  Future<DeleteCodeChallenge> requestDeleteCode({bool resend = false});
 }
 
 abstract interface class ProfileRepository {

@@ -281,9 +281,17 @@ void main() {
       );
       addTearDown(outbox.dispose);
       await outbox.enqueue(OutboxKind.react, 'react:a', {'id': 'a'});
-      await outbox.enqueue(OutboxKind.react, 'react:b', {
-        'id': 'b',
-      }, delay: const Duration(hours: 1));
+      final bId = await outbox.enqueue(
+        OutboxKind.react,
+        'react:b',
+        {'id': 'b'},
+        delay: const Duration(hours: 1),
+      );
+      // Simulate retry backoff (`attempts > 0`); initial `attempts == 0` delay
+      // guards in-flight direct RPCs (F-30).
+      await (db.update(db.uploadQueue)..where((t) => t.id.equals(bId))).write(
+        const UploadQueueCompanion(attempts: Value(1)),
+      );
       final first = outbox.flush();
       await Future<void>.delayed(Duration.zero);
       final forced = outbox.flush(force: true);
@@ -672,5 +680,343 @@ void main() {
         ['global', 'local'],
       );
     });
+  });
+
+  group('Audit fixes F-08, F-10, F-26, F-30, F-31', () {
+    const partner = 'cccccccc-0000-4000-8000-000000000002';
+
+    test(
+      'F-08: remote session revocation/expiry without unsynced work wipes local DB and cached media',
+      () async {
+        final photo = await layer.ctx.files.writeBytes(
+          'checkins/$jid/$me/synced.jpg',
+          [1, 2, 3],
+        );
+        final draft = File('${media.parent.path}/checkin_media/draft.jpg')
+          ..createSync(recursive: true)
+          ..writeAsBytesSync([4, 5]);
+        await db.into(db.profiles).insertOnConflictUpdate(
+          ProfilesCompanion.insert(
+            id: me,
+            username: 'me',
+            displayName: 'Me',
+          ),
+        );
+        expect(await db.select(db.journeys).get(), isNotEmpty);
+        expect(photo.existsSync(), isTrue);
+        expect(draft.existsSync(), isTrue);
+
+        // Simulate remote session revocation / token expiry.
+        remote.emitUser(null);
+        await pumpEventQueue();
+        await MediaWipe.settled();
+
+        expect(await db.select(db.journeys).get(), isEmpty);
+        expect(await db.select(db.memberships).get(), isEmpty);
+        expect(await db.select(db.profiles).get(), isEmpty);
+        expect(photo.existsSync(), isFalse);
+        expect(draft.existsSync(), isFalse);
+      },
+    );
+
+    test(
+      'F-08 & F-10: remote session expiry wipes synced data/photos, pauses outbox without killing unsynced writes, and resumes on re-sign-in as same user',
+      () async {
+        // Seed a synced check-in on disk and in DB.
+        const syncedId = 'eeeeeeee-0000-4000-8000-000000000010';
+        final syncedPhotoPath = checkInPhotoPath(jid, me, syncedId);
+        final syncedThumbPath = checkInThumbPath(jid, me, syncedId);
+        final syncedPhoto = await layer.ctx.files.writeBytes(
+          syncedPhotoPath,
+          [9, 9],
+        );
+        final syncedThumb = await layer.ctx.files.writeBytes(
+          syncedThumbPath,
+          [8, 8],
+        );
+        final avatarFile = await layer.ctx.files.writeBytes(
+          'avatars/$me/av.jpg',
+          [7, 7],
+        );
+        await db.into(db.checkIns).insert(
+          CheckInsCompanion.insert(
+            id: syncedId,
+            journeyId: jid,
+            userId: me,
+            localDate: const LocalDate(2026, 10, 15),
+            capturedAt: DateTime.utc(2026, 10, 15, 1),
+            photoPath: syncedPhotoPath,
+            thumbPath: syncedThumbPath,
+            uploaded: const Value(true),
+          ),
+        );
+        await db.into(db.profiles).insertOnConflictUpdate(
+          ProfilesCompanion.insert(
+            id: me,
+            username: 'me',
+            displayName: 'Me',
+          ),
+        );
+
+        // User submits an offline check-in.
+        remote.failure = offline;
+        final pending = await checkIn('unsynced_shot');
+        final pendingPhotoFile = layer.ctx.files.fileFor(pending.photoPath);
+        final pendingThumbFile = layer.ctx.files.fileFor(pending.thumbPath);
+        expect(pendingPhotoFile.existsSync(), isTrue);
+
+        // Remote session expires while offline/before retry.
+        remote.failure = null;
+        remote.emitUser(null);
+        await pumpEventQueue();
+        await MediaWipe.settled();
+
+        // Synced check-in, profile, avatar, and synced photos are wiped (F-08).
+        expect(await db.select(db.profiles).get(), isEmpty);
+        expect(syncedPhoto.existsSync(), isFalse);
+        expect(syncedThumb.existsSync(), isFalse);
+        expect(avatarFile.existsSync(), isFalse);
+        final remainingCheckIns = await db.select(db.checkIns).get();
+        expect(remainingCheckIns.map((c) => c.id), [pending.id]);
+        expect(pendingPhotoFile.existsSync(), isTrue);
+        expect(pendingThumbFile.existsSync(), isTrue);
+
+        // Even if the outbox flushes while signed out (remote.currentUserId == null)
+        // and the server would reject anon with forbidden, SyncEngine blocks
+        // anon execution with unauthenticated and Outbox pauses without killing
+        // the item or incrementing attempts (F-10).
+        remote.failure = const OurneyException(OurneyErrorCode.forbidden);
+        final callsBefore = remote.calls.length;
+        await layer.ctx.outbox!.flush(force: true);
+        expect(remote.calls.length, callsBefore, reason: 'no anon server calls');
+        final queuedWhileSignedOut = await queue();
+        expect(queuedWhileSignedOut, hasLength(1));
+        expect(queuedWhileSignedOut.single.dead, isFalse);
+        expect(queuedWhileSignedOut.single.attempts, 0);
+
+        // User signs back in as the same user (`me`): outbox resumes and uploads.
+        remote.failure = null;
+        remote.emitUser(me);
+        await layer.syncNow();
+
+        expect(remote.uploaded.keys, containsAll([
+          pending.photoPath,
+          pending.thumbPath,
+        ]));
+        expect(await queue(), isEmpty);
+        final uploadedRow = await (db.select(
+          db.checkIns,
+        )..where((t) => t.id.equals(pending.id))).getSingle();
+        expect(uploadedRow.uploaded, isTrue);
+      },
+    );
+
+    test(
+      'F-10 isolation: re-signing in as a different user isolates the old user queue (never uploads under new user) and restores it when old user returns',
+      () async {
+        remote.failure = offline;
+        final pending = await checkIn('user_a_unsynced');
+        expect(await queue(), hasLength(1));
+
+        // Session expires, then User B (`partner`) signs in.
+        remote.failure = null;
+        remote.emitUser(null);
+        await pumpEventQueue();
+        await MediaWipe.settled();
+
+        remote.tables['journeys'] = [
+          journeyRow('journey-b', ownerId: partner),
+        ];
+        remote.tables['memberships'] = [
+          membershipRow('journey-b', partner),
+        ];
+        remote.emitUser(partner);
+        await layer.syncNow();
+        await MediaWipe.settled();
+
+        // User A's unsynced post was NOT uploaded under User B, and User B's
+        // active queue and check-ins are clean.
+        expect(remote.uploaded, isEmpty);
+        expect(await queue(), isEmpty);
+        expect(await db.select(db.checkIns).get(), isEmpty);
+        expect(
+          [for (final j in await db.select(db.journeys).get()) j.id],
+          ['journey-b'],
+        );
+        expect(await layer.ctx.sync!.hasIsolatedWorkFor(me), isTrue);
+        expect(
+          await layer.ctx.sync!.isolatedEntityKeysFor(me),
+          [checkInKey(pending.id)],
+        );
+
+        // Now User A (`me`) signs back in: isolated work is restored and uploaded!
+        remote.tables['journeys'] = [journeyRow(jid, ownerId: me)];
+        remote.tables['memberships'] = [membershipRow(jid, me)];
+        remote.emitUser(me);
+        await layer.syncNow();
+        await MediaWipe.settled();
+
+        expect(await layer.ctx.sync!.hasIsolatedWorkFor(me), isFalse);
+        expect(remote.uploaded.keys, containsAll([
+          pending.photoPath,
+          pending.thumbPath,
+        ]));
+        expect(await queue(), isEmpty);
+        final restoredCheckIn = await (db.select(
+          db.checkIns,
+        )..where((t) => t.id.equals(pending.id))).getSingle();
+        expect(restoredCheckIn.uploaded, isTrue);
+      },
+    );
+
+    test(
+      'F-26: pulling a block from another device evicts blocked user media; pulling an unblock re-pulls group journeys',
+      () async {
+        const groupJid = 'dddddddd-0000-4000-8000-000000000099';
+        const partnerCid = 'eeeeeeee-0000-4000-8000-000000000099';
+        final partnerPhotoPath = checkInPhotoPath(groupJid, partner, partnerCid);
+        final partnerThumbPath = checkInThumbPath(groupJid, partner, partnerCid);
+
+        remote.tables['journeys'] = [
+          journeyRow(groupJid, ownerId: me, kind: 'group', visibility: 'group'),
+        ];
+        remote.tables['memberships'] = [
+          membershipRow(groupJid, me),
+          membershipRow(groupJid, partner, role: 'member'),
+        ];
+        final partnerCheckInRow = {
+          'id': partnerCid,
+          'journey_id': groupJid,
+          'user_id': partner,
+          'local_date': '2026-10-16',
+          'captured_at': '2026-10-16T01:00:00+00:00',
+          'photo_path': partnerPhotoPath,
+          'thumb_path': partnerThumbPath,
+          'from_library': false,
+          'caption': 'partner post',
+          'metric_value': null,
+          'updated_at': '2026-10-16T01:00:00.000000+00:00',
+          'deleted_at': null,
+        };
+        remote.tables['check_ins'] = [partnerCheckInRow];
+        await layer.syncNow();
+
+        final cachedPhoto = await layer.ctx.files.writeBytes(
+          partnerPhotoPath,
+          [1, 2],
+        );
+        final cachedThumb = await layer.ctx.files.writeBytes(
+          partnerThumbPath,
+          [3, 4],
+        );
+        final cachedAvatar = await layer.ctx.files.writeBytes(
+          'avatars/$partner/avatar.jpg',
+          [5, 6],
+        );
+        expect(cachedPhoto.existsSync(), isTrue);
+        expect(cachedThumb.existsSync(), isTrue);
+        expect(cachedAvatar.existsSync(), isTrue);
+
+        // Device 1 blocks partner; Device 2 pulls `blocks` table.
+        remote.tables['blocks'] = [
+          {
+            'blocker_id': me,
+            'blocked_id': partner,
+            'updated_at': '2026-10-16T02:00:00.000000+00:00',
+            'deleted_at': null,
+          },
+        ];
+        // Server RLS hides blocked user's check-ins while blocked.
+        remote.tables['check_ins'] = [];
+        await layer.syncNow();
+
+        expect(
+          await (db.select(
+            db.checkIns,
+          )..where((t) => t.userId.equals(partner))).get(),
+          isEmpty,
+        );
+        expect(cachedPhoto.existsSync(), isFalse);
+        expect(cachedThumb.existsSync(), isFalse);
+        expect(cachedAvatar.existsSync(), isFalse);
+
+        // Device 1 unblocks partner; Device 2 pulls block tombstone.
+        remote.tables['blocks'] = [
+          {
+            'blocker_id': me,
+            'blocked_id': partner,
+            'updated_at': '2026-10-16T03:00:00.000000+00:00',
+            'deleted_at': '2026-10-16T03:00:00.000000+00:00',
+          },
+        ];
+        remote.tables['check_ins'] = [partnerCheckInRow];
+        await layer.syncNow();
+
+        final repulled = await (db.select(
+          db.checkIns,
+        )..where((t) => t.id.equals(partnerCid))).getSingleOrNull();
+        expect(repulled, isNotNull);
+        expect(repulled!.caption, 'partner post');
+      },
+    );
+
+    test(
+      'F-30: Outbox.flush(force: true) respects initial enqueue delay guard (attempts == 0)',
+      () async {
+        final executed = <String>[];
+        final clock = TestClock(DateTime.utc(2026, 10, 16, 2));
+        final timers = RecordingTimers();
+        final outbox = Outbox(
+          db,
+          executor: (kind, payload) async {
+            executed.add('${kind.wire}:${payload['id']}');
+          },
+          now: clock.call,
+          timer: timers.call,
+        );
+        addTearDown(outbox.dispose);
+
+        await outbox.enqueue(
+          OutboxKind.updateJourney,
+          '${journeyKey(jid)}:extras',
+          {'id': jid},
+          delay: const Duration(seconds: 30),
+        );
+
+        // Forced flush while direct RPC is in flight (attempts == 0) must not
+        // bypass the 30s delay guard.
+        await outbox.flush(force: true);
+        expect(executed, isEmpty);
+        expect(timers.delays.last, const Duration(seconds: 30));
+
+        // Once the 30s delay passes (or makeDue is called), it executes.
+        clock.advance(const Duration(seconds: 31));
+        await outbox.flush(force: true);
+        expect(executed, ['update_journey:$jid']);
+      },
+    );
+
+    test(
+      'F-31: LocalStore.purgeJourney removes queued journey:<id>:couple (rename_couple) items',
+      () async {
+        await layer.ctx.outbox!.enqueue(
+          OutboxKind.renameCouple,
+          '${journeyKey(jid)}:couple',
+          {'p_journey': jid, 'p_self': 'An', 'p_partner': 'Bình'},
+        );
+        expect(
+          await layer.ctx.outbox!.pendingKeys(),
+          contains('${journeyKey(jid)}:couple'),
+        );
+
+        await layer.ctx.store.purgeJourney(jid);
+
+        expect(
+          await layer.ctx.outbox!.pendingKeys(),
+          isNot(contains('${journeyKey(jid)}:couple')),
+        );
+        expect(await queue(), isEmpty);
+      },
+    );
   });
 }

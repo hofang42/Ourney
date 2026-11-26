@@ -339,7 +339,12 @@ class Outbox {
       if (head == null || _abortEpoch != epoch) return;
 
       final nowUs = _now().toUtc().microsecondsSinceEpoch;
-      if (!force && head.nextAttemptAt > nowUs) {
+      // An initial `enqueue(..., delay: ...)` guard (`attempts == 0`) protects
+      // an in-flight direct RPC (e.g. `_applyExtras`) and must not be bypassed
+      // by `flush(force: true)` (F-30). `force: true` only overrides retry
+      // backoff (`attempts > 0`).
+      final inInitialDelay = head.attempts == 0 && head.nextAttemptAt > nowUs;
+      if ((inInitialDelay || !force) && head.nextAttemptAt > nowUs) {
         _schedule(Duration(microseconds: head.nextAttemptAt - nowUs));
         return;
       }
@@ -362,6 +367,19 @@ class Outbox {
         if (!isTransient(error.error)) {
           await _markDead(head, error.toString());
           continue;
+        }
+        if (error.error == OurneyErrorCode.unauthenticated) {
+          // Signed out / session expired (F-10): pause the outbox without
+          // burning retry attempts or scheduling retry timers while signed out.
+          // The queue resumes when the user signs back in.
+          await (_db.update(
+            _db.uploadQueue,
+          )..where((t) => t.id.equals(head.id))).write(
+            UploadQueueCompanion(
+              lastError: Value(error.toString()),
+            ),
+          );
+          return;
         }
         final attempts = head.attempts + 1;
         // Waiting for connectivity, sign-in or a client/server update

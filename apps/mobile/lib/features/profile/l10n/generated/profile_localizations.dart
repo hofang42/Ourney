@@ -524,6 +524,42 @@ abstract class ProfileL10n {
   /// **'Mã chưa đúng. Kiểm tra lại nhé.'**
   String get profile_deleteOtpWrong;
 
+  /// Delete step 2 title when confirming with password (CS-05).
+  ///
+  /// In vi, this message translates to:
+  /// **'xác nhận bằng mật khẩu.'**
+  String get profile_deletePasswordTitle;
+
+  /// Delete step 2 lead when confirming with password (CS-05).
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập mật khẩu tài khoản để xác nhận xóa vĩnh viễn.'**
+  String get profile_deletePasswordLead;
+
+  /// Password field label in delete account dialog.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mật khẩu'**
+  String get profile_deletePasswordLabel;
+
+  /// Delete password error.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mật khẩu chưa đúng. Kiểm tra lại nhé.'**
+  String get profile_deletePasswordWrong;
+
+  /// Switch to password confirmation in delete account dialog.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xác nhận bằng mật khẩu'**
+  String get profile_deleteUsePassword;
+
+  /// Switch to 6-digit code confirmation in delete account dialog.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dùng mã 6 số'**
+  String get profile_deleteUseCode;
+
   /// Resend.
   ///
   /// In vi, this message translates to:

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
 import 'package:ourney/features/reminders/data/reminder_settings.dart';
+import 'package:ourney_core/ourney_core.dart';
 
 import 'reminders_fakes.dart';
 
@@ -207,4 +208,54 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'F-32: RemindersScreen displays synced journey.reminderTime and syncs owner edits back to journey',
+    (tester) async {
+      final syncedJourney = reminderJourney(id: 'j1').copyWithReminder('08:15');
+      final h = await reminderHarness(
+        journeys: [syncedJourney],
+        gateway: FakeNotificationGateway(granted: true),
+        // No local SharedPreferences entry for j1.
+        prefs: {ReminderPrefs.permissionAsked: true},
+      );
+      addTearDown(h.container.dispose);
+
+      await tester.pumpWidget(remindersApp(h));
+      await tester.pumpAndSettle();
+
+      // Should show as enabled at 08:15 from journey.reminderTime.
+      expect(find.textContaining('08:15'), findsWidgets);
+      expect(byKey('reminders-time-j1'), findsOneWidget);
+
+      // Toggling off saves local override AND clears journey.reminderTime.
+      await tester.tap(byKey('reminders-toggle-j1'));
+      await tester.pumpAndSettle();
+
+      expect(
+        ReminderSetting.decode(h.prefs.getString('reminders.j1')).enabled,
+        isFalse,
+      );
+      expect(h.journeys.updates, hasLength(1));
+      expect(h.journeys.updates.single.$1, 'j1');
+      expect(h.journeys.updates.single.$2.clear, contains('reminder_time'));
+    },
+  );
+}
+
+extension on Journey {
+  Journey copyWithReminder(String? reminderTime) => Journey(
+    id: id,
+    ownerId: ownerId,
+    kind: kind,
+    templateId: templateId,
+    title: title,
+    emoji: emoji,
+    startDate: startDate,
+    durationDays: durationDays,
+    timezone: timezone,
+    visibility: visibility,
+    status: status,
+    reminderTime: reminderTime,
+  );
 }

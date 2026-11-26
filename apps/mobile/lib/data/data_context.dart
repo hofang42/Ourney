@@ -51,8 +51,19 @@ class DataContext {
   final SyncEngine? sync;
   final String Function() newId;
   final String? Function() _userIdOf;
+  int _explicitAuthWipes = 0;
 
   bool get localOnly => remote == null;
+
+  /// True while an explicit [AuthRepository.signOut] or
+  /// [AuthRepository.deleteAccount] call is wiping the session and cache.
+  bool get isExplicitAuthWipeInProgress => _explicitAuthWipes > 0;
+
+  void beginExplicitAuthWipe() => _explicitAuthWipes++;
+
+  void endExplicitAuthWipe() {
+    if (_explicitAuthWipes > 0) _explicitAuthWipes--;
+  }
 
   /// The user whose data is cached: guest id (local-only) or the signed-in
   /// Supabase user. Null when signed out.
@@ -82,8 +93,9 @@ class DataContext {
   DateTime now() => clock.now();
 
   /// Removes every cached row and file (account deletion, sign-out),
-  /// including leftover check-in drafts.
-  Future<void> wipeLocal() async {
+  /// including leftover check-in drafts. When [clearIsolatedUserId] is given,
+  /// any isolated unsynced queue/media stored for that user is removed too.
+  Future<void> wipeLocal({String? clearIsolatedUserId}) async {
     // Stop pulls and outbox passes still running for the old session before
     // they refill it.
     sync?.invalidateSession();
@@ -92,19 +104,64 @@ class DataContext {
     // a failure anywhere keeps rows and files together, and the trash is only
     // deleted after the commit. The marker survives a late in-flight write:
     // the next user to sign in finds an owner that is not them and wipes again.
-    Future<void> wipe() => MediaWipe.run(
-      db,
-      [files.root, _draftsDir],
-      (moveMedia) => db.transaction(() async {
-        await db.wipe();
-        if (sync != null) await db.writeCursor(ownerCursorKey, wipedOwner);
-        await moveMedia();
-      }),
-    );
+    Future<void> wipe() async {
+      await MediaWipe.run(
+        db,
+        [files.root, _draftsDir],
+        (moveMedia) => db.transaction(() async {
+          await db.wipe();
+          if (clearIsolatedUserId != null) {
+            await (db.delete(db.syncCursor)..where(
+                  (t) => t.tableKey.equals(
+                    isolatedOutboxCursorKey(clearIsolatedUserId),
+                  ),
+                ))
+                .go();
+          }
+          if (sync != null) await db.writeCursor(ownerCursorKey, wipedOwner);
+          await moveMedia();
+        }),
+      );
+      if (clearIsolatedUserId != null) {
+        await sync?.deleteIsolatedMediaFor(clearIsolatedUserId);
+      }
+    }
+
     // Never while a queue read-modify-write runs: its restore path would
     // write rows into the wiped outbox.
     final queue = outbox;
     await (queue == null ? wipe() : queue.exclusive(wipe));
+    sync?.notifyChanged();
+  }
+
+  /// Called on remote session revocation or token expiry (`watchUserId()`
+  /// transitions to `null` outside an explicit `signOut()` / `deleteAccount()`).
+  ///
+  /// Halts active sync/outbox passes and wipes all synced local SQLite rows
+  /// and cached private media from disk (F-08), while keeping any unsynced
+  /// local check-ins/outbox writes intact and paused until re-sign-in (F-10).
+  Future<void> handleSessionExpired() async {
+    sync?.invalidateSession();
+    outbox?.abortCurrentPass();
+    Future<void> expire() async {
+      if (userId != null || isExplicitAuthWipeInProgress) return;
+      final s = sync;
+      if (s != null) {
+        await s.purgeSyncedOnSessionExpiry(draftsDir: _draftsDir);
+      } else {
+        await MediaWipe.run(
+          db,
+          [files.root, _draftsDir],
+          (moveMedia) => db.transaction(() async {
+            await db.wipe();
+            await moveMedia();
+          }),
+        );
+      }
+    }
+
+    final queue = outbox;
+    await MediaWipe.track(queue == null ? expire() : queue.exclusive(expire));
     sync?.notifyChanged();
   }
 }

@@ -96,18 +96,23 @@ class DataGroupInviteAdminRepository implements GroupInviteAdminRepository {
             'local-only mode',
           );
         }
-        await (ctx.db.update(
-          ctx.db.journeys,
-        )..where((t) => t.id.equals(journeyId))).write(
-          JourneysCompanion(
-            coupleSelfName: Value(a),
-            couplePartnerName: Value(b),
-          ),
-        );
+        await ctx.claimUserId();
+        await ctx.db.transaction(() async {
+          await (ctx.db.update(
+            ctx.db.journeys,
+          )..where((t) => t.id.equals(journeyId))).write(
+            JourneysCompanion(
+              coupleSelfName: Value(a),
+              couplePartnerName: Value(b),
+            ),
+          );
+          if (outbox != null) {
+            final key = '${journeyKey(journeyId)}:couple';
+            await outbox.cancel(key, kind: OutboxKind.renameCouple);
+            await outbox.enqueue(OutboxKind.renameCouple, key, params);
+          }
+        });
         if (outbox != null) {
-          final key = '${journeyKey(journeyId)}:couple';
-          await outbox.cancel(key, kind: OutboxKind.renameCouple);
-          await outbox.enqueue(OutboxKind.renameCouple, key, params);
           unawaited(outbox.flush());
         }
       });
