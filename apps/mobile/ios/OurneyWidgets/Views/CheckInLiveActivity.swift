@@ -9,8 +9,7 @@ import AppIntents
 
 #if canImport(ActivityKit)
 /// iOS 16.2+ Check-In Window Live Activity for Lock Screen, StandBy, and Dynamic Island (§6.1).
-/// Strictly omits photos and weight/health metrics. Uses `Text(timerInterval:countsDown:)` so
-/// SpringBoard ticks the countdown every second with zero background app wakeups.
+/// Strictly omits photos, weight/health metrics, and ticking countdown timers.
 @available(iOSApplicationExtension 16.2, iOS 16.2, *)
 public struct CheckInLiveActivity: Widget {
   public init() {}
@@ -55,18 +54,18 @@ public struct CheckInLiveActivity: Widget {
               .foregroundColor(headerLabelColor)
               .lineLimit(1)
 
-              let rawTitle = state.journeyTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-              let effectiveRedact = state.redactTitleOnLockScreen
-                || WidgetJourneyItem.isImplicitlySensitive(skinId: state.skinId, typeIcon: state.typeIcon)
-              let displayTitle = rawTitle.isEmpty
-                ? WidgetL10n.lockScreenRedactedTitle(locale: state.locale)
-                : rawTitle
+              let displayTitle = WidgetL10n.liveActivityDisplayTitle(
+                rawTitle: state.journeyTitle,
+                redactTitleOnLockScreen: state.redactTitleOnLockScreen,
+                skinId: state.skinId,
+                typeIcon: state.typeIcon,
+                locale: state.locale
+              )
 
               Text(displayTitle)
                 .font(OurneyWidgetFont.title(13))
                 .foregroundColor(OurneyWidgetTheme.cameraDark.ink)
                 .lineLimit(1)
-                .privacySensitive(effectiveRedact && !rawTitle.isEmpty)
             }
           }
         }
@@ -114,17 +113,10 @@ public struct CheckInLiveActivity: Widget {
               } else {
                 HStack(spacing: 5) {
                   OurneyIconView(name: "clock", size: 14, ink: OurneyWidgetTheme.cameraDark.ink)
-                  Text(
-                    timerInterval: Self.safeInterval(
-                      start: state.windowStartUtc,
-                      end: state.deadlineUtc
-                    ),
-                    countsDown: true
-                  )
-                  .font(OurneyWidgetFont.display(14, weight: .bold))
-                  .monospacedDigit()
-                  .foregroundColor(OurneyWidgetTheme.cameraDark.ink)
-                  .frame(maxWidth: 72, alignment: .leading)
+                  Text(WidgetL10n.liveActivityOpenStatus(locale: state.locale))
+                    .font(OurneyWidgetFont.body(12, bold: true))
+                    .foregroundColor(OurneyWidgetTheme.cameraDark.ink)
+                    .lineLimit(1)
                 }
               }
 
@@ -170,7 +162,7 @@ public struct CheckInLiveActivity: Widget {
             .lineLimit(1)
         }
       } compactTrailing: {
-        // MARK: Compact Trailing (Live System Countdown)
+        // MARK: Compact Trailing (Calm Static Status)
         if state.isCompletedCelebration {
           OurneyIconView(
             name: "check",
@@ -179,17 +171,10 @@ public struct CheckInLiveActivity: Widget {
             overrideColor: OurneyWidgetTheme.cameraDark.success
           )
         } else {
-          Text(
-            timerInterval: Self.safeInterval(
-              start: state.windowStartUtc,
-              end: state.deadlineUtc
-            ),
-            countsDown: true
-          )
-          .font(OurneyWidgetFont.display(12.5, weight: .bold))
-          .monospacedDigit()
-          .foregroundColor(OurneyWidgetTheme.cameraDark.ink)
-          .frame(maxWidth: 52)
+          Text(WidgetL10n.liveActivityCompactStatus(locale: state.locale))
+            .font(OurneyWidgetFont.body(11.5, bold: true))
+            .foregroundColor(OurneyWidgetTheme.cameraDark.ink)
+            .lineLimit(1)
         }
       } minimal: {
         // MARK: Minimal Presentation (Flame inside Circular Progress Ring)
@@ -210,13 +195,6 @@ public struct CheckInLiveActivity: Widget {
       }
       .widgetURL(captureURL)
     }
-  }
-
-  static func safeInterval(start: Date, end: Date) -> ClosedRange<Date> {
-    let now = Date()
-    let safeStart = min(start, end)
-    let safeEnd = max(end, safeStart.addingTimeInterval(1), now.addingTimeInterval(1))
-    return safeStart...safeEnd
   }
 }
 
@@ -252,12 +230,13 @@ private struct CheckInLockScreenBannerView: View {
           .foregroundColor(headerLabelColor)
           .lineLimit(1)
 
-          let rawTitle = state.journeyTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-          let effectiveRedact = state.redactTitleOnLockScreen
-            || WidgetJourneyItem.isImplicitlySensitive(skinId: state.skinId, typeIcon: state.typeIcon)
-          let displayTitle = (effectiveRedact || rawTitle.isEmpty)
-            ? WidgetL10n.lockScreenRedactedTitle(locale: state.locale)
-            : rawTitle
+          let displayTitle = WidgetL10n.liveActivityDisplayTitle(
+            rawTitle: state.journeyTitle,
+            redactTitleOnLockScreen: state.redactTitleOnLockScreen,
+            skinId: state.skinId,
+            typeIcon: state.typeIcon,
+            locale: state.locale
+          )
 
           Text(
             state.isCompletedCelebration
@@ -302,16 +281,10 @@ private struct CheckInLockScreenBannerView: View {
         HStack(alignment: .center, spacing: 10) {
           HStack(spacing: 5) {
             OurneyIconView(name: "clock", size: 15, ink: dark.ink)
-            Text(
-              timerInterval: CheckInLiveActivity.safeInterval(
-                start: state.windowStartUtc,
-                end: state.deadlineUtc
-              ),
-              countsDown: true
-            )
-            .font(OurneyWidgetFont.display(16, weight: .bold))
-            .monospacedDigit()
-            .foregroundColor(dark.ink)
+            Text(WidgetL10n.liveActivityOpenStatus(locale: state.locale))
+              .font(OurneyWidgetFont.body(12.5, bold: true))
+              .foregroundColor(dark.ink)
+              .lineLimit(1)
           }
 
           Spacer(minLength: 4)

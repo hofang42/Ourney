@@ -646,7 +646,12 @@ public struct WidgetJourneyItem: Codable, Equatable, Identifiable {
     var rolled = self
     let survivedFirstMidnight = (extraDays == 1) && self.checkedInToday
     rolled.checkedInToday = false
-    rolled.dayNumber = self.dayNumber + extraDays
+    let rawNewDay = self.dayNumber + extraDays
+    if let cap = self.totalDays, cap > 0 {
+      rolled.dayNumber = min(rawNewDay, cap)
+    } else {
+      rolled.dayNumber = rawNewDay
+    }
     rolled.currentStreak = survivedFirstMidnight ? self.currentStreak : 0
     rolled.atRisk = rolled.currentStreak > 0
     rolled.heroThumbFile = nil
@@ -693,7 +698,7 @@ public struct WidgetJourneyItem: Codable, Equatable, Identifiable {
     referenceDate: Date,
     locale: String
   ) -> [WidgetWeekDay] {
-    guard !strip.isEmpty else { return strip }
+    guard !strip.isEmpty, extraDays > 0 else { return strip }
     var updated = strip
     if let lastIdx = updated.indices.last {
       // Finalize the snapshot's "today" cell.
@@ -707,20 +712,22 @@ public struct WidgetJourneyItem: Codable, Equatable, Identifiable {
       }
     }
 
+    var cal = Calendar(identifier: .gregorian)
+    cal.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
+
     let steps = min(extraDays, 7)
     let baseDate: Date = {
       if let last = updated.last, let parsed = WidgetDateParser.parseDateOnly(last.date) {
         return parsed
       }
-      return referenceDate.addingTimeInterval(TimeInterval(utcOffsetMinutes * 60))
+      let refLocal = referenceDate.addingTimeInterval(TimeInterval(utcOffsetMinutes * 60))
+      return cal.date(byAdding: .day, value: -extraDays, to: refLocal) ?? refLocal
     }()
 
-    var cal = Calendar(identifier: .gregorian)
-    cal.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
-
-    for step in 1...steps {
-      guard let nextDate = cal.date(byAdding: .day, value: step, to: baseDate) else { continue }
-      let isNewToday = (step == steps)
+    let startOffset = extraDays - steps + 1
+    for offset in startOffset...extraDays {
+      guard let nextDate = cal.date(byAdding: .day, value: offset, to: baseDate) else { continue }
+      let isNewToday = (offset == extraDays)
       let dayNum = cal.component(.day, from: nextDate)
       let dateStr = WidgetDateParser.formatDateOnly(nextDate)
       let label = WidgetDateParser.weekdayShortLabel(
@@ -893,7 +900,12 @@ public struct WidgetSquadItem: Codable, Equatable, Identifiable {
     )
 
     var rolled = self
-    rolled.dayNumber = self.dayNumber + extraDays
+    let rawNewDay = self.dayNumber + extraDays
+    if let cap = self.totalDays, cap > 0 {
+      rolled.dayNumber = min(rawNewDay, cap)
+    } else {
+      rolled.dayNumber = rawNewDay
+    }
     rolled.doneCount = 0
     rolled.meCheckedInToday = false
     rolled.midnightRolloverUtc = WidgetDateParser.formatISO8601(
@@ -1157,7 +1169,7 @@ public enum WidgetDateParser {
     cal.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
     let weekday = cal.component(.weekday, from: date) // 1 = Sun, 2 = Mon ... 7 = Sat
     if isEn {
-      let labels = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
+      let labels = ["S", "M", "T", "W", "T", "F", "S"]
       return labels[(weekday - 1) % 7]
     } else {
       let labels = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"]

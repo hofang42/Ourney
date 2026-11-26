@@ -1,9 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/features/journeys/domain/journey_progress.dart';
+import 'package:ourney/features/journeys/l10n/generated/journeys_localizations.dart';
+import 'package:ourney/features/journeys/ui/journey_actions.dart';
+import 'package:ourney/features/journeys/ui/today_card.dart';
 import 'package:ourney/features/journeys/ui/today_sheet.dart';
 import 'package:ourney/features/journeys/ui/widgets/journey_timeline.dart';
 import 'package:ourney/ui/ui.dart';
@@ -107,6 +112,58 @@ void main() {
       expect(h.location, '/capture?journeyId=j1');
       expect(h.container.read(activeJourneyIdProvider), 'j1');
     });
+
+    testWidgets(
+      'F-17: TodayCard and journeyDeadlineText show gentle non-countdown copy in EN and VI',
+      (tester) async {
+        final j = testJourney();
+        final progress = JourneyProgress.compute(
+          journey: j,
+          membership: testMembership(j),
+          checkIns: [testCheckIn(j.id, const LocalDate(2026, 10, 15))],
+          now: testNow,
+        );
+        final enL10n = lookupJourneysL10n(const Locale('en'));
+        final viL10n = lookupJourneysL10n(const Locale('vi'));
+
+        // Even 20 minutes before midnight (23:40 local), copy is calm and static.
+        final lateNightUtc = DateTime.utc(2026, 10, 16, 16, 40); // 23:40 ICT
+        expect(journeyDeadlineText(enL10n, progress, lateNightUtc), 'Open today');
+        expect(
+          journeyDeadlineText(viL10n, progress, lateNightUtc),
+          'Hôm nay đang mở',
+        );
+
+        // Day 1 with 0 streak still shows "Starts today" / "Bắt đầu hôm nay".
+        final dayOneJourney = testJourney(id: 'j-day1', startDate: testToday);
+        final dayOneProgress = JourneyProgress.compute(
+          journey: dayOneJourney,
+          membership: testMembership(dayOneJourney),
+          checkIns: const [],
+          now: testNow,
+        );
+        expect(
+          journeyDeadlineText(enL10n, dayOneProgress, lateNightUtc),
+          'Starts today',
+        );
+        expect(
+          journeyDeadlineText(viL10n, dayOneProgress, lateNightUtc),
+          'Bắt đầu hôm nay',
+        );
+
+        await tester.pumpWidget(
+          ProviderScope(
+            child: testApp(
+              Scaffold(body: TodayCard(progress: progress)),
+              locale: const Locale('en'),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Open today'), findsOneWidget);
+        expect(find.textContaining('left today'), findsNothing);
+      },
+    );
 
     testWidgets('shelf with a server shows the retell tile and albums', (
       tester,

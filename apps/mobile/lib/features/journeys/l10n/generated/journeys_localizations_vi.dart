@@ -384,17 +384,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_streakWord => 'ngày liên tiếp';
 
   @override
-  String journeys_endsInHours(int hours) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hours,
-      locale: localeName,
-      other: 'Còn $hours giờ',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get journeys_endsSoon => 'Còn chưa tới 1 giờ';
+  String get journeys_openToday => 'Hôm nay đang mở';
 
   @override
   String get journeys_startsToday => 'Bắt đầu hôm nay';

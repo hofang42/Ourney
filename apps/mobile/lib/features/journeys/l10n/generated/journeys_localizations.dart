@@ -734,17 +734,11 @@ abstract class JourneysL10n {
   /// **'ngày liên tiếp'**
   String get journeys_streakWord;
 
-  /// Time left to post today, in whole hours.
+  /// Calm non-countdown status on the Today card when today is open for check-in.
   ///
   /// In vi, this message translates to:
-  /// **'{hours, plural, other{Còn {hours} giờ}}'**
-  String journeys_endsInHours(int hours);
-
-  /// Less than one hour left to post today.
-  ///
-  /// In vi, this message translates to:
-  /// **'Còn chưa tới 1 giờ'**
-  String get journeys_endsSoon;
+  /// **'Hôm nay đang mở'**
+  String get journeys_openToday;
 
   /// Today card status on day 1.
   ///

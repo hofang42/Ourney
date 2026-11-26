@@ -387,18 +387,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_streakWord => 'streak';
 
   @override
-  String journeys_endsInHours(int hours) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hours,
-      locale: localeName,
-      other: '${hours}h left today',
-      one: '1h left today',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get journeys_endsSoon => 'Under 1h left today';
+  String get journeys_openToday => 'Open today';
 
   @override
   String get journeys_startsToday => 'Starts today';
