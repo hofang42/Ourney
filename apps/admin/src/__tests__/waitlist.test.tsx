@@ -24,7 +24,7 @@ describe('WaitlistPage, Per-Row Resend Feedback (UX-11), and CSV Protection', ()
     )
   })
 
-  it('builds UTF-8 BOM CSV string and neutralizes formula injection prefixes (=, +, -, @, tab, cr, leading spaces)', () => {
+  it('builds UTF-8 BOM CSV string and neutralizes formula injection prefixes (=, +, -, @, |, tab, cr, lf, leading spaces) (F-24)', () => {
     const csv = buildWaitlistCsv([
       {
         email: '=cmd|\' /C calc\'!A0@example.com',
@@ -35,6 +35,15 @@ describe('WaitlistPage, Per-Row Resend Feedback (UX-11), and CSV Protection', ()
         confirmation_sent_at: '\t-2+3',
         registered_in_app: true,
       },
+      {
+        email: '\n=HYPERLINK("http://evil.example")',
+        lang: 'en',
+        platforms: '|cmd|\' /C calc\'!A0',
+        source: '  |pipe_formula',
+        created_at: '2026-11-24T06:00:00Z',
+        confirmation_sent_at: '\nleading_lf',
+        registered_in_app: false,
+      },
     ])
     expect(
       csv.startsWith(
@@ -44,12 +53,18 @@ describe('WaitlistPage, Per-Row Resend Feedback (UX-11), and CSV Protection', ()
     expect(csv).toContain("'=cmd|' /C calc'!A0@example.com")
     expect(csv).toContain('\'  +HYPERLINK(""http://evil"")')
     expect(csv).toContain("'\t-2+3")
+    expect(csv).toContain('"\'\n=HYPERLINK(""http://evil.example"")"')
+    expect(csv).toContain("'|cmd|' /C calc'!A0")
+    expect(csv).toContain("'  |pipe_formula")
+    expect(csv).toContain('"\'\nleading_lf"')
 
     const rawFromSql =
-      'email,lang,platforms,source,created_at,confirmation_sent_at,registered_in_app\n"=SUM(1,2)@example.com","vi","ios","@attacker","2026-11-24T05:12:00Z","","false"'
+      'email,lang,platforms,source,created_at,confirmation_sent_at,registered_in_app\n"=SUM(1,2)@example.com","vi","ios","@attacker","2026-11-24T05:12:00Z","|dde","false"\n"\n=cmd()","en","android","normal","2026-11-24T05:13:00Z","","false"'
     const sanitized = sanitizeRawCsvString(rawFromSql)
     expect(sanitized).toContain("'=SUM(1,2)@example.com")
     expect(sanitized).toContain("'@attacker")
+    expect(sanitized).toContain("'|dde")
+    expect(sanitized).toContain('"\'\n=cmd()"')
   })
 
   it('hides Resend on already sent/registered rows, shows true sent/failed counts & highlights failed rows on Resend failure, and hides owner-only Export/Delete for moderators (UX-11)', async () => {

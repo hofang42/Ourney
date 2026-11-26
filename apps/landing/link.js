@@ -909,6 +909,7 @@
 
   async function fetchFriendPreview() {
     const embedded = readEmbeddedPreview('token', route.value);
+    const hadEmbedded = Boolean(embedded);
     if (embedded) {
       if (embedded.status === 'ok' && embedded.data && typeof embedded.data.display_name === 'string' && embedded.data.display_name.trim()) {
         loadedFriendData = embedded.data;
@@ -918,11 +919,10 @@
         friendPageState = 'expired';
       }
       renderFriendState();
-      return;
+    } else {
+      friendPageState = 'loading';
+      renderFriendState();
     }
-
-    friendPageState = 'loading';
-    renderFriendState();
 
     const { url, headers } = getRpcEndpoint('preview_friend_invite');
     const controller = new AbortController();
@@ -935,8 +935,10 @@
         signal: controller.signal
       });
       if (!res.ok) {
-        friendPageState = 'fallback';
-        renderFriendState();
+        if (!hadEmbedded) {
+          friendPageState = 'fallback';
+          renderFriendState();
+        }
         return;
       }
       const data = await res.json();
@@ -950,8 +952,10 @@
       friendPageState = 'loaded';
       renderFriendState();
     } catch (e) {
-      friendPageState = 'fallback';
-      renderFriendState();
+      if (!hadEmbedded) {
+        friendPageState = 'fallback';
+        renderFriendState();
+      }
     } finally {
       clearTimeout(timer);
     }
@@ -1102,6 +1106,7 @@
 
   async function fetchSquadPreview() {
     const embedded = readEmbeddedPreview('code', route.value);
+    const hadEmbedded = Boolean(embedded);
     if (embedded) {
       const embTitle = embedded.data && (embedded.data.title || embedded.data.group_name);
       if (embedded.status === 'ok' && typeof embTitle === 'string' && embTitle.trim()) {
@@ -1112,11 +1117,10 @@
         squadPageState = 'expired';
       }
       renderSquadState();
-      return;
+    } else {
+      squadPageState = 'loading';
+      renderSquadState();
     }
-
-    squadPageState = 'loading';
-    renderSquadState();
 
     const { url, headers } = getRpcEndpoint('preview_group_invite');
     const controller = new AbortController();
@@ -1129,8 +1133,10 @@
         signal: controller.signal
       });
       if (!res.ok) {
-        squadPageState = 'fallback';
-        renderSquadState();
+        if (!hadEmbedded) {
+          squadPageState = 'fallback';
+          renderSquadState();
+        }
         return;
       }
       const data = await res.json();
@@ -1145,8 +1151,10 @@
       squadPageState = isSquadFull(data) ? 'full' : 'loaded';
       renderSquadState();
     } catch (e) {
-      squadPageState = 'fallback';
-      renderSquadState();
+      if (!hadEmbedded) {
+        squadPageState = 'fallback';
+        renderSquadState();
+      }
     } finally {
       clearTimeout(timer);
     }

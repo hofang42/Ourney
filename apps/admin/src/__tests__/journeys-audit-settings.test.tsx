@@ -175,6 +175,63 @@ describe('JourneysPage, AuditPage, and SettingsPage', () => {
     )
   })
 
+  it('hides raw sample_errors last_error technical details from moderators while showing sanitized diagnostics to owners (F-43)', async () => {
+    vi.spyOn(adminApi, 'listAdmins').mockResolvedValue([
+      SQL_FIXTURE_OWNER,
+      SQL_FIXTURE_MODERATOR,
+    ])
+    vi.spyOn(adminApi, 'systemHealth').mockResolvedValue({
+      ...SQL_FIXTURE_SYSTEM_HEALTH,
+      storage_purge: {
+        ...SQL_FIXTURE_SYSTEM_HEALTH.storage_purge,
+        sample_errors: [
+          {
+            ...SQL_FIXTURE_SYSTEM_HEALTH.storage_purge.sample_errors[0],
+            last_error:
+              'Storage 503 temporary timeout on private.storage_purge_queue',
+          },
+        ],
+      },
+    })
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <I18nProvider initialLang="en">
+          <SettingsPage admin={SQL_FIXTURE_MODERATOR} />
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('mod@ourney.tech')).toBeInTheDocument()
+    })
+    // Moderator sees mapped human error but NOT raw technical details
+    expect(screen.queryByText(/Technical details/i)).toBeNull()
+    expect(
+      screen.queryByText(/Storage 503 temporary timeout/i),
+    ).toBeNull()
+    unmount()
+
+    render(
+      <MemoryRouter>
+        <I18nProvider initialLang="en">
+          <SettingsPage admin={SQL_FIXTURE_OWNER} />
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText(/Technical details/i)).toBeInTheDocument()
+    })
+    // Owner sees sanitized technical details (internal schema redacted to [db_object])
+    expect(
+      screen.getByText(/Storage 503 temporary timeout on \[db_object\]/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/private\.storage_purge_queue/i),
+    ).toBeNull()
+  })
+
   it('renders JourneysPage, AuditPage, and SettingsPage cleanly in default Vietnamese (initialLang="vi") without leftover English copy or raw sentinel IDs', async () => {
     vi.spyOn(adminApi, 'journeyStats').mockResolvedValue(
       SQL_FIXTURE_JOURNEY_STATS,
