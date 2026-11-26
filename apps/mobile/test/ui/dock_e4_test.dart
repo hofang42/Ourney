@@ -270,116 +270,110 @@ void main() {
         ];
 
     for (final c in cases) {
-      test(
-        'matches §1.2 reference table at W=${c.w.toInt()} (${c.state})',
-        () {
-          final g = UiDockGeometry.compute(
-            width: c.w,
-            cam: c.cam,
-            islandH: c.islandH,
-            bandH: c.bandH,
-          );
-          expect(g.slotWidth, closeTo(c.slot, 0.5));
-          expect(g.leftIsland.left, closeTo(c.leftL, 0.5));
-          expect(g.leftIsland.right, closeTo(c.leftR, 0.5));
-          expect(g.rightIsland.left, closeTo(c.rightL, 0.5));
-          expect(g.rightIsland.right, closeTo(c.rightR, 0.5));
-          for (var i = 0; i < 5; i++) {
-            expect(
-              g.allCentersX[i],
-              closeTo(c.centres[i], 0.5),
-              reason: 'slot $i centre x',
-            );
-          }
-
-          // Mirror symmetry
+      test('matches §1.2 reference table at W=${c.w.toInt()} (${c.state})', () {
+        final g = UiDockGeometry.compute(
+          width: c.w,
+          cam: c.cam,
+          islandH: c.islandH,
+          bandH: c.bandH,
+        );
+        expect(g.slotWidth, closeTo(c.slot, 0.5));
+        expect(g.leftIsland.left, closeTo(c.leftL, 0.5));
+        expect(g.leftIsland.right, closeTo(c.leftR, 0.5));
+        expect(g.rightIsland.left, closeTo(c.rightL, 0.5));
+        expect(g.rightIsland.right, closeTo(c.rightR, 0.5));
+        for (var i = 0; i < 5; i++) {
           expect(
-            g.leftIsland.left,
-            closeTo(c.w - g.rightIsland.right, 0.5),
-            reason: 'island outer margins mirrored',
+            g.allCentersX[i],
+            closeTo(c.centres[i], 0.5),
+            reason: 'slot $i centre x',
           );
-          expect(
-            g.leftIsland.width,
-            closeTo(g.rightIsland.width, 0.5),
-            reason: 'island widths equal',
-          );
-          for (var i = 0; i < 5; i++) {
-            expect(
-              g.allCentersX[i] + g.allCentersX[4 - i],
-              closeTo(c.w, 0.5),
-              reason: 'control $i mirrored with ${4 - i} about W/2',
-            );
-          }
-
-          // Camera centring & island-camera gaps
-          expect(g.cameraRect.center.dx, closeTo(c.w / 2, 0.5));
-          expect(g.cameraRect.center.dy, closeTo(g.leftIsland.center.dy, 0.5));
-          expect(g.cameraRect.center.dy, closeTo(g.rightIsland.center.dy, 0.5));
-          expect(g.cameraRect.left - g.leftIsland.right, closeTo(6, 0.5));
-          expect(g.rightIsland.left - g.cameraRect.right, closeTo(6, 0.5));
-
-          if (c.capW != null) {
-            expect(g.capsuleWidth, closeTo(c.capW!, 0.5));
-            for (var t = 0; t < 4; t++) {
-              final cap = g.selectionRectForTab(t);
-              expect(cap.width, closeTo(c.capW!, 0.5));
-              expect(cap.height, closeTo(52, 0.5));
-            }
-          } else if (c.state == 'compact') {
-            for (var t = 0; t < 4; t++) {
-              final ring = g.selectionRectForTab(t, compactT: 1);
-              expect(ring.width, closeTo(40, 0.5));
-              expect(ring.height, closeTo(40, 0.5));
-              expect(ring.center, Offset(g.tabCentersX[t], g.centerY));
-              expect(ring.top - g.leftIsland.top, closeTo(6, 0.5));
-              expect(g.leftIsland.bottom - ring.bottom, closeTo(6, 0.5));
-            }
-          }
-        },
-      );
-    }
-
-    test(
-      '320dp and 430dp graceful bounds: no overflow, slot >= 48dp, constant dockHeight across compact',
-      () {
-        for (final w in [320.0, 360.0, 390.0, 412.0, 430.0, 600.0]) {
-          final shown = UiDockGeometry.compute(
-            width: w,
-            cam: 60,
-            islandH: 64,
-            bandH: 64,
-            bottomGap: 16,
-          );
-          final compact = UiDockGeometry.compute(
-            width: w,
-            cam: 52,
-            islandH: 52,
-            bandH: 64,
-            bottomGap: 16,
-          );
-          expect(shown.slotWidth, greaterThanOrEqualTo(48), reason: 'w=$w');
-          expect(compact.slotWidth, greaterThanOrEqualTo(48), reason: 'w=$w');
-          expect(shown.leftIsland.left, greaterThanOrEqualTo(12));
-          expect(shown.rightIsland.right, lessThanOrEqualTo(w - 12));
-          // Dock box height and island bottom edge never move on compact
-          expect(shown.dockHeight, 84);
-          expect(compact.dockHeight, 84);
-          expect(shown.leftIsland.bottom, compact.leftIsland.bottom);
-          expect(shown.leftIsland.top, shown.leftIsland.bottom - 64);
-          expect(compact.leftIsland.top, compact.leftIsland.bottom - 52);
         }
 
-        // B = 34 -> bottomGap = 34 + 8 = 42 -> dockH = 4 + 64 + 42 = 110
-        final withSafeBottom = UiDockGeometry.compute(
-          width: 390,
+        // Mirror symmetry
+        expect(
+          g.leftIsland.left,
+          closeTo(c.w - g.rightIsland.right, 0.5),
+          reason: 'island outer margins mirrored',
+        );
+        expect(
+          g.leftIsland.width,
+          closeTo(g.rightIsland.width, 0.5),
+          reason: 'island widths equal',
+        );
+        for (var i = 0; i < 5; i++) {
+          expect(
+            g.allCentersX[i] + g.allCentersX[4 - i],
+            closeTo(c.w, 0.5),
+            reason: 'control $i mirrored with ${4 - i} about W/2',
+          );
+        }
+
+        // Camera centring & island-camera gaps
+        expect(g.cameraRect.center.dx, closeTo(c.w / 2, 0.5));
+        expect(g.cameraRect.center.dy, closeTo(g.leftIsland.center.dy, 0.5));
+        expect(g.cameraRect.center.dy, closeTo(g.rightIsland.center.dy, 0.5));
+        expect(g.cameraRect.left - g.leftIsland.right, closeTo(6, 0.5));
+        expect(g.rightIsland.left - g.cameraRect.right, closeTo(6, 0.5));
+
+        if (c.capW != null) {
+          expect(g.capsuleWidth, closeTo(c.capW!, 0.5));
+          for (var t = 0; t < 4; t++) {
+            final cap = g.selectionRectForTab(t);
+            expect(cap.width, closeTo(c.capW!, 0.5));
+            expect(cap.height, closeTo(52, 0.5));
+          }
+        } else if (c.state == 'compact') {
+          for (var t = 0; t < 4; t++) {
+            final ring = g.selectionRectForTab(t, compactT: 1);
+            expect(ring.width, closeTo(40, 0.5));
+            expect(ring.height, closeTo(40, 0.5));
+            expect(ring.center, Offset(g.tabCentersX[t], g.centerY));
+            expect(ring.top - g.leftIsland.top, closeTo(6, 0.5));
+            expect(g.leftIsland.bottom - ring.bottom, closeTo(6, 0.5));
+          }
+        }
+      });
+    }
+
+    test('320dp and 430dp graceful bounds: no overflow, slot >= 48dp, constant dockHeight across compact', () {
+      for (final w in [320.0, 360.0, 390.0, 412.0, 430.0, 600.0]) {
+        final shown = UiDockGeometry.compute(
+          width: w,
           cam: 60,
           islandH: 64,
           bandH: 64,
-          bottomGap: 42,
+          bottomGap: 16,
         );
-        expect(withSafeBottom.dockHeight, 110);
-      },
-    );
+        final compact = UiDockGeometry.compute(
+          width: w,
+          cam: 52,
+          islandH: 52,
+          bandH: 64,
+          bottomGap: 16,
+        );
+        expect(shown.slotWidth, greaterThanOrEqualTo(48), reason: 'w=$w');
+        expect(compact.slotWidth, greaterThanOrEqualTo(48), reason: 'w=$w');
+        expect(shown.leftIsland.left, greaterThanOrEqualTo(12));
+        expect(shown.rightIsland.right, lessThanOrEqualTo(w - 12));
+        // Dock box height and island bottom edge never move on compact
+        expect(shown.dockHeight, 84);
+        expect(compact.dockHeight, 84);
+        expect(shown.leftIsland.bottom, compact.leftIsland.bottom);
+        expect(shown.leftIsland.top, shown.leftIsland.bottom - 64);
+        expect(compact.leftIsland.top, compact.leftIsland.bottom - 52);
+      }
+
+      // B = 34 -> bottomGap = 34 + 8 = 42 -> dockH = 4 + 64 + 42 = 110
+      final withSafeBottom = UiDockGeometry.compute(
+        width: 390,
+        cam: 60,
+        islandH: 64,
+        bandH: 64,
+        bottomGap: 42,
+      );
+      expect(withSafeBottom.dockHeight, 110);
+    });
   });
 
   group('T1 — Pumped Widget Geometry at W ∈ {360, 390, 412}', () {
@@ -481,10 +475,7 @@ void main() {
 
             final tabFinder = find.byKey(ValueKey(_tabKeys[tabIdx]));
             final glyphRect = tester.getRect(
-              find.descendant(
-                of: tabFinder,
-                matching: find.byType(OurneyIcon),
-              ),
+              find.descendant(of: tabFinder, matching: find.byType(OurneyIcon)),
             );
             final labelRect = tester.getRect(
               find.descendant(of: tabFinder, matching: find.byType(Text)),
@@ -545,10 +536,7 @@ void main() {
 
             final tabFinder = find.byKey(ValueKey(_tabKeys[tabIdx]));
             final glyphRect = tester.getRect(
-              find.descendant(
-                of: tabFinder,
-                matching: find.byType(OurneyIcon),
-              ),
+              find.descendant(of: tabFinder, matching: find.byType(OurneyIcon)),
             );
             expect(circle.center.dx, closeTo(glyphRect.center.dx, 0.5));
             expect(circle.center.dy, closeTo(glyphRect.center.dy, 0.5));

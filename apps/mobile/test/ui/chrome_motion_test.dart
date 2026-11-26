@@ -29,14 +29,9 @@ Widget _host(
         : const <Locale>[Locale('en', 'US')],
     locale: withL10n ? const Locale('vi') : null,
     builder: (context, appChild) => MediaQuery(
-      data: MediaQuery.of(context).copyWith(
-        size: size,
-        disableAnimations: disableAnimations,
-      ),
-      child: Directionality(
-        textDirection: textDirection,
-        child: appChild!,
-      ),
+      data: MediaQuery.of(context)
+          .copyWith(size: size, disableAnimations: disableAnimations),
+      child: Directionality(textDirection: textDirection, child: appChild!),
     ),
     home: Scaffold(body: Center(child: child)),
   );
@@ -198,11 +193,7 @@ void main() {
                 setHost = setState;
                 return UiShellBranchContainer(
                   currentIndex: index,
-                  children: const [
-                    Text('Tab 0'),
-                    Text('Tab 1'),
-                    Text('Tab 2'),
-                  ],
+                  children: const [Text('Tab 0'), Text('Tab 1'), Text('Tab 2')],
                 );
               },
             ),
@@ -234,11 +225,7 @@ void main() {
                 setHost = setState;
                 return UiShellBranchContainer(
                   currentIndex: index,
-                  children: const [
-                    Text('Tab 0'),
-                    Text('Tab 1'),
-                    Text('Tab 2'),
-                  ],
+                  children: const [Text('Tab 0'), Text('Tab 1'), Text('Tab 2')],
                 );
               },
             ),
@@ -297,10 +284,7 @@ void main() {
                     snapKey: const ValueKey('dock-snap-pill'),
                     onSnap: () => setHost(() => camera = true),
                     center: camera
-                        ? UiShutter(
-                            label: 'Chụp',
-                            onPressed: () {},
-                          )
+                        ? UiShutter(label: 'Chụp', onPressed: () {})
                         : null,
                   ),
                 );
@@ -475,10 +459,7 @@ void main() {
           );
           setHost(() => camera = true);
           await tester.pump();
-          expect(
-            find.byKey(const ValueKey('dock-center-morph')),
-            findsNothing,
-          );
+          expect(find.byKey(const ValueKey('dock-center-morph')), findsNothing);
           expect(tester.binding.transientCallbackCount, 0);
           if (useIosFlag) {
             tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
@@ -652,210 +633,124 @@ void main() {
     );
   });
 
-  group('M1 #12 — Bottom Sheets (showUiSheet) & Trigger-Anchored UiMenuAnchor', () {
-    testWidgets(
-      'showUiSheet animates 260ms enter (UiCurves.drawer) and 190ms exit (UiCurves.easeOutStrong)',
-      (tester) async {
-        await tester.pumpWidget(
-          _host(
-            Builder(
-              builder: (context) => UiButton(
-                label: 'Mở sheet',
-                onPressed: () => showUiSheet<void>(
-                  context: context,
-                  builder: (_) => const Text('Sheet Body'),
-                ),
-              ),
-            ),
-          ),
-        );
-
-        await tester.tap(find.text('Mở sheet'));
-        await tester.pump();
-        final sheetOutline = find.byKey(const ValueKey('ui-sheet-outline'));
-        expect(sheetOutline, findsOneWidget);
-        final startTop = tester.getTopLeft(sheetOutline).dy;
-
-        // Mid-flight at t = 130ms of 260ms entrance
-        await tester.pump(const Duration(milliseconds: 130));
-        final midTop = tester.getTopLeft(sheetOutline).dy;
-        expect(midTop, lessThan(startTop));
-
-        await tester.pumpAndSettle();
-        final settledTop = tester.getTopLeft(sheetOutline).dy;
-        expect(settledTop, lessThan(midTop));
-
-        // Dismiss via scrim tap -> 190ms reverse exit
-        await tester.tapAt(const Offset(20, 20));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 95));
-        expect(sheetOutline, findsOneWidget);
-        expect(tester.getTopLeft(sheetOutline).dy, greaterThan(settledTop));
-
-        await tester.pumpAndSettle();
-        expect(sheetOutline, findsNothing);
-        expect(tester.binding.transientCallbackCount, 0);
-
-        // Reduce Motion (Android & iOS): showUiSheet settles immediately in 0ms.
-        for (final useIosFlag in [false, true]) {
-          if (useIosFlag) {
-            tester.platformDispatcher.accessibilityFeaturesTestValue =
-                const FakeAccessibilityFeatures(reduceMotion: true);
-          }
+  group(
+    'M1 #12 — Bottom Sheets (showUiSheet) & Trigger-Anchored UiMenuAnchor',
+    () {
+      testWidgets(
+        'showUiSheet animates 260ms enter (UiCurves.drawer) and 190ms exit (UiCurves.easeOutStrong)',
+        (tester) async {
           await tester.pumpWidget(
             _host(
-              disableAnimations: !useIosFlag,
               Builder(
                 builder: (context) => UiButton(
-                  label: 'Mở sheet RM',
+                  label: 'Mở sheet',
                   onPressed: () => showUiSheet<void>(
                     context: context,
-                    builder: (_) => const Text('Sheet Body RM'),
+                    builder: (_) => const Text('Sheet Body'),
                   ),
                 ),
               ),
             ),
           );
-          await tester.tap(find.text('Mở sheet RM'));
+
+          await tester.tap(find.text('Mở sheet'));
           await tester.pump();
-          expect(find.text('Sheet Body RM'), findsOneWidget);
-          expect(tester.binding.transientCallbackCount, 0);
+          final sheetOutline = find.byKey(const ValueKey('ui-sheet-outline'));
+          expect(sheetOutline, findsOneWidget);
+          final startTop = tester.getTopLeft(sheetOutline).dy;
+
+          // Mid-flight at t = 130ms of 260ms entrance
+          await tester.pump(const Duration(milliseconds: 130));
+          final midTop = tester.getTopLeft(sheetOutline).dy;
+          expect(midTop, lessThan(startTop));
+
+          await tester.pumpAndSettle();
+          final settledTop = tester.getTopLeft(sheetOutline).dy;
+          expect(settledTop, lessThan(midTop));
+
+          // Dismiss via scrim tap -> 190ms reverse exit
           await tester.tapAt(const Offset(20, 20));
           await tester.pump();
-          expect(find.text('Sheet Body RM'), findsNothing);
-          if (useIosFlag) {
-            tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
-          }
-        }
-      },
-    );
+          await tester.pump(const Duration(milliseconds: 95));
+          expect(sheetOutline, findsOneWidget);
+          expect(tester.getTopLeft(sheetOutline).dy, greaterThan(settledTop));
 
-    testWidgets(
-      'UiMenuAnchor keeps OverlayPortal hidden when closed, plays 3-point open (180ms) and ease-out close (130ms) with trigger-corner Alignment, ScaleTransition(0.95 -> 1.0), FadeTransition, and selection haptic',
-      (tester) async {
-        final haptics = <String>[];
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-            .setMockMethodCallHandler(SystemChannels.platform, (call) async {
-              if (call.method == 'HapticFeedback.vibrate') {
-                haptics.add(call.arguments as String? ?? '');
-              }
-              return null;
-            });
-        addTearDown(() {
+          await tester.pumpAndSettle();
+          expect(sheetOutline, findsNothing);
+          expect(tester.binding.transientCallbackCount, 0);
+
+          // Reduce Motion (Android & iOS): showUiSheet settles immediately in 0ms.
+          for (final useIosFlag in [false, true]) {
+            if (useIosFlag) {
+              tester.platformDispatcher.accessibilityFeaturesTestValue =
+                  const FakeAccessibilityFeatures(reduceMotion: true);
+            }
+            await tester.pumpWidget(
+              _host(
+                disableAnimations: !useIosFlag,
+                Builder(
+                  builder: (context) => UiButton(
+                    label: 'Mở sheet RM',
+                    onPressed: () => showUiSheet<void>(
+                      context: context,
+                      builder: (_) => const Text('Sheet Body RM'),
+                    ),
+                  ),
+                ),
+              ),
+            );
+            await tester.tap(find.text('Mở sheet RM'));
+            await tester.pump();
+            expect(find.text('Sheet Body RM'), findsOneWidget);
+            expect(tester.binding.transientCallbackCount, 0);
+            await tester.tapAt(const Offset(20, 20));
+            await tester.pump();
+            expect(find.text('Sheet Body RM'), findsNothing);
+            if (useIosFlag) {
+              tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
+            }
+          }
+        },
+      );
+
+      testWidgets(
+        'UiMenuAnchor keeps OverlayPortal hidden when closed, plays 3-point open (180ms) and ease-out close (130ms) with trigger-corner Alignment, ScaleTransition(0.95 -> 1.0), FadeTransition, and selection haptic',
+        (tester) async {
+          final haptics = <String>[];
           TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-              .setMockMethodCallHandler(SystemChannels.platform, null);
-        });
+              .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+                if (call.method == 'HapticFeedback.vibrate') {
+                  haptics.add(call.arguments as String? ?? '');
+                }
+                return null;
+              });
+          addTearDown(() {
+            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+                .setMockMethodCallHandler(SystemChannels.platform, null);
+          });
 
-        var open = false;
-        late StateSetter setHost;
-
-        await tester.pumpWidget(
-          _host(
-            StatefulBuilder(
-              builder: (context, setState) {
-                setHost = setState;
-                return UiMenuAnchor(
-                  open: open,
-                  onClose: () => setHost(() => open = false),
-                  anchor: UiButton(
-                    label: 'Menu',
-                    expand: false,
-                    onPressed: () => setHost(() => open = !open),
-                  ),
-                  menu: UiMenuSurface(
-                    children: [
-                      UiMenuItem(
-                        key: const ValueKey('menu-item-1'),
-                        label: 'Chỉnh sửa',
-                        onPressed: () => setHost(() => open = false),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        );
-        await tester.pump();
-
-        // When closed initially, OverlayPortal does NOT mount the menu in Overlay.
-        expect(find.byKey(const ValueKey('menu-item-1')), findsNothing);
-        expect(find.byKey(const ValueKey('ui-menu-fade')), findsNothing);
-
-        // 1. Open menu (180ms)
-        setHost(() => open = true);
-        await tester.pump();
-        await tester.pump();
-        expect(haptics, contains('HapticFeedbackType.selectionClick'));
-        expect(find.byKey(const ValueKey('menu-item-1')), findsOneWidget);
-
-        // Mid-flight at t = 90ms
-        await tester.pump(const Duration(milliseconds: 90));
-        final scaleTransition = tester.widget<ScaleTransition>(
-          find.byKey(const ValueKey('ui-menu-scale')),
-        );
-        final fadeTransition = tester.widget<FadeTransition>(
-          find.byKey(const ValueKey('ui-menu-fade')),
-        );
-        expect(scaleTransition.alignment, Alignment.topRight);
-        expect(scaleTransition.scale.value, greaterThan(UiMotion.popMinScale));
-        expect(scaleTransition.scale.value, lessThan(1.0));
-        expect(fadeTransition.opacity.value, greaterThan(0.0));
-        expect(fadeTransition.opacity.value, lessThan(1.0));
-
-        // Settled at t >= 180ms
-        await tester.pumpAndSettle();
-        expect(scaleTransition.scale.value, 1.0);
-        expect(fadeTransition.opacity.value, 1.0);
-
-        // 2. Close menu via barrier tap (130ms ease-out exit before _portal.hide())
-        await tester.tap(find.byKey(const ValueKey('ui-menu-barrier')));
-        await tester.pump();
-
-        // Mid-flight at t = 65ms: menu is still mounted in overlay while reversing
-        // with easeOutStrong.flipped (opacity already < 0.25 at midpoint)!
-        await tester.pump(const Duration(milliseconds: 65));
-        expect(find.byKey(const ValueKey('menu-item-1')), findsOneWidget);
-        expect(scaleTransition.scale.value, greaterThan(UiMotion.popMinScale));
-        expect(scaleTransition.scale.value, lessThan(1.0));
-        expect(fadeTransition.opacity.value, greaterThan(0.0));
-        expect(fadeTransition.opacity.value, lessThan(0.25));
-
-        // Settled at t >= 130ms: _portal.hide() called, overlay entry unmounted!
-        await tester.pumpAndSettle();
-        expect(find.byKey(const ValueKey('menu-item-1')), findsNothing);
-        expect(find.byKey(const ValueKey('ui-menu-fade')), findsNothing);
-        expect(tester.binding.transientCallbackCount, 0);
-      },
-    );
-
-    testWidgets(
-      'UiMenuAnchor under Reduce Motion (Android & iOS) uses 150ms opacity-only fade with zero ScaleTransition and hides portal on close',
-      (tester) async {
-        for (final useIosFlag in [false, true]) {
-          if (useIosFlag) {
-            tester.platformDispatcher.accessibilityFeaturesTestValue =
-                const FakeAccessibilityFeatures(reduceMotion: true);
-          }
           var open = false;
           late StateSetter setHost;
 
           await tester.pumpWidget(
             _host(
-              disableAnimations: !useIosFlag,
               StatefulBuilder(
                 builder: (context, setState) {
                   setHost = setState;
                   return UiMenuAnchor(
                     open: open,
                     onClose: () => setHost(() => open = false),
-                    anchor: const Text('Trigger'),
+                    anchor: UiButton(
+                      label: 'Menu',
+                      expand: false,
+                      onPressed: () => setHost(() => open = !open),
+                    ),
                     menu: UiMenuSurface(
                       children: [
                         UiMenuItem(
-                          key: const ValueKey('rm-menu-item'),
-                          label: 'Mục 1',
-                          onPressed: () {},
+                          key: const ValueKey('menu-item-1'),
+                          label: 'Chỉnh sửa',
+                          onPressed: () => setHost(() => open = false),
                         ),
                       ],
                     ),
@@ -865,35 +760,130 @@ void main() {
             ),
           );
           await tester.pump();
-          expect(find.byKey(const ValueKey('rm-menu-item')), findsNothing);
 
+          // When closed initially, OverlayPortal does NOT mount the menu in Overlay.
+          expect(find.byKey(const ValueKey('menu-item-1')), findsNothing);
+          expect(find.byKey(const ValueKey('ui-menu-fade')), findsNothing);
+
+          // 1. Open menu (180ms)
           setHost(() => open = true);
           await tester.pump();
           await tester.pump();
-          await tester.pump(const Duration(milliseconds: 75));
-          expect(
-            find.ancestor(
-              of: find.byType(UiMenuSurface),
-              matching: find.byType(ScaleTransition),
-            ),
-            findsNothing,
+          expect(haptics, contains('HapticFeedbackType.selectionClick'));
+          expect(find.byKey(const ValueKey('menu-item-1')), findsOneWidget);
+
+          // Mid-flight at t = 90ms
+          await tester.pump(const Duration(milliseconds: 90));
+          final scaleTransition = tester.widget<ScaleTransition>(
+            find.byKey(const ValueKey('ui-menu-scale')),
           );
+          final fadeTransition = tester.widget<FadeTransition>(
+            find.byKey(const ValueKey('ui-menu-fade')),
+          );
+          expect(scaleTransition.alignment, Alignment.topRight);
+          expect(
+            scaleTransition.scale.value,
+            greaterThan(UiMotion.popMinScale),
+          );
+          expect(scaleTransition.scale.value, lessThan(1.0));
+          expect(fadeTransition.opacity.value, greaterThan(0.0));
+          expect(fadeTransition.opacity.value, lessThan(1.0));
 
-          await tester.pump(const Duration(milliseconds: 100));
-          expect(find.byKey(const ValueKey('rm-menu-item')), findsOneWidget);
+          // Settled at t >= 180ms
+          await tester.pumpAndSettle();
+          expect(scaleTransition.scale.value, 1.0);
+          expect(fadeTransition.opacity.value, 1.0);
 
-          setHost(() => open = false);
+          // 2. Close menu via barrier tap (130ms ease-out exit before _portal.hide())
+          await tester.tap(find.byKey(const ValueKey('ui-menu-barrier')));
           await tester.pump();
-          await tester.pump(const Duration(milliseconds: 160));
-          expect(find.byKey(const ValueKey('rm-menu-item')), findsNothing);
+
+          // Mid-flight at t = 65ms: menu is still mounted in overlay while reversing
+          // with easeOutStrong.flipped (opacity already < 0.25 at midpoint)!
+          await tester.pump(const Duration(milliseconds: 65));
+          expect(find.byKey(const ValueKey('menu-item-1')), findsOneWidget);
+          expect(
+            scaleTransition.scale.value,
+            greaterThan(UiMotion.popMinScale),
+          );
+          expect(scaleTransition.scale.value, lessThan(1.0));
+          expect(fadeTransition.opacity.value, greaterThan(0.0));
+          expect(fadeTransition.opacity.value, lessThan(0.25));
+
+          // Settled at t >= 130ms: _portal.hide() called, overlay entry unmounted!
+          await tester.pumpAndSettle();
+          expect(find.byKey(const ValueKey('menu-item-1')), findsNothing);
+          expect(find.byKey(const ValueKey('ui-menu-fade')), findsNothing);
           expect(tester.binding.transientCallbackCount, 0);
-          if (useIosFlag) {
-            tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
+        },
+      );
+
+      testWidgets(
+        'UiMenuAnchor under Reduce Motion (Android & iOS) uses 150ms opacity-only fade with zero ScaleTransition and hides portal on close',
+        (tester) async {
+          for (final useIosFlag in [false, true]) {
+            if (useIosFlag) {
+              tester.platformDispatcher.accessibilityFeaturesTestValue =
+                  const FakeAccessibilityFeatures(reduceMotion: true);
+            }
+            var open = false;
+            late StateSetter setHost;
+
+            await tester.pumpWidget(
+              _host(
+                disableAnimations: !useIosFlag,
+                StatefulBuilder(
+                  builder: (context, setState) {
+                    setHost = setState;
+                    return UiMenuAnchor(
+                      open: open,
+                      onClose: () => setHost(() => open = false),
+                      anchor: const Text('Trigger'),
+                      menu: UiMenuSurface(
+                        children: [
+                          UiMenuItem(
+                            key: const ValueKey('rm-menu-item'),
+                            label: 'Mục 1',
+                            onPressed: () {},
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            );
+            await tester.pump();
+            expect(find.byKey(const ValueKey('rm-menu-item')), findsNothing);
+
+            setHost(() => open = true);
+            await tester.pump();
+            await tester.pump();
+            await tester.pump(const Duration(milliseconds: 75));
+            expect(
+              find.ancestor(
+                of: find.byType(UiMenuSurface),
+                matching: find.byType(ScaleTransition),
+              ),
+              findsNothing,
+            );
+
+            await tester.pump(const Duration(milliseconds: 100));
+            expect(find.byKey(const ValueKey('rm-menu-item')), findsOneWidget);
+
+            setHost(() => open = false);
+            await tester.pump();
+            await tester.pump(const Duration(milliseconds: 160));
+            expect(find.byKey(const ValueKey('rm-menu-item')), findsNothing);
+            expect(tester.binding.transientCallbackCount, 0);
+            if (useIosFlag) {
+              tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
+            }
           }
-        }
-      },
-    );
-  });
+        },
+      );
+    },
+  );
 
   group('M1 #10 & #15 — UiSegmented, UiEmptyState, UiSkeleton, Progress & Toast', () {
     testWidgets(
@@ -1122,10 +1112,7 @@ void main() {
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(
-                      width: 200,
-                      child: UiProgressBar(value: progress),
-                    ),
+                    SizedBox(width: 200, child: UiProgressBar(value: progress)),
                     UiProgressRing(value: progress, label: '6/30'),
                   ],
                 );
@@ -1154,15 +1141,15 @@ void main() {
 
         double currentRingValue() =>
             (tester
-                        .widget<CustomPaint>(
-                          find.descendant(
-                            of: find.byType(UiProgressRing),
-                            matching: find.byType(CustomPaint),
-                          ),
-                        )
-                        .painter!
-                    as dynamic)
-                .value
+                            .widget<CustomPaint>(
+                              find.descendant(
+                                of: find.byType(UiProgressRing),
+                                matching: find.byType(CustomPaint),
+                              ),
+                            )
+                            .painter!
+                        as dynamic)
+                    .value
                 as double;
 
         expect(currentBarFactor(), closeTo(0.2, 0.001));
@@ -1250,15 +1237,16 @@ void main() {
         );
 
         // 1. Info toast (even with "Error" / "lỗi" in journey title): zero haptic, 200ms 12dp -> 0 upward slide.
-        showUiToast(savedCtx, 'Đã lưu hành trình Trial & Error - Sửa lỗi phát âm');
+        showUiToast(
+          savedCtx,
+          'Đã lưu hành trình Trial & Error - Sửa lỗi phát âm',
+        );
         await tester.pump();
         expect(haptics, isEmpty);
 
         await tester.pump(const Duration(milliseconds: 80));
         final midDy = tester
-            .widget<Transform>(
-              find.byKey(const ValueKey('ui-toast-translate')),
-            )
+            .widget<Transform>(find.byKey(const ValueKey('ui-toast-translate')))
             .transform
             .getTranslation()
             .y;
@@ -1267,9 +1255,7 @@ void main() {
 
         await tester.pump(const Duration(milliseconds: 150));
         final settledDy = tester
-            .widget<Transform>(
-              find.byKey(const ValueKey('ui-toast-translate')),
-            )
+            .widget<Transform>(find.byKey(const ValueKey('ui-toast-translate')))
             .transform
             .getTranslation()
             .y;
@@ -1303,9 +1289,7 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 75));
         final exitMidDy = tester
-            .widget<Transform>(
-              find.byKey(const ValueKey('ui-toast-translate')),
-            )
+            .widget<Transform>(find.byKey(const ValueKey('ui-toast-translate')))
             .transform
             .getTranslation()
             .y;
@@ -1335,7 +1319,10 @@ void main() {
           showUiToast(savedCtx, 'Đã sao chép');
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 75));
-          expect(find.byKey(const ValueKey('ui-toast-translate')), findsNothing);
+          expect(
+            find.byKey(const ValueKey('ui-toast-translate')),
+            findsNothing,
+          );
           await tester.pump(const Duration(seconds: 5));
           await tester.pumpAndSettle();
           if (useIosFlag) {
@@ -1368,15 +1355,17 @@ void main() {
         );
 
         // 1. Show banner -> 220ms enter (-28dp -> 0)
-        container.read(reminderBannerProvider.notifier).show(
-          const ReminderBannerData(
-            journeyId: 'j1',
-            journeyName: 'Chạy sáng',
-            skinId: 'flexer',
-            kind: ReminderBannerKind.streak,
-            streak: 14,
-          ),
-        );
+        container
+            .read(reminderBannerProvider.notifier)
+            .show(
+              const ReminderBannerData(
+                journeyId: 'j1',
+                journeyName: 'Chạy sáng',
+                skinId: 'flexer',
+                kind: ReminderBannerKind.streak,
+                streak: 14,
+              ),
+            );
         await tester.pump();
         expect(find.byType(ReminderBanner), findsOneWidget);
         expect(
@@ -1442,14 +1431,16 @@ void main() {
         expect(find.byType(ReminderBanner), findsNothing);
 
         // 3. Mid-entrance dismiss at t = 60ms: zero single-frame vertical jump!
-        container.read(reminderBannerProvider.notifier).show(
-          const ReminderBannerData(
-            journeyId: 'j2',
-            journeyName: 'Đọc sách',
-            skinId: 'minimal',
-            kind: ReminderBannerKind.daily,
-          ),
-        );
+        container
+            .read(reminderBannerProvider.notifier)
+            .show(
+              const ReminderBannerData(
+                journeyId: 'j2',
+                journeyName: 'Đọc sách',
+                skinId: 'minimal',
+                kind: ReminderBannerKind.daily,
+              ),
+            );
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 60));
         final dyBeforeReverse = tester
@@ -1492,14 +1483,16 @@ void main() {
               ),
             ),
           );
-          container.read(reminderBannerProvider.notifier).show(
-            const ReminderBannerData(
-              journeyId: 'j-rm',
-              journeyName: 'RM',
-              skinId: 'quiet',
-              kind: ReminderBannerKind.daily,
-            ),
-          );
+          container
+              .read(reminderBannerProvider.notifier)
+              .show(
+                const ReminderBannerData(
+                  journeyId: 'j-rm',
+                  journeyName: 'RM',
+                  skinId: 'quiet',
+                  kind: ReminderBannerKind.daily,
+                ),
+              );
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 75));
           expect(

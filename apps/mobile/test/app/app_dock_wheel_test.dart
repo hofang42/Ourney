@@ -74,61 +74,62 @@ void main() {
     expect(taps, isEmpty, reason: 'the wheel never navigates');
   });
 
-  testWidgets('T9 — wheel anchor equals the shutter centre on the camera dock', (
-    tester,
-  ) async {
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(360, 780);
-    addTearDown(tester.view.reset);
-    final prefs = await testPrefs();
-    final container = ProviderContainer(
-      overrides: baseOverrides(
-        prefs: prefs,
-        journeys: FakeJourneyRepository(
-          journeys: [
-            testJourney(
-              id: 'run',
-              templateId: TemplateId.workout30,
-              title: 'Chạy bộ',
-            ),
-            testJourney(
-              id: 'trip',
-              templateId: TemplateId.travel,
-              title: 'Đà Lạt',
-            ),
-          ],
+  testWidgets(
+    'T9 — wheel anchor equals the shutter centre on the camera dock',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 780);
+      addTearDown(tester.view.reset);
+      final prefs = await testPrefs();
+      final container = ProviderContainer(
+        overrides: baseOverrides(
+          prefs: prefs,
+          journeys: FakeJourneyRepository(
+            journeys: [
+              testJourney(
+                id: 'run',
+                templateId: TemplateId.workout30,
+                title: 'Chạy bộ',
+              ),
+              testJourney(
+                id: 'trip',
+                templateId: TemplateId.travel,
+                title: 'Đà Lạt',
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-    addTearDown(container.dispose);
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: testApp(
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: AppDock(
-              currentIndex: AppDock.captureIndex,
-              onSelect: (_) {},
-              shutter: UiShutter(
-                key: const ValueKey('dock-hero-shutter'),
-                label: 'Chụp',
-                onPressed: () {},
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: testApp(
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: AppDock(
+                currentIndex: AppDock.captureIndex,
+                onSelect: (_) {},
+                shutter: UiShutter(
+                  key: const ValueKey('dock-hero-shutter'),
+                  label: 'Chụp',
+                  onPressed: () {},
+                ),
               ),
             ),
           ),
         ),
-      ),
-    );
-    await tester.pump();
-    await tester.pump();
+      );
+      await tester.pump();
+      await tester.pump();
 
-    final shutterCenter = tester.getCenter(find.byType(UiShutter));
-    await tester.longPress(find.byType(UiShutter));
-    await tester.pumpAndSettle();
+      final shutterCenter = tester.getCenter(find.byType(UiShutter));
+      await tester.longPress(find.byType(UiShutter));
+      await tester.pumpAndSettle();
 
-    final wheel = tester.widget<UiJourneyWheel>(find.byType(UiJourneyWheel));
-    expect(wheel.anchor.dx, closeTo(shutterCenter.dx, 0.5));
-    expect(wheel.anchor.dy, closeTo(shutterCenter.dy, 0.5));
-  });
+      final wheel = tester.widget<UiJourneyWheel>(find.byType(UiJourneyWheel));
+      expect(wheel.anchor.dx, closeTo(shutterCenter.dx, 0.5));
+      expect(wheel.anchor.dy, closeTo(shutterCenter.dy, 0.5));
+    },
+  );
 }

@@ -588,7 +588,20 @@ void main() {
       await tester.tap(find.text('Squad'));
       await tester.tap(find.bySemanticsLabel('Chụp'));
       expect(taps, ['left', 'right', 'snap']);
-      // 56x40 pill inside a 48dp hit area.
+      // E4 60x60 camera circle inside the dock.
+      expect(tester.getSize(find.bySemanticsLabel('Chụp')), const Size(60, 60));
+
+      // Standalone 56x40 UiSnapPill inside a 48dp hit area.
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: OurneyTheme.build(Brightness.light),
+          home: Scaffold(
+            body: Center(
+              child: UiSnapPill(label: 'Chụp', onPressed: () {}),
+            ),
+          ),
+        ),
+      );
       expect(
         tester.getSize(
           find

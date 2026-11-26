@@ -365,9 +365,9 @@ class UiDock extends StatelessWidget {
         final labelMaxW = math.max(0.0, shownBaseGeo.capsuleWidth - 6);
         final labels = [for (final e in items) e.label];
         final labelFit = dockLabelFit(context, labels, labelMaxW);
-        final textScale = MediaQuery.textScalerOf(
-          context,
-        ).clamp(maxScaleFactor: dockLabelMaxScale).scale(1);
+        final textScale = MediaQuery.textScalerOf(context)
+            .clamp(maxScaleFactor: dockLabelMaxScale)
+            .scale(1);
         final lineH = dockLabelSize * labelFit * 1.35 * textScale;
         final capH = math.max(
           _E4.capH,
@@ -667,9 +667,10 @@ class _DockSelection extends StatelessWidget {
         child: DecoratedBox(
           key: const ValueKey('dock-selection-pill'),
           decoration: useLiquid
-              ? _lensDecoration(accent, dark).copyWith(
-                  borderRadius: borderRadius,
-                )
+              ? _lensDecoration(
+                  accent,
+                  dark,
+                ).copyWith(borderRadius: borderRadius)
               : dockSelectionDecoration(
                   accent: accent,
                   surface: surface,
@@ -984,8 +985,9 @@ class _LongPress extends StatelessWidget {
   }
 }
 
-/// `.camera-capsule`: 56x40 quick-snap pill on Hub / Timeline / Squad, in the
-/// brand (or [accent]) fill with a sticker outline and hard shadow.
+/// Legacy `.camera-capsule`: 56x40 quick-snap pill in the brand (or [accent])
+/// fill with a sticker outline and hard shadow. Retained for standalone kit
+/// compatibility (`UiDock` draws its own 60dp/52dp camera circle since E4).
 class UiSnapPill extends StatelessWidget {
   const UiSnapPill({
     required this.label,
@@ -1124,15 +1126,9 @@ class _UiDockCenterMorphState extends State<_UiDockCenterMorph>
   AnimationController _ensureController() {
     var ctrl = _ctrl;
     if (ctrl != null) return ctrl;
-    ctrl = AnimationController(
-      vsync: this,
-      duration: UiMotion.medium,
-    );
+    ctrl = AnimationController(vsync: this, duration: UiMotion.medium);
     _ctrl = ctrl;
-    _curved = CurvedAnimation(
-      parent: ctrl,
-      curve: UiCurves.easeOutStrong,
-    );
+    _curved = CurvedAnimation(parent: ctrl, curve: UiCurves.easeOutStrong);
     return ctrl;
   }
 
@@ -1241,7 +1237,9 @@ class _UiDockCenterMorphState extends State<_UiDockCenterMorph>
         final iconSize = lerpDouble(widget.fromIconSize, _E4.camIconRoute, t)!;
         final outline = Color.lerp(ui.outline, UiCamera.outline, t)!;
         final shadowColor = Color.lerp(ui.hardShadowColor, UiCamera.shadow, t)!;
-        final shellShadow = widget.camera ? UiShadow.large : widget.shadowOffset;
+        final shellShadow = widget.camera
+            ? UiShadow.large
+            : widget.shadowOffset;
         final shadowOff = lerpDouble(shellShadow, UiShadow.small, t)!;
 
         final morphCenter = SizedBox(

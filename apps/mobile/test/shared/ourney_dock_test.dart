@@ -73,14 +73,8 @@ void main() {
                 c.decoration is BoxDecoration &&
                 (c.decoration! as BoxDecoration).color != null,
           );
-      expect(
-        tester.getSize(find.byWidget(face)),
-        const Size(60, 60),
-      );
-      expect(
-        (face.decoration! as BoxDecoration).shape,
-        BoxShape.circle,
-      );
+      expect(tester.getSize(find.byWidget(face)), const Size(60, 60));
+      expect((face.decoration! as BoxDecoration).shape, BoxShape.circle);
       expect(
         (face.decoration! as BoxDecoration).color,
         uiJourneyStyles[2].accent,
@@ -214,8 +208,8 @@ void main() {
             final pillRect = tester.getRect(
               find.byKey(const ValueKey('dock-selection-pill')),
             );
-            final expectedSlot =
-                ((width - 2 * 12 - 60 - 2 * 6 - 4 * 4) / 4).clamp(0.0, 76.0);
+            final expectedSlot = ((width - 2 * 12 - 60 - 2 * 6 - 4 * 4) / 4)
+                .clamp(0.0, 76.0);
             expect(pillRect.width, closeTo(expectedSlot - 2, 0.5));
             expect(pillRect.height, closeTo(52, 0.5));
             final tabFinder = find.byKey(ValueKey(tabKey));

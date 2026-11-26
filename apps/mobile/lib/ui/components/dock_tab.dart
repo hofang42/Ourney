@@ -198,9 +198,7 @@ class DockTab extends StatelessWidget {
     }
     final t = compactT.clamp(0.0, 1.0);
     final Widget labelBox = ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: labelMaxWidth ?? double.infinity,
-      ),
+      constraints: BoxConstraints(maxWidth: labelMaxWidth ?? double.infinity),
       child: FittedBox(
         fit: BoxFit.scaleDown,
         child: MediaQuery(

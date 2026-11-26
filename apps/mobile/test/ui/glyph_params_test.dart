@@ -110,16 +110,15 @@ void main() {
     );
     expect(
       find.descendant(of: find.byType(UiDock), matching: find.byType(ClipPath)),
-      findsOneWidget,
+      findsNWidgets(2),
     );
-    // The single shadow is the glass's own: 4dp offset in the palette outline.
-    final glass = tester.widget<UiGlass>(find.byType(UiGlass));
+    // Each island's shadow is the glass's own: 4dp offset in the palette outline.
+    final glass = tester.widget<UiGlass>(find.byType(UiGlass).first);
     expect(glass.hardShadow, UiShadow.large);
     expect(glass.hardShadowColor, OurneyUi.light.outline);
-    final clip = find.descendant(
-      of: find.byType(UiDock),
-      matching: find.byType(ClipPath),
-    );
+    final clip = find
+        .descendant(of: find.byType(UiDock), matching: find.byType(ClipPath))
+        .first;
     final t = tester.widget<Transform>(
       find.descendant(of: clip, matching: find.byType(Transform)),
     );
