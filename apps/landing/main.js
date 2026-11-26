@@ -160,10 +160,10 @@
       beta_stub_title: 'VÉ BETA',
       form_err: 'Email chưa đúng định dạng — bạn kiểm tra lại giúp nhé.',
       form_plat_err: 'Bạn chọn giúp ít nhất một nền tảng (iOS hoặc Android) nhé.',
-      form_ok: 'Đã ghi danh vào danh sách beta cho iOS và Android! Tụi mình vừa gửi email cảm ơn, nhớ xem cả mục Quảng cáo/Spam nhé. Bản beta mở là bạn nhận lời mời đầu tiên.',
-      form_ok_ios: 'Đã ghi danh vào danh sách chờ beta cho iOS! Tụi mình vừa gửi email xác nhận, nhớ xem cả mục Quảng cáo/Spam nhé. Khi bản beta iOS mở, bạn sẽ nhận lời mời đầu tiên.',
-      form_ok_android: 'Đã ghi danh nhận thông tin beta cho Android! Tụi mình vừa gửi email xác nhận, nhớ xem cả mục Quảng cáo/Spam nhé. Khi có bản cập nhật Android mới, bạn sẽ nhận thông báo đầu tiên.',
-      form_ok_both: 'Đã ghi danh vào danh sách beta cho iOS và Android! Tụi mình vừa gửi email xác nhận, nhớ xem cả mục Quảng cáo/Spam nhé. Bản beta mở là bạn nhận lời mời đầu tiên.',
+      form_ok: 'Đã ghi danh vào danh sách beta cho iOS và Android!',
+      form_ok_ios: 'Đã ghi danh vào danh sách chờ beta cho iOS!',
+      form_ok_android: 'Đã ghi danh nhận thông tin beta cho Android!',
+      form_ok_both: 'Đã ghi danh vào danh sách beta cho iOS và Android!',
       form_sending: 'Đang gửi…',
       form_fail: 'Chưa gửi được, bạn thử lại sau ít phút nhé.',
       form_rate: 'Bạn gửi hơi nhiều lần rồi, đợi một lúc rồi thử lại nhé.',
@@ -332,10 +332,10 @@
       beta_stub_title: 'BETA PASS',
       form_err: 'That email doesn’t look right — please check and try again.',
       form_plat_err: 'Please select at least one platform (iOS or Android).',
-      form_ok: 'You’re on the beta list for iOS and Android! We just sent you a thank-you email (check spam too). You’ll get the first beta invite.',
-      form_ok_ios: 'You’re on the iOS beta waitlist! We just sent you a confirmation email (check spam too). You’ll get the first invite when the iOS beta opens.',
-      form_ok_android: 'You’re on the Android beta list! We just sent you a confirmation email (check spam too). You’ll get the first update invite.',
-      form_ok_both: 'You’re on the beta list for iOS and Android! We just sent you a confirmation email (check spam too). You’ll get the first beta invite.',
+      form_ok: 'You’re on the beta list for iOS and Android!',
+      form_ok_ios: 'You’re on the iOS beta waitlist!',
+      form_ok_android: 'You’re on the Android beta list!',
+      form_ok_both: 'You’re on the beta list for iOS and Android!',
       form_sending: 'Sending…',
       form_fail: 'Couldn’t send that. Please try again in a few minutes.',
       form_rate: 'Too many tries. Please wait a bit and try again.',
@@ -1259,7 +1259,7 @@
             website: honeypot ? honeypot.value : '',
           }),
         });
-        if (res.ok) key = confirmKeyForPlatforms(platforms);
+        if (res.ok && (await res.json())?.ok === true) key = confirmKeyForPlatforms(platforms);
         else if (res.status === 429) key = 'form_rate';
         else if (res.status === 400) key = 'form_err';
       } catch (_) {
@@ -1280,6 +1280,11 @@
         }
       }
     });
+    // Only reveal the controls once the JSON submit handler is installed.
+    form.hidden = false;
+    if (platGroup) platGroup.hidden = false;
+    const waitlistHelp = $('beta-waitlist-help');
+    if (waitlistHelp) waitlistHelp.hidden = true;
   }
 
   addEventListener('focusin', (e) => {
