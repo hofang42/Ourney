@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/import/data/import_draft.dart';
 import 'package:ourney/features/import/data/import_photo_picker.dart';
 import 'package:ourney/features/import/data/photo_dates.dart';
+import 'package:ourney/shared/time_zones.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../journeys/journeys_fakes.dart' show testNow, testTz;
@@ -309,6 +310,29 @@ void main() {
     expect(p.offsetMinutes, isNull);
     expect(p.source, PhotoDateSource.manual);
   });
+
+  test(
+    'F-33: instantInZone and importCapturedAt stay on the target date on DST spring-forward day',
+    () {
+      // Australia/Sydney springs forward from AEST (+10) to AEDT (+11) at 02:00 on 2026-10-04.
+      const zone = 'Australia/Sydney';
+      const springDay = LocalDate(2026, 10, 4);
+
+      final midnight = instantInZone(springDay, 0, zone);
+      expect(midnight, DateTime.utc(2026, 10, 3, 14));
+      expect(journeyLocalDate(zone, midnight), springDay);
+
+      // Importing a photo for 2026-10-04 at 00:05 Sydney local time (2026-10-03T14:05Z)
+      // when limit (now - 15m) slips into yesterday must clamp to 2026-10-04 00:00 local, not yesterday.
+      final captured = importCapturedAt(
+        date: springDay,
+        secondsOfDay: importNoonSeconds,
+        timezone: zone,
+        now: DateTime.utc(2026, 10, 3, 14, 5),
+      );
+      expect(journeyLocalDate(zone, captured), springDay);
+    },
+  );
 }
 
 LocalDate journeyLocalDateOf(DateTime instant) {

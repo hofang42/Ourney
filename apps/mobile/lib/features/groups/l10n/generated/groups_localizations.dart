@@ -305,7 +305,7 @@ abstract class GroupsL10n {
   /// No description provided for @groups_endedBanner.
   ///
   /// In vi, this message translates to:
-  /// **'Hành trình đã kết thúc. Ảnh và streak chỉ còn để xem.'**
+  /// **'Hành trình đã kết thúc. Ảnh và chuỗi chỉ còn để xem.'**
   String get groups_endedBanner;
 
   /// No description provided for @groups_notFoundTitle.
@@ -395,7 +395,7 @@ abstract class GroupsL10n {
   /// No description provided for @groups_endMessage.
   ///
   /// In vi, this message translates to:
-  /// **'Sau đó không ai check-in được nữa. Ảnh và streak vẫn còn để mọi người xem lại.'**
+  /// **'Sau đó không ai check-in được nữa. Ảnh và chuỗi vẫn còn để mọi người xem lại.'**
   String get groups_endMessage;
 
   /// No description provided for @groups_actionDelete.

@@ -48,7 +48,7 @@ class AestheticFlexerL10nEn extends AestheticFlexerL10n {
 
   @override
   String aesthetic_flexer_milestoneStar(String day) {
-    return 'DAY $day ★ MILESTONE';
+    return 'DAY $day · MILESTONE';
   }
 
   @override

@@ -444,6 +444,7 @@ void main() {
             find.byKey(const ValueKey('checkin-countdown-ring')),
             findsNothing,
           );
+          expect(find.textContaining('Tự đăng sau'), findsNothing);
           expect(tester.binding.transientCallbackCount, 0);
           await tester.pumpWidget(const SizedBox.shrink());
           container.dispose();

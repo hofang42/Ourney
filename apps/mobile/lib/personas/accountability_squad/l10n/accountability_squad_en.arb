@@ -5,7 +5,7 @@
   "accountability_squad_dayGoalTrophy": "DAY {day} GOAL",
   "accountability_squad_dayStartLabel": "DAY {day} · START",
   "accountability_squad_dayTodayLabel": "DAY {day} · TODAY",
-  "accountability_squad_dayWeekMilestone": "DAY {day} ★ WEEK {week}",
+  "accountability_squad_dayWeekMilestone": "DAY {day} · WEEK {week}",
   "accountability_squad_dayRegularLabel": "DAY {day}",
   "accountability_squad_missedSlot": "Not snapped yet",
   "accountability_squad_studyMetricBadge": "{value} {unit} STUDY",

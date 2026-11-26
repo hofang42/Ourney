@@ -14,6 +14,7 @@ import '../../../ui/ui.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_time.dart';
 import '../l10n/generated/journeys_localizations.dart';
+import 'journey_errors.dart';
 import 'journey_extras.dart';
 import 'journey_photo.dart';
 
@@ -466,10 +467,42 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
           Padding(
             padding: const EdgeInsets.only(top: 120),
             child: Center(
-              child: checkIns.isLoading
+              child: checkIns.isLoading || waitingForJourney
                   ? UiSpinner(
                       color: UiCamera.ink,
                       semanticsLabel: app.common_loading,
+                    )
+                  : (checkIns.hasError || journeyAsync.hasError)
+                  ? Column(
+                      key: const ValueKey('journey-day-error'),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          journeyErrorMessage(
+                            context,
+                            (checkIns.error ?? journeyAsync.error)!,
+                          ),
+                          textAlign: TextAlign.center,
+                          style: UiText.body(
+                            size: 16,
+                            height: 1.5,
+                            color: UiCamera.onPhoto,
+                          ),
+                        ),
+                        const SizedBox(height: UiSpace.md),
+                        UiButton.secondary(
+                          key: const ValueKey('journey-day-retry'),
+                          label: app.common_retry,
+                          onPressed: () {
+                            ref.invalidate(
+                              journeyByIdProvider(widget.journeyId),
+                            );
+                            ref.invalidate(
+                              myCheckInsProvider(widget.journeyId),
+                            );
+                          },
+                        ),
+                      ],
                     )
                   : Text(
                       l10n.journeys_noCheckIn,

@@ -404,5 +404,37 @@ void main() {
       expect(invites.calls, contains('accept:i1'));
       expect(h.location, '/groups/g1');
     });
+
+    testWidgets(
+      'F-40 & F-41: pending invites disable buttons while busy and SquadTodayCard caps chips at 4 on 320dp',
+      (tester) async {
+        await pumpGroups(
+          tester,
+          journeys: FakeJourneyRepository(journeys: [groupJourney()]),
+          groups: FakeGroupRepository(
+            today: {
+              'g1': [
+                for (var i = 1; i <= 6; i++) memberToday('u$i', 'Member $i'),
+              ],
+            },
+          ),
+        );
+        // At 420dp width, SquadTodayCard shows 5 member chips + "+1" overflow.
+        for (var i = 1; i <= 5; i++) {
+          expect(find.byKey(ValueKey('squad-member-u$i')), findsOneWidget);
+        }
+        expect(find.text('+1'), findsOneWidget);
+
+        // At 320dp width, SquadTodayCard shows at most 4 member chips + "+2" overflow without overflow exception.
+        tester.view.physicalSize = const Size(320, 640);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        for (var i = 1; i <= 4; i++) {
+          expect(find.byKey(ValueKey('squad-member-u$i')), findsOneWidget);
+        }
+        expect(find.byKey(const ValueKey('squad-member-u5')), findsNothing);
+        expect(find.text('+2'), findsOneWidget);
+      },
+    );
   });
 }

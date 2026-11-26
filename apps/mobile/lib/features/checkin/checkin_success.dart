@@ -1261,9 +1261,19 @@ class _MiniCalendar extends StatelessWidget {
                       for (var i = 0; i < 7; i++)
                         Expanded(
                           child: Text(
-                            DateFormat.E(locale)
-                                .format(DateTime(2024, 1, 1 + i))
-                                .substring(0, 2),
+                            locale.startsWith('vi')
+                                ? const [
+                                    'T2',
+                                    'T3',
+                                    'T4',
+                                    'T5',
+                                    'T6',
+                                    'T7',
+                                    'CN',
+                                  ][i]
+                                : DateFormat.E(locale)
+                                      .format(DateTime(2024, 1, 1 + i))
+                                      .substring(0, 2),
                             textAlign: TextAlign.center,
                             maxLines: 1,
                             style: UiText.body(

@@ -347,7 +347,7 @@ abstract class SharingL10n {
   /// S21 owner stats line, opens SCR-88.
   ///
   /// In vi, this message translates to:
-  /// **'{views} lượt xem · {likes} ❤️ · {started} đã bắt đầu'**
+  /// **'{views} lượt xem · {likes} lượt thích · {started} đã bắt đầu'**
   String sharing_statsLine(String views, String likes, String started);
 
   /// Revokes every share.
@@ -731,7 +731,7 @@ abstract class SharingL10n {
   /// S22 counts line for viewers.
   ///
   /// In vi, this message translates to:
-  /// **'❤️ {likes} · {follows} người đã làm hành trình này'**
+  /// **'{likes} lượt thích · {follows} người đã làm hành trình này'**
   String sharing_counts(int likes, int follows);
 
   /// Day label of a photo.

@@ -143,7 +143,7 @@ abstract class AestheticFlexerL10n {
   /// Nhãn mốc ngày 7, 14, 21...
   ///
   /// In vi, this message translates to:
-  /// **'NGÀY {day} ★ CỘT MỐC'**
+  /// **'NGÀY {day} · CỘT MỐC'**
   String aesthetic_flexer_milestoneStar(String day);
 
   /// Nhãn mốc hôm nay
@@ -161,19 +161,19 @@ abstract class AestheticFlexerL10n {
   /// Kiểu lớp phủ Bold HUD
   ///
   /// In vi, this message translates to:
-  /// **'Bold HUD'**
+  /// **'HUD đậm'**
   String get aesthetic_flexer_styleBoldHud;
 
   /// Kiểu lớp phủ Minimal Stamp
   ///
   /// In vi, this message translates to:
-  /// **'Minimal Stamp'**
+  /// **'Dấu tối giản'**
   String get aesthetic_flexer_styleMinimalStamp;
 
   /// Kiểu lớp phủ Film Strip
   ///
   /// In vi, this message translates to:
-  /// **'Film Strip'**
+  /// **'Dải phim'**
   String get aesthetic_flexer_styleFilmStrip;
 
   /// Nhãn số ngày đã tập trên thiệp Story

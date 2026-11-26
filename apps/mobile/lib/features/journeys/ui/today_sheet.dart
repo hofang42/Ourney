@@ -5,12 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/app_routes.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/journey_style_name.dart';
 import '../../../ui/ui.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'journey_actions.dart';
+import 'journey_errors.dart';
 import 'journey_style.dart';
 
 /// Opens the **Today sheet** (V1.0 `TodaySheet`): what is still waiting for
@@ -27,20 +29,32 @@ class TodaySheetContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = JourneysL10n.of(context);
+    final app = AppLocalizations.of(context);
     final ui = context.ui;
-    final journeys = ref.watch(journeysListProvider).value ?? const [];
+    final journeysAsync = ref.watch(journeysListProvider);
+    final journeys = journeysAsync.value ?? const [];
     final active = JourneyBuckets(journeys).active;
     final now = ref.watch(journeysNowProvider);
-    final progress = <JourneyProgress>[
-      for (final j in active)
-        if (ref.watch(myCheckInsProvider(j.id)).value case final c?)
+    var anyLoading = journeysAsync.isLoading && !journeysAsync.hasValue;
+    Object? firstError = journeysAsync.hasValue ? null : journeysAsync.error;
+    final progress = <JourneyProgress>[];
+    for (final j in active) {
+      final checkInsAsync = ref.watch(myCheckInsProvider(j.id));
+      if (checkInsAsync.value case final c?) {
+        progress.add(
           JourneyProgress.compute(
             journey: j,
             membership: ref.watch(myMembershipProvider(j.id)).value,
             checkIns: c,
             now: now,
           ),
-    ];
+        );
+      } else if (checkInsAsync.isLoading) {
+        anyLoading = true;
+      } else if (checkInsAsync.hasError) {
+        firstError ??= checkInsAsync.error;
+      }
+    }
     final pending = [
       for (final p in progress)
         if (!p.checkedInToday) p,
@@ -65,7 +79,30 @@ class TodaySheetContent extends ConsumerWidget {
       key: const ValueKey('today-sheet'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (allDone) ...[
+        if (progress.isEmpty && anyLoading)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: UiSpace.xl),
+            child: Center(
+              child: UiSpinner(
+                key: const ValueKey('today-sheet-loading'),
+                semanticsLabel: app.common_loading,
+              ),
+            ),
+          )
+        else if (progress.isEmpty && firstError != null)
+          UiEmptyState(
+            key: const ValueKey('today-sheet-error'),
+            glyph: const OurneyIcon(name: 'error', size: 40),
+            title: journeyErrorMessage(context, firstError),
+            actionLabel: app.common_retry,
+            onAction: () {
+              ref.invalidate(journeysListProvider);
+              for (final j in active) {
+                ref.invalidate(myCheckInsProvider(j.id));
+              }
+            },
+          )
+        else if (allDone) ...[
           const Center(child: UiCheckBadge(size: 64)),
           const SizedBox(height: UiSpace.md),
           Semantics(

@@ -475,6 +475,30 @@ void main() {
       expect(sharing.savedStory?.coverCheckInId, 'c-j1-2026-10-10');
     });
 
+    testWidgets(
+      'F-40: failed hide toggle restores the selected cover photo instead of clearing it',
+      (tester) async {
+        final sharing = FakeSharingRepository(
+          story: const JourneyStory(coverCheckInId: 'c-j1-2026-10-10'),
+        )..hideError = const OurneyException(OurneyErrorCode.offline);
+        final h = await pumpSharing(
+          tester,
+          location: '/sharing/j1',
+          sharing: sharing,
+          checkIns: FakeCheckInRepository([
+            testCheckIn('j1', const LocalDate(2026, 10, 10)),
+          ]),
+          journeys: _journeys(),
+        );
+        await h.go(tester, '/sharing/j1/story');
+        await _tap(tester, _key('story-hide-c-j1-2026-10-10'));
+        await tester.enterText(_key('story-intro'), 'Updated intro');
+        await tester.pumpAndSettle();
+        await _tap(tester, _key('story-save'));
+        expect(sharing.savedStory?.coverCheckInId, 'c-j1-2026-10-10');
+      },
+    );
+
     testWidgets('slow hide toggles (two) never overwrite a later save', (
       tester,
     ) async {
@@ -774,7 +798,7 @@ void main() {
       expect(sharing.calls, contains('public-open:tok123'));
       expect(_key('shared-reply-p1'), findsNothing);
       expect(_key('shared-streak'), findsNothing);
-      expect(find.text('❤️ 340 · 28 people did this journey'), findsOneWidget);
+      expect(find.text('340 likes · 28 people did this journey'), findsOneWidget);
       expect(find.textContaining('IMPORTED'), findsOneWidget);
       await _tap(tester, _key('shared-add-friend'));
       expect(friends.requests, ['o1:j1']);

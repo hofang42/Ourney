@@ -59,7 +59,7 @@ String wrappedShareText(
       ? l10n.journeys_wrapped_sumQuiet(stats.total)
       : wrappedSummaryTitle(l10n, journey, skin, stats);
   final weights = skin == PersonaSkinId.quietTransformer && !hideKg
-      ? _Summary._weights(stats)
+      ? _Summary._weights(stats, unit: journey.metricUnit)
       : null;
   final String? footer;
   if (publicAddress != null) {
@@ -588,11 +588,12 @@ class _Summary extends ConsumerStatefulWidget {
   final ValueChanged<bool> onHideBrand;
 
   /// "65.2 kg - 62.0 kg" from the first and last logged metric, if any.
-  static String? _weights(WrappedStats s) {
+  static String? _weights(WrappedStats s, {String? unit}) {
     final values = s.weights;
     if (values.length < 2) return null;
+    final u = (unit == null || unit.trim().isEmpty) ? 'kg' : unit.trim();
     String f(double v) => v.toStringAsFixed(1);
-    return '${f(values.first)} kg  >  ${f(values.last)} kg';
+    return '${f(values.first)} $u  >  ${f(values.last)} $u';
   }
 
   @override
@@ -624,19 +625,19 @@ class _SummaryState extends ConsumerState<_Summary> {
       membership.isLoading ||
       membership.hasError ||
       membership.value == null ||
-      shareMetricHidden(
-        journey,
-        membership.value,
-        forceHideMetric: hideKg,
-        hideWeight: hideWeight,
-      );
+      hideKg ||
+      (hideWeight && isWeightMetric(journey)) ||
+      journey.hideMetricDefault ||
+      (membership.value?.hideMetric ?? false);
 
   @override
   Widget build(BuildContext context) {
     final l10n = JourneysL10n.of(context);
     final ui = context.ui;
     final quiet = skin == PersonaSkinId.quietTransformer;
-    final weights = quiet ? _Summary._weights(stats) : null;
+    final weights = quiet
+        ? _Summary._weights(stats, unit: journey.metricUnit)
+        : null;
     final membershipProvider = myMembershipProvider(journey.id);
     final hasBackend = ref.watch(appConfigProvider).hasBackend;
     final shareState = hasBackend

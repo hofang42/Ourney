@@ -206,11 +206,11 @@ class ShareRatioTabs<T> extends StatelessWidget {
 
     // (selected fill, selected label, selected outline)
     final (Color selFill, Color selInk, Color? selBorder) = switch (skinId) {
-      'squad' => (v.button, const Color(0xFF1A1A1A), ui.outline),
-      'memory' => (v.button, Colors.white, ui.outline),
-      'couple' => (v.button, const Color(0xFF1A1316), null),
-      'flexer' => (v.accent, const Color(0xFF090A0F), null),
-      'minimal' => (v.button, const Color(0xFF1C1C1E), null),
+      'squad' => (v.button, v.buttonLabel, ui.outline),
+      'memory' => (v.button, v.buttonLabel, ui.outline),
+      'couple' => (v.button, v.buttonLabel, null),
+      'flexer' => (v.accent, OurneyUi.onAccentFor(v.accent), null),
+      'minimal' => (v.button, v.buttonLabel, null),
       _ => (Colors.transparent, ui.ink, null),
     };
 
@@ -383,7 +383,7 @@ class ShareActionButton extends StatelessWidget {
       ),
       'couple' => (
         v.button,
-        const Color(0xFF1A1316),
+        v.buttonLabel,
         Border.all(color: ui.outline, width: UiBorder.standard),
         [
           const BoxShadow(
@@ -395,7 +395,7 @@ class ShareActionButton extends StatelessWidget {
       ),
       'flexer' => (
         v.button,
-        const Color(0xFF090A0F),
+        v.buttonLabel,
         Border.all(color: v.accent, width: UiBorder.thin),
         [
           BoxShadow(color: v.accent, blurRadius: 10),
@@ -407,15 +407,15 @@ class ShareActionButton extends StatelessWidget {
         UiRadius.capsule,
       ),
       'minimal' => (
-        ui.isDark ? const Color(0xFF3F3F46) : const Color(0xFF27272A),
-        Colors.white,
+        ui.isDark ? ui.ink : const Color(0xFF27272A),
+        ui.isDark ? ui.bg : Colors.white,
         null,
         null,
         8.0,
       ),
       _ => (
-        const Color(0xFF111827),
-        Colors.white,
+        ui.isDark ? ui.ink : const Color(0xFF111827),
+        ui.isDark ? ui.bg : Colors.white,
         null,
         null,
         UiRadius.capsule,
@@ -692,10 +692,10 @@ Future<void> showShareSheet({
                     onPressed: () => Navigator.of(sheetContext).pop(),
                     semanticLabel: close,
                     excludeChildSemantics: true,
-                    minSize: const Size.square(44),
+                    minSize: const Size.square(UiSize.tap),
                     borderRadius: BorderRadius.circular(UiRadius.capsule),
                     child: SizedBox.square(
-                      dimension: 44,
+                      dimension: UiSize.tap,
                       child: Center(
                         child: OurneyIcon(
                           name: 'close',
@@ -799,10 +799,10 @@ Future<bool> showQuietPrivacySheet(BuildContext context) async {
                 onPressed: () => Navigator.of(sheetContext).pop(false),
                 semanticLabel: close,
                 excludeChildSemantics: true,
-                minSize: const Size.square(44),
+                minSize: const Size.square(UiSize.tap),
                 borderRadius: BorderRadius.circular(UiRadius.capsule),
                 child: SizedBox.square(
-                  dimension: 44,
+                  dimension: UiSize.tap,
                   child: Center(
                     child: OurneyIcon(
                       name: 'close',

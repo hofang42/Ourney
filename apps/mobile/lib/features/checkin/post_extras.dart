@@ -301,7 +301,7 @@ class _MinutesPicker extends StatelessWidget {
               children: [
                 UiIconButton(
                   key: const ValueKey('checkin-minutes-less'),
-                  glyph: Text('−', style: UiText.h2(color: ui.ink, size: 24)),
+                  glyph: const OurneyIcon(name: 'minus', size: 22),
                   label: l10n.checkin_extraMinutesLess,
                   onPressed: () => c.pickMinutes(
                     ((c.minutes ?? 45) - 5).clamp(5, 180),

@@ -688,7 +688,11 @@ class _DnaDateRangeState extends State<DnaDateRange> {
                   maxLines: 1,
                   style: UiText.body(
                     size: 14,
-                    color: past ? ui.divider : ui.ink,
+                    color: on
+                        ? ui.onAccent
+                        : (past
+                              ? ui.inkMuted.withValues(alpha: 0.5)
+                              : ui.ink),
                   ).copyWith(fontWeight: on ? FontWeight.w700 : null),
                 ),
               ),

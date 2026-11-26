@@ -114,6 +114,7 @@ const Map<String, List<_Prim>> _drawings = {
   'back': [_Prim.path('m10 5-7 7 7 7'), _Prim.path('M4 12h17')],
   'close': [_Prim.path('m5 5 14 14M19 5 5 19')],
   'plus': [_Prim.path('M12 4v16M4 12h16')],
+  'minus': [_Prim.path('M5 11h14v2H5Z')],
   'share': [
     _Prim.circle(18, 5, 2.5),
     _Prim.circle(6, 12, 2.5),
@@ -414,6 +415,7 @@ const Map<String, Color> _palette = {
   'back': Color(0xFF2AA7E0),
   'close': Color(0xFFC2452B),
   'plus': Color(0xFF10B981),
+  'minus': Color(0xFF10B981),
   'share': Color(0xFF2AA7E0),
   'lock': Color(0xFF2AA7E0),
   'heart': Color(0xFFFF4D6D),

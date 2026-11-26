@@ -156,7 +156,7 @@ class SharingL10nVi extends SharingL10n {
 
   @override
   String sharing_statsLine(String views, String likes, String started) {
-    return '$views lượt xem · $likes ❤️ · $started đã bắt đầu';
+    return '$views lượt xem · $likes lượt thích · $started đã bắt đầu';
   }
 
   @override
@@ -379,7 +379,7 @@ class SharingL10nVi extends SharingL10n {
 
   @override
   String sharing_counts(int likes, int follows) {
-    return '❤️ $likes · $follows người đã làm hành trình này';
+    return '$likes lượt thích · $follows người đã làm hành trình này';
   }
 
   @override

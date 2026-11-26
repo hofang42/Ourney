@@ -1145,6 +1145,8 @@ class _LinkBlock extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  const OurneyIcon(name: 'heart', size: 14),
+                  const SizedBox(width: 6),
                   Flexible(
                     child: Text(
                       l10n.sharing_statsLine(
