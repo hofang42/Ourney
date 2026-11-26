@@ -172,6 +172,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
             myUserId: callerId,
             members:
                 ref.watch(groupMembersTodaySafeProvider(id)).value ??
+                ref.watch(groupCachedMembersSafeProvider(id)).value ??
                 const <MemberToday>[],
           )
         : const <String?>[];
@@ -245,7 +246,8 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
     final hideBrand = _hideBrand ?? shareCardHidesBrandByDefault(skinId);
     final gallery = <ImageProvider>[
       if (!coupleMosaic)
-        for (final c in candidates.take(36)) ?_photoProvider(c, thumb: true),
+        for (final c in candidates.where((c) => c.id != selected?.id).take(36))
+          ?_photoProvider(c, thumb: true),
     ];
     final screenHeight = MediaQuery.sizeOf(context).height;
     final previewHeight = (screenHeight * 0.55).clamp(280.0, 620.0);
@@ -750,29 +752,31 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
         baseName: shareCardBaseName(journey.id, format),
       );
       if (!mounted) return;
+      bool shouldHideTitle() =>
+          !mounted ||
+          shareMetricHidden(
+            journey,
+            ref.read(shareMembershipProvider(journey.id)).value,
+            forceHideMetric: widget.initialHideMetric ?? false,
+            hideWeight: ref.read(hideWeightOnShareProvider),
+          );
+
       final token = await publicAddressForCaption(
         journey,
         () => ref.read(appConfigProvider).hasBackend
             ? ref.read(sharingRepositoryProvider)
             : null,
-        hideTitle: () =>
-            !mounted ||
-            shareMetricHidden(
-              journey,
-              ref.read(shareMembershipProvider(journey.id)).value,
-              forceHideMetric: widget.initialHideMetric ?? false,
-              hideWeight: ref.read(hideWeightOnShareProvider),
-            ),
+        hideTitle: shouldHideTitle,
       );
       if (!mounted) return;
       final link = token != null
           ? publicJourneyLink(token)
           : 'https://ourney.tech';
+      final captionTitle = shouldHideTitle() ? shareCardLogo : journey.title;
       await sharer.shareImage(
         path: file.path,
         mimeType: file.mimeType,
-        text:
-            '${l10n.share_card_shareText(journey.emoji, journey.title)}\n$link',
+        text: '${l10n.share_card_shareText(journey.emoji, captionTitle)}\n$link',
         origin: _shareOrigin(),
       );
     } on Object {

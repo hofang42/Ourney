@@ -994,4 +994,47 @@ void main() {
   });
 
   test('card logo constant', () => expect(shareCardLogo, 'Ourney'));
+
+  testWidgets(
+    'F-16: multi-photo ShareCard gallery excludes the selected primary photo so slot 0 and slot 1 do not duplicate',
+    (tester) async {
+      final j = testJourney(templateId: TemplateId.englishDaily);
+      final checkIns = streakCheckIns(j.id, lastDay: 12);
+      await pumpShare(
+        tester,
+        journey: j,
+        checkIns: checkIns,
+        mediaStore: FakeMediaStore(resolve: true),
+      );
+      final card = tester.widget<ShareCard>(find.byType(ShareCard).last);
+      expect(card.photo, isNotNull);
+      // 3 distinct days total (Oct 10..12): 1 primary photo + 2 distinct gallery thumbnails.
+      expect(card.gallery, hasLength(2));
+    },
+  );
+
+  testWidgets(
+    'F-25: ShareCard share caption omits sensitive journey.title when metric/title is hidden',
+    (tester) async {
+      const secretTitle = 'Giảm 12kg sau sinh';
+      final wl = weightLossJourney();
+      final j = testJourney(
+        templateId: wl.templateId,
+        title: secretTitle,
+        emoji: wl.emoji,
+        metricName: wl.metricName,
+        metricUnit: wl.metricUnit,
+        hideMetricDefault: true,
+      );
+      final h = await pumpShare(
+        tester,
+        journey: j,
+        checkIns: streakCheckIns(j.id),
+      );
+      await _tap(tester, _key('share-card-share'));
+      expect(h.sharer.shared, hasLength(1));
+      expect(h.sharer.shared.single.text, isNot(contains(secretTitle)));
+      expect(h.sharer.shared.single.text, contains(shareCardLogo));
+    },
+  );
 }

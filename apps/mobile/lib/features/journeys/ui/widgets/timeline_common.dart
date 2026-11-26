@@ -553,7 +553,11 @@ class TimelineGridCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final ui = context.ui;
     final photo = day.canOpen;
-    final color = photo
+    final hasCouplePhoto = day.coupleSlots.isNotEmpty && photo;
+    final hasLeftPhoto = hasCouplePhoto
+        ? day.coupleSlots.first.checkIn != null
+        : (photo && day.checkIn != null);
+    final color = hasLeftPhoto
         ? UiCamera.onPhoto
         : day.state == DayState.today
         ? timelineAccent(context)
@@ -570,29 +574,20 @@ class TimelineGridCell extends StatelessWidget {
           dimension: size,
           child: Stack(
             children: [
-              if (day.coupleSlots.isEmpty)
+              if (!hasCouplePhoto)
                 TimelineTile(day: day, size: size, cacheWidth: cacheWidth)
-              else
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(UiRadius.otp),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final slot in day.coupleSlots)
-                        Expanded(
-                          child: ColoredBox(
-                            color: ui.fill,
-                            child: slot.checkIn == null || !photo
-                                ? null
-                                : JourneyPhoto(
-                                    checkIn: slot.checkIn!,
-                                    cacheWidth: cacheWidth,
-                                  ),
-                          ),
-                        ),
-                    ],
+              else if (day.state == DayState.today)
+                CustomPaint(
+                  key: const ValueKey('journey-today-ring'),
+                  foregroundPainter: DashedOutlinePainter(
+                    color: timelineAccent(context),
+                    width: 2,
+                    radius: UiRadius.otp,
                   ),
-                ),
+                  child: _coupleSplitTile(ui.fill, photo),
+                )
+              else
+                _coupleSplitTile(ui.fill, photo),
               Positioned(
                 left: 3,
                 top: 2,
@@ -607,11 +602,13 @@ class TimelineGridCell extends StatelessWidget {
                       weight: FontWeight.w700,
                       height: 1.3,
                       color: color,
-                    ).copyWith(shadows: photo
+                    ).copyWith(
+                      shadows: hasLeftPhoto
                           ? const [
                               Shadow(color: UiCamera.shadow, blurRadius: 3),
                             ]
-                          : null),
+                          : null,
+                    ),
                   ),
                 ),
               ),
@@ -621,4 +618,25 @@ class TimelineGridCell extends StatelessWidget {
       ),
     );
   }
+
+  Widget _coupleSplitTile(Color fill, bool photo) => ClipRRect(
+    borderRadius: BorderRadius.circular(UiRadius.otp),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final slot in day.coupleSlots)
+          Expanded(
+            child: ColoredBox(
+              color: fill,
+              child: slot.checkIn == null || !photo
+                  ? null
+                  : JourneyPhoto(
+                      checkIn: slot.checkIn!,
+                      cacheWidth: cacheWidth,
+                    ),
+            ),
+          ),
+      ],
+    ),
+  );
 }

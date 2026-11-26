@@ -49,6 +49,7 @@ private class SquadRenderBundle(
     val avatarStripBitmap: android.graphics.Bitmap?,
     val coupleAvatars: Map<WidgetSquadMember, android.graphics.Bitmap>,
     val memberPolaroids: Map<WidgetSquadMember, android.graphics.Bitmap>,
+    val allowsPhotos: Boolean,
 )
 
 /**
@@ -149,6 +150,7 @@ class SquadGlanceWidget : GlanceAppWidget() {
                     avatarStripBitmap = avatarStripBitmap,
                     coupleAvatars = coupleAvatars,
                     memberPolaroids = memberPolaroids,
+                    allowsPhotos = showMemberPhotos,
                 )
             }
 
@@ -208,6 +210,7 @@ class SquadGlanceWidget : GlanceAppWidget() {
                         avatarStripBitmap = bundle.avatarStripBitmap,
                         coupleAvatars = bundle.coupleAvatars,
                         memberPolaroids = bundle.memberPolaroids,
+                        allowsPhotos = bundle.allowsPhotos,
                         isLarge = size.height >= 200.dp,
                     )
                 }
@@ -224,6 +227,7 @@ class SquadGlanceWidget : GlanceAppWidget() {
         avatarStripBitmap: android.graphics.Bitmap?,
         coupleAvatars: Map<WidgetSquadMember, android.graphics.Bitmap>,
         memberPolaroids: Map<WidgetSquadMember, android.graphics.Bitmap>,
+        allowsPhotos: Boolean,
         isLarge: Boolean,
     ) {
         val progressText = l10n.getString(
@@ -313,6 +317,7 @@ class SquadGlanceWidget : GlanceAppWidget() {
                         palette = palette,
                         avatars = coupleAvatars,
                         memberPolaroids = memberPolaroids,
+                        allowsPhotos = allowsPhotos,
                         showPhotos = true,
                         modifier = GlanceModifier.fillMaxWidth(),
                     )
@@ -339,6 +344,7 @@ class SquadGlanceWidget : GlanceAppWidget() {
                         palette = palette,
                         avatars = coupleAvatars,
                         memberPolaroids = memberPolaroids,
+                        allowsPhotos = allowsPhotos,
                         showPhotos = false,
                         modifier = GlanceModifier.defaultWeight(),
                     )
@@ -416,6 +422,7 @@ class SquadGlanceWidget : GlanceAppWidget() {
         palette: OurneyWidgetPalette,
         avatars: Map<WidgetSquadMember, android.graphics.Bitmap>,
         memberPolaroids: Map<WidgetSquadMember, android.graphics.Bitmap>,
+        allowsPhotos: Boolean,
         showPhotos: Boolean,
         modifier: GlanceModifier,
     ) {
@@ -427,11 +434,11 @@ class SquadGlanceWidget : GlanceAppWidget() {
                 } else {
                     member.displayName
                 }
-                val photo = memberPolaroids[member]
+                val photo = if (showPhotos && allowsPhotos) memberPolaroids[member] else null
                 val status = when {
                     !member.checkedInToday -> R.string.widget_couple_waiting
-                    photo == null -> R.string.widget_couple_no_preview
-                    else -> R.string.widget_couple_checked_in
+                    !showPhotos || !allowsPhotos || photo != null -> R.string.widget_couple_checked_in
+                    else -> R.string.widget_couple_no_preview
                 }
                 Column(
                     modifier = GlanceModifier.defaultWeight(),
