@@ -303,3 +303,153 @@ Deno.test("public-journey never falls back to an unthrottled lookup if the RPC f
   assertEquals(response.status, 500, "unavailable limiter status");
   assertEquals((await response.json()).error, "internal", "generic error body");
 });
+
+Deno.test("public-journey paginates >1,000 check-ins across PostgREST max_rows=1000 pages and preserves oldest cover & >1,000 follow_count (F-28)", async () => {
+  const baseUrl = "https://public-journey.example.test";
+  const publicToken = "c".repeat(40);
+  const journeyId = "11111111-1111-4111-8111-111111111112";
+  const ownerId = "22222222-2222-4222-8222-222222222223";
+  const totalCheckIns = 2500;
+  const maxRowsPerRequest = 1000;
+
+  // Descending order (newest first, matching PostgREST ORDER BY local_date DESC, captured_at DESC, id DESC).
+  // Index 2499 is the oldest check-in (Day 1) and is set as story.cover_checkin_id.
+  const allCheckIns = Array.from({ length: totalCheckIns }, (_, idx) => {
+    const seq = totalCheckIns - idx; // 2500 down to 1
+    const id = `c0000000-0000-4000-8000-${String(seq).padStart(12, "0")}`;
+    return {
+      id,
+      user_id: ownerId,
+      local_date: "2026-01-15",
+      captured_at: `2026-01-15T12:00:00Z`,
+      caption: `Photo #${seq}`,
+      from_library: false,
+      photo_path: `photo_${seq}.jpg`,
+      thumb_path: `thumb_${seq}.jpg`,
+    };
+  });
+  const oldestCheckInId = allCheckIns[totalCheckIns - 1].id;
+
+  // 1,350 follower journeys across 1,250 distinct owner_ids (testing >1,000 follower pagination fallback too).
+  const allFollowers = Array.from({ length: 1350 }, (_, idx) => ({
+    id: `f0000000-0000-4000-8000-${String(idx + 1).padStart(12, "0")}`,
+    owner_id: `u0000000-0000-4000-8000-${String((idx % 1250) + 1).padStart(12, "0")}`,
+  }));
+
+  function slicePostgrestPage<T>(rows: T[], request: Request, url: URL): T[] {
+    let offset = 0;
+    let limit = maxRowsPerRequest;
+    const rangeHeader = request.headers.get("range");
+    const rangeMatch = rangeHeader?.match(/^(\d+)-(\d+)$/);
+    if (rangeMatch) {
+      offset = Number(rangeMatch[1]);
+      limit = Number(rangeMatch[2]) - offset + 1;
+    }
+    const offsetParam = url.searchParams.get("offset");
+    const limitParam = url.searchParams.get("limit");
+    if (offsetParam !== null) offset = Number(offsetParam);
+    if (limitParam !== null) limit = Number(limitParam);
+    const effectiveLimit = Math.max(0, Math.min(limit, maxRowsPerRequest));
+    return rows.slice(offset, offset + effectiveLimit);
+  }
+
+  for (const useSqlFollowCount of [true, false]) {
+    let checkInPageRequests = 0;
+    let followerPageRequests = 0;
+
+    const journey = {
+      id: journeyId,
+      owner_id: ownerId,
+      public_token: publicToken,
+      kind: "solo",
+      template_id: "custom",
+      title: "2500 Check-In Journey",
+      emoji: "📸",
+      metric_name: null,
+      metric_unit: null,
+      start_date: "2026-01-01",
+      duration_days: 30,
+      timezone: "UTC",
+      status: "ended",
+      origin: "imported",
+      layout: null,
+      color: null,
+      cover: null,
+      story_title: "Full Story",
+      story_intro: null,
+      story_lessons: null,
+      cover_checkin_id: oldestCheckInId,
+      show_counts: true,
+      ...(useSqlFollowCount ? { follow_count: 1250 } : {}),
+    };
+
+    const client = createClient(baseUrl, "local-test-key", {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+      global: {
+        fetch: async (input, init) => {
+          const request = new Request(input, init);
+          const url = new URL(request.url);
+          if (url.pathname === "/rest/v1/rpc/lookup_public_journey_for_edge") {
+            return Response.json({ journey, retry_after: 0 });
+          }
+          if (url.pathname === "/rest/v1/rpc/record_journey_view") {
+            return Response.json(null);
+          }
+          const table = url.pathname.slice("/rest/v1/".length);
+          if (table === "memberships") {
+            return Response.json([{ user_id: ownerId, hide_metric: true, blur_media: true, joined_at: "2026-01-01T00:00:00Z" }]);
+          }
+          if (table === "journey_share_consents") {
+            return Response.json([]);
+          }
+          if (table === "profiles") {
+            return Response.json({ display_name: "Owner" });
+          }
+          if (table === "check_ins") {
+            checkInPageRequests++;
+            return Response.json(slicePostgrestPage(allCheckIns, request, url));
+          }
+          if (table === "check_in_metrics") {
+            return Response.json([]);
+          }
+          if (table === "reactions") {
+            return new Response(null, {
+              status: 200,
+              headers: { "content-range": "0-0/3" },
+            });
+          }
+          if (table === "journeys") {
+            followerPageRequests++;
+            return Response.json(slicePostgrestPage(allFollowers, request, url));
+          }
+          throw new Error(`Unexpected Supabase request: ${url}`);
+        },
+      },
+    });
+
+    const response = await handle(
+      new Request(`${baseUrl}/functions/v1/public-journey?token=${publicToken}`),
+      { createAdmin: () => client, viewSalt: "" },
+    );
+    assertEquals(response.status, 200, "paginated status");
+    const body = await response.json();
+    assertEquals(checkInPageRequests, 3, "3 pages of 1000/1000/500 check-ins fetched");
+    assertEquals(body.check_ins.length, totalCheckIns, "all 2,500 check-ins returned without truncation");
+    assertEquals(body.check_ins[0].checkin_id, oldestCheckInId, "oldest check-in sorted first after reverse()");
+    assertEquals(body.check_ins[totalCheckIns - 1].checkin_id, allCheckIns[0].id, "newest check-in sorted last");
+    assertEquals(body.story.cover_checkin_id, oldestCheckInId, "oldest check-in beyond row 1,000 is preserved as story cover");
+    assertEquals(body.follow_count, 1250, "distinct follower count > 1,000 is not truncated at 1,000");
+    assertEquals(
+      followerPageRequests,
+      useSqlFollowCount ? 0 : 2,
+      "SQL follow_count avoids table scan while fallback paginates 2 pages",
+    );
+  }
+});
+
+import "../waitlist-signup/index_test.ts";
+import "../notify-moderation/index_test.ts";

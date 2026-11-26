@@ -20,6 +20,7 @@ const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*-[a-z2-7]{16}$/;
 const MAX_SLUG_LENGTH = 40;
 const SIGNED_URL_TTL_SECONDS = 600;
 const MAX_CHECKINS = 4000; // up to 10 members x 366 days
+const POSTGREST_PAGE_SIZE = 1000; // matches supabase/config.toml max_rows = 1000
 const SIGN_BATCH_SIZE = 200;
 
 const cors = {
@@ -51,6 +52,7 @@ type JourneyRow = {
   story_lessons: string | null;
   cover_checkin_id: string | null;
   show_counts: boolean;
+  follow_count?: number | null;
 };
 
 type CheckInRow = {
@@ -136,13 +138,7 @@ export async function handle(
   if (!data.journey) return notFound();
   const journey = data.journey as JourneyRow;
 
-  const [members, consents, owner, checkIns, followers] = await Promise.all([
-    admin.from("memberships").select("user_id, hide_metric, blur_media, joined_at")
-      .eq("journey_id", journey.id).eq("status", "active").is("deleted_at", null)
-      .order("joined_at", { ascending: true }),
-    admin.from("journey_share_consents").select("user_id")
-      .eq("journey_id", journey.id).eq("status", "accepted"),
-    admin.from("profiles").select("display_name").eq("id", journey.owner_id).maybeSingle(),
+  const fetchCheckInsPage = (offset: number) =>
     admin.from("check_ins")
       .select("id, user_id, local_date, captured_at, caption, from_library, photo_path, thumb_path")
       .eq("journey_id", journey.id).is("deleted_at", null).is("moderated_at", null)
@@ -151,14 +147,32 @@ export async function handle(
       .order("local_date", { ascending: false })
       .order("captured_at", { ascending: false })
       .order("id", { ascending: false })
-      .limit(MAX_CHECKINS),
-    // FS-23: distinct owner_id count so one follower with multiple journeys cannot inflate follow_count.
-    journey.show_counts
-      ? admin.from("journeys").select("owner_id")
-        .eq("followed_from", journey.id).is("deleted_at", null)
+      .range(offset, offset + POSTGREST_PAGE_SIZE - 1);
+
+  const fetchFollowersPage = (offset: number) =>
+    admin.from("journeys").select("owner_id")
+      .eq("followed_from", journey.id).is("deleted_at", null)
+      .order("id", { ascending: true })
+      .range(offset, offset + POSTGREST_PAGE_SIZE - 1);
+
+  const hasSqlFollowCount = typeof journey.follow_count === "number" &&
+    Number.isFinite(journey.follow_count) && journey.follow_count >= 0;
+
+  const [members, consents, owner, firstCheckIns, firstFollowers] = await Promise.all([
+    admin.from("memberships").select("user_id, hide_metric, blur_media, joined_at")
+      .eq("journey_id", journey.id).eq("status", "active").is("deleted_at", null)
+      .order("joined_at", { ascending: true }),
+    admin.from("journey_share_consents").select("user_id")
+      .eq("journey_id", journey.id).eq("status", "accepted"),
+    admin.from("profiles").select("display_name").eq("id", journey.owner_id).maybeSingle(),
+    fetchCheckInsPage(0),
+    // FS-23 & F-28: prefer SQL count(distinct owner_id) from lookup_public_journey_for_edge;
+    // fall back to paginated owner_id scan if running against pre-0036 lookup output.
+    journey.show_counts && !hasSqlFollowCount
+      ? fetchFollowersPage(0)
       : Promise.resolve({ data: null, error: null }),
   ]);
-  for (const r of [members, consents, owner, checkIns, followers]) {
+  for (const r of [members, consents, owner, firstCheckIns, firstFollowers]) {
     if (r.error) {
       console.error("public-journey query failed", r.error.message);
       return json({ error: "internal" }, 500, cors);
@@ -174,10 +188,63 @@ export async function handle(
       visibleAuthors.set(m.user_id, m);
     }
   }
-  const rows = ((checkIns.data ?? []) as CheckInRow[]).filter((c) => visibleAuthors.has(c.user_id)).reverse();
-  const followCount = journey.show_counts
-    ? new Set(((followers.data ?? []) as { owner_id: string }[]).map((f) => f.owner_id)).size
-    : 0;
+  const visibleCheckIns: CheckInRow[] = [];
+  let checkInPage = (firstCheckIns.data ?? []) as CheckInRow[];
+  for (const c of checkInPage) {
+    if (visibleAuthors.has(c.user_id)) {
+      visibleCheckIns.push(c);
+      if (visibleCheckIns.length >= MAX_CHECKINS) break;
+    }
+  }
+  // F-28: PostgREST enforces max_rows = 1000 per request; paginate in 1,000-row chunks up to MAX_CHECKINS.
+  const maxScanOffset = MAX_CHECKINS * 3;
+  for (
+    let offset = POSTGREST_PAGE_SIZE;
+    visibleAuthors.size > 0 &&
+    checkInPage.length === POSTGREST_PAGE_SIZE &&
+    visibleCheckIns.length < MAX_CHECKINS &&
+    offset < maxScanOffset;
+    offset += POSTGREST_PAGE_SIZE
+  ) {
+    const nextCheckIns = await fetchCheckInsPage(offset);
+    if (nextCheckIns.error) {
+      console.error("public-journey query failed", nextCheckIns.error.message);
+      return json({ error: "internal" }, 500, cors);
+    }
+    checkInPage = (nextCheckIns.data ?? []) as CheckInRow[];
+    for (const c of checkInPage) {
+      if (visibleAuthors.has(c.user_id)) {
+        visibleCheckIns.push(c);
+        if (visibleCheckIns.length >= MAX_CHECKINS) break;
+      }
+    }
+  }
+  const rows = visibleCheckIns.reverse();
+
+  let followCount = 0;
+  if (journey.show_counts) {
+    if (hasSqlFollowCount) {
+      followCount = Math.trunc(journey.follow_count as number);
+    } else {
+      const followerOwners = new Set<string>();
+      let followerPage = (firstFollowers.data ?? []) as { owner_id: string }[];
+      for (const f of followerPage) followerOwners.add(f.owner_id);
+      for (
+        let offset = POSTGREST_PAGE_SIZE;
+        followerPage.length === POSTGREST_PAGE_SIZE && offset < 50_000;
+        offset += POSTGREST_PAGE_SIZE
+      ) {
+        const nextFollowers = await fetchFollowersPage(offset);
+        if (nextFollowers.error) {
+          console.error("public-journey query failed", nextFollowers.error.message);
+          return json({ error: "internal" }, 500, cors);
+        }
+        followerPage = (nextFollowers.data ?? []) as { owner_id: string }[];
+        for (const f of followerPage) followerOwners.add(f.owner_id);
+      }
+      followCount = followerOwners.size;
+    }
+  }
 
   // Metrics only for the returned check-ins (not a second, independently truncated list).
   const metricById = new Map<string, number | null>();

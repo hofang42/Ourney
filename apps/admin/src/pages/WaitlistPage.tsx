@@ -48,10 +48,13 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
   const [failedRows, setFailedRows] = useState<Record<string, string>>({})
   const [resendingId, setResendingId] = useState<string | null>(null)
   const [bulkRetrying, setBulkRetrying] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [deleting, setDeleting] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<WaitlistRow | null>(null)
   const [deleteReason, setDeleteReason] = useState('')
 
   const loadData = async (nextOffset = offset) => {
+    setLoading(true)
     try {
       const [sum, listRes] = await Promise.all([
         adminApi.waitlistSummary(30),
@@ -71,6 +74,8 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
     } catch (err) {
       const msg = await handleRpcError(err, 'list_waitlist', lang)
       setErrorMsg(msg)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -259,7 +264,8 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
   }
 
   const handleConfirmDelete = async () => {
-    if (!deleteTarget) return
+    if (!deleteTarget || deleting) return
+    setDeleting(true)
     setErrorMsg(null)
     try {
       await adminApi.deleteWaitlistEntry(
@@ -278,6 +284,8 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
     } catch (err) {
       const msg = await handleRpcError(err, 'delete_waitlist_entry', lang)
       setErrorMsg(msg)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -322,7 +330,7 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
         </div>
       </div>
 
-      {errorMsg && (
+      {errorMsg && !deleteTarget && (
         <div className="status-banner error" role="alert">
           <span>{errorMsg}</span>
         </div>
@@ -486,7 +494,26 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => {
+            {loading && rows.length === 0 ? (
+              <tr>
+                <td colSpan={7} style={{ textAlign: 'center', padding: 28 }}>
+                  {t(
+                    'Đang tải danh sách chờ...',
+                    'Loading waitlist entries...',
+                  )}
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={7} style={{ textAlign: 'center', padding: 28 }}>
+                  {t(
+                    'Không tìm thấy mục danh sách chờ nào khớp với bộ lọc.',
+                    'No waitlist entries match the current filters.',
+                  )}
+                </td>
+              </tr>
+            ) : (
+              rows.map((r) => {
               const isRowHighlightedFailed = Boolean(failedRows[r.id])
               const rawRowError =
                 failedRows[r.id] || r.confirmation_error || null
@@ -593,8 +620,12 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
                         <button
                           type="button"
                           className="btn btn-danger"
+                          disabled={deleting}
                           aria-label={`${t('Xóa', 'Delete')} ${r.email}`}
-                          onClick={() => setDeleteTarget(r)}
+                          onClick={() => {
+                            setErrorMsg(null)
+                            setDeleteTarget(r)
+                          }}
                         >
                           <OIcon name="trash" size={16} />
                           <span>{t('Xóa', 'Delete')}</span>
@@ -604,7 +635,8 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
                   </td>
                 </tr>
               )
-            })}
+            })
+            )}
           </tbody>
         </table>
       </div>
@@ -626,13 +658,20 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
             'Confirm Waitlist Deletion',
           )}
           onClose={() => {
+            if (deleting) return
             setDeleteTarget(null)
             setDeleteReason('')
+            setErrorMsg(null)
           }}
         >
           <h3>
             {t('Xác nhận xóa khỏi Danh sách chờ', 'Confirm Waitlist Deletion')}
           </h3>
+          {errorMsg && (
+            <div className="status-banner error" role="alert">
+              <span>{errorMsg}</span>
+            </div>
+          )}
           <p className="page-subtitle">
             {deleteTarget.email} —{' '}
             {t(
@@ -659,9 +698,11 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn"
+              disabled={deleting}
               onClick={() => {
                 setDeleteTarget(null)
                 setDeleteReason('')
+                setErrorMsg(null)
               }}
             >
               {t('Hủy', 'Cancel')}
@@ -669,6 +710,7 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn btn-danger"
+              disabled={deleting}
               onClick={() => void handleConfirmDelete()}
             >
               {t('Xác nhận xóa', 'Confirm Delete')}

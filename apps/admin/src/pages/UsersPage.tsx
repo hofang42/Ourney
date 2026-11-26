@@ -37,6 +37,8 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
     params.id || searchParams.get('id'),
   )
   const [detail, setDetail] = useState<AdminUserDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
   const [statusMsg, setStatusMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -63,6 +65,7 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
   }, [params.id, searchParams])
 
   const loadUsers = async (nextOffset = offset) => {
+    setLoading(true)
     setErrorMsg(null)
     try {
       const res = await adminApi.listUsers({
@@ -77,6 +80,8 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
     } catch (err) {
       const msg = await handleRpcError(err, 'list_users', lang)
       setErrorMsg(msg)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -116,7 +121,7 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
   }, [drawerUserId])
 
   const handleConfirmBan = async () => {
-    if (!detail) return
+    if (!detail || submitting) return
     const trimmedReason = banReason.trim()
     if (trimmedReason.length < 3) {
       setErrorMsg(
@@ -127,6 +132,7 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
       )
       return
     }
+    setSubmitting(true)
     setErrorMsg(null)
     try {
       await adminApi.banUser({
@@ -154,11 +160,14 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
     } catch (err) {
       const msg = await handleRpcError(err, 'ban_user', lang)
       setErrorMsg(msg)
+    } finally {
+      setSubmitting(false)
     }
   }
 
   const handleConfirmUnban = async () => {
-    if (!detail) return
+    if (!detail || submitting) return
+    setSubmitting(true)
     setErrorMsg(null)
     try {
       await adminApi.unbanUser(
@@ -179,11 +188,14 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
     } catch (err) {
       const msg = await handleRpcError(err, 'unban_user', lang)
       setErrorMsg(msg)
+    } finally {
+      setSubmitting(false)
     }
   }
 
   const handleConfirmRevokeSessions = async () => {
-    if (!detail) return
+    if (!detail || submitting) return
+    setSubmitting(true)
     setErrorMsg(null)
     try {
       await adminApi.revokeUserSessions(
@@ -201,6 +213,8 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
     } catch (err) {
       const msg = await handleRpcError(err, 'revoke_user_sessions', lang)
       setErrorMsg(msg)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -209,7 +223,7 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
     : detail?.email || detail?.id || ''
 
   const handleConfirmDeleteAccount = async () => {
-    if (!detail) return
+    if (!detail || submitting) return
     if (deleteConfirmInput.trim() !== expectedConfirmToken) return
     const trimmedReason = deleteReason.trim()
     if (trimmedReason.length < 3) {
@@ -221,6 +235,7 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
       )
       return
     }
+    setSubmitting(true)
     setErrorMsg(null)
     try {
       await adminApi.invokeAdminAction({
@@ -244,6 +259,8 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
     } catch (err) {
       const msg = await handleRpcError(err, 'delete_user', lang)
       setErrorMsg(msg)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -330,11 +347,16 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
         </div>
       </div>
 
-      {errorMsg && (
-        <div className="status-banner error" role="alert">
-          <span>{errorMsg}</span>
-        </div>
-      )}
+      {errorMsg &&
+        !banModalOpen &&
+        !unbanModalOpen &&
+        !revokeModalOpen &&
+        !deleteModalOpen &&
+        !(drawerUserId && detail) && (
+          <div className="status-banner error" role="alert">
+            <span>{errorMsg}</span>
+          </div>
+        )}
 
       {statusMsg && (
         <div className="status-banner success" role="status">
@@ -407,7 +429,23 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((u) => {
+            {loading && rows.length === 0 ? (
+              <tr>
+                <td colSpan={7} style={{ textAlign: 'center', padding: 28 }}>
+                  {t('Đang tải danh sách người dùng...', 'Loading users...')}
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={7} style={{ textAlign: 'center', padding: 28 }}>
+                  {t(
+                    'Không tìm thấy người dùng nào khớp với bộ lọc.',
+                    'No users match the current filters.',
+                  )}
+                </td>
+              </tr>
+            ) : (
+              rows.map((u) => {
               const isSelected = drawerUserId === u.id
               return (
                 <tr
@@ -490,7 +528,8 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
                   </td>
                 </tr>
               )
-            })}
+            })
+            )}
           </tbody>
         </table>
       </div>
@@ -509,7 +548,11 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
         <AccessibleModal
           variant="drawer"
           title={t('Chi tiết người dùng', 'User detail drawer')}
-          onClose={() => setDrawerUserId(null)}
+          onClose={() => {
+            if (submitting) return
+            setDrawerUserId(null)
+            setErrorMsg(null)
+          }}
         >
           <div className="kpi-top">
             <div>
@@ -525,12 +568,26 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn btn-icon"
-              onClick={() => setDrawerUserId(null)}
+              disabled={submitting}
+              onClick={() => {
+                setDrawerUserId(null)
+                setErrorMsg(null)
+              }}
               aria-label={t('Đóng ngăn chi tiết', 'Close detail drawer')}
             >
               <OIcon name="close" size={18} />
             </button>
           </div>
+
+          {errorMsg &&
+            !banModalOpen &&
+            !unbanModalOpen &&
+            !revokeModalOpen &&
+            !deleteModalOpen && (
+              <div className="status-banner error" role="alert">
+                <span>{errorMsg}</span>
+              </div>
+            )}
 
           <div className="card-subtle">
             <div style={{ display: 'grid', gap: 6, fontSize: '0.88rem' }}>
@@ -587,9 +644,12 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn btn-warn"
-              disabled={Boolean(banDisabledReason)}
+              disabled={Boolean(banDisabledReason) || submitting}
               title={banDisabledReason}
-              onClick={() => setBanModalOpen(true)}
+              onClick={() => {
+                setErrorMsg(null)
+                setBanModalOpen(true)
+              }}
             >
               <OIcon name="ban" size={18} />
               <span>
@@ -600,9 +660,12 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn btn-success"
-              disabled={Boolean(unbanDisabledReason)}
+              disabled={Boolean(unbanDisabledReason) || submitting}
               title={unbanDisabledReason}
-              onClick={() => setUnbanModalOpen(true)}
+              onClick={() => {
+                setErrorMsg(null)
+                setUnbanModalOpen(true)
+              }}
             >
               <OIcon name="check" size={18} />
               <span>{t('Mở khóa tài khoản', 'Unban User')}</span>
@@ -611,9 +674,12 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn"
-              disabled={Boolean(revokeDisabledReason)}
+              disabled={Boolean(revokeDisabledReason) || submitting}
               title={revokeDisabledReason}
-              onClick={() => setRevokeModalOpen(true)}
+              onClick={() => {
+                setErrorMsg(null)
+                setRevokeModalOpen(true)
+              }}
             >
               <OIcon name="sign-out" size={18} />
               <span>{t('Thu hồi phiên đăng nhập', 'Revoke Sessions')}</span>
@@ -623,9 +689,12 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
               <button
                 type="button"
                 className="btn btn-danger"
-                disabled={Boolean(deleteDisabledReason)}
+                disabled={Boolean(deleteDisabledReason) || submitting}
                 title={deleteDisabledReason}
-                onClick={() => setDeleteModalOpen(true)}
+                onClick={() => {
+                  setErrorMsg(null)
+                  setDeleteModalOpen(true)
+                }}
               >
                 <OIcon name="trash" size={18} />
                 <span>
@@ -711,14 +780,21 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
         <AccessibleModal
           title={t('Khóa tài khoản người dùng', 'Ban / Suspend User Account')}
           onClose={() => {
+            if (submitting) return
             setBanModalOpen(false)
             setBanReason('')
             setWipeUgc(false)
+            setErrorMsg(null)
           }}
         >
           <h3>
             {t('Khóa tài khoản người dùng', 'Ban / Suspend User Account')}
           </h3>
+          {errorMsg && (
+            <div className="status-banner error" role="alert">
+              <span>{errorMsg}</span>
+            </div>
+          )}
           <p className="page-subtitle">
             {t(
               'Mặc định là Khóa có thể hoàn tác: chặn đăng nhập, đăng xuất mọi thiết bị đang mở, ghi lịch sử kiểm duyệt và thu hồi liên kết công khai (không xóa hồ sơ và giữ nguyên ảnh riêng tư).',
@@ -781,10 +857,12 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn"
+              disabled={submitting}
               onClick={() => {
                 setBanModalOpen(false)
                 setBanReason('')
                 setWipeUgc(false)
+                setErrorMsg(null)
               }}
             >
               {t('Hủy', 'Cancel')}
@@ -792,7 +870,7 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn btn-danger"
-              disabled={banReason.trim().length < 3}
+              disabled={submitting || banReason.trim().length < 3}
               onClick={() => void handleConfirmBan()}
             >
               {t('Xác nhận khóa', 'Confirm Ban')}
@@ -805,11 +883,18 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
         <AccessibleModal
           title={t('Mở khóa tài khoản', 'Unban User Account')}
           onClose={() => {
+            if (submitting) return
             setUnbanModalOpen(false)
             setUnbanReason('')
+            setErrorMsg(null)
           }}
         >
           <h3>{t('Mở khóa tài khoản', 'Unban User Account')}</h3>
+          {errorMsg && (
+            <div className="status-banner error" role="alert">
+              <span>{errorMsg}</span>
+            </div>
+          )}
           <label className="field-group">
             <span className="field-label">
               {t('Lý do mở khóa', 'Unban Reason')}
@@ -825,9 +910,11 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn"
+              disabled={submitting}
               onClick={() => {
                 setUnbanModalOpen(false)
                 setUnbanReason('')
+                setErrorMsg(null)
               }}
             >
               {t('Hủy', 'Cancel')}
@@ -835,6 +922,7 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn btn-success"
+              disabled={submitting}
               onClick={() => void handleConfirmUnban()}
             >
               {t('Xác nhận mở khóa', 'Confirm Unban')}
@@ -850,8 +938,10 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             'Confirm Revoke Active Sessions',
           )}
           onClose={() => {
+            if (submitting) return
             setRevokeModalOpen(false)
             setRevokeReason('')
+            setErrorMsg(null)
           }}
         >
           <h3>
@@ -860,6 +950,11 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
               'Confirm Revoke Active Sessions',
             )}
           </h3>
+          {errorMsg && (
+            <div className="status-banner error" role="alert">
+              <span>{errorMsg}</span>
+            </div>
+          )}
           <p className="page-subtitle">
             {t(
               'Người dùng này sẽ bị đăng xuất ngay lập tức khỏi tất cả thiết bị đang đăng nhập.',
@@ -885,9 +980,11 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn"
+              disabled={submitting}
               onClick={() => {
                 setRevokeModalOpen(false)
                 setRevokeReason('')
+                setErrorMsg(null)
               }}
             >
               {t('Hủy', 'Cancel')}
@@ -895,6 +992,7 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn btn-danger"
+              disabled={submitting}
               onClick={() => void handleConfirmRevokeSessions()}
             >
               {t('Xác nhận thu hồi phiên', 'Confirm Revoke Sessions')}
@@ -910,10 +1008,12 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             'Delete Account on Request (GDPR / Decree 13)',
           )}
           onClose={() => {
+            if (submitting) return
             setDeleteModalOpen(false)
             setDeleteConfirmInput('')
             setDeleteReason('')
             setDeleteTicketRef('')
+            setErrorMsg(null)
           }}
         >
           <h3>
@@ -922,6 +1022,11 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
               'Delete Account on Request (GDPR / Decree 13)',
             )}
           </h3>
+          {errorMsg && (
+            <div className="status-banner error" role="alert">
+              <span>{errorMsg}</span>
+            </div>
+          )}
           <p className="page-subtitle">
             {t(
               `Nhập chính xác "${expectedConfirmToken}" để xác nhận xóa vĩnh viễn tài khoản và toàn bộ tệp hình ảnh lưu trữ.`,
@@ -980,11 +1085,13 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
             <button
               type="button"
               className="btn"
+              disabled={submitting}
               onClick={() => {
                 setDeleteModalOpen(false)
                 setDeleteConfirmInput('')
                 setDeleteReason('')
                 setDeleteTicketRef('')
+                setErrorMsg(null)
               }}
             >
               {t('Hủy', 'Cancel')}
@@ -993,6 +1100,7 @@ export function UsersPage({ admin }: { admin: AdminIdentity }) {
               type="button"
               className="btn btn-danger"
               disabled={
+                submitting ||
                 deleteConfirmInput.trim() !== expectedConfirmToken ||
                 deleteReason.trim().length < 3
               }

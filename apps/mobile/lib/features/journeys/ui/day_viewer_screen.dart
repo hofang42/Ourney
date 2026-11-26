@@ -179,7 +179,8 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
     final l10n = JourneysL10n.of(context);
     final app = AppLocalizations.of(context);
     final reduced = UiMotion.reduced(context);
-    final journey = ref.watch(journeyByIdProvider(widget.journeyId)).value;
+    final journeyAsync = ref.watch(journeyByIdProvider(widget.journeyId));
+    final journey = journeyAsync.value;
     final checkIns = ref.watch(myCheckInsProvider(widget.journeyId));
     final date = widget.date;
     final couple = journey == null
@@ -210,7 +211,8 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
             ]..sort(compareCheckIns)),
           ]
         : ownPhotos;
-    final count = dayCheckIns.length;
+    final waitingForJourney = journey == null && journeyAsync.isLoading;
+    final count = waitingForJourney ? 0 : dayCheckIns.length;
     if (count > 0 && _pages == null) {
       _page = paired ? 0 : count - 1;
       _pages = PageController(initialPage: _page);

@@ -120,6 +120,34 @@ void main() {
       expect(half, findsNothing);
       expect(find.byKey(const ValueKey('overlay-partner-pip')), findsOneWidget);
     });
+
+    testWidgets(
+      'F-39: quietTransformer renders ghost guide alongside partner PiP',
+      (tester) async {
+        await tester.pumpWidget(
+          _host(
+            const Stack(
+              children: [
+                Positioned.fill(
+                  child: CaptureSkinOverlay(
+                    skin: PersonaSkinId.quietTransformer,
+                    showGhost: true,
+                    partnerPhotoFile: 'missing-partner.jpg',
+                  ),
+                ),
+              ],
+            ),
+            dark: true,
+            scale: 1,
+          ),
+        );
+        expect(find.byKey(const ValueKey('overlay-ghost')), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('overlay-partner-pip')),
+          findsOneWidget,
+        );
+      },
+    );
   });
 
   testWidgets('journey picker filters by search', (tester) async {

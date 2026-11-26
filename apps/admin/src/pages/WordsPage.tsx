@@ -42,11 +42,14 @@ export function WordsPage() {
   const [deleteTarget, setDeleteTarget] =
     useState<ObjectionableWordRow | null>(null)
   const [deleteReason, setDeleteReason] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
 
   const [statusMsg, setStatusMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const loadWords = async () => {
+    setLoading(true)
     setErrorMsg(null)
     try {
       const list = await adminApi.listObjectionableWords({
@@ -61,6 +64,8 @@ export function WordsPage() {
     } catch (err) {
       const msg = await handleRpcError(err, 'list_objectionable_words', lang)
       setErrorMsg(msg)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -132,7 +137,8 @@ export function WordsPage() {
   }
 
   const handleConfirmDeleteWord = async () => {
-    if (!deleteTarget) return
+    if (!deleteTarget || submitting) return
+    setSubmitting(true)
     setErrorMsg(null)
     try {
       const term = deleteTarget.term
@@ -147,6 +153,8 @@ export function WordsPage() {
     } catch (err) {
       const msg = await handleRpcError(err, 'delete_objectionable_word', lang)
       setErrorMsg(msg)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -166,7 +174,7 @@ export function WordsPage() {
         </div>
       </div>
 
-      {errorMsg && (
+      {errorMsg && !deleteTarget && (
         <div className="status-banner error" role="alert">
           <span>{errorMsg}</span>
         </div>
@@ -419,54 +427,78 @@ export function WordsPage() {
             </tr>
           </thead>
           <tbody>
-            {words.map((w) => (
-              <tr key={w.term}>
-                <td style={{ fontWeight: 700 }}>{w.term}</td>
-                <td>
-                  <span className="badge">{formatWordLang(w.lang, lang)}</span>
-                </td>
-                <td>
-                  <span className="badge badge-sky">
-                    {formatWordMatchMode(w.match_mode, lang)}
-                  </span>
-                </td>
-                <td>
-                  <span className="badge badge-warn">
-                    {formatWordCategory(w.category, lang)}
-                  </span>
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    aria-pressed={w.enabled}
-                    aria-label={
-                      w.enabled
-                        ? `${t('Đang bật', 'Enabled')} ${w.term}`
-                        : `${t('Đang tắt', 'Disabled')} ${w.term}`
-                    }
-                    className={`btn ${w.enabled ? 'btn-success' : ''}`}
-                    onClick={() => void handleToggleWord(w)}
-                  >
-                    <span>
-                      {w.enabled
-                        ? t('Đang bật', 'Enabled')
-                        : t('Đang tắt', 'Disabled')}
-                    </span>
-                  </button>
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    aria-label={`${t('Xóa', 'Delete')} ${w.term}`}
-                    className="btn btn-danger"
-                    onClick={() => setDeleteTarget(w)}
-                  >
-                    <OIcon name="trash" size={16} />
-                    <span>{t('Xóa', 'Delete')}</span>
-                  </button>
+            {loading && words.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: 28 }}>
+                  {t(
+                    'Đang tải danh sách từ khóa...',
+                    'Loading filter words...',
+                  )}
                 </td>
               </tr>
-            ))}
+            ) : words.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: 28 }}>
+                  {t(
+                    'Không tìm thấy từ khóa nào khớp với bộ lọc.',
+                    'No filter words match the current filters.',
+                  )}
+                </td>
+              </tr>
+            ) : (
+              words.map((w) => (
+                <tr key={w.term}>
+                  <td style={{ fontWeight: 700 }}>{w.term}</td>
+                  <td>
+                    <span className="badge">{formatWordLang(w.lang, lang)}</span>
+                  </td>
+                  <td>
+                    <span className="badge badge-sky">
+                      {formatWordMatchMode(w.match_mode, lang)}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="badge badge-warn">
+                      {formatWordCategory(w.category, lang)}
+                    </span>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      aria-pressed={w.enabled}
+                      aria-label={
+                        w.enabled
+                          ? `${t('Đang bật', 'Enabled')} ${w.term}`
+                          : `${t('Đang tắt', 'Disabled')} ${w.term}`
+                      }
+                      className={`btn ${w.enabled ? 'btn-success' : ''}`}
+                      onClick={() => void handleToggleWord(w)}
+                    >
+                      <span>
+                        {w.enabled
+                          ? t('Đang bật', 'Enabled')
+                          : t('Đang tắt', 'Disabled')}
+                      </span>
+                    </button>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      aria-label={`${t('Xóa', 'Delete')} ${w.term}`}
+                      className="btn btn-danger"
+                      disabled={submitting}
+                      onClick={() => {
+                        setErrorMsg(null)
+                        setDeleteTarget(w)
+                      }}
+                    >
+                      <OIcon name="trash" size={16} />
+                      <span>{t('Xóa', 'Delete')}</span>
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -478,13 +510,20 @@ export function WordsPage() {
             'Confirm Filter Word Deletion',
           )}
           onClose={() => {
+            if (submitting) return
             setDeleteTarget(null)
             setDeleteReason('')
+            setErrorMsg(null)
           }}
         >
           <h3>
             {t('Xác nhận xóa từ khóa chặn', 'Confirm Filter Word Deletion')}
           </h3>
+          {errorMsg && (
+            <div className="status-banner error" role="alert">
+              <span>{errorMsg}</span>
+            </div>
+          )}
           <p className="page-subtitle">
             <strong>{deleteTarget.term}</strong> (
             {formatWordCategory(deleteTarget.category, lang)}) —{' '}
@@ -512,9 +551,11 @@ export function WordsPage() {
             <button
               type="button"
               className="btn"
+              disabled={submitting}
               onClick={() => {
                 setDeleteTarget(null)
                 setDeleteReason('')
+                setErrorMsg(null)
               }}
             >
               {t('Hủy', 'Cancel')}
@@ -522,6 +563,7 @@ export function WordsPage() {
             <button
               type="button"
               className="btn btn-danger"
+              disabled={submitting}
               onClick={() => void handleConfirmDeleteWord()}
             >
               {t('Xác nhận xóa', 'Confirm Delete')}

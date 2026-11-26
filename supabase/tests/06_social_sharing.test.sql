@@ -175,6 +175,7 @@ select lives_ok($$ select public.update_public_settings(tests.j(1), true, false,
 do $$ begin perform tests.as_user(tests.u(3)); end $$;
 select is((public.public_journey_by_token(:'tok')->>'like_count')::int, 2, 'show_counts exposes like_count to strangers');
 do $$ begin perform tests.as_user(tests.u(7)); end $$;
+select is(public.public_journey_by_token(:'tok')->>'role', 'stranger', 'second stranger views (no like)');
 select throws_ok($$ select tests.react(tests.c(1)) $$, '42501', null, 'no stranger reactions when allow_public_reactions is off');
 select throws_ok($$ select public.send_friend_request(tests.u(1), tests.j(1)) $$, '42501', 'forbidden',
   'no viewer requests when allow_viewer_requests is off');
@@ -184,7 +185,6 @@ do $$ begin perform tests.as_postgres();
 do $$ begin perform tests.as_user(tests.u(7)); end $$;
 select throws_ok($$ select public.send_friend_request(tests.u(1), tests.j(1)) $$, 'P0001', 'rate_limited',
   'S39: 20 public-page requests per sender per day');
-select is(public.public_journey_by_token(:'tok')->>'role', 'stranger', 'second stranger views (no like)');
 
 -- ===== follow-along ============================================================
 do $$ begin perform tests.as_user(tests.u(3)); end $$;

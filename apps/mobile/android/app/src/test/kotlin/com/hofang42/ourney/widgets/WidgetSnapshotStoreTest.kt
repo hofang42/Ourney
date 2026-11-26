@@ -758,4 +758,137 @@ class WidgetSnapshotStoreTest {
             WidgetSnapshot.resolveSquadCardState(postSignOutSnap),
         )
     }
+
+    @Test
+    fun `F-14 advances midnight evening streakAlert and reminder timestamps across multi-day rollover and DST`() {
+        val store = WidgetSnapshotStore(tempFolder.newFolder("ourney_widgets_f14"))
+        store.writeSnapshotAtomically(sampleSnapshotJson)
+
+        // Day 1 -> Day 2 midnight (2026-11-24T17:05:00Z = 00:05 ICT on 2026-11-25)
+        val day2MorningMs = Instant.parse("2026-11-24T17:05:00.000Z").toEpochMilli()
+        val day2Snap = store.readSnapshot(day2MorningMs)!!
+
+        val day2Ielts = day2Snap.journeys.first { it.id == "6f8c9a10-0001" }
+        assertEquals("2026-11-25T11:00:00Z", day2Ielts.eveningCueAtUtc)
+        assertEquals("2026-11-25T14:00:00Z", day2Ielts.streakAlertAtUtc)
+        assertEquals("2026-11-25T17:00:00Z", day2Ielts.midnightRolloverUtc)
+        assertEquals("2026-11-25T13:00:00Z", day2Ielts.reminderAtUtc)
+
+        val day2Squad = day2Snap.squads.single()
+        assertEquals("2026-11-25T17:00:00Z", day2Squad.midnightRolloverUtc)
+
+        // nextRolloverEpochMs on Day 2 morning must find Day 2's 18:00 evening cue (never null!)
+        val nextOnDay2Morning = day2Snap.nextRolloverEpochMs(day2MorningMs)
+        assertNotNull("Rollover alarm must continue scheduling after Day 1 midnight", nextOnDay2Morning)
+        assertEquals(Instant.parse("2026-11-25T11:00:00Z").toEpochMilli(), nextOnDay2Morning)
+
+        // Day 2 -> Day 3 midnight (2026-11-25T17:05:00Z = 00:05 ICT on 2026-11-26, 2 days closed app)
+        val day3MorningMs = Instant.parse("2026-11-25T17:05:00.000Z").toEpochMilli()
+        val day3Snap = store.readSnapshot(day3MorningMs)!!
+        val nextOnDay3Morning = day3Snap.nextRolloverEpochMs(day3MorningMs)
+        assertNotNull("Rollover alarm must continue scheduling on Day 3+", nextOnDay3Morning)
+        assertEquals(Instant.parse("2026-11-26T11:00:00Z").toEpochMilli(), nextOnDay3Morning)
+
+        // DST Spring-Forward in America/New_York: 2026-03-08 is 23 hours long (EST -05:00 -> EDT -04:00).
+        // Snapshot taken on 2026-03-07 (EST -05:00):
+        // - 18:00 local = 2026-03-07T23:00:00Z
+        // - 21:00 local = 2026-03-08T02:00:00Z
+        // - 00:00 local (start of Mar 8) = 2026-03-08T05:00:00Z
+        val dstSpringJson = """
+            {
+              "schemaVersion": 1,
+              "authState": "ready",
+              "locale": "en",
+              "journeys": [
+                {
+                  "id": "ny-dst",
+                  "title": "NY Spring Forward",
+                  "timezone": "America/New_York",
+                  "utcOffsetMinutes": -300,
+                  "dayNumber": 1,
+                  "totalDays": 30,
+                  "currentStreak": 3,
+                  "bestStreak": 3,
+                  "checkedInToday": true,
+                  "atRisk": false,
+                  "eveningCueAtUtc": "2026-03-07T23:00:00Z",
+                  "streakAlertAtUtc": "2026-03-08T02:00:00Z",
+                  "midnightRolloverUtc": "2026-03-08T05:00:00Z",
+                  "weekStrip": [
+                    {"date": "2026-03-07", "day": 7, "label": "TD", "state": "done"}
+                  ]
+                }
+              ],
+              "squads": []
+            }
+        """.trimIndent()
+        val dstSnap = WidgetSnapshot.fromJson(dstSpringJson)
+
+        // At 2026-03-09T04:05:00Z (00:05 EDT on Mar 9 — only 23h 05m after Mar 8 midnight!):
+        // Two midnights have crossed (Mar 8 00:00 EST and Mar 9 00:00 EDT), so daysPassed must be 2!
+        val mar9MidnightPlus5m = Instant.parse("2026-03-09T04:05:00Z").toEpochMilli()
+        val rolledDst = dstSnap.evaluateAt(mar9MidnightPlus5m)
+        val nyRolled = rolledDst.journeys.single()
+        assertEquals("23-hour DST spring-forward day must count as full calendar day", 3, nyRolled.dayNumber)
+        assertEquals(0, nyRolled.currentStreak)
+        // Next midnight is Mar 10 00:00 EDT (-04:00) = 2026-03-10T04:00:00Z
+        assertEquals("2026-03-10T04:00:00Z", nyRolled.midnightRolloverUtc)
+        // Next evening cue is Mar 9 18:00 EDT (-04:00) = 2026-03-09T22:00:00Z
+        assertEquals("2026-03-09T22:00:00Z", nyRolled.eveningCueAtUtc)
+        assertEquals(
+            Instant.parse("2026-03-09T22:00:00Z").toEpochMilli(),
+            rolledDst.nextRolloverEpochMs(mar9MidnightPlus5m),
+        )
+    }
+
+    @Test
+    fun `F-34 rollWeekStrip keeps English TD and single-letter weekdays instead of flipping to Vietnamese`() {
+        val enSnapshotJson = """
+            {
+              "schemaVersion": 1,
+              "authState": "ready",
+              "locale": "en",
+              "journeys": [
+                {
+                  "id": "en-journey",
+                  "title": "Morning Run",
+                  "timezone": "Asia/Ho_Chi_Minh",
+                  "utcOffsetMinutes": 420,
+                  "dayNumber": 7,
+                  "totalDays": 30,
+                  "currentStreak": 7,
+                  "bestStreak": 7,
+                  "checkedInToday": true,
+                  "atRisk": false,
+                  "midnightRolloverUtc": "2026-11-24T17:00:00.000Z",
+                  "weekStrip": [
+                    {"date": "2026-11-18", "day": 18, "label": "W", "state": "done"},
+                    {"date": "2026-11-19", "day": 19, "label": "T", "state": "done"},
+                    {"date": "2026-11-20", "day": 20, "label": "F", "state": "done"},
+                    {"date": "2026-11-21", "day": 21, "label": "S", "state": "done"},
+                    {"date": "2026-11-22", "day": 22, "label": "S", "state": "done"},
+                    {"date": "2026-11-23", "day": 23, "label": "M", "state": "done"},
+                    {"date": "2026-11-24", "day": 24, "label": "TD", "state": "done"}
+                  ]
+                }
+              ],
+              "squads": []
+            }
+        """.trimIndent()
+
+        val postMidnightMs = Instant.parse("2026-11-24T17:05:00.000Z").toEpochMilli()
+        val rolled = WidgetSnapshot.fromJson(enSnapshotJson).evaluateAt(postMidnightMs)
+        val strip = rolled.journeys.single().weekStrip
+
+        assertEquals(7, strip.size)
+        // 2026-11-24 (Tuesday) was "TD" and must roll to English "T" (never Vietnamese "T3"!)
+        assertEquals("2026-11-24", strip[5].date)
+        assertEquals("T", strip[5].label)
+        assertEquals("done", strip[5].state)
+        // 2026-11-25 (Wednesday, new today) must stay English "TD" (never Vietnamese "HN"!)
+        assertEquals("2026-11-25", strip[6].date)
+        assertEquals("TD", strip[6].label)
+        assertEquals("today", strip[6].state)
+        assertEquals(listOf("T", "F", "S", "S", "M", "T", "TD"), strip.map { it.label })
+    }
 }

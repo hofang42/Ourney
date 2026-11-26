@@ -7,7 +7,6 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
 import '../domain/journey_progress.dart';
-import '../domain/journey_time.dart';
 import '../journeys_paths.dart';
 import '../l10n/generated/journeys_localizations.dart';
 
@@ -73,17 +72,17 @@ String journeyDayShort(JourneysL10n l10n, JourneyProgress p) =>
     ? l10n.journeys_dayOpen(p.dayNumber)
     : l10n.journeys_dayShort(p.dayNumber, p.totalDays!);
 
-/// "Starts today" on day 1, otherwise the time left before the journey's
-/// local midnight ("Ends in 3h").
-String journeyDeadlineText(JourneysL10n l10n, JourneyProgress p, DateTime now) {
+/// "Starts today" on day 1, otherwise a calm non-countdown status that
+/// today's check-in is open.
+String journeyDeadlineText(
+  JourneysL10n l10n,
+  JourneyProgress p, [
+  DateTime? now,
+]) {
   if (p.journey.startDate == p.today && p.summary.current == 0) {
     return l10n.journeys_startsToday;
   }
-  final offset = utcOffsetIn(p.journey.timezone, now);
-  final local = now.toUtc().add(offset);
-  final minutesLeft = (24 * 60) - (local.hour * 60 + local.minute);
-  final hours = minutesLeft ~/ 60;
-  return hours < 1 ? l10n.journeys_endsSoon : l10n.journeys_endsInHours(hours);
+  return l10n.journeys_openToday;
 }
 
 /// Makes [journeyId] the active journey while its screen is open, so the
