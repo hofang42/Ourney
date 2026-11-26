@@ -57,9 +57,11 @@ export function AuditPage() {
   const [beforeId, setBeforeId] = useState<number | null>(null)
   const [nextBeforeId, setNextBeforeId] = useState<number | null>(null)
   const [copiedId, setCopiedId] = useState<number | null>(null)
+  const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const loadAudit = async (cursor: number | null = beforeId) => {
+    setLoading(true)
     setErrorMsg(null)
     try {
       const res = await adminApi.listAuditLog({
@@ -74,6 +76,8 @@ export function AuditPage() {
     } catch (err) {
       const msg = await handleRpcError(err, 'list_audit_log', lang)
       setErrorMsg(msg)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -168,7 +172,26 @@ export function AuditPage() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => {
+            {loading && rows.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: 28 }}>
+                  {t(
+                    'Đang tải nhật ký kiểm toán...',
+                    'Loading audit log...',
+                  )}
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: 28 }}>
+                  {t(
+                    'Không tìm thấy bản ghi kiểm toán nào khớp với bộ lọc.',
+                    'No audit log entries match the current filters.',
+                  )}
+                </td>
+              </tr>
+            ) : (
+              rows.map((r) => {
               const metaSummary = formatAuditMetaSummary(r.meta, lang, r.action)
               return (
                 <tr key={r.id}>
@@ -244,7 +267,8 @@ export function AuditPage() {
                   </td>
                 </tr>
               )
-            })}
+            })
+            )}
           </tbody>
         </table>
       </div>

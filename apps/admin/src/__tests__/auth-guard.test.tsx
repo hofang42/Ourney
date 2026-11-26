@@ -24,7 +24,7 @@ import {
   formatWordMatchMode,
   I18nProvider,
 } from '../lib/i18n'
-import { AdminAuthGuard } from '../ui/Shell'
+import { AdminAuthGuard, AdminShell } from '../ui/Shell'
 import { SQL_FIXTURE_MODERATOR, SQL_FIXTURE_OWNER } from './fixtures'
 
 describe('AdminAuthGuard, Central Error Mapper (UX-10), and Localization Helpers (UX-42)', () => {
@@ -407,5 +407,54 @@ describe('AdminAuthGuard, Central Error Mapper (UX-10), and Localization Helpers
       ).toBeInTheDocument()
     })
     expect(meSpy).toHaveBeenCalledTimes(3)
+  })
+
+  it('renders session revocation banner in the newly toggled language without stale locale closure (F-43)', async () => {
+    vi.spyOn(adminApi, 'signOut').mockResolvedValue()
+    vi.spyOn(adminApi, 'me')
+      .mockResolvedValueOnce(SQL_FIXTURE_MODERATOR)
+      .mockRejectedValueOnce(
+        Object.assign(new Error('forbidden'), { code: '42501' }),
+      )
+
+    render(
+      <MemoryRouter>
+        <I18nProvider initialLang="vi">
+          <AdminAuthGuard>
+            {(admin, refresh) => (
+              <AdminShell admin={admin} onSignOut={refresh}>
+                <div>Dashboard Content</div>
+              </AdminShell>
+            )}
+          </AdminAuthGuard>
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Dashboard Content')).toBeInTheDocument()
+    })
+
+    // Toggle language from initial 'vi' to 'en' while authenticated
+    const user = userEvent.setup()
+    await user.click(
+      screen.getByRole('button', { name: /Chuyển đổi ngôn ngữ VI\/EN/i }),
+    )
+
+    // Trigger session revocation: banner must render in English ('en'), not stale Vietnamese ('vi')
+    await act(async () => {
+      await handleRpcError(
+        Object.assign(new Error('forbidden'), { code: '42501' }),
+        'list_users',
+      )
+    })
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          /Admin privileges were revoked or account was suspended/i,
+        ),
+      ).toBeInTheDocument()
+    })
   })
 })

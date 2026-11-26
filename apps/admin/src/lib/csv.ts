@@ -8,7 +8,7 @@ export interface WaitlistExportRow {
   registered_in_app: boolean
 }
 
-const FORMULA_PREFIX_RE = /^[\t\r ]*[=+\-@]|^[\t\r]/
+const FORMULA_PREFIX_RE = /^[\t\r\n ]*[=+\-@|]|^[\t\r\n]/
 
 export function neutralizeCsvFormula(raw: string): string {
   if (raw.length === 0) return ''
