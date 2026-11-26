@@ -38,10 +38,11 @@ BoxDecoration dockSelectionDecoration({
   required Color outline,
   required Color shadow,
   bool camera = false,
+  BorderRadius? borderRadius,
 }) => BoxDecoration(
   // The always-dark camera dock keeps the solid accent pill.
   color: camera ? accent : dockSelectionFill(accent, surface),
-  borderRadius: BorderRadius.circular(dockSelectionRadius),
+  borderRadius: borderRadius ?? BorderRadius.circular(dockSelectionRadius),
   border: Border.all(color: outline, width: UiBorder.thin),
   boxShadow: UiShadow.hard(shadow, UiShadow.tiny),
 );
@@ -132,6 +133,9 @@ class DockTab extends StatelessWidget {
     this.onAccent,
     this.labelFit = 1,
     this.labelMaxWidth,
+    this.lift = dockTabLift,
+    this.labelGap = 2,
+    this.compactT = 0,
     super.key,
   });
 
@@ -139,9 +143,18 @@ class DockTab extends StatelessWidget {
   /// all labels render at one font size (see [dockLabelFit]).
   final double labelFit;
 
-  /// Chord width inside the selection capsule at the label row; constrains
+  /// Max width inside the selection capsule at the label row; constrains
   /// the label without shrinking the 48dp [UiPressable] hit target.
   final double? labelMaxWidth;
+
+  /// Vertical lift above the slot centre (dp). E4 passes `0`.
+  final double lift;
+
+  /// Gap between the 24dp glyph and the label when expanded (dp). E4 passes `3`.
+  final double labelGap;
+
+  /// E4 compact morph progress (`0` = labels shown, `1` = compact).
+  final double compactT;
 
   final UiDockItem item;
   final bool camera;
@@ -183,6 +196,51 @@ class DockTab extends StatelessWidget {
         child: OurneyIcon(name: item.glyph!, active: active),
       );
     }
+    final t = compactT.clamp(0.0, 1.0);
+    final Widget labelBox = ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: labelMaxWidth ?? double.infinity,
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: MediaQuery.textScalerOf(context)
+                .clamp(maxScaleFactor: dockLabelMaxScale),
+          ),
+          child: Text(
+            item.label,
+            maxLines: 1,
+            softWrap: false,
+            textAlign: TextAlign.center,
+            style: UiText.body(
+              size: dockLabelSize * labelFit,
+              weight: active ? FontWeight.w700 : FontWeight.w600,
+              height: 1.35,
+              color: labelColor,
+            ).copyWith(letterSpacing: 0),
+          ),
+        ),
+      ),
+    );
+    final Widget labelWidget = t > 0
+        ? Opacity(
+            opacity: 1 - t,
+            child: ClipRect(
+              child: Align(
+                alignment: Alignment.topCenter,
+                heightFactor: 1 - t,
+                child: Visibility(
+                  visible: t < 1,
+                  maintainState: true,
+                  maintainSize: false,
+                  child: labelBox,
+                ),
+              ),
+            ),
+          )
+        : labelBox;
+    final effectiveGap = labelGap * (1 - t);
     return UiPressable(
       key: item.itemKey,
       onPressed: () {
@@ -195,48 +253,21 @@ class DockTab extends StatelessWidget {
       semanticLabel: item.label,
       excludeChildSemantics: true,
       borderRadius: BorderRadius.circular(UiRadius.menu),
-      minSize: const Size(UiSize.tap, 56),
+      minSize: const Size(UiSize.tap, UiSize.tap),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 56),
+        constraints: const BoxConstraints(minHeight: UiSize.tap),
         // Shrink-wrap vertically: a bottom bar slot gives loose constraints
         // as tall as the screen and `alignment` would fill them.
         child: Center(
           heightFactor: 1,
-          // Lift the content 4dp: the label row then sits where the capsule is
-          // still wide (U17).
           child: Padding(
-            padding: const EdgeInsets.only(bottom: dockTabLift * 2),
+            padding: EdgeInsets.only(bottom: lift * 2),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 glyph,
-                const SizedBox(height: 2),
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: labelMaxWidth ?? double.infinity,
-                  ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: MediaQuery(
-                      data: MediaQuery.of(context).copyWith(
-                        textScaler: MediaQuery.textScalerOf(context)
-                            .clamp(maxScaleFactor: dockLabelMaxScale),
-                      ),
-                      child: Text(
-                        item.label,
-                        maxLines: 1,
-                        softWrap: false,
-                        textAlign: TextAlign.center,
-                        style: UiText.body(
-                          size: dockLabelSize * labelFit,
-                          weight: active ? FontWeight.w700 : FontWeight.w600,
-                          height: 1.35,
-                          color: labelColor,
-                        ).copyWith(letterSpacing: 0),
-                      ),
-                    ),
-                  ),
-                ),
+                if (effectiveGap > 0) SizedBox(height: effectiveGap),
+                labelWidget,
               ],
             ),
           ),

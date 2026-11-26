@@ -48,7 +48,7 @@ void main() {
   }
 
   for (final brightness in Brightness.values) {
-    testWidgets('${brightness.name}: same 5 tabs, snap pill 56x40 in the '
+    testWidgets('${brightness.name}: same 5 tabs, camera circle 60x60 in the '
         'journey accent, no overflow at 320dp / 1.35x', (tester) async {
       await pump(
         tester,
@@ -75,7 +75,11 @@ void main() {
           );
       expect(
         tester.getSize(find.byWidget(face)),
-        const Size(UiSize.snapPillW, UiSize.snapPillH),
+        const Size(60, 60),
+      );
+      expect(
+        (face.decoration! as BoxDecoration).shape,
+        BoxShape.circle,
       );
       expect(
         (face.decoration! as BoxDecoration).color,
@@ -103,15 +107,13 @@ void main() {
     expect(shutter.height, UiSize.shutter);
     expect(shutter.width, greaterThanOrEqualTo(UiSize.shutter));
     expect(find.byKey(const ValueKey('dock-snap-pill')), findsNothing);
-    final bar = tester
-        .widgetList<Container>(
-          find.descendant(
-            of: find.byType(UiDock),
-            matching: find.byType(Container),
-          ),
-        )
-        .firstWhere((c) => c.decoration is BoxDecoration);
-    expect((bar.decoration! as BoxDecoration).color, UiCamera.dock);
+    final islands = tester.widgetList<UiGlass>(find.byType(UiGlass)).toList();
+    expect(islands, hasLength(2));
+    for (final island in islands) {
+      expect(island.tint, UiCamera.dock);
+      expect(island.fallback, UiCamera.dock);
+      expect(island.borderColor, UiCamera.outline);
+    }
   });
 
   testWidgets('every control is at least 48dp and taps select the tab', (
@@ -212,6 +214,10 @@ void main() {
             final pillRect = tester.getRect(
               find.byKey(const ValueKey('dock-selection-pill')),
             );
+            final expectedSlot =
+                ((width - 2 * 12 - 60 - 2 * 6 - 4 * 4) / 4).clamp(0.0, 76.0);
+            expect(pillRect.width, closeTo(expectedSlot - 2, 0.5));
+            expect(pillRect.height, closeTo(52, 0.5));
             final tabFinder = find.byKey(ValueKey(tabKey));
             final iconRect = tester.getRect(
               find.descendant(of: tabFinder, matching: find.byType(OurneyIcon)),

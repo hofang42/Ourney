@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/ui/components/dock.dart';
-import 'package:ourney/ui/components/dock_tab.dart' show dockSelectionRadius;
 import 'package:ourney/ui/components/glass.dart';
 import 'package:ourney/ui/components/ourney_icons.dart';
 import 'package:ourney/ui/components/pressable.dart';
@@ -236,20 +235,11 @@ void main() {
           final label = tester.getRect(
             find.text(activeTab == 0 ? 'Hành trình' : 'Hoạt động'),
           );
-          final r = pill.height / 2;
-          bool inside(Offset p) {
-            final cx = p.dx.clamp(pill.left + r, pill.right - r);
-            return (p - Offset(cx, pill.center.dy)).distance <= r - 2;
-          }
-
-          for (final p in [
-            label.bottomLeft,
-            label.bottomRight,
-            label.topLeft,
-            label.topRight,
-          ]) {
-            expect(inside(p), isTrue, reason: 'label corner $p vs $pill');
-          }
+          expect(label.width, lessThanOrEqualTo(pill.width - 6 + 0.5));
+          expect(label.left, greaterThanOrEqualTo(pill.left - 0.5));
+          expect(label.right, lessThanOrEqualTo(pill.right + 0.5));
+          expect(label.top, greaterThanOrEqualTo(pill.top - 0.5));
+          expect(label.bottom, lessThanOrEqualTo(pill.bottom + 0.5));
         },
       );
     }
@@ -307,12 +297,11 @@ void main() {
       expect(taps, ['j', 'h', 'a', 'p', 'snap']);
 
       final pill = find.byKey(const ValueKey('dock-selection-pill'));
-      expect(tester.getSize(pill).height, 56);
-      expect(tester.getSize(pill).width, inInclusiveRange(60, 78));
-      // V2 capsule shape (U17).
+      expect(tester.getSize(pill).height, 52);
+      expect(tester.getSize(pill).width, inInclusiveRange(60, 74));
       final deco =
           tester.widget<DecoratedBox>(pill).decoration as BoxDecoration;
-      expect(deco.borderRadius, BorderRadius.circular(dockSelectionRadius));
+      expect(deco.borderRadius, BorderRadius.circular(26));
       // Even the outermost tab keeps clear padding inside the dock border.
       expect(
         tester.getTopLeft(pill).dx - tester.getTopLeft(find.byType(UiDock)).dx,
@@ -341,21 +330,23 @@ void main() {
               host(fiveTab([], active: active), brightness: b),
             );
             await tester.pumpAndSettle();
-            final glass = tester.getRect(find.byType(UiGlass));
+            final islands = find.byType(UiGlass);
+            final glass = tester.getRect(
+              active == 0 ? islands.first : islands.last,
+            );
             final pill = tester.getRect(
               find.byKey(const ValueKey('dock-selection-pill')),
             );
-            // 2dp border + >= 8dp gap, also past the pill's 2dp hard shadow.
             const shadow = UiShadow.tiny;
-            expect(pill.top - glass.top, greaterThanOrEqualTo(10));
+            expect(pill.top - glass.top, greaterThanOrEqualTo(5));
             expect(
               glass.bottom - (pill.bottom + shadow),
-              greaterThanOrEqualTo(8),
+              greaterThanOrEqualTo(4),
             );
-            expect(pill.left - glass.left, greaterThanOrEqualTo(10));
+            expect(pill.left - glass.left, greaterThanOrEqualTo(4));
             expect(
               glass.right - (pill.right + shadow),
-              greaterThanOrEqualTo(8),
+              greaterThanOrEqualTo(3),
             );
           }
         },
@@ -392,12 +383,15 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(host(fiveTab([])));
-      final glass = tester.widget<UiGlass>(find.byType(UiGlass));
-      expect(glass.blur, 20);
-      expect(glass.borderWidth, UiBorder.standard);
-      expect(glass.hardShadow, greaterThan(0));
-      expect(glass.tint!.a, lessThan(0.9));
-      expect(find.byType(BackdropFilter), findsOneWidget);
+      final glasses = tester.widgetList<UiGlass>(find.byType(UiGlass)).toList();
+      expect(glasses, hasLength(2));
+      for (final glass in glasses) {
+        expect(glass.blur, 20);
+        expect(glass.borderWidth, UiBorder.standard);
+        expect(glass.hardShadow, greaterThan(0));
+        expect(glass.tint!.a, lessThan(0.9));
+      }
+      expect(find.byType(BackdropFilter), findsNWidgets(2));
     });
 
     testWidgets('selection pill jumps at once under reduce-motion', (
@@ -494,8 +488,8 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(host(fiveTab([])));
-      expect(find.byType(UiGlass), findsOneWidget);
-      expect(find.byType(BackdropFilter), findsOneWidget);
+      expect(find.byType(UiGlass), findsNWidgets(2));
+      expect(find.byType(BackdropFilter), findsNWidgets(2));
 
       await tester.pumpWidget(
         host(
@@ -520,7 +514,7 @@ void main() {
           host(UiSkinScope(skinId: skin, child: fiveTab([]))),
         );
         await tester.pumpAndSettle();
-        return tester.widget<UiGlass>(find.byType(UiGlass)).borderWidth;
+        return tester.widget<UiGlass>(find.byType(UiGlass).first).borderWidth;
       }
 
       expect(await outline('quiet'), UiBorder.thin);
@@ -795,8 +789,8 @@ void main() {
         // A Center without a height once made the glass fill the screen and
         // swallow every tap above it.
         final height = tester.getSize(find.byType(UiDock)).height;
-        expect(height, lessThan(120));
-        expect(tester.getSize(find.byType(UiGlass)).height, camera ? 92 : 76);
+        expect(height, camera ? 90 : 84);
+        expect(tester.getSize(find.byType(UiGlass).first).height, 64);
       });
     }
   });

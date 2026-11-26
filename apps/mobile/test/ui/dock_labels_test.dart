@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/ui/components/dock.dart';
-import 'package:ourney/ui/components/dock_tab.dart'
-    show dockLabelChordWidth, dockLabelMaxScale;
+import 'package:ourney/ui/components/dock_tab.dart' show dockLabelMaxScale;
 import 'package:ourney/ui/theme.dart';
 import 'package:ourney/ui/typography.dart';
 
@@ -127,7 +126,7 @@ void main() {
         final text = tester.widget<Text>(find.text(l));
         expect(
           text.style!.fontSize!,
-          w >= 390 ? 10.5 : greaterThanOrEqualTo(10.2),
+          w >= 390 ? 10.5 : greaterThanOrEqualTo(10),
           reason: '$l at ${w}dp',
         );
       }
@@ -223,22 +222,35 @@ void main() {
               greaterThanOrEqualTo(size10 - 0.01),
               reason: '$locale at ${w}dp x$s ($sizeScaled vs 1x $size10)',
             );
-            if (w == 320.0) {
-              final pill = tester.getRect(
-                find.byKey(const ValueKey('dock-selection-pill')),
-              );
-              final labelRect = tester.getRect(find.text(labels.first));
-              final chord = dockLabelChordWidth(
-                pill.width,
-                pill.width,
-                effectiveScale: sizeScaled / 10.5,
-              );
-              expect(
-                labelRect.width,
-                lessThanOrEqualTo(chord + 0.5),
-                reason: '320dp active label stays inside capsule chord',
-              );
-            }
+            final pill = tester.getRect(
+              find.byKey(const ValueKey('dock-selection-pill')),
+            );
+            final labelRect = tester.getRect(find.text(labels.first));
+            expect(
+              labelRect.width,
+              lessThanOrEqualTo(pill.width - 6 + 0.5),
+              reason: '${w}dp active label width <= capW - 6',
+            );
+            expect(
+              labelRect.left,
+              greaterThanOrEqualTo(pill.left - 0.5),
+              reason: '${w}dp active label left inside capsule',
+            );
+            expect(
+              labelRect.right,
+              lessThanOrEqualTo(pill.right + 0.5),
+              reason: '${w}dp active label right inside capsule',
+            );
+            expect(
+              labelRect.top,
+              greaterThanOrEqualTo(pill.top - 0.5),
+              reason: '${w}dp active label top inside capsule',
+            );
+            expect(
+              labelRect.bottom,
+              lessThanOrEqualTo(pill.bottom + 0.5),
+              reason: '${w}dp active label bottom inside capsule',
+            );
           }
         },
       );

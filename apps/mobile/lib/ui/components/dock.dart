@@ -15,21 +15,6 @@ import 'pressable.dart';
 import 'skin_scope.dart';
 
 const Duration _longPress = Duration(milliseconds: 400);
-const double _pillW = 78;
-const double _pillH = 56;
-// V2 `.app-dock` is 76 high around the 56 capsule: 10dp of air inside the 2dp
-// border (8dp under the capsule's 2dp shadow). At 64 the capsule sat 4dp from
-// the border and its shadow touched it (bug #11).
-const double _dockH = 76;
-const double _cameraDockH = 92;
-// One center slot width for both docks: the camera route swaps the snap pill
-// for the 76dp hero shutter, and the four tabs must not slide sideways when
-// that happens (they used to move 3-7dp because the slots were 64 vs 82).
-// One center slot width for the tab row in both docks so the four tabs never
-// slide sideways when the camera route swaps the 56dp snap pill for the 76dp
-// hero shutter, and the 76dp hero shutter never overlaps Squad or Activity.
-const double _centerSlot = UiSize.shutter;
-const double _dockSideInset = 10;
 
 /// Constants for the E4 two-island dock layout.
 abstract final class _E4 {
@@ -119,20 +104,8 @@ class UiDockGeometry {
     double capH = _E4.capH,
     int tabsPerSide = 2,
   }) {
-    // Keep _E4 constants referenced before Step 2 replaces the old build body.
-    assert(
-      _E4.islandHCompact == 52 &&
-          _E4.camD == 60 &&
-          _E4.camDCompact == 52 &&
-          _E4.camDRoute == 76 &&
-          _E4.labelGap == 3 &&
-          _E4.camIcon == 28 &&
-          _E4.camIconCompact == 24 &&
-          _E4.camIconRoute == 30,
-    );
     final resolvedBaseIslandH = baseIslandH ?? math.max(_E4.islandH, islandH);
     final resolvedBandH = bandH ?? resolvedBaseIslandH;
-    final dockHeight = topPad + resolvedBandH + bottomGap;
     final slot = math.min(
       _E4.slotMax,
       (width - 2 * _E4.margin - cam - 2 * _E4.gap - 4 * _E4.pad) /
@@ -145,6 +118,7 @@ class UiDockGeometry {
 
     final islandBottom =
         topPad + resolvedBandH - (resolvedBandH - resolvedBaseIslandH) / 2;
+    final dockHeight = islandBottom + bottomGap;
     final islandTop = islandBottom - islandH;
     final cy = islandBottom - islandH / 2;
 
@@ -260,10 +234,12 @@ class UiDockItem {
   final Key? itemKey;
 }
 
-/// The V2 floating dock: a glass sticker bar (blur 20, saturation 1.6, solid
-/// when transparency is reduced) with a sliding selection pill.
+/// The E4 floating dock: two glass islands (blur 20, saturation 1.6, solid
+/// when transparency is reduced) flanking a free-standing 60dp camera circle
+/// (52dp when [compact] on scroll), with a selection capsule that morphs into
+/// a 40dp circle when compact.
 ///
-/// 3-slot form: [left], the center snap pill, [right]. 5-tab form (V2):
+/// 3-slot form: [left], the center camera circle, [right]. 5-tab form (V2):
 /// pass [extraLeft] / [extraRight] so the order is
 /// `left, ...extraLeft, [center], ...extraRight, right`; e.g. Hành trình ·
 /// Nhóm · [Chụp] · Hoạt động · Hồ sơ.
@@ -282,7 +258,9 @@ class UiDock extends StatelessWidget {
     this.onAccent,
     this.center,
     this.camera = false,
+    this.compact = false,
     this.snapKey,
+    this.centerAnchorKey,
     this.onShutterLongPress,
     this.reduceTransparency = false,
     this.liquid = false,
@@ -301,25 +279,35 @@ class UiDock extends StatelessWidget {
   /// outline, hard shadow, solid under reduce transparency / high contrast).
   final bool liquid;
 
-  /// Key of the quick-snap pill.
+  /// Key of the centre camera button.
   final Key? snapKey;
+
+  /// Optional key attached to the [KeyedSubtree] wrapping the centre slot
+  /// (camera circle or [center] shutter) so callers can anchor overlays such as
+  /// the journey wheel on its centre.
+  final GlobalKey? centerAnchorKey;
 
   final UiDockItem left;
   final UiDockItem right;
 
-  /// Tabs between [left] and the center (left side).
+  /// Tabs between [left] and the center (left island).
   final List<UiDockItem> extraLeft;
 
-  /// Tabs between the center and [right].
+  /// Tabs between the center and [right] (right island).
   final List<UiDockItem> extraRight;
   final String snapLabel;
   final VoidCallback onSnap;
   final Color? accent;
   final Color? onAccent;
 
-  /// Replaces the snap pill (the camera screen's big shutter).
+  /// Replaces the camera circle (the camera screen's 76dp hero shutter).
   final Widget? center;
   final bool camera;
+
+  /// E4 compact state (scroll-driven): islands and camera shrink to 52dp,
+  /// labels collapse, and the selection capsule morphs into a 40dp circle.
+  /// Ignored when [camera] is true.
+  final bool compact;
 
   /// Fired after a 400ms press on the center (journey wheel).
   final VoidCallback? onShutterLongPress;
@@ -345,7 +333,6 @@ class UiDock extends StatelessWidget {
         : ((quiet || camera) ? UiShadow.tiny : UiShadow.large);
     final outline = camera ? UiCamera.outline : ui.outline;
     final shadowColor = camera ? UiCamera.shadow : ui.hardShadowColor;
-    final solid = reduceTransparency || media.highContrast;
     // V2: journey docks tint the skin surface at 62%, the shell dock at 78%
     // (light) / 80% (dark), so content shows through the blur.
     final tintAlpha = UiSkinScope.maybeOf(context) != null
@@ -356,199 +343,259 @@ class UiDock extends StatelessWidget {
     final rightItems = [...extraRight, right];
     final items = [...leftItems, ...rightItems];
     final activeIndex = items.indexWhere((e) => e.active);
-    final height = camera ? _cameraDockH : _dockH;
-    const radius = BorderRadius.all(Radius.circular(32));
+    final tabsPerSide = math.max(
+      1,
+      math.max(leftItems.length, rightItems.length),
+    );
+    final bottomGap = math.max(bottom, _E4.minBottomInset) + _E4.bottomExtra;
+    final pillFill = accent ?? ui.accent;
+    final fgOnAccent = onAccent ?? ui.onBrand;
 
-    final Widget centerChild =
-        center ??
-        UiSnapPill(
-          key: snapKey,
-          label: snapLabel,
-          onPressed: onSnap,
-          accent: accent,
-          onAccent: onAccent,
-          outlineColor: outline,
-          outlineWidth: stroke,
-          shadowOffset: shadowOffset,
-          shadowColor: shadowColor,
-          onLongPress: onShutterLongPress,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth.isFinite && constraints.maxWidth > 0
+            ? constraints.maxWidth
+            : media.size.width;
+        final shownBaseGeo = UiDockGeometry.compute(
+          width: width,
+          cam: _E4.camD,
+          islandH: _E4.islandH,
+          tabsPerSide: tabsPerSide,
         );
-
-    final Widget centerSlot = center != null && onShutterLongPress != null
-        ? _LongPress(onLongPress: onShutterLongPress!, child: centerChild)
-        : centerChild;
-
-    const centerSlotWidth = _centerSlot;
-    // The camera dock is 16dp taller and its hard shadow 2dp smaller, so its
-    // vertical centre sits (16 / 2 - 2) = 6dp higher than the shell dock's.
-    // Push the tab row (not the shutter) back down by that much so Journeys,
-    // Squad, Activity and Profile stay exactly where they were.
-    final tabDy = camera
-        ? (_cameraDockH - _dockH) / 2 - (UiShadow.large - UiShadow.tiny)
-        : 0.0;
-
-    final bar = LayoutBuilder(
-      builder: (context, c) {
-        final slotW = (c.maxWidth - centerSlotWidth) / items.length;
-        // On 360dp phones (slotW = 61dp) let the centered selection capsule be
-        // 66dp wide so 10.25dp Vietnamese labels stay inside its curved ends,
-        // while keeping pillW == slotW at 320dp (51dp) and >= 390dp (68.5dp+).
-        final pillW = math.min(
-          _pillW,
-          slotW < 66
-              ? math.min(66.0, slotW + (slotW - 51.0).clamp(0.0, 5.0))
-              : slotW,
-        );
+        final labelMaxW = math.max(0.0, shownBaseGeo.capsuleWidth - 6);
         final labels = [for (final e in items) e.label];
-        final labelFit = dockLabelFit(
+        final labelFit = dockLabelFit(context, labels, labelMaxW);
+        final textScale = MediaQuery.textScalerOf(
           context,
-          labels,
-          slotW,
-          slotW: slotW,
-          pillW: pillW,
+        ).clamp(maxScaleFactor: dockLabelMaxScale).scale(1);
+        final lineH = dockLabelSize * labelFit * 1.35 * textScale;
+        final capH = math.max(
+          _E4.capH,
+          _E4.glyph + _E4.labelGap + lineH + 10.4,
         );
-        final effectiveScale =
-            labelFit *
-            MediaQuery.textScalerOf(
-              context,
-            ).clamp(maxScaleFactor: dockLabelMaxScale).scale(1);
-        final labelMaxW = dockLabelChordWidth(
-          slotW,
-          pillW,
-          effectiveScale: effectiveScale,
-        );
-        final tabMaxW = math.min(slotW, math.max(UiSize.tap, labelMaxW));
-        double slotX(int i) => i < leftItems.length
-            ? i * slotW
-            : leftItems.length * slotW +
-                  centerSlotWidth +
-                  (i - leftItems.length) * slotW;
-        final pillFill = accent ?? ui.accent;
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            if (activeIndex >= 0)
-              AnimatedPositioned(
-                duration: UiMotion.of(context, UiMotion.dockPill),
-                curve: UiCurves.dockOvershoot,
-                left: slotX(activeIndex) + (slotW - pillW) / 2,
-                top: (c.maxHeight - _pillH) / 2 + tabDy,
-                width: pillW,
-                height: _pillH,
-                child: IgnorePointer(
-                  child: DecoratedBox(
-                    key: const ValueKey('dock-selection-pill'),
-                    decoration: useLiquid
-                        ? _lensDecoration(pillFill, dark)
-                        : dockSelectionDecoration(
-                            accent: pillFill,
-                            surface: ui.surface,
-                            outline: outline,
-                            shadow: shadowColor,
-                            camera: camera,
-                          ),
+        final baseIslandH = math.max(_E4.islandH, capH + 12);
+
+        final effectiveCompact = !camera && compact;
+        final targetT = effectiveCompact ? 1.0 : 0.0;
+
+        return TweenAnimationBuilder<double>(
+          tween: Tween<double>(end: targetT),
+          duration: UiMotion.of(context, UiMotion.medium),
+          curve: UiCurves.easeOutStrong,
+          builder: (context, compactT, _) {
+            final t = camera
+                ? 0.0
+                : (UiMotion.reduced(context)
+                      ? targetT
+                      : compactT.clamp(0.0, 1.0));
+            final shellCam = lerpDouble(_E4.camD, _E4.camDCompact, t)!;
+            final shellCamIcon = lerpDouble(
+              _E4.camIcon,
+              _E4.camIconCompact,
+              t,
+            )!;
+            final currentIslandH = camera
+                ? _E4.islandH
+                : lerpDouble(baseIslandH, _E4.islandHCompact, t)!;
+            final currentCam = camera ? _E4.camDRoute : shellCam;
+            final currentBandH = camera
+                ? _E4.camDRoute
+                : baseIslandH;
+            final geo = UiDockGeometry.compute(
+              width: width,
+              cam: currentCam,
+              islandH: currentIslandH,
+              topPad: _E4.topPad,
+              bandH: currentBandH,
+              bottomGap: bottomGap,
+              baseIslandH: camera ? _E4.islandH : baseIslandH,
+              capH: capH,
+              tabsPerSide: tabsPerSide,
+            );
+
+            final Widget centerChild =
+                center ??
+                _DockCamera(
+                  snapKey: snapKey,
+                  label: snapLabel,
+                  onPressed: onSnap,
+                  onLongPress: onShutterLongPress,
+                  diameter: shellCam,
+                  iconSize: shellCamIcon,
+                  accent: pillFill,
+                  onAccent: fgOnAccent,
+                  outlineColor: outline,
+                  outlineWidth: stroke,
+                  shadowOffset: shadowOffset,
+                  shadowColor: shadowColor,
+                );
+
+            final Widget centerSlot =
+                center != null && onShutterLongPress != null
+                ? _LongPress(
+                    onLongPress: onShutterLongPress!,
+                    child: centerChild,
+                  )
+                : centerChild;
+
+            final Widget morphingCenter = _UiDockCenterMorph(
+              camera: camera,
+              accent: pillFill,
+              onAccent: fgOnAccent,
+              outlineColor: outline,
+              outlineWidth: stroke,
+              shadowOffset: shadowOffset,
+              shadowColor: shadowColor,
+              child: centerSlot,
+            );
+
+            final centerBoxSize = math.max(geo.cameraRect.width, _E4.camDRoute);
+
+            return SizedBox(
+              width: width,
+              height: geo.dockHeight,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  _DockIsland(
+                    rect: geo.leftIsland,
+                    camera: camera,
+                    useLiquid: useLiquid,
+                    dark: dark,
+                    tintAlpha: tintAlpha,
+                    outline: outline,
+                    stroke: stroke,
+                    shadowOffset: shadowOffset,
+                    shadowColor: shadowColor,
+                    reduceTransparency: reduceTransparency,
                   ),
-                ),
-              ),
-            Row(
-              children: [
-                for (final item in leftItems)
-                  Expanded(
-                    child: Transform.translate(
-                      offset: Offset(0, tabDy),
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: tabMaxW),
-                          child: DockTab(
-                            item: item,
-                            camera: camera,
-                            onAccent: onAccent,
-                            labelFit: labelFit,
-                            labelMaxWidth: labelMaxW,
-                          ),
+                  _DockIsland(
+                    rect: geo.rightIsland,
+                    camera: camera,
+                    useLiquid: useLiquid,
+                    dark: dark,
+                    tintAlpha: tintAlpha,
+                    outline: outline,
+                    stroke: stroke,
+                    shadowOffset: shadowOffset,
+                    shadowColor: shadowColor,
+                    reduceTransparency: reduceTransparency,
+                  ),
+                  if (!camera && activeIndex >= 0)
+                    _DockSelectionSlide(
+                      activeIndex: activeIndex,
+                      geometry: geo,
+                      expandedCapsuleWidth: shownBaseGeo.capsuleWidth,
+                      compactT: t,
+                      accent: pillFill,
+                      surface: ui.surface,
+                      outline: outline,
+                      shadow: shadowColor,
+                      camera: camera,
+                      useLiquid: useLiquid,
+                      dark: dark,
+                    ),
+                  for (var i = 0; i < leftItems.length; i++)
+                    Positioned.fromRect(
+                      rect: geo.tabSlots[i],
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: geo.slotWidth),
+                        child: DockTab(
+                          item: leftItems[i],
+                          camera: camera,
+                          onAccent: onAccent,
+                          labelFit: labelFit,
+                          labelMaxWidth: labelMaxW,
+                          lift: 0,
+                          labelGap: _E4.labelGap,
+                          compactT: t,
                         ),
                       ),
                     ),
-                  ),
-                const SizedBox(width: centerSlotWidth),
-                for (final item in rightItems)
-                  Expanded(
-                    child: Transform.translate(
-                      offset: Offset(0, tabDy),
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: tabMaxW),
-                          child: DockTab(
-                            item: item,
-                            camera: camera,
-                            onAccent: onAccent,
-                            labelFit: labelFit,
-                            labelMaxWidth: labelMaxW,
-                          ),
+                  for (var i = 0; i < rightItems.length; i++)
+                    Positioned.fromRect(
+                      rect: geo.tabSlots[tabsPerSide + i],
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: geo.slotWidth),
+                        child: DockTab(
+                          item: rightItems[i],
+                          camera: camera,
+                          onAccent: onAccent,
+                          labelFit: labelFit,
+                          labelMaxWidth: labelMaxW,
+                          lift: 0,
+                          labelGap: _E4.labelGap,
+                          compactT: t,
                         ),
                       ),
                     ),
+                  Positioned(
+                    left: (width - centerBoxSize) / 2,
+                    top: geo.centerY - centerBoxSize / 2,
+                    width: centerBoxSize,
+                    height: centerBoxSize,
+                    child: Center(
+                      child: centerAnchorKey != null
+                          ? KeyedSubtree(
+                              key: centerAnchorKey,
+                              child: morphingCenter,
+                            )
+                          : morphingCenter,
+                    ),
                   ),
-              ],
-            ),
-            Center(
-              child: _UiDockCenterMorph(
-                camera: camera,
-                accent: accent ?? ui.accent,
-                onAccent: onAccent ?? ui.onBrand,
-                outlineColor: outline,
-                outlineWidth: stroke,
-                shadowOffset: shadowOffset,
-                shadowColor: shadowColor,
-                child: centerSlot,
+                ],
               ),
-            ),
-          ],
+            );
+          },
         );
       },
     );
+  }
+}
 
-    // Fixed height: the Center in the shutter slot would otherwise expand to
-    // the full available height (the dock filled the whole screen).
-    final surface = Container(
-      height: height,
-      padding: EdgeInsets.symmetric(horizontal: _dockSideInset, vertical: 6),
-      // Camera: the dark dock tint lives here so glass stays neutral.
-      decoration: camera && !useLiquid
-          ? const BoxDecoration(color: UiCamera.dock)
-          : null,
-      // V2 glass sheen: `inset 0 1px 0 rgb(255 255 255 / 42%)`.
-      foregroundDecoration: camera || solid || useLiquid
-          ? null
-          : BoxDecoration(
-              borderRadius: radius,
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: const [0, 0.05, 0.06],
-                colors: [
-                  Colors.white.withValues(alpha: dark ? 0.24 : 0.42),
-                  Colors.white.withValues(alpha: 0),
-                  Colors.white.withValues(alpha: 0),
-                ],
-              ),
-            ),
-      child: bar,
-    );
+class _DockIsland extends StatelessWidget {
+  const _DockIsland({
+    required this.rect,
+    required this.camera,
+    required this.useLiquid,
+    required this.dark,
+    required this.tintAlpha,
+    required this.outline,
+    required this.stroke,
+    required this.shadowOffset,
+    required this.shadowColor,
+    required this.reduceTransparency,
+  });
 
-    final Widget glass = useLiquid
+  final Rect rect;
+  final bool camera;
+  final bool useLiquid;
+  final bool dark;
+  final double tintAlpha;
+  final Color outline;
+  final double stroke;
+  final double shadowOffset;
+  final Color shadowColor;
+  final bool reduceTransparency;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    final r = rect.height / 2;
+    final radius = BorderRadius.circular(r);
+    final Widget island = useLiquid
         ? GlassContainer(
             useOwnLayer: true,
-            shape: const LiquidRoundedSuperellipse(borderRadius: 32),
+            shape: LiquidRoundedSuperellipse(borderRadius: r),
             settings: _liquidSettings(camera: camera, dark: dark),
-            child: surface,
+            child: const SizedBox.expand(),
           )
         : UiGlass(
             borderRadius: radius,
-            blur: 20,
+            blur: camera ? 0 : 20,
             saturation: 1.6,
             tint: camera
-                ? Colors.transparent
+                ? UiCamera.dock
                 : ui.surface.withValues(alpha: tintAlpha),
             fallback: camera ? UiCamera.dock : ui.surface,
             borderColor: outline,
@@ -556,27 +603,290 @@ class UiDock extends StatelessWidget {
             hardShadow: shadowOffset,
             hardShadowColor: shadowColor,
             reduceTransparency: reduceTransparency,
-            child: surface,
+            child: const SizedBox.expand(),
           );
+    return Positioned.fromRect(rect: rect, child: island);
+  }
+}
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        UiSpace.sm,
-        UiSpace.xs,
-        // Same right gutter in every mode (the shell dock's 4dp shadow), so
-        // the tabs keep their x when the camera dock swaps in.
-        UiSpace.sm + UiShadow.large,
-        (bottom < UiSpace.sm ? UiSpace.sm : bottom) + shadowOffset,
-      ),
-      child: Center(
-        heightFactor: 1,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 380 + 16),
-          // UiGlass draws the outside-only hard shadow itself.
-          child: glass,
+class _DockSelection extends StatelessWidget {
+  const _DockSelection({
+    required this.rect,
+    required this.accent,
+    required this.surface,
+    required this.outline,
+    required this.shadow,
+    required this.camera,
+    required this.useLiquid,
+    required this.dark,
+  });
+
+  final Rect rect;
+  final Color accent;
+  final Color surface;
+  final Color outline;
+  final Color shadow;
+  final bool camera;
+  final bool useLiquid;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderRadius = BorderRadius.circular(rect.height / 2);
+    return Positioned.fromRect(
+      rect: rect,
+      child: IgnorePointer(
+        child: DecoratedBox(
+          key: const ValueKey('dock-selection-pill'),
+          decoration: useLiquid
+              ? _lensDecoration(accent, dark).copyWith(
+                  borderRadius: borderRadius,
+                )
+              : dockSelectionDecoration(
+                  accent: accent,
+                  surface: surface,
+                  outline: outline,
+                  shadow: shadow,
+                  camera: camera,
+                  borderRadius: borderRadius,
+                ),
         ),
       ),
     );
+  }
+}
+
+class _DockSelectionSlide extends StatefulWidget {
+  const _DockSelectionSlide({
+    required this.activeIndex,
+    required this.geometry,
+    required this.expandedCapsuleWidth,
+    required this.compactT,
+    required this.accent,
+    required this.surface,
+    required this.outline,
+    required this.shadow,
+    required this.camera,
+    required this.useLiquid,
+    required this.dark,
+  });
+
+  final int activeIndex;
+  final UiDockGeometry geometry;
+  final double expandedCapsuleWidth;
+  final double compactT;
+  final Color accent;
+  final Color surface;
+  final Color outline;
+  final Color shadow;
+  final bool camera;
+  final bool useLiquid;
+  final bool dark;
+
+  @override
+  State<_DockSelectionSlide> createState() => _DockSelectionSlideState();
+}
+
+class _DockSelectionSlideState extends State<_DockSelectionSlide>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _ctrl;
+  CurvedAnimation? _curved;
+  double _fromU = 0;
+  double _toU = 0;
+
+  double _uForTab(UiDockGeometry g, int index) {
+    final centres = g.tabCentersX;
+    if (centres.length <= 1) return 0;
+    final clamped = index.clamp(0, centres.length - 1);
+    final first = centres.first;
+    final span = centres.last - first;
+    return span == 0 ? 0 : (centres[clamped] - first) / span;
+  }
+
+  double _centerXFromU(UiDockGeometry g, double u) {
+    final centres = g.tabCentersX;
+    if (centres.isEmpty) return g.width / 2;
+    if (centres.length == 1) return centres.first;
+    return lerpDouble(centres.first, centres.last, u)!;
+  }
+
+  double _currentU(UiDockGeometry g) {
+    final curved = _curved;
+    if (curved == null || !(_ctrl?.isAnimating ?? false)) {
+      return _uForTab(g, widget.activeIndex);
+    }
+    return lerpDouble(_fromU, _toU, curved.value)!;
+  }
+
+  AnimationController _ensureController() {
+    var ctrl = _ctrl;
+    if (ctrl != null) return ctrl;
+    ctrl = AnimationController(vsync: this, duration: UiMotion.dockPill);
+    _ctrl = ctrl;
+    _curved = CurvedAnimation(parent: ctrl, curve: UiCurves.dockOvershoot);
+    return ctrl;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fromU = _uForTab(widget.geometry, widget.activeIndex);
+    _toU = _fromU;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (UiMotion.reduced(context) && (_ctrl?.isAnimating ?? false)) {
+      _ctrl?.stop();
+      _fromU = _uForTab(widget.geometry, widget.activeIndex);
+      _toU = _fromU;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _DockSelectionSlide oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.activeIndex != oldWidget.activeIndex) {
+      final targetU = _uForTab(widget.geometry, widget.activeIndex);
+      if (UiMotion.reduced(context)) {
+        _ctrl?.stop();
+        _fromU = targetU;
+        _toU = targetU;
+        return;
+      }
+      final startU = (_ctrl?.isAnimating ?? false)
+          ? _currentU(widget.geometry)
+          : _uForTab(widget.geometry, oldWidget.activeIndex);
+      _fromU = startU;
+      _toU = targetU;
+      _ensureController()
+        ..duration = UiMotion.of(context, UiMotion.dockPill)
+        ..forward(from: 0.0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _curved?.dispose();
+    _ctrl?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = _ctrl;
+    final curved = _curved;
+    final g = widget.geometry;
+    if (UiMotion.reduced(context) ||
+        ctrl == null ||
+        curved == null ||
+        !ctrl.isAnimating) {
+      final idx = widget.activeIndex.clamp(0, g.tabCentersX.length - 1);
+      final rect = g.selectionRectAt(
+        g.tabCentersX[idx],
+        widget.compactT,
+        expandedWidth: widget.expandedCapsuleWidth,
+      );
+      return _DockSelection(
+        rect: rect,
+        accent: widget.accent,
+        surface: widget.surface,
+        outline: widget.outline,
+        shadow: widget.shadow,
+        camera: widget.camera,
+        useLiquid: widget.useLiquid,
+        dark: widget.dark,
+      );
+    }
+
+    return AnimatedBuilder(
+      animation: curved,
+      builder: (context, _) {
+        final u = lerpDouble(_fromU, _toU, curved.value)!;
+        final cx = _centerXFromU(widget.geometry, u);
+        final rect = widget.geometry.selectionRectAt(
+          cx,
+          widget.compactT,
+          expandedWidth: widget.expandedCapsuleWidth,
+        );
+        return _DockSelection(
+          rect: rect,
+          accent: widget.accent,
+          surface: widget.surface,
+          outline: widget.outline,
+          shadow: widget.shadow,
+          camera: widget.camera,
+          useLiquid: widget.useLiquid,
+          dark: widget.dark,
+        );
+      },
+    );
+  }
+}
+
+class _DockCamera extends StatelessWidget {
+  const _DockCamera({
+    required this.snapKey,
+    required this.label,
+    required this.onPressed,
+    required this.onLongPress,
+    required this.diameter,
+    required this.iconSize,
+    required this.accent,
+    required this.onAccent,
+    required this.outlineColor,
+    required this.outlineWidth,
+    required this.shadowOffset,
+    required this.shadowColor,
+  });
+
+  final Key? snapKey;
+  final String label;
+  final VoidCallback onPressed;
+  final VoidCallback? onLongPress;
+  final double diameter;
+  final double iconSize;
+  final Color accent;
+  final Color onAccent;
+  final Color outlineColor;
+  final double outlineWidth;
+  final double shadowOffset;
+  final Color shadowColor;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget button = UiPressable(
+      key: snapKey,
+      onPressed: onPressed,
+      semanticLabel: label,
+      excludeChildSemantics: true,
+      haptic: true,
+      minSize: const Size.square(UiSize.tap),
+      shadowOffset: shadowOffset,
+      shadowColor: shadowColor,
+      child: Container(
+        width: diameter,
+        height: diameter,
+        decoration: BoxDecoration(
+          color: accent,
+          shape: BoxShape.circle,
+          border: Border.all(color: outlineColor, width: outlineWidth),
+        ),
+        child: Center(
+          child: OurneyIcon(
+            name: 'camera',
+            size: iconSize,
+            color: onAccent,
+            inkColor: onAccent,
+          ),
+        ),
+      ),
+    );
+    if (onLongPress != null) {
+      button = _LongPress(onLongPress: onLongPress!, child: button);
+    }
+    return button;
   }
 }
 
@@ -999,7 +1309,12 @@ class UiShutter extends StatelessWidget {
           border: Border.all(color: line, width: width),
         ),
         child: Center(
-          child: OurneyIcon(name: 'camera', size: 30, color: fg, inkColor: fg),
+          child: OurneyIcon(
+            name: 'camera',
+            size: _E4.camIconRoute,
+            color: fg,
+            inkColor: fg,
+          ),
         ),
       ),
     );
