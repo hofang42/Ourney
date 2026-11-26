@@ -38,6 +38,12 @@ create function tests.thumb(j uuid, u uuid, c uuid) returns text language sql im
   select format('checkins/%s/%s/%s_t.jpg', j, u, c) $$;
 create function tests.partner_photo(j uuid, u uuid, c uuid) returns text language sql immutable as $$
   select format('checkins/%s/%s/%s_p.jpg', j, u, c) $$;
+create function tests.slug(j uuid) returns text language sql security definer as $$
+  select public_slug from public.journeys where id = j $$;
+create function tests.token(j uuid) returns text language sql security definer as $$
+  select public_token from public.journeys where id = j $$;
+create function tests.rate_event_count(u uuid, k text) returns int language sql security definer as $$
+  select count(*)::int from private.rate_events where user_id = u and kind = k $$;
 create function tests.react(cid uuid) returns void language sql as $$
   insert into public.reactions (checkin_id, user_id, emoji) values (cid, auth.uid(), '❤️')
   on conflict (checkin_id, user_id) do update set deleted_at = null $$;
@@ -82,8 +88,10 @@ do $$ begin
   perform public.end_journey(tests.j(1));
 end $$;
 
-do $$ begin perform tests.as_user(tests.u(1)); end $$;
-select (public.set_readable_public_link(tests.j(1), true, false, 'Da Lat Trip'))->>'public_slug' as slug1 \gset
+do $$ begin
+  perform tests.as_user(tests.u(1));
+  perform public.set_readable_public_link(tests.j(1), true, false, 'Da Lat Trip');
+end $$;
 
 -- [Test 1] Stranger u(3) who has NOT opened public_journey_by_token cannot react or access via bare journey_id/checkin_id
 do $$ begin perform tests.as_user(tests.u(3)); end $$;
@@ -96,7 +104,7 @@ select throws_ok(
 -- [Test 2] Stranger u(2) opens slug1 via public_journey_by_token, reads photo from Storage, reacts, and saves the journey
 do $$ begin perform tests.as_user(tests.u(2)); end $$;
 select is(
-  (public.public_journey_by_token(:'slug1')->>'role'),
+  (public.public_journey_by_token(tests.slug(tests.j(1)))->>'role'),
   'stranger',
   'F-02: stranger u(2) opens slug1 and receives stranger role'
 );
@@ -116,8 +124,10 @@ select is(
 );
 
 -- Owner u(1) rotates the public link (reset := true)
-do $$ begin perform tests.as_user(tests.u(1)); end $$;
-select (public.set_readable_public_link(tests.j(1), true, true, 'Da Lat Trip'))->>'public_slug' as slug2 \gset
+do $$ begin
+  perform tests.as_user(tests.u(1));
+  perform public.set_readable_public_link(tests.j(1), true, true, 'Da Lat Trip');
+end $$;
 
 -- [Test 5] After link rotation, old viewer u(2) cannot re-insert or un-delete a reaction to restore saved_journeys
 do $$ begin perform tests.as_user(tests.u(2)); end $$;
@@ -165,7 +175,7 @@ select throws_ok(
 -- [Test 11] Opening the new rotated slug2 restores legitimate viewer access for u(2)
 do $$ begin
   perform tests.as_user(tests.u(2));
-  if (public.public_journey_by_token(:'slug2')->>'role') is distinct from 'stranger' then
+  if (public.public_journey_by_token(tests.slug(tests.j(1)))->>'role') is distinct from 'stranger' then
     raise exception 'expected stranger role when opening rotated slug2';
   end if;
 end $$;
@@ -396,7 +406,7 @@ do $$ begin perform tests.as_user(tests.u(8)); end $$;
 select is(
   (not public.check_username_available('a'))
   and public.check_username_available('sec35user8')
-  and (select count(*)::int from private.rate_events where user_id = tests.u(8) and kind = 'username_check') = 0,
+  and tests.rate_event_count(tests.u(8), 'username_check') = 0,
   true,
   'F-19: invalid format and caller own handle do not consume username_check rate limit'
 );
@@ -443,27 +453,26 @@ do $$ begin
   delete from private.share_lookup_buckets;
   perform tests.as_user(tests.u(1));
 end $$;
-select public_token as f20_token from public.journeys where id = tests.j(1) \gset
 
 -- [Test 27] Single IP (or fallback null IP) is capped at 30/min per journey while other IPs remain unaffected
 do $$ begin
   perform tests.as_service_role();
   for i in 1..30 loop
-    perform public.lookup_public_journey_for_edge(:'f20_token', repeat('1', 64));
-    perform public.lookup_public_journey_for_edge(:'f20_token', repeat('2', 64));
-    perform public.lookup_public_journey_for_edge(:'f20_token', null);
+    perform public.lookup_public_journey_for_edge(tests.token(tests.j(1)), repeat('1', 64));
+    perform public.lookup_public_journey_for_edge(tests.token(tests.j(1)), repeat('2', 64));
+    perform public.lookup_public_journey_for_edge(tests.token(tests.j(1)), null);
   end loop;
 end $$;
 select ok(
-  (public.lookup_public_journey_for_edge(:'f20_token', repeat('1', 64))->>'retry_after')::int between 1 and 60
-  and (public.lookup_public_journey_for_edge(:'f20_token', repeat('2', 64))->>'retry_after')::int between 1 and 60
-  and (public.lookup_public_journey_for_edge(:'f20_token', null)->>'retry_after')::int between 1 and 60,
+  (public.lookup_public_journey_for_edge(tests.token(tests.j(1)), repeat('1', 64))->>'retry_after')::int between 1 and 60
+  and (public.lookup_public_journey_for_edge(tests.token(tests.j(1)), repeat('2', 64))->>'retry_after')::int between 1 and 60
+  and (public.lookup_public_journey_for_edge(tests.token(tests.j(1)), null)->>'retry_after')::int between 1 and 60,
   'F-20: each IP and the null-IP fallback is capped at 30/min on a single journey'
 );
 
 -- [Test 28] A third legitimate IP can still open the journey despite 2 IPs + null-IP fallback being saturated
 select is(
-  public.lookup_public_journey_for_edge(:'f20_token', repeat('3', 64))->'journey'->>'title',
+  public.lookup_public_journey_for_edge(tests.token(tests.j(1)), repeat('3', 64))->'journey'->>'title',
   'Da Lat Trip',
   'F-20: 2 saturated IPs + saturated fallback bucket cannot DoS the shared link for a 3rd legitimate IP'
 );
