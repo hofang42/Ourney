@@ -31,6 +31,210 @@ const double _cameraDockH = 92;
 const double _centerSlot = UiSize.shutter;
 const double _dockSideInset = 10;
 
+/// Constants for the E4 two-island dock layout.
+abstract final class _E4 {
+  static const double margin = 12;
+  static const double gap = 6;
+  static const double pad = 4;
+  static const double slotMax = 76;
+  static const double islandH = 64;
+  static const double islandHCompact = 52;
+  static const double camD = 60;
+  static const double camDCompact = 52;
+  static const double camDRoute = UiSize.shutter;
+  static const double capH = 52;
+  static const double ring = 40;
+  static const double glyph = 24;
+  static const double glyphActiveScale = 1.08;
+  static const double labelGap = 3;
+  static const double camIcon = 28;
+  static const double camIconCompact = 24;
+  static const double camIconRoute = 30;
+  static const double topPad = UiSpace.xs;
+  static const double minBottomInset = 8;
+  static const double bottomExtra = 8;
+  static const double capsuleOpticalLift =
+      glyph * (glyphActiveScale - 1) / 4; // 0.48
+}
+
+/// Pure E4 dock layout geometry for a given screen [width] and state.
+@visibleForTesting
+@immutable
+class UiDockGeometry {
+  const UiDockGeometry({
+    required this.width,
+    required this.dockHeight,
+    required this.slotWidth,
+    required this.islandWidth,
+    required this.islandHeight,
+    required this.capsuleWidth,
+    required this.capsuleHeight,
+    required this.centerY,
+    required this.leftIsland,
+    required this.rightIsland,
+    required this.cameraRect,
+    required this.tabSlots,
+    required this.tabCentersX,
+    required this.allCentersX,
+  });
+
+  final double width;
+  final double dockHeight;
+  final double slotWidth;
+  final double islandWidth;
+  final double islandHeight;
+  final double capsuleWidth;
+  final double capsuleHeight;
+  final double centerY;
+  final Rect leftIsland;
+  final Rect rightIsland;
+  final Rect cameraRect;
+
+  /// The [2 * tabsPerSide] tab slot rects (left to right, excluding camera).
+  final List<Rect> tabSlots;
+
+  /// X centres of the [2 * tabsPerSide] tab slots.
+  final List<double> tabCentersX;
+
+  /// X centres of all controls in visual order: left tabs, camera (`width / 2`),
+  /// right tabs.
+  final List<double> allCentersX;
+
+  /// Computes the E4 geometry.
+  ///
+  /// [cam] is the centre-slot diameter in the current state (`60` labels shown,
+  /// `52` compact, `76` on the camera route, or lerped while animating).
+  /// [islandH] is the current island height (`64` shown, `52` compact, or
+  /// lerped).
+  /// [baseIslandH] is the expanded island height (`64` at 1x, larger at >1x
+  /// text scale) used to anchor the constant island bottom edge inside [bandH].
+  static UiDockGeometry compute({
+    required double width,
+    required double cam,
+    required double islandH,
+    double topPad = _E4.topPad,
+    double? bandH,
+    double bottomGap = _E4.minBottomInset + _E4.bottomExtra,
+    double? baseIslandH,
+    double capH = _E4.capH,
+    int tabsPerSide = 2,
+  }) {
+    // Keep _E4 constants referenced before Step 2 replaces the old build body.
+    assert(
+      _E4.islandHCompact == 52 &&
+          _E4.camD == 60 &&
+          _E4.camDCompact == 52 &&
+          _E4.camDRoute == 76 &&
+          _E4.labelGap == 3 &&
+          _E4.camIcon == 28 &&
+          _E4.camIconCompact == 24 &&
+          _E4.camIconRoute == 30,
+    );
+    final resolvedBaseIslandH = baseIslandH ?? math.max(_E4.islandH, islandH);
+    final resolvedBandH = bandH ?? resolvedBaseIslandH;
+    final dockHeight = topPad + resolvedBandH + bottomGap;
+    final slot = math.min(
+      _E4.slotMax,
+      (width - 2 * _E4.margin - cam - 2 * _E4.gap - 4 * _E4.pad) /
+          (2 * tabsPerSide),
+    );
+    final islandW = tabsPerSide * slot + 2 * _E4.pad;
+    final total = 2 * islandW + 2 * _E4.gap + cam;
+    final x0 = (width - total) / 2;
+    final rightX0 = x0 + islandW + _E4.gap + cam + _E4.gap;
+
+    final islandBottom =
+        topPad + resolvedBandH - (resolvedBandH - resolvedBaseIslandH) / 2;
+    final islandTop = islandBottom - islandH;
+    final cy = islandBottom - islandH / 2;
+
+    final leftIsland = Rect.fromLTRB(x0, islandTop, x0 + islandW, islandBottom);
+    final rightIsland = Rect.fromLTRB(
+      rightX0,
+      islandTop,
+      rightX0 + islandW,
+      islandBottom,
+    );
+    final cameraRect = Rect.fromCenter(
+      center: Offset(width / 2, cy),
+      width: cam,
+      height: cam,
+    );
+
+    final tabSlots = <Rect>[
+      for (var i = 0; i < tabsPerSide; i++)
+        Rect.fromLTWH(x0 + _E4.pad + i * slot, islandTop, slot, islandH),
+      for (var i = 0; i < tabsPerSide; i++)
+        Rect.fromLTWH(rightX0 + _E4.pad + i * slot, islandTop, slot, islandH),
+    ];
+    final tabCentersX = <double>[for (final r in tabSlots) r.center.dx];
+    final allCentersX = <double>[
+      for (var i = 0; i < tabsPerSide; i++) tabCentersX[i],
+      width / 2,
+      for (var i = tabsPerSide; i < 2 * tabsPerSide; i++) tabCentersX[i],
+    ];
+    final capW = slot - 2;
+
+    return UiDockGeometry(
+      width: width,
+      dockHeight: dockHeight,
+      slotWidth: slot,
+      islandWidth: islandW,
+      islandHeight: islandH,
+      capsuleWidth: capW,
+      capsuleHeight: capH,
+      centerY: cy,
+      leftIsland: leftIsland,
+      rightIsland: rightIsland,
+      cameraRect: cameraRect,
+      tabSlots: List.unmodifiable(tabSlots),
+      tabCentersX: List.unmodifiable(tabCentersX),
+      allCentersX: List.unmodifiable(allCentersX),
+    );
+  }
+
+  /// Expanded selection capsule rect centred horizontally on [centerX].
+  Rect capsuleRectAt(double centerX, {double? width}) {
+    final w = width ?? capsuleWidth;
+    return Rect.fromLTWH(
+      centerX - w / 2,
+      centerY - capsuleHeight / 2 - _E4.capsuleOpticalLift,
+      w,
+      capsuleHeight,
+    );
+  }
+
+  /// Compact 40×40 selection circle rect centred on ([centerX], [centerY]).
+  Rect circleRectAt(double centerX) => Rect.fromCenter(
+    center: Offset(centerX, centerY),
+    width: _E4.ring,
+    height: _E4.ring,
+  );
+
+  /// Lerped selection rect at morph progress [compactT] (`0` = capsule,
+  /// `1` = circle) centred horizontally on [centerX].
+  Rect selectionRectAt(
+    double centerX,
+    double compactT, {
+    double? expandedWidth,
+  }) => Rect.lerp(
+    capsuleRectAt(centerX, width: expandedWidth),
+    circleRectAt(centerX),
+    compactT,
+  )!;
+
+  /// Selection rect for [tabIndex] (`0..tabSlots.length - 1`) at [compactT].
+  Rect selectionRectForTab(
+    int tabIndex, {
+    double compactT = 0,
+    double? expandedWidth,
+  }) => selectionRectAt(
+    tabCentersX[tabIndex],
+    compactT,
+    expandedWidth: expandedWidth,
+  );
+}
+
 /// One tab of the [UiDock]. Give it a drawn [glyph] (an [OurneyIcon] name such
 /// as `journeys`, `squad`, `activity`, `profile`) or, for older callers, a
 /// Material [icon].
