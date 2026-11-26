@@ -63,6 +63,8 @@ jobs:
         run: deno check supabase/functions/*/index.ts
       - name: Test public journey metric redaction
         run: deno test supabase/functions/public-journey/index_test.ts
+      - name: Test waitlist signup
+        run: deno test supabase/functions/waitlist-signup/index_test.ts
       - name: Start Supabase (db, auth, storage, rest)
         run: supabase start -x studio,realtime,imgproxy,logflare,vector,mailpit,supavisor,postgres-meta,edge-runtime
       - name: pgTAP
@@ -70,6 +72,31 @@ jobs:
       - name: Stop Supabase
         if: always()
         run: supabase stop --no-backup
+
+  landing:
+    name: Landing (fonts and waitlist)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Decode and shape WOFF2 fonts
+        run: |
+          python -m pip install 'fonttools[woff]==4.69.1' 'opentype-sanitizer==9.2.0' 'uharfbuzz==0.57.0'
+          python apps/landing/scripts/landing-fonts.py
+      - name: Check font rendering and waitlist in Chrome, Firefox and WebKit
+        working-directory: apps/landing/scripts
+        run: |
+          npm install --no-save --package-lock=false playwright@1.65.1
+          npx playwright install --with-deps firefox webkit
+          for browser in chrome firefox webkit; do
+            LANDING_BROWSER="$browser" node --test check-landing.mjs
+          done
 
   tooling:
     name: repo tooling (shellcheck + actionlint)

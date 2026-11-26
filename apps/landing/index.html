@@ -1003,7 +1003,8 @@
             <!-- iOS & Beta Release Notification Form -->
             <div class="beta-waitlist-box" id="beta-waitlist-box">
               <p class="beta-ios-lead" id="beta-ios-lead" data-i18n="beta_ios_lead">Dùng iOS (iPhone) hoặc muốn nhận thông báo khi có bản cập nhật mới? Để lại email nhận thông tin beta:</p>
-              <div class="platform-group" id="platform-group" role="group" aria-label="Chọn nền tảng điện thoại" data-i18n-aria="beta_plat_aria">
+              <p class="form-msg" id="beta-waitlist-help">Để đăng ký, hãy bật JavaScript trong trình duyệt rồi tải lại trang.</p>
+              <div class="platform-group" id="platform-group" role="group" aria-label="Chọn nền tảng điện thoại" data-i18n-aria="beta_plat_aria" hidden>
                 <button type="button" class="plat-pill" aria-pressed="false" data-plat="ios">
                   <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12.5 4 4 8-9"/></svg>
                   <span translate="no">iOS</span>
@@ -1013,7 +1014,7 @@
                   <span translate="no">Android</span>
                 </button>
               </div>
-              <form class="beta-form" id="beta-form" novalidate>
+              <form class="beta-form" id="beta-form" method="post" novalidate hidden>
                 <label for="email" class="sr" data-i18n="beta_email_label">Email</label>
                 <input id="email" name="email" type="email" inputmode="email" autocomplete="email" spellcheck="false" placeholder="ban@email-cua-ban.vn" data-i18n-placeholder="beta_placeholder" required aria-describedby="form-msg">
                 <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
