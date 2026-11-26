@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -20,6 +21,7 @@ import '../../journeys/data/journeys_providers.dart';
 import '../../journeys/domain/journey_progress.dart';
 import '../../journeys/ui/journey_row.dart' show journeyTypeId;
 import '../../safety/data/safety_providers.dart' show hiddenCheckInIdsProvider;
+import '../data/widget_bridge_gateway.dart';
 import '../data/widget_sync_controller.dart';
 import '../domain/widget_privacy.dart';
 import '../domain/widget_snapshot.dart';
@@ -56,24 +58,13 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
     final photoMode = ref.watch(widgetPhotoModeProvider);
     final redactTitles = ref.watch(redactLockScreenTitlesProvider);
     final liveEnabled = ref.watch(liveActivityEnabledProvider);
-    final defaultJourneyId = ref.watch(defaultWidgetJourneyIdProvider);
     final journeysAsync = ref.watch(journeysListProvider);
     final activeJourneys = [
       for (final j in journeysAsync.asData?.value ?? const <Journey>[])
         if (j.status == JourneyStatus.active) j,
     ];
 
-    Journey? featuredJourney;
-    if (defaultJourneyId != null) {
-      for (final j in activeJourneys) {
-        if (j.id == defaultJourneyId) {
-          featuredJourney = j;
-          break;
-        }
-      }
-    }
-    featuredJourney ??= activeJourneys.firstOrNull;
-
+    final featuredJourney = activeJourneys.firstOrNull;
     Journey? featuredSquadJourney;
     if (featuredJourney != null && featuredJourney.kind == JourneyKind.group) {
       featuredSquadJourney = featuredJourney;
@@ -87,9 +78,9 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
     }
 
     final isAndroid = defaultTargetPlatform == TargetPlatform.android;
+    final isIOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
     final showAppGroupNotice =
-        !kIsWeb &&
-        defaultTargetPlatform == TargetPlatform.iOS &&
+        isIOS &&
         ref.watch(widgetCapabilitiesProvider).asData?.value.appGroup == false;
 
     final photoModeNote = switch (photoMode) {
@@ -124,6 +115,10 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
                 style: UiText.body(size: 13, height: 1.4, color: ui.inkMuted),
               ),
             ),
+          ],
+          if (isIOS) ...[
+            const SizedBox(height: UiSpace.md),
+            const _WidgetDiagnosticsCard(),
           ],
           const SizedBox(height: UiSpace.xl),
           UiListHeading(title: l10n.widgets_secPreview),
@@ -278,57 +273,6 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
               },
             ),
           ),
-          if (activeJourneys.isNotEmpty) ...[
-            const SizedBox(height: UiSpace.xl),
-            UiListHeading(title: l10n.widgets_secDefaultJourney),
-            const SizedBox(height: UiSpace.xs),
-            UiCard(
-              radius: UiRadius.card,
-              shadowOffset: 0,
-              padding: const EdgeInsets.symmetric(horizontal: UiSpace.md),
-              child: Column(
-                children: [
-                  _DefaultJourneyOptionRow(
-                    rowKey: const ValueKey('widgets-default-journey-auto'),
-                    title: l10n.widgets_defaultJourneyAuto,
-                    subtitle: l10n.widgets_defaultJourneyAutoSub,
-                    leading: const OurneyIcon(name: 'sparkle', size: 22),
-                    selected: defaultJourneyId == null,
-                    divider: true,
-                    onTap: () {
-                      OurneyHaptics.selection();
-                      unawaited(
-                        ref
-                            .read(defaultWidgetJourneyIdProvider.notifier)
-                            .set(null),
-                      );
-                    },
-                  ),
-                  for (var i = 0; i < activeJourneys.length; i++)
-                    _DefaultJourneyOptionRow(
-                      rowKey: ValueKey(
-                        'widgets-default-journey-${activeJourneys[i].id}',
-                      ),
-                      title: activeJourneys[i].title,
-                      leading: UiTypeBadge(
-                        type: journeyTypeId(activeJourneys[i]),
-                        size: 32,
-                      ),
-                      selected: defaultJourneyId == activeJourneys[i].id,
-                      divider: i < activeJourneys.length - 1,
-                      onTap: () {
-                        OurneyHaptics.selection();
-                        unawaited(
-                          ref
-                              .read(defaultWidgetJourneyIdProvider.notifier)
-                              .set(activeJourneys[i].id),
-                        );
-                      },
-                    ),
-                ],
-              ),
-            ),
-          ],
           const SizedBox(height: UiSpace.xl),
           UiListHeading(title: l10n.widgets_secSetup),
           const SizedBox(height: UiSpace.xs),
@@ -368,51 +312,97 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
   }
 }
 
-class _DefaultJourneyOptionRow extends StatelessWidget {
-  const _DefaultJourneyOptionRow({
-    required this.rowKey,
-    required this.title,
-    required this.leading,
-    required this.selected,
-    required this.divider,
-    required this.onTap,
-    this.subtitle,
-  });
+class _WidgetDiagnosticsCard extends ConsumerStatefulWidget {
+  const _WidgetDiagnosticsCard();
 
-  final Key rowKey;
-  final String title;
-  final String? subtitle;
-  final Widget leading;
-  final bool selected;
-  final bool divider;
-  final VoidCallback onTap;
+  @override
+  ConsumerState<_WidgetDiagnosticsCard> createState() =>
+      _WidgetDiagnosticsCardState();
+}
+
+class _WidgetDiagnosticsCardState
+    extends ConsumerState<_WidgetDiagnosticsCard> {
+  Future<List<String>>? _read;
+
+  void _toggle() {
+    setState(() {
+      _read = _read == null
+          ? ref.read(widgetBridgeGatewayProvider).getWidgetDiagnostics()
+          : null;
+    });
+  }
+
+  Future<void> _copy(String text, String copiedMessage) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    if (mounted) showUiToast(context, copiedMessage);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = WidgetsL10n.of(context);
     final ui = context.ui;
-    return UiRow(
-      key: rowKey,
-      leading: leading,
-      title: title,
-      subtitle: subtitle == null
-          ? null
-          : Text(
-              subtitle!,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: UiText.body(size: 12, height: 1.4, color: ui.inkMuted),
+    final read = _read;
+    return UiCard(
+      shadowOffset: 0,
+      padding: const EdgeInsets.symmetric(horizontal: UiSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            expanded: read != null,
+            child: UiRow(
+              title: l10n.widgets_diagnosticsTitle,
+              showChevron: false,
+              divider: read != null,
+              trailing: OurneyIcon(
+                name: read == null ? 'chevron-down' : 'chevron-up',
+                size: 20,
+                flat: true,
+                color: ui.chevron,
+              ),
+              onPressed: _toggle,
             ),
-      selected: selected,
-      inMutuallyExclusiveGroup: true,
-      showChevron: false,
-      divider: divider,
-      trailing: OurneyIcon(
-        name: selected ? 'radio-on' : 'radio-off',
-        size: 20,
-        flat: !selected,
-        color: selected ? ui.brand : ui.inkMuted,
+          ),
+          if (read != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: UiSpace.sm),
+              child: FutureBuilder<List<String>>(
+                future: read,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: UiSpinner());
+                  }
+                  final log = snapshot.data?.join('\n') ?? '';
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        log.isEmpty ? l10n.widgets_diagnosticsEmpty : log,
+                        style: UiText.body(
+                          size: 12,
+                          height: 1.4,
+                          color: ui.inkMuted,
+                        ),
+                      ),
+                      if (log.isNotEmpty)
+                        Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: UiButton.ghost(
+                            label: l10n.widgets_diagnosticsCopy,
+                            glyph: const OurneyIcon(name: 'copy', size: 16),
+                            expand: false,
+                            onPressed: () => unawaited(
+                              _copy(log, l10n.widgets_diagnosticsCopied),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
+        ],
       ),
-      onPressed: onTap,
     );
   }
 }

@@ -108,7 +108,6 @@ Future<void> resetAccountLocalState(
     ..invalidate(redactLockScreenTitlesPrefProvider)
     ..invalidate(redactLockScreenTitlesProvider)
     ..invalidate(liveActivityEnabledProvider)
-    ..invalidate(defaultWidgetJourneyIdProvider)
     ..invalidate(dismissedLiveWindowKeyProvider);
   try {
     await Future.wait(removals);

@@ -196,65 +196,6 @@ public enum WidgetL10n {
     isEnglish(locale) ? "Open Ourney" : "Mở Ourney"
   }
 
-  // MARK: - Configurable Widget Entity Picker Copy (§B.2, §B.4)
-
-  public static func autoJourneyOptionTitle(locale: String) -> String {
-    isEnglish(locale) ? "Automatic (Recommended)" : "Tự động (Đề xuất)"
-  }
-
-  public static func autoJourneyOptionSubtitle(locale: String) -> String {
-    isEnglish(locale)
-      ? "Auto: Next pending today or featured streak"
-      : "Tự động: hành trình cần chụp hôm nay"
-  }
-
-  public static func autoSquadOptionTitle(locale: String) -> String {
-    isEnglish(locale) ? "Automatic (Recommended)" : "Tự động (Đề xuất)"
-  }
-
-  public static func autoSquadOptionSubtitle(locale: String) -> String {
-    isEnglish(locale)
-      ? "Auto: Active squad or couple today"
-      : "Tự động: nhóm cần chụp hôm nay"
-  }
-
-  public static func journeyEntitySubtitle(
-    dayNumber: Int,
-    totalDays: Int?,
-    streak: Int,
-    locale: String
-  ) -> String {
-    let en = isEnglish(locale)
-    let dayText: String
-    if let total = totalDays, total > 0 {
-      dayText = en ? "Day \(dayNumber)/\(total)" : "Ngày \(dayNumber)/\(total)"
-    } else {
-      dayText = en ? "Day \(dayNumber)" : "Ngày \(dayNumber)"
-    }
-    let streakText = en ? "\(streak)d" : "Chuỗi \(streak) ngày"
-    return "\(dayText) · \(streakText)"
-  }
-
-  public static func squadEntitySubtitle(
-    doneCount: Int,
-    memberCount: Int,
-    dayNumber: Int,
-    locale: String
-  ) -> String {
-    let en = isEnglish(locale)
-    let total = max(memberCount, doneCount)
-    if en {
-      return "Day \(dayNumber) · \(doneCount)/\(total) today"
-    }
-    return "Ngày \(dayNumber) · \(doneCount)/\(total) hôm nay"
-  }
-
-  public static func archivedEntityFallbackSubtitle(locale: String) -> String {
-    isEnglish(locale)
-      ? "Falls back to Automatic when a pinned journey ends"
-      : "Tự động chuyển sang hành trình đang hoạt động"
-  }
-
   // MARK: - Lock Screen & Live Activity Copy
 
   public static func lockScreenRedactedTitle(locale: String) -> String {

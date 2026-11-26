@@ -218,7 +218,7 @@ class SquadGlanceWidget : GlanceAppWidget() {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(ImageProvider(palette.cardBackgroundRes()))
-                .clickable(WidgetActions.groupTodayAction(context, squad.journeyId))
+                .clickable(WidgetActions.captureAction(context, squad.journeyId))
                 .semantics { contentDescription = a11yDescription }
                 .padding(14.dp),
         ) {

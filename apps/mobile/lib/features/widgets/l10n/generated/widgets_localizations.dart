@@ -122,6 +122,30 @@ abstract class WidgetsL10n {
   /// **'Bản cài này chưa cho widget đọc dữ liệu. Widget sẽ hoạt động ở bản TestFlight/App Store hoặc khi cài qua AltStore/SideStore.'**
   String get widgets_appGroupUnavailable;
 
+  /// Heading for the collapsible iOS widget diagnostics panel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chẩn đoán tiện ích'**
+  String get widgets_diagnosticsTitle;
+
+  /// Shown when the iOS widget diagnostics log is empty.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa ghi nhận sự kiện nào của tiện ích.'**
+  String get widgets_diagnosticsEmpty;
+
+  /// Button to copy the widget diagnostics log.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sao chép nhật ký'**
+  String get widgets_diagnosticsCopy;
+
+  /// Confirmation after copying the widget diagnostics log.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã sao chép nhật ký tiện ích'**
+  String get widgets_diagnosticsCopied;
+
   /// Section heading for the interactive widget preview gallery.
   ///
   /// In vi, this message translates to:
@@ -337,24 +361,6 @@ abstract class WidgetsL10n {
   /// In vi, this message translates to:
   /// **'Hiện khung giờ chụp trên thanh trạng thái và Màn hình khóa từ 30 phút trước giờ nhắc (hoặc từ 18:00 khi đang có chuỗi) và tự tắt ngay khi bạn chụp xong.'**
   String get widgets_liveActivitySubAndroid;
-
-  /// Section heading for selecting the default journey shown on widgets.
-  ///
-  /// In vi, this message translates to:
-  /// **'hành trình ưu tiên trên tiện ích'**
-  String get widgets_secDefaultJourney;
-
-  /// Default option that automatically prioritizes pinned/at-risk unchecked journeys.
-  ///
-  /// In vi, this message translates to:
-  /// **'Tự động (ưu tiên hành trình chưa chụp hôm nay)'**
-  String get widgets_defaultJourneyAuto;
-
-  /// Subtitle for automatic journey selection.
-  ///
-  /// In vi, this message translates to:
-  /// **'Áp dụng cho tiện ích ở chế độ Tự động. Nhấn giữ tiện ích trên Màn hình chính để chọn riêng từng hành trình.'**
-  String get widgets_defaultJourneyAutoSub;
 
   /// Section heading for the 3-step OS widget setup guide.
   ///

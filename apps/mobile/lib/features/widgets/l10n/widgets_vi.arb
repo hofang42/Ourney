@@ -16,6 +16,22 @@
   "@widgets_appGroupUnavailable": {
     "description": "Notice on iOS when the app installation lacks a shared widget data container."
   },
+  "widgets_diagnosticsTitle": "Chẩn đoán tiện ích",
+  "@widgets_diagnosticsTitle": {
+    "description": "Heading for the collapsible iOS widget diagnostics panel."
+  },
+  "widgets_diagnosticsEmpty": "Chưa ghi nhận sự kiện nào của tiện ích.",
+  "@widgets_diagnosticsEmpty": {
+    "description": "Shown when the iOS widget diagnostics log is empty."
+  },
+  "widgets_diagnosticsCopy": "Sao chép nhật ký",
+  "@widgets_diagnosticsCopy": {
+    "description": "Button to copy the widget diagnostics log."
+  },
+  "widgets_diagnosticsCopied": "Đã sao chép nhật ký tiện ích",
+  "@widgets_diagnosticsCopied": {
+    "description": "Confirmation after copying the widget diagnostics log."
+  },
   "widgets_secPreview": "xem trước tiện ích",
   "@widgets_secPreview": {
     "description": "Section heading for the interactive widget preview gallery."
@@ -185,18 +201,6 @@
   "widgets_liveActivitySubAndroid": "Hiện khung giờ chụp trên thanh trạng thái và Màn hình khóa từ 30 phút trước giờ nhắc (hoặc từ 18:00 khi đang có chuỗi) và tự tắt ngay khi bạn chụp xong.",
   "@widgets_liveActivitySubAndroid": {
     "description": "Switch subtitle for Live Updates (Android)."
-  },
-  "widgets_secDefaultJourney": "hành trình ưu tiên trên tiện ích",
-  "@widgets_secDefaultJourney": {
-    "description": "Section heading for selecting the default journey shown on widgets."
-  },
-  "widgets_defaultJourneyAuto": "Tự động (ưu tiên hành trình chưa chụp hôm nay)",
-  "@widgets_defaultJourneyAuto": {
-    "description": "Default option that automatically prioritizes pinned/at-risk unchecked journeys."
-  },
-  "widgets_defaultJourneyAutoSub": "Áp dụng cho tiện ích ở chế độ Tự động. Nhấn giữ tiện ích trên Màn hình chính để chọn riêng từng hành trình.",
-  "@widgets_defaultJourneyAutoSub": {
-    "description": "Subtitle for automatic journey selection."
   },
   "widgets_secSetup": "cách thêm ra màn hình chính",
   "@widgets_secSetup": {

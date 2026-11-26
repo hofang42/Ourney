@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart'
     show TargetPlatform, debugDefaultTargetPlatformOverride;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/locale_override.dart';
@@ -68,6 +69,56 @@ void main() {
       c.invalidate(widgetCapabilitiesProvider);
       await tester.pumpAndSettle();
       expect(englishNotice, findsNothing);
+    },
+    variant: const TargetPlatformVariant({TargetPlatform.iOS}),
+  );
+
+  testWidgets(
+    'iOS shows and copies recent widget diagnostics and refreshes on reopen',
+    (tester) async {
+      const log = '2026-11-26T01:00:00Z OurneyTodayWidget timeline ready';
+      final bridge = FakeWidgetBridgeGateway()..widgetDiagnostics = [log];
+      String? copied;
+      final messenger = tester.binding.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map<Object?, Object?>)['text'] as String;
+        }
+        return null;
+      });
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+      );
+      final c = await pumpOurneyApp(
+        tester,
+        overrides: [widgetBridgeGatewayProvider.overrideWithValue(bridge)],
+      );
+      await c.read(localeOverrideProvider.notifier).set(const Locale('en'));
+      await goTo(tester, c, AppRoutes.widgets);
+
+      final heading = find.text('Widget diagnostics');
+      expect(find.text(log), findsNothing);
+      expect(find.text('Copy log'), findsNothing);
+      await tester.tap(heading);
+      await tester.pumpAndSettle();
+      expect(find.text(log), findsOneWidget);
+      await tester.tap(find.text('Copy log'));
+      await tester.pumpAndSettle();
+      expect(copied, log);
+
+      await tester.tap(heading);
+      await tester.pumpAndSettle();
+      bridge.widgetDiagnostics = const [];
+      await c.read(localeOverrideProvider.notifier).set(const Locale('vi'));
+      await tester.pumpAndSettle();
+      expect(find.text(log), findsNothing);
+      await tester.tap(find.text('Chẩn đoán tiện ích'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Chưa ghi nhận sự kiện nào của tiện ích.'),
+        findsOneWidget,
+      );
+      expect(find.text('Sao chép nhật ký'), findsNothing);
     },
     variant: const TargetPlatformVariant({TargetPlatform.iOS}),
   );
@@ -149,8 +200,7 @@ void main() {
   }
 
   testWidgets(
-    'persists photoMode, redactLockScreenTitles, liveActivityEnabled, and '
-    'defaultWidgetJourneyId and supports vi + en localizations (§7.2, §8.3)',
+    'persists privacy and Live Activity settings without a journey picker',
     (tester) async {
       final fakeBridge = FakeWidgetBridgeGateway();
       final journeys = FakeJourneyRepository(
@@ -170,6 +220,7 @@ void main() {
 
       final c = await pumpOurneyApp(
         tester,
+        initialPrefs: const {'widgets.defaultJourneyId': 'j-2'},
         overrides: [
           journeyRepositoryProvider.overrideWithValue(journeys),
           widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
@@ -178,6 +229,8 @@ void main() {
 
       await goTo(tester, c, AppRoutes.widgets);
       expect(byKey('widgets-screen'), findsOneWidget);
+      expect(byKey('widgets-default-journey-auto'), findsNothing);
+      expect(byKey('widgets-default-journey-j-2'), findsNothing);
       expect(find.text('tiện ích.'), findsOneWidget);
 
       // 1. Photo mode defaults to smart; switch to blurred, off, clear.
@@ -228,24 +281,14 @@ void main() {
         isFalse,
       );
 
-      // 4. Select default widget journey j-2, then back to auto.
-      expect(c.read(defaultWidgetJourneyIdProvider), isNull);
-      await tester.ensureVisible(byKey('widgets-default-journey-j-2'));
-      await tester.pumpAndSettle();
-      await tester.tap(byKey('widgets-default-journey-j-2'));
-      await tester.pumpAndSettle();
-      expect(c.read(defaultWidgetJourneyIdProvider), 'j-2');
-
-      await tester.ensureVisible(byKey('widgets-default-journey-auto'));
-      await tester.pumpAndSettle();
-      await tester.tap(byKey('widgets-default-journey-auto'));
-      await tester.pumpAndSettle();
-      expect(c.read(defaultWidgetJourneyIdProvider), isNull);
-
-      // 5. Switch locale to English ('en') and verify localized header.
       await c.read(localeOverrideProvider.notifier).set(const Locale('en'));
       await tester.pumpAndSettle();
       expect(find.text('widgets.'), findsOneWidget);
+      expect(
+        find.text('2. Search for Ourney in the widget gallery'),
+        findsOneWidget,
+      );
+      expect(find.text('featured widget journey'), findsNothing);
       _expectNoRenderOverflowsOrTruncations(tester);
     },
   );

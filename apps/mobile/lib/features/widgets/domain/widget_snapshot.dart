@@ -541,7 +541,6 @@ abstract final class WidgetSnapshotBuilder {
     WidgetPhotoMode photoMode = WidgetPhotoMode.smart,
     bool? explicitRedactLockScreenTitles,
     bool liveActivityEnabled = true,
-    String? preferredDefaultJourneyId,
     bool globalBlurPhotosOnShare = false,
     Set<String> blockedUserIds = const {},
     Set<String> hiddenCheckInIds = const {},
@@ -959,14 +958,6 @@ abstract final class WidgetSnapshotBuilder {
       }
     }
 
-    String? resolvedDefaultId;
-    if (preferredDefaultJourneyId != null &&
-        journeyItems.any((j) => j.id == preferredDefaultJourneyId)) {
-      resolvedDefaultId = preferredDefaultJourneyId;
-    } else {
-      resolvedDefaultId = journeyItems.firstOrNull?.id;
-    }
-
     final livePlan = LiveActivityWindowPlanner.plan(
       now: nowUtc,
       authStatus: authStatus,
@@ -990,7 +981,7 @@ abstract final class WidgetSnapshotBuilder {
         explicitRedactLockScreenTitles: explicitRedactLockScreenTitles,
         liveActivityEnabled: liveActivityEnabled,
       ),
-      defaultJourneyId: resolvedDefaultId,
+      defaultJourneyId: journeyItems.firstOrNull?.id,
       totals: WidgetTotalsSnapshot(
         activeCount: activeCount,
         completedTodayCount: completedTodayCount,

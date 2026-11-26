@@ -9,7 +9,7 @@ public struct StreakWidget: Widget {
   public init() {}
 
   public var body: some WidgetConfiguration {
-    StaticConfiguration(kind: kind, provider: OurneyTimelineProvider()) { entry in
+    StaticConfiguration(kind: kind, provider: OurneyTimelineProvider(kind: kind)) { entry in
       StreakWidgetEntryView(entry: entry)
     }
     .configurationDisplayName(WidgetL10n.tr("widget.streak.gallery.title"))
@@ -32,7 +32,6 @@ public struct StreakWidgetEntryView: View {
     let themeMode = snapshot?.themeMode ?? "system"
     let cardState = WidgetSnapshot.resolveStreakCardState(
       snapshot: snapshot,
-      pinnedId: entry.pinnedId,
       appGroupAvailable: entry.appGroupAvailable
     )
     let journey: WidgetJourneyItem? = {
@@ -45,21 +44,6 @@ public struct StreakWidgetEntryView: View {
       themeMode: themeMode,
       systemScheme: colorScheme
     )
-
-    let destination: URL = {
-      switch cardState {
-      case .ready(let item):
-        return item.checkedInToday
-          ? OurneyDeepLinks.journey(id: item.id)
-          : OurneyDeepLinks.capture(journeyId: item.id)
-      case .unsynced, .signedOut:
-        return OurneyDeepLinks.syncJourneys
-      case .appGroupUnavailable:
-        return OurneyDeepLinks.journeys
-      case .noJourneys:
-        return OurneyDeepLinks.newJourney
-      }
-    }()
 
     Group {
       switch cardState {
@@ -106,7 +90,7 @@ public struct StreakWidgetEntryView: View {
     .ourneyWidgetContainerBackground {
       theme.bg
     }
-    .widgetURL(destination)
+    .widgetURL(cardState.tapURL)
   }
 }
 

@@ -596,117 +596,19 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
     XCTAssertEqual(WidgetPreviewFixtures.sampleTodaySnapshot(locale: "vi").journeys.first?.title, "Tự học IELTS 30 ngày")
   }
 
-  func testConfigurableWidgetEntityQueryAndSelectionFallback() throws {
-    let tempRoot = FileManager.default.temporaryDirectory
-      .appendingPathComponent("ourney_widget_entity_tests_\(UUID().uuidString)", isDirectory: true)
-    defer {
-      try? FileManager.default.removeItem(at: tempRoot)
-    }
-
+  func testAutomaticWidgetSelectionAndLegacyPayload() throws {
     let now = try XCTUnwrap(WidgetDateParser.parseISO8601("2026-11-24T10:00:00.000Z"))
+    var snapshot = try JSONDecoder().decode(WidgetSnapshot.self, from: Data(sampleJson.utf8)).evaluated(at: now)
 
-    // 1. Before snapshot_v1.json exists (Unsynced): suggestedEntities still returns ["auto"]
-    //    and defaultResult returns "auto" ("Tự động (Đề xuất)" in VI / "Automatic (Recommended)" in EN).
-    let unsyncedJourneysVi = WidgetSnapshotStore.suggestedJourneyEntityOptions(
-      at: now,
-      rootDirectory: tempRoot,
-      fallbackLocale: "vi"
-    )
-    XCTAssertEqual(unsyncedJourneysVi.map(\.id), ["auto"])
-    XCTAssertEqual(unsyncedJourneysVi.first?.title, "Tự động (Đề xuất)")
-    XCTAssertEqual(
-      WidgetSnapshotStore.defaultJourneyEntityOption(
-        at: now,
-        rootDirectory: tempRoot,
-        fallbackLocale: "en"
-      ).title,
-      "Automatic (Recommended)"
-    )
+    XCTAssertEqual(snapshot.selectedTodayJourney()?.id, "6f8c9a10-ielts")
+    XCTAssertEqual(snapshot.selectedStreakJourney()?.id, "6f8c9a10-ielts")
+    XCTAssertEqual(snapshot.selectedSquad()?.journeyId, "6f8c9a10-ielts")
 
-    // 2. Write sample snapshot_v1.json and verify suggestedJourneyEntityOptions & suggestedSquadEntityOptions.
-    let bridge = OurneyWidgetBridge()
-    let data = try XCTUnwrap(sampleJson.data(using: .utf8))
-    XCTAssertTrue(
-      bridge.writeSnapshotAndThumbs(
-        snapshotData: data,
-        thumbSpecs: [],
-        overrideRootDirectory: tempRoot
-      )
-    )
+    snapshot.defaultJourneyId = nil
+    XCTAssertEqual(snapshot.selectedStreakJourney()?.id, "8a10b220-run")
+    XCTAssertEqual(snapshot.selectedSquad()?.journeyId, "6f8c9a10-ielts")
 
-    let journeyOptions = WidgetSnapshotStore.suggestedJourneyEntityOptions(
-      at: now,
-      rootDirectory: tempRoot
-    )
-    XCTAssertEqual(journeyOptions.map(\.id), ["auto", "6f8c9a10-ielts", "8a10b220-run"])
-    XCTAssertEqual(journeyOptions[1].title, "Tự học IELTS 30 ngày")
-    XCTAssertEqual(journeyOptions[1].subtitle, "Ngày 15/30 · Chuỗi 14 ngày")
-    XCTAssertEqual(journeyOptions[2].title, "Chạy bộ sáng 5km")
-    XCTAssertEqual(journeyOptions[2].subtitle, "Ngày 21/30 · Chuỗi 21 ngày")
-
-    let squadOptions = WidgetSnapshotStore.suggestedSquadEntityOptions(
-      at: now,
-      rootDirectory: tempRoot
-    )
-    XCTAssertEqual(squadOptions.map(\.id), ["auto", "6f8c9a10-ielts"])
-    XCTAssertEqual(squadOptions[1].title, "Tự học IELTS 30 ngày")
-    XCTAssertEqual(squadOptions[1].subtitle, "Ngày 15 · 1/2 hôm nay")
-
-    // 3. Entity lookup by IDs resolves "auto", active IDs, and returns a graceful fallback option
-    //    for archived/deleted IDs so WidgetKit never shows a broken parameter row.
-    let resolvedJourneys = WidgetSnapshotStore.journeyEntityOptions(
-      for: ["auto", "8a10b220-run", "archived-journey-999"],
-      at: now,
-      rootDirectory: tempRoot
-    )
-    XCTAssertEqual(resolvedJourneys.count, 3)
-    XCTAssertEqual(resolvedJourneys[0].id, "auto")
-    XCTAssertEqual(resolvedJourneys[1].id, "8a10b220-run")
-    XCTAssertEqual(resolvedJourneys[1].title, "Chạy bộ sáng 5km")
-    XCTAssertEqual(resolvedJourneys[2].id, "archived-journey-999")
-    XCTAssertEqual(resolvedJourneys[2].title, "Tự động (Đề xuất)")
-
-    let resolvedSquads = WidgetSnapshotStore.squadEntityOptions(
-      for: ["auto", "6f8c9a10-ielts", "deleted-squad-999"],
-      at: now,
-      rootDirectory: tempRoot
-    )
-    XCTAssertEqual(resolvedSquads.count, 3)
-    XCTAssertEqual(resolvedSquads[0].id, "auto")
-    XCTAssertEqual(resolvedSquads[1].id, "6f8c9a10-ielts")
-    XCTAssertEqual(resolvedSquads[2].id, "deleted-squad-999")
-    XCTAssertEqual(resolvedSquads[2].title, "Tự động (Đề xuất)")
-
-    // 4. Pinned selection overrides "auto" on Today, Streak, Squad, and Lock Screen,
-    //    and falls back to "auto" when pinnedId is nil, "auto", or archived/deleted.
-    let loaded = try XCTUnwrap(
-      WidgetSnapshotStore.loadSnapshot(at: now, rootDirectory: tempRoot)
-    )
-    // In "auto" mode on Today, pending journey "6f8c9a10-ielts" is selected over completed "8a10b220-run".
-    XCTAssertEqual(loaded.selectedTodayJourney(pinnedId: nil)?.id, "6f8c9a10-ielts")
-    XCTAssertEqual(loaded.selectedTodayJourney(pinnedId: "auto")?.id, "6f8c9a10-ielts")
-    XCTAssertFalse(loaded.isTodayJourneyPinned(nil))
-    XCTAssertFalse(loaded.isTodayJourneyPinned("auto"))
-
-    // Pinning completed journey "8a10b220-run" selects it directly and marks it pinned (hiding cycle pill).
-    XCTAssertEqual(loaded.selectedTodayJourney(pinnedId: "8a10b220-run")?.id, "8a10b220-run")
-    XCTAssertTrue(loaded.isTodayJourneyPinned("8a10b220-run"))
-
-    // Archived/deleted pinnedId falls back to "auto" ("6f8c9a10-ielts") and unmarks isTodayJourneyPinned.
-    XCTAssertEqual(loaded.selectedTodayJourney(pinnedId: "archived-journey-999")?.id, "6f8c9a10-ielts")
-    XCTAssertFalse(loaded.isTodayJourneyPinned("archived-journey-999"))
-
-    // Streak widget: defaultJourneyId is "6f8c9a10-ielts" in "auto", pinning "8a10b220-run" selects it,
-    // and archived ID falls back to "auto".
-    XCTAssertEqual(loaded.selectedStreakJourney(preferredId: "auto")?.id, "6f8c9a10-ielts")
-    XCTAssertEqual(loaded.selectedStreakJourney(preferredId: "8a10b220-run")?.id, "8a10b220-run")
-    XCTAssertEqual(loaded.selectedStreakJourney(preferredId: "archived-journey-999")?.id, "6f8c9a10-ielts")
-
-    // Squad widget: pinning valid squad or falling back from deleted squad ID to "auto".
-    XCTAssertEqual(loaded.selectedSquad(preferredId: "6f8c9a10-ielts")?.journeyId, "6f8c9a10-ielts")
-    XCTAssertEqual(loaded.selectedSquad(preferredId: "deleted-squad-999")?.journeyId, "6f8c9a10-ielts")
-
-    // 5. Legacy snapshot payload omitting "journeys" and "squads" decodes cleanly with empty arrays.
+    // Older snapshots can omit both lists.
     let legacyJsonWithoutLists = """
     {
       "schemaVersion": 1,
@@ -721,6 +623,33 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
     )
     XCTAssertTrue(legacyDecoded.journeys.isEmpty)
     XCTAssertTrue(legacyDecoded.squads.isEmpty)
+  }
+
+  func testTodayTapUsesTheCycledCardAndItsOwnCaptureURL() {
+    let other = WidgetJourneyItem(id: "other", title: "Other Journey")
+    let trip = WidgetJourneyItem(id: "trip+last&day=11", title: "Trip", dayNumber: 11, totalDays: 11)
+    let snapshot = WidgetSnapshot(authState: "ready", defaultJourneyId: other.id, journeys: [other, trip])
+    let state = WidgetSnapshot.resolveTodayCardState(
+      snapshot: snapshot,
+      state: WidgetInteractiveState(selectedTodayJourneyId: trip.id)
+    )
+
+    XCTAssertEqual(state, .ready(trip))
+    XCTAssertEqual(state.tapURL.absoluteString, "ourney://capture?journeyId=trip%2Blast%26day%3D11")
+    XCTAssertEqual(state.tapURL, trip.captureURL)
+    XCTAssertEqual(other.captureURL.absoluteString, "ourney://capture?journeyId=other")
+  }
+
+  func testCompletedJourneyAndCoupleCardsStillOpenTheirOwnCamera() {
+    let trip = WidgetJourneyItem(id: "trip", title: "Trip", checkedInToday: true)
+    let couple = WidgetSquadItem(journeyId: "couple", title: "Couple", isCouple: true, meCheckedInToday: true)
+    let snapshot = WidgetSnapshot(authState: "ready", defaultJourneyId: trip.id, journeys: [trip], squads: [couple])
+
+    XCTAssertEqual(WidgetSnapshot.resolveTodayCardState(snapshot: snapshot).tapURL, trip.captureURL)
+    XCTAssertEqual(WidgetSnapshot.resolveStreakCardState(snapshot: snapshot).tapURL, trip.captureURL)
+    XCTAssertEqual(trip.captureURL.absoluteString, "ourney://capture?journeyId=trip")
+    XCTAssertEqual(WidgetSnapshot.resolveSquadCardState(snapshot: snapshot).tapURL, couple.captureURL)
+    XCTAssertEqual(couple.captureURL.absoluteString, "ourney://capture?journeyId=couple")
   }
 
   func testFourStateCardResolutionAndSoloOnlySquadAndLockScreenSensitivity() throws {

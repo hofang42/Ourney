@@ -268,7 +268,6 @@ class WidgetSyncController {
       final photoMode = _ref.read(widgetPhotoModeProvider);
       final explicitRedact = _ref.read(redactLockScreenTitlesPrefProvider);
       final liveEnabled = _ref.read(liveActivityEnabledProvider);
-      final defaultJourneyId = _ref.read(defaultWidgetJourneyIdProvider);
       final dismissedWindowKey = _ref.read(dismissedLiveWindowKeyProvider);
       final reminderSettings = _ref.read(reminderSettingsProvider);
       final streakAlerts = _ref.read(streakAlertsEnabledProvider);
@@ -313,7 +312,6 @@ class WidgetSyncController {
         photoMode: photoMode,
         explicitRedactLockScreenTitles: explicitRedact,
         liveActivityEnabled: liveEnabled,
-        preferredDefaultJourneyId: defaultJourneyId,
         globalBlurPhotosOnShare: blurPhotosOnShare,
         blockedUserIds: blockedIds,
         hiddenCheckInIds: hiddenCheckInIds,
@@ -714,7 +712,6 @@ class _WidgetLifecycleHookState extends ConsumerState<WidgetLifecycleHook>
       ..listen(widgetPhotoModeProvider, trigger, onError: ignoreError)
       ..listen(redactLockScreenTitlesPrefProvider, trigger, onError: ignoreError)
       ..listen(liveActivityEnabledProvider, trigger, onError: ignoreError)
-      ..listen(defaultWidgetJourneyIdProvider, trigger, onError: ignoreError)
       ..listen(dismissedLiveWindowKeyProvider, trigger, onError: ignoreError);
 
     if (authStatus != AuthStatus.signedOut) {

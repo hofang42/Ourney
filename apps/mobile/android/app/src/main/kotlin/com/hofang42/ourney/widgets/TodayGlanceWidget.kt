@@ -247,11 +247,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
         streakBitmap: android.graphics.Bitmap?,
     ) {
         val urgent = journey.isStreakAlertActive(nowMs)
-        val primaryAction = if (journey.checkedInToday) {
-            WidgetActions.journeyDetailAction(context, journey.id)
-        } else {
-            WidgetActions.captureAction(context, journey.id)
-        }
+        val primaryAction = WidgetActions.captureAction(context, journey.id)
         val statusDesc = resolveStatusCopy(l10n, journey, nowMs)
         val a11yDescription =
             "${journey.title}, ${l10n.getString(R.string.widget_streak_days, journey.currentStreak)}, $statusDesc"
@@ -362,11 +358,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
         framedPhoto: android.graphics.Bitmap?,
     ) {
         val urgent = journey.isStreakAlertActive(nowMs)
-        val primaryAction = if (journey.checkedInToday) {
-            WidgetActions.journeyDetailAction(context, journey.id)
-        } else {
-            WidgetActions.captureAction(context, journey.id)
-        }
+        val primaryAction = WidgetActions.captureAction(context, journey.id)
         val statusText = resolveStatusCopy(l10n, journey, nowMs)
         val a11yDescription =
             "${journey.title}, ${l10n.getString(R.string.widget_streak_days, journey.currentStreak)}, $statusText"
@@ -499,11 +491,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
         framedPhoto: android.graphics.Bitmap?,
     ) {
         val urgent = journey.isStreakAlertActive(nowMs)
-        val primaryAction = if (journey.checkedInToday) {
-            WidgetActions.journeyDetailAction(context, journey.id)
-        } else {
-            WidgetActions.captureAction(context, journey.id)
-        }
+        val primaryAction = WidgetActions.captureAction(context, journey.id)
         val statusText = resolveStatusCopy(l10n, journey, nowMs)
         val a11yDescription =
             "${journey.title}, ${l10n.getString(R.string.widget_streak_days, journey.currentStreak)}, $statusText"

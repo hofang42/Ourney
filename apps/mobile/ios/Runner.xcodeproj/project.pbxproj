@@ -39,7 +39,6 @@
 		7D0B002F2F10000100000001 /* LockScreenWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B000C2F10000100000001 /* LockScreenWidget.swift */; };
 		7D0B00302F10000100000001 /* CheckInLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B000D2F10000100000001 /* CheckInLiveActivity.swift */; };
 		7D0B00312F10000100000001 /* WidgetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B000E2F10000100000001 /* WidgetIntents.swift */; };
-		7D0B004E2F10000100000001 /* WidgetConfigIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B001C2F10000100000001 /* WidgetConfigIntents.swift */; };
 		7D0B00322F10000100000001 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D0B00182F10000100000001 /* WidgetKit.framework */; };
 		7D0B00332F10000100000001 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D0B00192F10000100000001 /* SwiftUI.framework */; };
 		7D0B00342F10000100000001 /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D0B001A2F10000100000001 /* ActivityKit.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
@@ -53,6 +52,11 @@
 		7D0B004B2F10000100000001 /* WidgetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B000E2F10000100000001 /* WidgetIntents.swift */; };
 		7D0B004C2F10000100000001 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D0B001B2F10000100000001 /* AppIntents.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		7D0B004D2F10000100000001 /* WidgetL10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00082F10000100000001 /* WidgetL10n.swift */; };
+		7D0B00652F10000100000001 /* WidgetDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00682F10000100000001 /* WidgetDiagnostics.swift */; };
+		7D0B00662F10000100000001 /* WidgetDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00682F10000100000001 /* WidgetDiagnostics.swift */; };
+		7D0B00672F10000100000001 /* WidgetTimelineProviders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B006A2F10000100000001 /* WidgetTimelineProviders.swift */; };
+		7D0B00692F10000100000001 /* WidgetTimelineProviders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B006A2F10000100000001 /* WidgetTimelineProviders.swift */; };
+		7D0B006B2F10000100000001 /* WidgetTimelineProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B006C2F10000100000001 /* WidgetTimelineProviderTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -132,7 +136,6 @@
 		7D0B000C2F10000100000001 /* LockScreenWidget.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Views/LockScreenWidget.swift; sourceTree = "<group>"; };
 		7D0B000D2F10000100000001 /* CheckInLiveActivity.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Views/CheckInLiveActivity.swift; sourceTree = "<group>"; };
 		7D0B000E2F10000100000001 /* WidgetIntents.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Intents/WidgetIntents.swift; sourceTree = "<group>"; };
-		7D0B001C2F10000100000001 /* WidgetConfigIntents.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Intents/WidgetConfigIntents.swift; sourceTree = "<group>"; };
 		7D0B000F2F10000100000001 /* Localizable.xcstrings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		7D0B00102F10000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7D0B00112F10000100000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -148,6 +151,9 @@
 		7D0B00192F10000100000001 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		7D0B001A2F10000100000001 /* ActivityKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ActivityKit.framework; path = System/Library/Frameworks/ActivityKit.framework; sourceTree = SDKROOT; };
 		7D0B001B2F10000100000001 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
+		7D0B00682F10000100000001 /* WidgetDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDiagnostics.swift; sourceTree = "<group>"; };
+		7D0B006A2F10000100000001 /* WidgetTimelineProviders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetTimelineProviders.swift; sourceTree = "<group>"; };
+		7D0B006C2F10000100000001 /* WidgetTimelineProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetTimelineProviderTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -181,6 +187,7 @@
 				331C807B294A618700263BE5 /* RunnerTests.swift */,
 				7D0B00142F10000100000001 /* WidgetSnapshotRolloverTests.swift */,
 				7D0B00642F10000100000001 /* WidgetAppGroupTests.swift */,
+				7D0B006C2F10000100000001 /* WidgetTimelineProviderTests.swift */,
 			);
 			path = RunnerTests;
 			sourceTree = "<group>";
@@ -190,6 +197,8 @@
 			children = (
 				7D0B00032F10000100000001 /* OurneyCheckInAttributes.swift */,
 				7D0B00632F10000100000001 /* WidgetAppGroup.swift */,
+				7D0B00682F10000100000001 /* WidgetDiagnostics.swift */,
+				7D0B006A2F10000100000001 /* WidgetTimelineProviders.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -208,7 +217,6 @@
 				7D0B000C2F10000100000001 /* LockScreenWidget.swift */,
 				7D0B000D2F10000100000001 /* CheckInLiveActivity.swift */,
 				7D0B000E2F10000100000001 /* WidgetIntents.swift */,
-				7D0B001C2F10000100000001 /* WidgetConfigIntents.swift */,
 				7D0B000F2F10000100000001 /* Localizable.xcstrings */,
 				7D0B00102F10000100000001 /* Assets.xcassets */,
 				7D0B00112F10000100000001 /* PrivacyInfo.xcprivacy */,
@@ -474,6 +482,7 @@
 				331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */,
 				7D0B00252F10000100000001 /* WidgetSnapshotRolloverTests.swift in Sources */,
 				7D0B00622F10000100000001 /* WidgetAppGroupTests.swift in Sources */,
+				7D0B006B2F10000100000001 /* WidgetTimelineProviderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -485,6 +494,8 @@
 				7D0B00272F10000100000001 /* OurneyWidgetsBundle.swift in Sources */,
 				7D0B00282F10000100000001 /* WidgetSnapshot.swift in Sources */,
 				7D0B00612F10000100000001 /* WidgetAppGroup.swift in Sources */,
+				7D0B00662F10000100000001 /* WidgetDiagnostics.swift in Sources */,
+				7D0B00692F10000100000001 /* WidgetTimelineProviders.swift in Sources */,
 				7D0B00292F10000100000001 /* OurneyWidgetTokens.swift in Sources */,
 				7D0B002A2F10000100000001 /* OurneyWidgetIcons.swift in Sources */,
 				7D0B002B2F10000100000001 /* WidgetL10n.swift in Sources */,
@@ -494,7 +505,6 @@
 				7D0B002F2F10000100000001 /* LockScreenWidget.swift in Sources */,
 				7D0B00302F10000100000001 /* CheckInLiveActivity.swift in Sources */,
 				7D0B00312F10000100000001 /* WidgetIntents.swift in Sources */,
-				7D0B004E2F10000100000001 /* WidgetConfigIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -509,6 +519,8 @@
 				7D0B00212F10000100000001 /* OurneyCheckInAttributes.swift in Sources */,
 				7D0B00222F10000100000001 /* WidgetSnapshot.swift in Sources */,
 				7D0B00602F10000100000001 /* WidgetAppGroup.swift in Sources */,
+				7D0B00652F10000100000001 /* WidgetDiagnostics.swift in Sources */,
+				7D0B00672F10000100000001 /* WidgetTimelineProviders.swift in Sources */,
 				7D0B004B2F10000100000001 /* WidgetIntents.swift in Sources */,
 				7D0B004D2F10000100000001 /* WidgetL10n.swift in Sources */,
 			);

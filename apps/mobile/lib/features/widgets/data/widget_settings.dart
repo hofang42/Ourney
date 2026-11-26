@@ -23,9 +23,6 @@ abstract final class WidgetPrefs {
   /// Ongoing Live Update (Android) (default `true`, §7.2).
   static const liveActivityEnabled = 'widgets.liveActivityEnabled';
 
-  /// Optional journey id pinned as the primary default journey on widgets.
-  static const defaultJourneyId = 'widgets.defaultJourneyId';
-
   /// Last `windowKey` (`YYYY-MM-DD:<journeyId>`) dismissed by the user so
   /// reopening the app later that evening does not re-spawn the Live Activity (§6.2).
   static const dismissedWindowKey = 'widgets.dismissedWindowKey';
@@ -34,7 +31,7 @@ abstract final class WidgetPrefs {
     photoMode,
     redactLockScreenTitles,
     liveActivityEnabled,
-    defaultJourneyId,
+    'widgets.defaultJourneyId', // Remove the legacy picker setting on account reset.
     dismissedWindowKey,
   ];
 }
@@ -118,34 +115,6 @@ class LiveActivityEnabledController extends Notifier<bool> {
 final liveActivityEnabledProvider =
     NotifierProvider<LiveActivityEnabledController, bool>(
       LiveActivityEnabledController.new,
-    );
-
-class DefaultWidgetJourneyIdController extends Notifier<String?> {
-  @override
-  String? build() {
-    final raw = ref
-        .watch(sharedPreferencesProvider)
-        .getString(WidgetPrefs.defaultJourneyId);
-    return (raw == null || raw.isEmpty) ? null : raw;
-  }
-
-  Future<void> set(String? journeyId) async {
-    final normalized = (journeyId == null || journeyId.isEmpty)
-        ? null
-        : journeyId;
-    state = normalized;
-    final prefs = ref.read(sharedPreferencesProvider);
-    if (normalized == null) {
-      await prefs.remove(WidgetPrefs.defaultJourneyId);
-    } else {
-      await prefs.setString(WidgetPrefs.defaultJourneyId, normalized);
-    }
-  }
-}
-
-final defaultWidgetJourneyIdProvider =
-    NotifierProvider<DefaultWidgetJourneyIdController, String?>(
-      DefaultWidgetJourneyIdController.new,
     );
 
 class DismissedLiveWindowKeyController extends Notifier<String?> {

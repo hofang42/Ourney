@@ -673,7 +673,12 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
       }
     });
     final list = journeys.value ?? const <Journey>[];
-    final selected = pickInitialJourney(list, _selectedJourneyId);
+    final requested = widget.initialJourneyId;
+    // A stale link can outlive its journey. Keep capture disabled until
+    // that journey is available or the user chooses another one.
+    final selected = requested != null && requested == _selectedJourneyId
+        ? list.where((journey) => journey.id == requested).firstOrNull
+        : pickInitialJourney(list, _selectedJourneyId);
     if (selected != null) {
       // Keep the selected journey provider warm so pushing /checkin mounts
       // CheckinScreen with AsyncData on frame 0 (no 1-frame spinner flash and

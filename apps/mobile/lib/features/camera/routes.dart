@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_routes.dart';
@@ -16,9 +17,13 @@ final List<RouteBase> cameraRoutes = [
       context: context,
       state: state,
       kind: UiPageTransition.fadeThrough,
-      child: CaptureScreen(
-        initialJourneyId:
-            state.uri.queryParameters[CaptureScreen.journeyIdParam],
+      // The camera page and its session survive query-only navigation.
+      child: Builder(
+        builder: (context) => CaptureScreen(
+          initialJourneyId: GoRouterState.of(context)
+              .uri
+              .queryParameters[CaptureScreen.journeyIdParam],
+        ),
       ),
     ),
   ),
