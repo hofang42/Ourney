@@ -72,12 +72,14 @@ async function sha256Hex(input: string): Promise<string> {
 }
 
 async function rateLimitIpHash(req: Request, secret?: string): Promise<string | null> {
-  // Use the Cloudflare ingress header on *.supabase.co. Caller-supplied forwarding chains
-  // do not provide a safe fallback. SQL also caps each journey independently of this header.
+  // Best-effort only: Supabase does not document an end-to-end trust guarantee here.
+  // A missing client address skips the IP quota. SQL always caps the resolved journey.
   const ip = req.headers.get("cf-connecting-ip") ?? "";
   const family = isIP(ip);
   if (family === 0 || ip.includes("%")) return null;
   const canonicalIp = family === 6 ? new URL(`http://[${ip}]`).hostname : ip;
+  // Cloudflare uses this shared address for cross-zone Worker subrequests.
+  if (canonicalIp === "[2a06:98c0:3600::103]") return null;
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     "raw", encoder.encode(secret ?? serviceRoleKey()), { name: "HMAC", hash: "SHA-256" }, false, ["sign"],

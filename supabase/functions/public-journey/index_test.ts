@@ -270,6 +270,7 @@ Deno.test("public-journey sends only a keyed hash of the Cloudflare ingress IP",
     { "cf-connecting-ip": "198.51.100.25" },
     { "x-forwarded-for": "203.0.113.8", "x-real-ip": "203.0.113.9" },
     { "cf-connecting-ip": "198.51.100.1, 198.51.100.2" },
+    { "cf-connecting-ip": "2a06:98c0:3600:0:0:0:0:103" },
   ];
   for (const headers of cases) {
     await handle(new Request(url, { headers }), {
@@ -286,7 +287,8 @@ Deno.test("public-journey sends only a keyed hash of the Cloudflare ingress IP",
   assertEquals(hashes[0] === hashes[2], false, "separate IP buckets");
   assertEquals(hashes[3], null, "no caller-supplied forwarding fallback");
   assertEquals(hashes[4], null, "reject a list instead of a single IP");
-  assertEquals(hashes[0] === hashes[5], false, "hash depends on the server key");
+  assertEquals(hashes[5], null, "the shared Cloudflare Worker address is not a client IP");
+  assertEquals(hashes[0] === hashes[6], false, "hash depends on the server key");
 });
 
 Deno.test("public-journey never falls back to an unthrottled lookup if the RPC fails", async () => {

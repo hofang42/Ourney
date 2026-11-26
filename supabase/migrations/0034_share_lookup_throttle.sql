@@ -1,66 +1,78 @@
+-- Equivalent to SET LOCAL, including when the CLI starts an implicit batch.
+select pg_catalog.set_config('lock_timeout', '2s', true);
+
 -- Public share lookups share fixed UTC minute windows across Edge instances.
 create table private.share_lookup_buckets (
   scope text not null,
   bucket_key text not null,
   window_start timestamptz not null,
   hits integer not null,
-  primary key (scope, bucket_key)
+  primary key (window_start, scope, bucket_key)
 );
-create index share_lookup_bucket_expiry on private.share_lookup_buckets (window_start);
 alter table private.share_lookup_buckets enable row level security;
 revoke all on table private.share_lookup_buckets from public, anon, authenticated, service_role;
 
-create function private.take_share_lookup(p_scope text, p_key text, p_limit integer) returns integer
-language plpgsql set search_path = ''
+create function private.share_lookup_is_full(
+  p_window timestamptz, p_scope text, p_key text, p_limit integer
+) returns boolean
+language sql stable strict set search_path = ''
 as $$
-declare
-  v_window timestamptz := date_trunc('minute', now(), 'UTC');
+  select exists (
+    select from private.share_lookup_buckets
+     where window_start = p_window and scope = p_scope and bucket_key = p_key and hits >= p_limit
+  );
+$$;
+
+create function private.take_share_lookup(
+  p_window timestamptz, p_scope text, p_key text, p_limit integer
+) returns boolean
+language plpgsql strict set search_path = ''
+as $$
 begin
-  -- Once full, skip the write path (and the hot row lock) for the rest of this window.
-  if not exists (select from private.share_lookup_buckets b
-                  where b.scope = p_scope and b.bucket_key = p_key
-                    and b.window_start = v_window and b.hits >= p_limit) then
-    insert into private.share_lookup_buckets as b (scope, bucket_key, window_start, hits)
-    values (p_scope, p_key, v_window, 1)
-    on conflict (scope, bucket_key) do update
-      set window_start = excluded.window_start,
-          hits = case when b.window_start = excluded.window_start then b.hits + 1 else 1 end
-      where b.window_start < excluded.window_start
-         or (b.window_start = excluded.window_start and b.hits < p_limit);
-    if found then
-      return 0;
-    end if;
-  end if;
-  return ceil(extract(epoch from v_window + interval '1 minute' - now()))::integer;
+  -- Skip the hot row lock once a full count is visible. The upsert enforces the cap during races.
+  insert into private.share_lookup_buckets as b (scope, bucket_key, window_start, hits)
+  select p_scope, p_key, p_window, 1
+   where not private.share_lookup_is_full(p_window, p_scope, p_key, p_limit)
+  on conflict (window_start, scope, bucket_key) do update
+    set hits = b.hits + 1 where b.hits < p_limit;
+  return found;
 end;
 $$;
-revoke all on function private.take_share_lookup(text, text, integer)
+
+create function private.purge_share_lookup_buckets(p_batch_size integer) returns void
+language sql strict set search_path = ''
+as $$
+  with expired as (
+    select window_start, scope, bucket_key
+      from private.share_lookup_buckets
+     where window_start < now() - interval '10 minutes'
+     order by window_start, scope, bucket_key
+     limit p_batch_size
+     for update skip locked
+  )
+  delete from private.share_lookup_buckets b using expired e
+   where (b.window_start, b.scope, b.bucket_key) = (e.window_start, e.scope, e.bucket_key);
+$$;
+
+revoke all on function private.share_lookup_is_full(timestamptz, text, text, integer),
+  private.take_share_lookup(timestamptz, text, text, integer), private.purge_share_lookup_buckets(integer)
   from public, anon, authenticated, service_role;
 
--- Replaces the Edge function's first read, so throttling adds no HTTP round trip.
--- A well-formed miss uses the IP quota without creating a credential-specific bucket.
+-- Resolve the link before charging quota. The counter writes are the last work in this RPC.
 create function public.lookup_public_journey_for_edge(p_token text, p_ip_hash text) returns jsonb
 language plpgsql security definer set search_path = ''
 as $$
 declare
   v_is_slug boolean := coalesce(char_length(p_token) <= 40
     and p_token collate "C" ~ '^[a-z0-9]+(-[a-z0-9]+)*-[a-z2-7]{16}$', false);
-  v_retry integer;
+  v_window timestamptz := date_trunc('minute', now(), 'UTC');
+  v_ip_hash text := case when p_ip_hash collate "C" ~ '^[0-9a-f]{64}$' then p_ip_hash end;
   v_journey record;
+  v_response jsonb;
 begin
   if not v_is_slug and not coalesce(p_token collate "C" ~ '^[a-z0-9]{32,64}$', false) then
     return jsonb_build_object('retry_after', 0, 'journey', null);
   end if;
-  if p_ip_hash is not null and p_ip_hash collate "C" !~ '^[0-9a-f]{64}$' then
-    raise exception 'invalid_ip_hash';
-  end if;
-
-  v_retry := private.take_share_lookup('ip', coalesce(p_ip_hash, 'unknown'),
-    case when p_ip_hash is null then 120 else 60 end);
-  if v_retry > 0 then
-    return jsonb_build_object('retry_after', v_retry, 'journey', null);
-  end if;
-
   select j.id, j.owner_id, j.public_token, j.kind, j.template_id, j.title, j.emoji, j.metric_name,
          j.metric_unit, j.start_date, j.duration_days, j.timezone, j.status, j.origin, j.layout,
          j.color, j.cover, j.story_title, j.story_intro, j.story_lessons, j.cover_checkin_id, j.show_counts
@@ -72,11 +84,19 @@ begin
     return jsonb_build_object('retry_after', 0, 'journey', null);
   end if;
 
-  v_retry := private.take_share_lookup('journey', v_journey.id::text, 120);
-  if v_retry > 0 then
-    return jsonb_build_object('retry_after', v_retry, 'journey', null);
+  if not private.share_lookup_is_full(v_window, 'journey', v_journey.id::text, 120)
+     and not coalesce(private.share_lookup_is_full(v_window, 'ip', v_ip_hash, 60), false) then
+    v_response := jsonb_build_object('retry_after', 0, 'journey', to_jsonb(v_journey));
+    -- Four expired rows per lookup can outpace up to two new rows even with Cron paused.
+    perform private.purge_share_lookup_buckets(4);
+    if v_ip_hash is null or private.take_share_lookup(v_window, 'ip', v_ip_hash, 60) then
+      if private.take_share_lookup(v_window, 'journey', v_journey.id::text, 120) then
+        return v_response;
+      end if;
+    end if;
   end if;
-  return jsonb_build_object('retry_after', 0, 'journey', to_jsonb(v_journey));
+  return jsonb_build_object('retry_after', ceil(extract(epoch from v_window + interval '1 minute' - now()))::integer,
+    'journey', null);
 end;
 $$;
 revoke all on function public.lookup_public_journey_for_edge(text, text) from public, anon, authenticated;
@@ -90,6 +110,8 @@ declare
   uid uuid := public._uid();
   v_is_slug boolean := coalesce(char_length(p_token) <= 40
     and p_token collate "C" ~ '^[a-z0-9]+(-[a-z0-9]+)*-[a-z2-7]{16}$', false);
+  v_window timestamptz := date_trunc('minute', now(), 'UTC');
+  v_limited boolean;
   v_retry integer;
   v_journey uuid;
   v_role text;
@@ -98,33 +120,37 @@ begin
   if not v_is_slug and not coalesce(p_token collate "C" ~ '^[a-z0-9]{32,64}$', false) then
     raise exception 'not_found';
   end if;
-  -- Misses skip the counter write. Authorize, charge once, and only then build the payload
-  -- from the same snapshot as the credential and viewer role.
+  -- Authorize and build the payload from the same snapshot, with a read-only quota check.
   with candidate as materialized (
     select j.id, private.viewer_role(j.id, true) as role
       from public.journeys j
      where j.deleted_at is null and j.public_token is not null
        and ((v_is_slug and j.public_slug = p_token) or (not v_is_slug and j.public_token = p_token))
   ), authorized as materialized (
-    select c.id, c.role, private.take_share_lookup('user', uid::text, 60) as retry_after
+    select c.id, c.role, private.share_lookup_is_full(v_window, 'user', uid::text, 60) as limited
       from candidate c where c.role is not null
   )
-  select a.id, a.role, a.retry_after,
-         case when a.retry_after = 0 then private.journey_view(a.id, a.role) end
-    into v_journey, v_role, v_retry, v_view
+  select a.id, a.role, a.limited,
+         case when not a.limited then private.journey_view(a.id, a.role) end
+    into v_journey, v_role, v_limited, v_view
     from authorized a;
   if not found then
     raise exception 'not_found';
   end if;
-  if v_retry > 0 then
+  if not v_limited then
+    if v_role <> 'member' then
+      perform private.record_view(v_journey, uid::text);
+    end if;
+    perform private.purge_share_lookup_buckets(4);
+    -- A denied upsert raises below and rolls back any view recorded during a race.
+    v_limited := not private.take_share_lookup(v_window, 'user', uid::text, 60);
+  end if;
+  if v_limited then
+    v_retry := ceil(extract(epoch from v_window + interval '1 minute' - now()))::integer;
     raise sqlstate 'PGRST' using
       message = '{"code":"P0001","message":"rate_limited"}',
       detail = json_build_object('status', 429,
         'headers', json_build_object('Retry-After', v_retry::text, 'Cache-Control', 'no-store'))::text;
-  end if;
-
-  if v_role <> 'member' then
-    perform private.record_view(v_journey, uid::text);
   end if;
   return v_view;
 end;
@@ -135,10 +161,11 @@ grant usage on schema cron to postgres;
 grant select on cron.job to postgres;
 grant select, delete on cron.job_run_details to postgres;
 select cron.schedule('purge-share-lookup-buckets', '*/5 * * * *', $job$
-  with expired_buckets as (
-    delete from private.share_lookup_buckets where window_start < now() - interval '10 minutes'
-  )
+  select private.purge_share_lookup_buckets(5000);
+$job$);
+select cron.schedule('prune-share-lookup-cron-history', '19 3 * * *', $job$
   delete from cron.job_run_details
-   where jobid = (select jobid from cron.job where jobname = 'purge-share-lookup-buckets')
+   where jobid in (select jobid from cron.job
+                    where jobname in ('purge-share-lookup-buckets', 'prune-share-lookup-cron-history'))
      and end_time < now() - interval '7 days';
 $job$);
