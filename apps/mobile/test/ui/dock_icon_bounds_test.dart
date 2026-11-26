@@ -91,53 +91,131 @@ void main() {
     });
   });
 
-  testWidgets('camera and shell docks keep the tabs where they are', (
-    tester,
-  ) async {
-    Future<List<Offset>> centers({required bool camera}) async {
-      UiDockItem item(String g, int i) => UiDockItem(
-        glyph: g,
-        label: g,
-        itemKey: ValueKey('t$i'),
-        onPressed: () {},
-      );
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: OurneyTheme.build(Brightness.light),
-          home: MediaQuery(
-            data: const MediaQueryData(
-              size: Size(390, 780),
-              viewPadding: EdgeInsets.only(bottom: 20),
-            ),
-            child: Scaffold(
-              body: Align(
-                alignment: Alignment.bottomCenter,
-                child: UiDock(
-                  left: item('journeys', 0),
-                  extraLeft: [item('squad', 1)],
-                  extraRight: [item('activity', 3)],
-                  right: item('profile', 4),
-                  snapLabel: 'Snap',
-                  onSnap: () {},
-                  camera: camera,
-                  center: camera ? const SizedBox.square(dimension: 76) : null,
+  testWidgets(
+    'camera dock tabs sit at the E4 camera-route centres and glide there '
+    'monotonically during the 220ms morph while keeping y invariant',
+    (tester) async {
+      for (final (w, expectedShellX, expectedCamX) in const [
+        (360.0, [47.0, 109.0, 251.0, 313.0], [45.0, 103.0, 257.0, 315.0]),
+        (
+          390.0,
+          [50.75, 120.25, 269.75, 339.25],
+          [48.75, 114.25, 275.75, 341.25],
+        ),
+      ]) {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = Size(w, 780);
+        addTearDown(tester.view.reset);
+
+        var camera = false;
+        late StateSetter setHost;
+
+        UiDockItem item(String g, int i) => UiDockItem(
+          glyph: g,
+          label: g,
+          itemKey: ValueKey('t$i'),
+          onPressed: () {},
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: OurneyTheme.build(Brightness.light),
+            home: MediaQuery(
+              data: MediaQueryData(
+                size: Size(w, 780),
+                viewPadding: const EdgeInsets.only(bottom: 20),
+              ),
+              child: Scaffold(
+                body: StatefulBuilder(
+                  builder: (context, setState) {
+                    setHost = setState;
+                    return Align(
+                      alignment: Alignment.bottomCenter,
+                      child: UiDock(
+                        key: ValueKey('dock-$w'),
+                        left: item('journeys', 0),
+                        extraLeft: [item('squad', 1)],
+                        extraRight: [item('activity', 3)],
+                        right: item('profile', 4),
+                        snapLabel: 'Snap',
+                        onSnap: () {},
+                        camera: camera,
+                        center: camera
+                            ? const SizedBox.square(dimension: 76)
+                            : null,
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
           ),
-        ),
-      );
-      return [
-        for (final k in ['t0', 't1', 't3', 't4'])
-          tester.getRect(find.byKey(ValueKey(k))).center,
-      ];
-    }
+        );
 
-    final shell = await centers(camera: false);
-    final cam = await centers(camera: true);
-    for (var i = 0; i < shell.length; i++) {
-      expect(cam[i].dx, closeTo(shell[i].dx, 0.01), reason: 'tab $i x');
-      expect(cam[i].dy, closeTo(shell[i].dy, 0.01), reason: 'tab $i y');
-    }
-  });
+        List<Offset> centers() => [
+          for (final k in ['t0', 't1', 't3', 't4'])
+            tester.getRect(find.byKey(ValueKey(k))).center,
+        ];
+
+        final shell = centers();
+        for (var i = 0; i < 4; i++) {
+          expect(
+            shell[i].dx,
+            closeTo(expectedShellX[i], 0.5),
+            reason: 'shell tab $i x at W=$w',
+          );
+        }
+
+        // Flip to camera route and sample mid-morph at 55ms, 110ms, 165ms, 220ms
+        setHost(() => camera = true);
+        await tester.pump();
+
+        var prev = shell;
+        for (var step = 1; step <= 4; step++) {
+          await tester.pump(const Duration(milliseconds: 55));
+          final cur = centers();
+          for (var i = 0; i < 4; i++) {
+            // Y is invariant throughout
+            expect(
+              cur[i].dy,
+              closeTo(shell[i].dy, 0.01),
+              reason: 'tab $i y invariant at step $step (W=$w)',
+            );
+            // Left tabs (0, 1) glide monotonically left; right tabs (2, 3) glide right
+            if (i < 2) {
+              expect(
+                cur[i].dx,
+                lessThanOrEqualTo(prev[i].dx + 0.001),
+                reason: 'left tab $i monotonic at step $step (W=$w)',
+              );
+            } else {
+              expect(
+                cur[i].dx,
+                greaterThanOrEqualTo(prev[i].dx - 0.001),
+                reason: 'right tab $i monotonic at step $step (W=$w)',
+              );
+            }
+          }
+          prev = cur;
+        }
+
+        await tester.pumpAndSettle();
+        final cam = centers();
+        for (var i = 0; i < 4; i++) {
+          expect(
+            cam[i].dx,
+            closeTo(expectedCamX[i], 0.5),
+            reason: 'camera tab $i x at W=$w',
+          );
+          expect(
+            cam[i].dy,
+            closeTo(shell[i].dy, 0.01),
+            reason: 'camera tab $i y at W=$w',
+          );
+        }
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+      }
+    },
+  );
 }

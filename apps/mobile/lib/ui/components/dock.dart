@@ -394,24 +394,11 @@ class UiDock extends StatelessWidget {
               _E4.camIconCompact,
               t,
             )!;
-            final currentIslandH = camera
-                ? _E4.islandH
-                : lerpDouble(baseIslandH, _E4.islandHCompact, t)!;
-            final currentCam = camera ? _E4.camDRoute : shellCam;
-            final currentBandH = camera
-                ? _E4.camDRoute
-                : baseIslandH;
-            final geo = UiDockGeometry.compute(
-              width: width,
-              cam: currentCam,
-              islandH: currentIslandH,
-              topPad: _E4.topPad,
-              bandH: currentBandH,
-              bottomGap: bottomGap,
-              baseIslandH: camera ? _E4.islandH : baseIslandH,
-              capH: capH,
-              tabsPerSide: tabsPerSide,
-            );
+            final shellIslandH = lerpDouble(
+              baseIslandH,
+              _E4.islandHCompact,
+              t,
+            )!;
 
             final Widget centerChild =
                 center ??
@@ -438,8 +425,10 @@ class UiDock extends StatelessWidget {
                   )
                 : centerChild;
 
-            final Widget morphingCenter = _UiDockCenterMorph(
+            return _UiDockCenterMorph(
               camera: camera,
+              fromDiameter: shellCam,
+              fromIconSize: shellCamIcon,
               accent: pillFill,
               onAccent: fgOnAccent,
               outlineColor: outline,
@@ -447,104 +436,143 @@ class UiDock extends StatelessWidget {
               shadowOffset: shadowOffset,
               shadowColor: shadowColor,
               child: centerSlot,
-            );
+              builder: (context, cameraT, morphingCenter) {
+                final currentCam = lerpDouble(
+                  shellCam,
+                  _E4.camDRoute,
+                  cameraT,
+                )!;
+                final currentIslandH = lerpDouble(
+                  shellIslandH,
+                  _E4.islandH,
+                  cameraT,
+                )!;
+                final currentBaseIslandH = lerpDouble(
+                  baseIslandH,
+                  _E4.islandH,
+                  cameraT,
+                )!;
+                final currentBandH = lerpDouble(
+                  baseIslandH,
+                  _E4.camDRoute,
+                  cameraT,
+                )!;
+                final geo = UiDockGeometry.compute(
+                  width: width,
+                  cam: currentCam,
+                  islandH: currentIslandH,
+                  topPad: _E4.topPad,
+                  bandH: currentBandH,
+                  bottomGap: bottomGap,
+                  baseIslandH: currentBaseIslandH,
+                  capH: capH,
+                  tabsPerSide: tabsPerSide,
+                );
+                final centerBoxSize = math.max(
+                  geo.cameraRect.width,
+                  _E4.camDRoute,
+                );
 
-            final centerBoxSize = math.max(geo.cameraRect.width, _E4.camDRoute);
-
-            return SizedBox(
-              width: width,
-              height: geo.dockHeight,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  _DockIsland(
-                    rect: geo.leftIsland,
-                    camera: camera,
-                    useLiquid: useLiquid,
-                    dark: dark,
-                    tintAlpha: tintAlpha,
-                    outline: outline,
-                    stroke: stroke,
-                    shadowOffset: shadowOffset,
-                    shadowColor: shadowColor,
-                    reduceTransparency: reduceTransparency,
-                  ),
-                  _DockIsland(
-                    rect: geo.rightIsland,
-                    camera: camera,
-                    useLiquid: useLiquid,
-                    dark: dark,
-                    tintAlpha: tintAlpha,
-                    outline: outline,
-                    stroke: stroke,
-                    shadowOffset: shadowOffset,
-                    shadowColor: shadowColor,
-                    reduceTransparency: reduceTransparency,
-                  ),
-                  if (!camera && activeIndex >= 0)
-                    _DockSelectionSlide(
-                      activeIndex: activeIndex,
-                      geometry: geo,
-                      expandedCapsuleWidth: shownBaseGeo.capsuleWidth,
-                      compactT: t,
-                      accent: pillFill,
-                      surface: ui.surface,
-                      outline: outline,
-                      shadow: shadowColor,
-                      camera: camera,
-                      useLiquid: useLiquid,
-                      dark: dark,
-                    ),
-                  for (var i = 0; i < leftItems.length; i++)
-                    Positioned.fromRect(
-                      rect: geo.tabSlots[i],
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: geo.slotWidth),
-                        child: DockTab(
-                          item: leftItems[i],
-                          camera: camera,
-                          onAccent: onAccent,
-                          labelFit: labelFit,
-                          labelMaxWidth: labelMaxW,
-                          lift: 0,
-                          labelGap: _E4.labelGap,
+                return SizedBox(
+                  width: width,
+                  height: geo.dockHeight,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      _DockIsland(
+                        rect: geo.leftIsland,
+                        camera: camera,
+                        useLiquid: useLiquid,
+                        dark: dark,
+                        tintAlpha: tintAlpha,
+                        outline: outline,
+                        stroke: stroke,
+                        shadowOffset: shadowOffset,
+                        shadowColor: shadowColor,
+                        reduceTransparency: reduceTransparency,
+                      ),
+                      _DockIsland(
+                        rect: geo.rightIsland,
+                        camera: camera,
+                        useLiquid: useLiquid,
+                        dark: dark,
+                        tintAlpha: tintAlpha,
+                        outline: outline,
+                        stroke: stroke,
+                        shadowOffset: shadowOffset,
+                        shadowColor: shadowColor,
+                        reduceTransparency: reduceTransparency,
+                      ),
+                      if (!camera && activeIndex >= 0)
+                        _DockSelectionSlide(
+                          activeIndex: activeIndex,
+                          geometry: geo,
+                          expandedCapsuleWidth: shownBaseGeo.capsuleWidth,
                           compactT: t,
+                          accent: pillFill,
+                          surface: ui.surface,
+                          outline: outline,
+                          shadow: shadowColor,
+                          camera: camera,
+                          useLiquid: useLiquid,
+                          dark: dark,
+                        ),
+                      for (var i = 0; i < leftItems.length; i++)
+                        Positioned.fromRect(
+                          rect: geo.tabSlots[i],
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: geo.slotWidth,
+                            ),
+                            child: DockTab(
+                              item: leftItems[i],
+                              camera: camera,
+                              onAccent: onAccent,
+                              labelFit: labelFit,
+                              labelMaxWidth: labelMaxW,
+                              lift: 0,
+                              labelGap: _E4.labelGap,
+                              compactT: t,
+                            ),
+                          ),
+                        ),
+                      for (var i = 0; i < rightItems.length; i++)
+                        Positioned.fromRect(
+                          rect: geo.tabSlots[tabsPerSide + i],
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: geo.slotWidth,
+                            ),
+                            child: DockTab(
+                              item: rightItems[i],
+                              camera: camera,
+                              onAccent: onAccent,
+                              labelFit: labelFit,
+                              labelMaxWidth: labelMaxW,
+                              lift: 0,
+                              labelGap: _E4.labelGap,
+                              compactT: t,
+                            ),
+                          ),
+                        ),
+                      Positioned(
+                        left: (width - centerBoxSize) / 2,
+                        top: geo.centerY - centerBoxSize / 2,
+                        width: centerBoxSize,
+                        height: centerBoxSize,
+                        child: Center(
+                          child: centerAnchorKey != null
+                              ? KeyedSubtree(
+                                  key: centerAnchorKey,
+                                  child: morphingCenter,
+                                )
+                              : morphingCenter,
                         ),
                       ),
-                    ),
-                  for (var i = 0; i < rightItems.length; i++)
-                    Positioned.fromRect(
-                      rect: geo.tabSlots[tabsPerSide + i],
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: geo.slotWidth),
-                        child: DockTab(
-                          item: rightItems[i],
-                          camera: camera,
-                          onAccent: onAccent,
-                          labelFit: labelFit,
-                          labelMaxWidth: labelMaxW,
-                          lift: 0,
-                          labelGap: _E4.labelGap,
-                          compactT: t,
-                        ),
-                      ),
-                    ),
-                  Positioned(
-                    left: (width - centerBoxSize) / 2,
-                    top: geo.centerY - centerBoxSize / 2,
-                    width: centerBoxSize,
-                    height: centerBoxSize,
-                    child: Center(
-                      child: centerAnchorKey != null
-                          ? KeyedSubtree(
-                              key: centerAnchorKey,
-                              child: morphingCenter,
-                            )
-                          : morphingCenter,
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             );
           },
         );
@@ -1019,10 +1047,10 @@ class UiSnapPill extends StatelessWidget {
   }
 }
 
-/// Animates the center dock trigger between the `56×40` [UiSnapPill] and the
-/// `76×76` [UiShutter] over [UiMotion.medium] (`220ms`, [UiCurves.easeOutStrong])
-/// without non-uniformly scaling the `2dp` Neo-Brutalist border or warping the
-/// `1:1` camera glyph.
+/// Animates the center dock trigger between the `60×60` (or `52×52` compact)
+/// E4 camera circle and the `76×76` [UiShutter] over [UiMotion.medium]
+/// (`220ms`, [UiCurves.easeOutStrong]) while exposing `cameraT` to the dock
+/// layout so the two islands and four tabs glide smoothly.
 ///
 /// Triggers when:
 /// 1. [camera] flips on a mounted [UiDock],
@@ -1033,6 +1061,8 @@ class UiSnapPill extends StatelessWidget {
 class _UiDockCenterMorph extends StatefulWidget {
   const _UiDockCenterMorph({
     required this.camera,
+    required this.fromDiameter,
+    required this.fromIconSize,
     required this.accent,
     required this.onAccent,
     required this.outlineColor,
@@ -1040,9 +1070,12 @@ class _UiDockCenterMorph extends StatefulWidget {
     required this.shadowOffset,
     required this.shadowColor,
     required this.child,
+    required this.builder,
   });
 
   final bool camera;
+  final double fromDiameter;
+  final double fromIconSize;
   final Color accent;
   final Color onAccent;
   final Color outlineColor;
@@ -1050,6 +1083,8 @@ class _UiDockCenterMorph extends StatefulWidget {
   final double shadowOffset;
   final Color shadowColor;
   final Widget child;
+  final Widget Function(BuildContext context, double cameraT, Widget center)
+  builder;
 
   @override
   State<_UiDockCenterMorph> createState() => _UiDockCenterMorphState();
@@ -1184,11 +1219,12 @@ class _UiDockCenterMorphState extends State<_UiDockCenterMorph>
   Widget build(BuildContext context) {
     final ctrl = _ctrl;
     final curved = _curved;
+    final settledT = widget.camera ? 1.0 : 0.0;
     if (UiMotion.reduced(context) ||
         ctrl == null ||
         curved == null ||
         (!ctrl.isAnimating && (_fromT - _toT).abs() < 0.001)) {
-      return widget.child;
+      return widget.builder(context, settledT, widget.child);
     }
 
     final ui = context.ui;
@@ -1198,21 +1234,20 @@ class _UiDockCenterMorphState extends State<_UiDockCenterMorph>
       builder: (context, settledChild) {
         final t = lerpDouble(_fromT, _toT, curved.value)!;
         if (!ctrl.isAnimating || (t - _toT).abs() < 0.001) {
-          return settledChild!;
+          return widget.builder(context, settledT, settledChild!);
         }
-        final width = lerpDouble(UiSize.snapPillW, UiSize.shutter, t)!;
-        final height = lerpDouble(UiSize.snapPillH, UiSize.shutter, t)!;
-        final radius = BorderRadius.circular(height / 2);
-        final iconSize = lerpDouble(24.0, 30.0, t)!;
+        final diameter = lerpDouble(widget.fromDiameter, _E4.camDRoute, t)!;
+        final radius = BorderRadius.circular(diameter / 2);
+        final iconSize = lerpDouble(widget.fromIconSize, _E4.camIconRoute, t)!;
         final outline = Color.lerp(ui.outline, UiCamera.outline, t)!;
         final shadowColor = Color.lerp(ui.hardShadowColor, UiCamera.shadow, t)!;
         final shellShadow = widget.camera ? UiShadow.large : widget.shadowOffset;
         final shadowOff = lerpDouble(shellShadow, UiShadow.small, t)!;
 
-        return SizedBox(
+        final morphCenter = SizedBox(
           key: const ValueKey('dock-center-morph'),
-          width: width,
-          height: height,
+          width: diameter,
+          height: diameter,
           child: Stack(
             clipBehavior: Clip.none,
             fit: StackFit.expand,
@@ -1253,6 +1288,7 @@ class _UiDockCenterMorphState extends State<_UiDockCenterMorph>
             ],
           ),
         );
+        return widget.builder(context, t, morphCenter);
       },
     );
   }

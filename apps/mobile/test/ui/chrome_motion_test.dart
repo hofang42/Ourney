@@ -353,16 +353,17 @@ void main() {
         await tester.pump();
         expect(haptics, contains('HapticFeedbackType.lightImpact'));
 
-        // Mid-flight at t = 110ms of 220ms morph: bounds interpolate 56x40 -> 76x76
-        // with constant uniform 2dp border and square 1:1 camera icon.
+        // Mid-flight at t = 110ms of 220ms morph: bounds interpolate 60x60 -> 76x76
+        // circle with constant uniform 2dp border and square 1:1 camera icon.
         await tester.pump(const Duration(milliseconds: 110));
         final morphFinder = find.byKey(const ValueKey('dock-center-morph'));
         expect(morphFinder, findsOneWidget);
         final morphSize = tester.getSize(morphFinder);
-        expect(morphSize.width, greaterThan(UiSize.snapPillW));
+        expect(morphSize.width, greaterThan(60));
         expect(morphSize.width, lessThan(UiSize.shutter));
-        expect(morphSize.height, greaterThan(UiSize.snapPillH));
+        expect(morphSize.height, greaterThan(60));
         expect(morphSize.height, lessThan(UiSize.shutter));
+        expect(morphSize.width, closeTo(morphSize.height, 0.01));
 
         final morphDeco =
             tester
@@ -371,6 +372,10 @@ void main() {
                     )
                     .decoration
                 as BoxDecoration;
+        expect(
+          morphDeco.borderRadius,
+          BorderRadius.circular(morphSize.height / 2),
+        );
         final morphBorder = morphDeco.border! as Border;
         expect(morphBorder.top.width, UiBorder.standard);
         expect(morphBorder.left.width, UiBorder.standard);
