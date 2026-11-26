@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -33,8 +34,71 @@ class AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<AppShell> {
   String? _promptedTermsKey;
   bool _termsSheetOpen = false;
+  final ValueNotifier<bool> _dockCompact = ValueNotifier<bool>(false);
+  bool _userScrolling = false;
+  int? _lastBranchIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _lastBranchIndex = widget.navigationShell.currentIndex;
+  }
+
+  @override
+  void didUpdateWidget(covariant AppShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final idx = widget.navigationShell.currentIndex;
+    if (idx != oldWidget.navigationShell.currentIndex ||
+        idx != _lastBranchIndex ||
+        idx == AppShell.captureIndex) {
+      _lastBranchIndex = idx;
+      _userScrolling = false;
+      _setCompact(false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _dockCompact.dispose();
+    super.dispose();
+  }
+
+  void _setCompact(bool v) {
+    if (_dockCompact.value != v) _dockCompact.value = v;
+  }
+
+  bool _onScroll(ScrollNotification n) {
+    if (n.depth != 0 || n.metrics.axis != Axis.vertical) return false;
+    if (n is UserScrollNotification) {
+      _userScrolling = n.direction != ScrollDirection.idle;
+      return false;
+    }
+    if (n is! ScrollUpdateNotification) return false;
+    final m = n.metrics;
+    if (m.maxScrollExtent - m.minScrollExtent < 56) {
+      _setCompact(false);
+      return false;
+    }
+    final p = m.pixels;
+    if (p <= m.minScrollExtent + 4) {
+      _setCompact(false);
+      return false;
+    }
+    if (p < m.minScrollExtent || p > m.maxScrollExtent) return false;
+    final userDriven = n.dragDetails != null || _userScrolling;
+    if (!userDriven) return false;
+    final dy = n.scrollDelta ?? 0;
+    if (dy > 1 && p > 40) {
+      _setCompact(true);
+    } else if (dy < -1) {
+      _setCompact(false);
+    }
+    return false;
+  }
 
   void _go(int index) {
+    _userScrolling = false;
+    _setCompact(false);
     final navigationShell = widget.navigationShell;
     if (index == navigationShell.currentIndex) {
       navigationShell.goBranch(index, initialLocation: true);
@@ -74,21 +138,37 @@ class _AppShellState extends ConsumerState<AppShell> {
     }
 
     final navigationShell = widget.navigationShell;
-    final onCamera = navigationShell.currentIndex == AppShell.captureIndex;
+    final currentIndex = navigationShell.currentIndex;
+    final onCamera = currentIndex == AppShell.captureIndex;
+    if (_lastBranchIndex != currentIndex || onCamera) {
+      _lastBranchIndex = currentIndex;
+      _userScrolling = false;
+      _setCompact(false);
+    }
     final termsBlocking =
         _termsSheetOpen ||
         (userId != null && needsTermsUpdate && _promptedTermsKey == null);
     return Scaffold(
       backgroundColor: context.ui.bg,
       extendBody: true,
-      body: UpdateShellCoordinator(
-        currentIndex: navigationShell.currentIndex,
-        termsSheetBlocking: termsBlocking,
-        child: navigationShell,
+      body: NotificationListener<ScrollNotification>(
+        onNotification: _onScroll,
+        child: UpdateShellCoordinator(
+          currentIndex: currentIndex,
+          termsSheetBlocking: termsBlocking,
+          child: navigationShell,
+        ),
       ),
       bottomNavigationBar: onCamera
           ? null
-          : AppDock(currentIndex: navigationShell.currentIndex, onSelect: _go),
+          : ValueListenableBuilder<bool>(
+              valueListenable: _dockCompact,
+              builder: (context, compact, _) => AppDock(
+                currentIndex: currentIndex,
+                compact: compact,
+                onSelect: _go,
+              ),
+            ),
     );
   }
 }
