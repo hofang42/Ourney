@@ -70,29 +70,36 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.partnerPhotoFile != null) return _partner(context);
-    switch (widget.skin) {
-      case PersonaSkinId.quietTransformer:
-        return IgnorePointer(
-          child: AnimatedOpacity(
-            key: const ValueKey('overlay-ghost-fade'),
-            opacity: widget.showGhost ? 1.0 : 0.0,
-            duration: UiMotion.fadeOf(context, UiMotion.fast),
-            curve: UiCurves.easeOutStrong,
-            child: CustomPaint(
-              key: widget.showGhost ? const ValueKey('overlay-ghost') : null,
-              size: Size.infinite,
-              painter: const _GhostPainter(),
-            ),
+    final Widget? skinOverlay = switch (widget.skin) {
+      PersonaSkinId.quietTransformer => IgnorePointer(
+        child: AnimatedOpacity(
+          key: const ValueKey('overlay-ghost-fade'),
+          opacity: widget.showGhost ? 1.0 : 0.0,
+          duration: UiMotion.fadeOf(context, UiMotion.fast),
+          curve: UiCurves.easeOutStrong,
+          child: CustomPaint(
+            key: widget.showGhost ? const ValueKey('overlay-ghost') : null,
+            size: Size.infinite,
+            painter: const _GhostPainter(),
           ),
-        );
-      case PersonaSkinId.coupleRituals:
-      case PersonaSkinId.accountabilitySquad:
-      case PersonaSkinId.memoryCollectors:
-      case PersonaSkinId.aestheticFlexer:
-      case PersonaSkinId.minimalistHabit:
-        return const SizedBox.shrink(key: ValueKey('overlay-none'));
+        ),
+      ),
+      PersonaSkinId.coupleRituals ||
+      PersonaSkinId.accountabilitySquad ||
+      PersonaSkinId.memoryCollectors ||
+      PersonaSkinId.aestheticFlexer ||
+      PersonaSkinId.minimalistHabit => null,
+    };
+    if (widget.partnerPhotoFile != null) {
+      final partner = _partner(context);
+      if (skinOverlay == null) return partner;
+      return Stack(
+        fit: StackFit.expand,
+        children: [skinOverlay, partner],
+      );
     }
+    return skinOverlay ??
+        const SizedBox.shrink(key: ValueKey('overlay-none'));
   }
 
   Widget _partner(BuildContext context) {

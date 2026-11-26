@@ -5,6 +5,7 @@ import '../app/journey_clock.dart';
 import '../app/providers.dart';
 import '../features/groups/data/groups_providers.dart';
 import '../features/journeys/domain/journey_time.dart';
+import 'repositories/group_repository.dart';
 
 Duration? _noRetry(int _, Object _) => null;
 
@@ -79,13 +80,15 @@ class GroupDailySnapshot {
     required List<CheckIn> allCheckIns,
     required List<MemberToday> members,
     required String? myUserId,
+    List<MemberToday> cachedMembers = const [],
     LocalDate? today,
     bool hasLoadedMembers = true,
     Set<String> blockedIds = const {},
   }) {
     if (!isCoupleGroup(journey)) return empty;
+    final roster = members.isNotEmpty ? members : cachedMembers;
     final visible = [
-      for (final member in members)
+      for (final member in roster)
         if (!blockedIds.contains(member.userId)) member,
     ];
     final memberIds = coupleMemberIds(
@@ -98,10 +101,21 @@ class GroupDailySnapshot {
         ? visible.where((member) => member.userId != myUserId).singleOrNull
         : null;
 
+    final rpcToday = partner?.todayCheckIn;
+    final checkIns =
+        rpcToday != null &&
+            rpcToday.journeyId == journey.id &&
+            rpcToday.userId == partner?.userId &&
+            rpcToday.uploaded &&
+            (today == null || rpcToday.localDate == today) &&
+            !allCheckIns.any((c) => c.id == rpcToday.id)
+        ? [...allCheckIns, rpcToday]
+        : allCheckIns;
+
     final byDate = <LocalDate, Map<String, CheckIn>>{};
     final photosByDate = <LocalDate, List<CheckIn>>{};
     CheckIn? latestPartner;
-    for (final photo in allCheckIns) {
+    for (final photo in checkIns) {
       if (photo.journeyId != journey.id) continue;
       final isMine = myUserId != null && photo.userId == myUserId;
       if (!isMine) {
@@ -112,7 +126,9 @@ class GroupDailySnapshot {
         }
         // The current group-day result covers reports/moderation even while
         // the historical cache is still reconciling.
-        if (photo.localDate == today && photo.id != partner.todayCheckIn?.id) {
+        if (hasLoadedMembers &&
+            photo.localDate == today &&
+            photo.id != partner.todayCheckIn?.id) {
           // Older eligible posts stay in the gallery. If the RPC withheld the
           // entire day, withhold all cached photos of that day too.
           if (partner.todayCheckIn == null ||
@@ -147,6 +163,12 @@ class GroupDailySnapshot {
       if (id != null && name != null && name.isNotEmpty) memberNames[id] = name;
     }
 
+    final knownMemberIds = <String>{
+      journey.ownerId,
+      for (final member in members) member.userId,
+      for (final member in cachedMembers) member.userId,
+    };
+
     return GroupDailySnapshot._(
       memberIds: memberIds,
       myUserId: myUserId,
@@ -154,9 +176,9 @@ class GroupDailySnapshot {
       hasLoadedMembers: hasLoadedMembers,
       canInvitePartner:
           hasLoadedMembers &&
-          members.length == 1 &&
-          members.single.userId == myUserId &&
-          blockedIds.isEmpty,
+          visible.length == 1 &&
+          visible.single.userId == myUserId &&
+          knownMemberIds.length == 1,
       today: today,
       partnerPostedToday: partner?.checkedIn ?? false,
       memberNames: memberNames,
@@ -247,6 +269,23 @@ final groupMembersTodaySafeProvider = StreamProvider.autoDispose
       return repo.watchToday(journeyId);
     }, retry: _noRetry);
 
+/// Locally cached active members for offline fallback and invite eligibility.
+final groupCachedMembersSafeProvider = StreamProvider.autoDispose
+    .family<List<MemberToday>, String>((ref, journeyId) {
+      if (ref.watch(appConfigProvider).localOnly) return Stream.value(const []);
+      ref.watch(currentUserIdProvider);
+      final GroupRepository repo;
+      try {
+        repo = ref.watch(groupRepositoryProvider);
+      } on Object {
+        return Stream.value(const []);
+      }
+      if (repo is DataGroupRepository) {
+        return repo.watchCachedMembers(journeyId);
+      }
+      return Stream.value(const []);
+    }, retry: _noRetry);
+
 final groupDailySnapshotProvider = Provider.autoDispose
     .family<GroupDailySnapshot, Journey>((ref, journey) {
       if (!isCoupleGroup(journey) || ref.watch(appConfigProvider).localOnly) {
@@ -255,6 +294,12 @@ final groupDailySnapshotProvider = Provider.autoDispose
       final members = ref
           .watch(groupMembersTodaySafeProvider(journey.id))
           .asData;
+      final cachedMembers =
+          ref
+              .watch(groupCachedMembersSafeProvider(journey.id))
+              .asData
+              ?.value ??
+          const [];
       // Sample a fresh instant when either the roster or history refreshes.
       // The app day ticker also invalidates the snapshot at midnight.
       ref.watch(journeysNowProvider);
@@ -264,6 +309,7 @@ final groupDailySnapshotProvider = Provider.autoDispose
             ref.watch(groupAllCheckInsSafeProvider(journey.id)).asData?.value ??
             const [],
         members: members?.value ?? const [],
+        cachedMembers: cachedMembers,
         hasLoadedMembers: members != null,
         myUserId: ref.watch(currentUserIdProvider),
         blockedIds: ref.watch(groupBlockedIdsProvider).value ?? const {},

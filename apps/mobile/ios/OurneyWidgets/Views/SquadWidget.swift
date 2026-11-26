@@ -411,7 +411,7 @@ private struct CoupleDiptychRow: View {
               .foregroundColor(theme.ink)
               .lineLimit(1)
 
-            if photo != nil {
+            if photo != nil || (!allowsPhotos && member.checkedInToday && !member.isVacant) {
               HStack(spacing: 3) {
                 OurneyIconView(name: "flame", size: 12, ink: theme.ink)
                 Text("\(member.streak)")
@@ -495,7 +495,9 @@ private struct SquadMemberPolaroidTile: View {
             }
             Text(
               member.checkedInToday
-                ? WidgetL10n.couplePhotoUnavailable(locale: locale)
+                ? (allowsPhotos
+                  ? WidgetL10n.couplePhotoUnavailable(locale: locale)
+                  : WidgetL10n.checkedInToday(locale: locale))
                 : WidgetL10n.coupleWaitingForPhoto(locale: locale)
             )
             .font(OurneyWidgetFont.body(10))

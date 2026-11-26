@@ -3,21 +3,31 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/router.dart';
+import 'package:ourney/data/group_daily_checkins_provider.dart';
 import 'package:ourney/features/camera/capture_services.dart'
     show appSettingsOpenerProvider;
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
+import 'package:ourney/features/journeys/domain/wrapped_story.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
+import 'package:ourney/features/journeys/l10n/generated/journeys_localizations.dart';
+import 'package:ourney/features/journeys/ui/journey_photo.dart';
+import 'package:ourney/features/journeys/ui/wrapped/journey_wrapped_screen.dart';
+import 'package:ourney/features/journeys/ui/wrapped/wrapped_visuals.dart';
 import 'package:ourney/features/profile/settings_providers.dart';
 import 'package:ourney/features/share_card/data/share_card_exporter.dart';
 import 'package:ourney/features/share_card/data/share_card_providers.dart';
 import 'package:ourney/features/share_card/domain/share_card_content.dart';
+import 'package:ourney/features/sharing/data/sharing_providers.dart'
+    show shareStateProvider;
 import 'package:ourney/features/social/data/social_providers.dart'
     show defaultSharePositionOrigin;
-import 'package:ourney/ui/ui.dart' show UiButton;
+import 'package:ourney/ui/ui.dart' show OurneyTheme, UiButton;
 import 'package:ourney_core/ourney_core.dart';
 
+import '../../app/test_helpers.dart' show testBackendConfig;
 import '../checkin/fakes.dart' show FakeSettingsOpener;
 import '../share_card/share_card_fakes.dart'
     show FakeExporter, FakeSaver, FakeSharer;
@@ -621,6 +631,197 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('4/14 FINISHED'), findsOneWidget);
         expect(find.textContaining('0 KM'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'F-01 & F-09: Wrapped summary filters hidden_in_share photos and honors blurPhotosOnShareProvider across all skins',
+      (tester) async {
+        final j = testJourney(
+          status: JourneyStatus.ended,
+          templateId: TemplateId.travel,
+        );
+        final visiblePhoto = testCheckIn(j.id, const LocalDate(2026, 10, 10));
+        final hiddenPhoto = testCheckIn(j.id, const LocalDate(2026, 10, 11));
+        final h = await pumpJourneys(
+          tester,
+          config: testBackendConfig,
+          userId: 'u1',
+          locale: const Locale('en'),
+          location: JourneysPaths.wrapped(j.id),
+          journeys: FakeJourneyRepository(
+            journeys: [j],
+            memberships: {j.id: testMembership(j)},
+          ),
+          checkIns: FakeCheckInRepository([visiblePhoto, hiddenPhoto]),
+          extraOverrides: [
+            shareStateProvider(j.id).overrideWith(
+              (_) => Stream.value(
+                JourneyShareState(
+                  journeyId: j.id,
+                  viewers: const [],
+                  story: const JourneyStory(),
+                  publicSettings: const PublicSettings(
+                    showCounts: false,
+                    allowPublicReactions: false,
+                    allowViewerRequests: false,
+                  ),
+                  hiddenCheckInIds: {hiddenPhoto.id},
+                ),
+              ),
+            ),
+          ],
+        );
+        await tester.pumpAndSettle();
+        await tester.runAsync(
+          () => h.container.read(blurPhotosOnShareProvider.notifier).set(true),
+        );
+        await tester.tap(_key('wrapped-segment-4'));
+        await tester.pumpAndSettle();
+
+        final film = _key('wrapped-memory-film');
+        expect(film, findsOneWidget);
+        final renderedPhotos = tester
+            .widgetList<JourneyPhoto>(
+              find.descendant(of: film, matching: find.byType(JourneyPhoto)),
+            )
+            .map((w) => w.checkIn.id)
+            .toList();
+        expect(renderedPhotos, [visiblePhoto.id]);
+        final blurFilter = tester.widget<ImageFiltered>(
+          find.descendant(of: film, matching: find.byType(ImageFiltered)),
+        );
+        expect(blurFilter.enabled, isTrue);
+      },
+    );
+
+    testWidgets(
+      'F-25: Wrapped share omits journey.title from shared caption when sensitive or metric hidden',
+      (tester) async {
+        const secretTitle = 'Hậu sản 68kg của Lan';
+        final j = testJourney(
+          status: JourneyStatus.ended,
+          templateId: TemplateId.weightLoss,
+          title: secretTitle,
+          metricName: 'Weight',
+          metricUnit: 'kg',
+        );
+        final exporter = FakeExporter();
+        final sharer = FakeSharer();
+        await pumpJourneys(
+          tester,
+          locale: const Locale('en'),
+          location: JourneysPaths.wrapped(j.id),
+          journeys: FakeJourneyRepository(
+            journeys: [j],
+            memberships: {j.id: testMembership(j)},
+          ),
+          checkIns: FakeCheckInRepository([
+            testCheckIn(j.id, const LocalDate(2026, 10, 10), metricValue: 68.0),
+            testCheckIn(j.id, const LocalDate(2026, 10, 14), metricValue: 66.5),
+          ]),
+          extraOverrides: [
+            shareCardExporterProvider.overrideWithValue(exporter),
+            shareCardSharerProvider.overrideWithValue(sharer),
+          ],
+        );
+        await tester.tap(_key('wrapped-segment-4'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(_key('wrapped-share'));
+        await tester.tap(_key('wrapped-share'));
+        await tester.pumpAndSettle();
+        await tester.tap(_key('wrapped-share-now'));
+        await tester.pumpAndSettle();
+        expect(sharer.shared, hasLength(1));
+        expect(sharer.shared.single.text, isNot(contains(secretTitle)));
+
+        final l10n = lookupJourneysL10n(const Locale('en'));
+        final memoryCaption = wrappedShareText(
+          l10n,
+          testJourney(
+            status: JourneyStatus.ended,
+            templateId: TemplateId.travel,
+            title: secretTitle,
+          ),
+          PersonaSkinId.memoryCollectors,
+          const WrappedStats(
+            days: 4,
+            moments: 4,
+            total: 14,
+            streak: 4,
+            totalKm: 0,
+            photos: [],
+            lastCaption: null,
+            lastPlace: null,
+            pace: null,
+          ),
+          hideTitle: true,
+        );
+        expect(memoryCaption, isNot(contains(secretTitle)));
+      },
+    );
+
+    testWidgets(
+      'F-38: Couple Wrapped export falls back to caller latest photo when partner posted on a later day',
+      (tester) async {
+        final j = testJourney(
+          kind: JourneyKind.group,
+          maxMembers: 2,
+          status: JourneyStatus.ended,
+        );
+        final myPhoto = testCheckIn(
+          j.id,
+          const LocalDate(2026, 10, 12),
+          userId: 'u1',
+        );
+        final partnerLaterPhoto = testCheckIn(
+          j.id,
+          const LocalDate(2026, 10, 13),
+          userId: 'u2',
+        );
+        final stats = WrappedStats(
+          days: 1,
+          moments: 1,
+          total: 14,
+          streak: 1,
+          totalKm: 0,
+          photos: [myPhoto],
+          lastCaption: null,
+          lastPlace: null,
+          pace: null,
+          coupleSlots: [
+            const CouplePhotoSlot(
+              userId: 'u1',
+              displayName: 'An',
+              isMine: true,
+            ),
+            CouplePhotoSlot(
+              userId: 'u2',
+              displayName: 'Binh',
+              checkIn: partnerLaterPhoto,
+            ),
+          ],
+        );
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              theme: OurneyTheme.build(Brightness.light),
+              home: Scaffold(
+                body: WrappedVisual(
+                  skin: PersonaSkinId.coupleRituals,
+                  stats: stats,
+                  page: 3,
+                  exporting: true,
+                ),
+              ),
+            ),
+          ),
+        );
+        final rendered = tester
+            .widgetList<JourneyPhoto>(find.byType(JourneyPhoto))
+            .map((w) => w.checkIn.id)
+            .toList();
+        expect(rendered, [myPhoto.id]);
       },
     );
   });

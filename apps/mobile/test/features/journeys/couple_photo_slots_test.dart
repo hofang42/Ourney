@@ -160,4 +160,112 @@ void main() {
       anThird,
     ]);
   });
+
+  test(
+    'F-12: partner todayCheckIn from group_today RPC renders before local cache pulls it',
+    () {
+      final rpcOnly = GroupDailySnapshot.build(
+        journey: _journey,
+        allCheckIns: [zoeToday],
+        members: [
+          _zoe,
+          MemberToday(
+            userId: 'an',
+            displayName: 'An',
+            role: MemberRole.member,
+            todayCheckIn: anTieHigh,
+          ),
+        ],
+        myUserId: 'zoe',
+        today: _second,
+      );
+      expect(rpcOnly.slotsOn(_second).map((s) => s.checkIn), [
+        zoeToday,
+        anTieHigh,
+      ]);
+      expect(rpcOnly.slotsOn(_second).last.photoUnavailable, isFalse);
+      expect(rpcOnly.latestPartnerCheckIn, anTieHigh);
+
+      // When partner posts a 2nd photo today and RPC refreshes before SQLite
+      // pulls the 2nd row, the new RPC photo fills the slot and the older
+      // cached photo remains in photosOn(today).
+      final secondPostToday = GroupDailySnapshot.build(
+        journey: _journey,
+        allCheckIns: [zoeToday, anOlder],
+        members: [
+          _zoe,
+          MemberToday(
+            userId: 'an',
+            displayName: 'An',
+            role: MemberRole.member,
+            todayCheckIn: anTieHigh,
+          ),
+        ],
+        myUserId: 'zoe',
+        today: _second,
+      );
+      expect(secondPostToday.slotsOn(_second).map((s) => s.checkIn), [
+        zoeToday,
+        anTieHigh,
+      ]);
+      expect(secondPostToday.slotsOn(_second).last.photoUnavailable, isFalse);
+      expect(
+        secondPostToday.photosOn(_second),
+        unorderedEquals([zoeToday, anOlder, anTieHigh]),
+      );
+    },
+  );
+
+  test(
+    'F-13: offline snapshot derives partner from cachedMembers and keeps cached partner photos visible',
+    () {
+      final offline = GroupDailySnapshot.build(
+        journey: _journey,
+        allCheckIns: [zoeFirst, zoeToday, anOlder, anTieHigh, anThird],
+        members: const [],
+        cachedMembers: const [_zoe, _an],
+        hasLoadedMembers: false,
+        myUserId: 'zoe',
+        today: _second,
+      );
+      expect(offline.memberIds, ['zoe', 'an']);
+      expect(offline.partnerId, 'an');
+      expect(offline.slotsOn(_first).map((s) => s.checkIn), [zoeFirst, null]);
+      expect(offline.slotsOn(_second).map((s) => s.checkIn), [
+        zoeToday,
+        anTieHigh,
+      ]);
+      expect(offline.latestPartnerCheckIn, anThird);
+    },
+  );
+
+  test(
+    'F-36: canInvitePartner ignores unrelated global blocks but hides when partner is blocked or reverse-blocked',
+    () {
+      final withUnrelatedBlock = snapshot(
+        members: const [_zoe],
+        blocked: const {'stranger-1', 'stranger-2'},
+      );
+      expect(withUnrelatedBlock.canInvitePartner, isTrue);
+
+      final withBlockedPartner = GroupDailySnapshot.build(
+        journey: _journey,
+        allCheckIns: const [],
+        members: const [_zoe],
+        cachedMembers: const [_zoe, _an],
+        myUserId: 'zoe',
+        blockedIds: const {'an'},
+      );
+      expect(withBlockedPartner.canInvitePartner, isFalse);
+
+      // Non-owner caller seeing only themselves because owner reverse-blocked them.
+      final reverseBlocked = GroupDailySnapshot.build(
+        journey: _journey,
+        allCheckIns: const [],
+        members: const [_an],
+        myUserId: 'an',
+      );
+      expect(reverseBlocked.canInvitePartner, isFalse);
+    },
+  );
 }
