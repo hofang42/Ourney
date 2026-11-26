@@ -181,11 +181,7 @@ class StreakGlanceWidget : GlanceAppWidget() {
         weekBitmap: android.graphics.Bitmap?,
     ) {
         val urgent = journey.isStreakAlertActive(nowMs)
-        val tapAction = if (journey.checkedInToday) {
-            WidgetActions.journeyDetailAction(context, journey.id)
-        } else {
-            WidgetActions.captureAction(context, journey.id)
-        }
+        val tapAction = WidgetActions.captureAction(context, journey.id)
         val statusLabel = when {
             journey.checkedInToday -> l10n.getString(R.string.widget_checked_in_short)
             urgent -> l10n.getString(R.string.widget_streak_at_risk, journey.currentStreak)

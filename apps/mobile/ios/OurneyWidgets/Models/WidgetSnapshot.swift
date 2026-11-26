@@ -45,28 +45,6 @@ public enum OurneyDeepLinks {
     }
     return components.url ?? bareCapture
   }
-
-  public static func journey(id: String) -> URL {
-    let trimmed = id.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty,
-          let encoded = trimmed.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
-          let url = URL(string: "ourney://journey/\(encoded)")
-    else {
-      return journeys
-    }
-    return url
-  }
-
-  public static func group(id: String) -> URL {
-    let trimmed = id.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty,
-          let encoded = trimmed.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
-          let url = URL(string: "ourney://groups/\(encoded)")
-    else {
-      return groups
-    }
-    return url
-  }
 }
 
 /// Visual time-of-day urgency phase for a journey card.
@@ -84,6 +62,15 @@ public enum OurneyJourneyCardState: Equatable {
   case signedOut
   case noJourneys
   case ready(WidgetJourneyItem)
+
+  var tapURL: URL {
+    switch self {
+    case .ready(let journey): return journey.captureURL
+    case .unsynced, .signedOut: return OurneyDeepLinks.syncJourneys
+    case .appGroupUnavailable: return OurneyDeepLinks.journeys
+    case .noJourneys: return OurneyDeepLinks.newJourney
+    }
+  }
 }
 
 /// 5-state card resolution for `Squad` widget (§A.3 & Rank 5 solo-only hint).
@@ -94,6 +81,15 @@ public enum OurneySquadCardState: Equatable {
   case soloOnly(soloCount: Int)
   case noSquads
   case ready(WidgetSquadItem)
+
+  var tapURL: URL {
+    switch self {
+    case .ready(let squad): return squad.captureURL
+    case .unsynced, .signedOut: return OurneyDeepLinks.syncJourneys
+    case .appGroupUnavailable: return OurneyDeepLinks.journeys
+    case .soloOnly, .noSquads: return OurneyDeepLinks.groups
+    }
+  }
 }
 
 /// Root `snapshot_v1.json` contract (§4.3).
@@ -450,6 +446,8 @@ public struct WidgetTotals: Codable, Equatable {
 }
 
 public struct WidgetJourneyItem: Codable, Equatable, Identifiable {
+  var captureURL: URL { OurneyDeepLinks.capture(journeyId: id) }
+
   public var id: String
   public var title: String
   public var kind: String
@@ -780,6 +778,8 @@ public struct WidgetWeekDay: Codable, Equatable {
 }
 
 public struct WidgetSquadItem: Codable, Equatable, Identifiable {
+  var captureURL: URL { OurneyDeepLinks.capture(journeyId: journeyId) }
+
   public var id: String { journeyId }
   public var journeyId: String
   public var title: String

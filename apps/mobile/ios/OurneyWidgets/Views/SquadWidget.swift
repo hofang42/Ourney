@@ -46,19 +46,6 @@ public struct SquadWidgetEntryView: View {
       systemScheme: colorScheme
     )
 
-    let rootDestination: URL = {
-      switch cardState {
-      case .ready(let item):
-        return OurneyDeepLinks.group(id: item.journeyId)
-      case .unsynced, .signedOut:
-        return OurneyDeepLinks.syncJourneys
-      case .appGroupUnavailable:
-        return OurneyDeepLinks.journeys
-      case .soloOnly, .noSquads:
-        return OurneyDeepLinks.groups
-      }
-    }()
-
     Group {
       switch cardState {
       case .ready(let item):
@@ -118,7 +105,7 @@ public struct SquadWidgetEntryView: View {
     .ourneyWidgetContainerBackground {
       theme.bg
     }
-    .widgetURL(rootDestination)
+    .widgetURL(cardState.tapURL)
   }
 }
 
@@ -131,8 +118,6 @@ private struct SquadMediumView: View {
 
   var body: some View {
     let locale = snapshot.locale
-    let groupURL = OurneyDeepLinks.group(id: squad.journeyId)
-    let captureURL = OurneyDeepLinks.capture(journeyId: squad.journeyId)
 
     VStack(alignment: .leading, spacing: 8) {
       // Header: Type icon + Squad title + Checked-in counter pill
@@ -194,7 +179,7 @@ private struct SquadMediumView: View {
 
         Spacer(minLength: 4)
 
-        Link(destination: squad.meCheckedInToday ? groupURL : captureURL) {
+        Link(destination: squad.captureURL) {
           HStack(spacing: 5) {
             OurneyIconView(
               name: squad.meCheckedInToday ? "check" : "camera",
@@ -203,7 +188,7 @@ private struct SquadMediumView: View {
               flat: true,
               overrideColor: squad.meCheckedInToday ? theme.ink : theme.onBrand
             )
-            Text(squad.meCheckedInToday ? WidgetL10n.viewSquad(locale: locale) : WidgetL10n.snapYours(locale: locale))
+            Text(squad.meCheckedInToday ? WidgetL10n.doneShort(locale: locale) : WidgetL10n.snapYours(locale: locale))
               .font(OurneyWidgetFont.body(11, bold: true))
               .foregroundColor(squad.meCheckedInToday ? theme.ink : theme.onBrand)
               .lineLimit(1)
@@ -236,8 +221,6 @@ private struct SquadLargeView: View {
 
   var body: some View {
     let locale = snapshot.locale
-    let groupURL = OurneyDeepLinks.group(id: squad.journeyId)
-    let captureURL = OurneyDeepLinks.capture(journeyId: squad.journeyId)
     let featuredMembers = Array(squad.members.prefix(4))
     let totalCount = max(squad.memberCount, squad.members.count)
 
@@ -310,7 +293,7 @@ private struct SquadLargeView: View {
       .frame(maxHeight: .infinity)
 
       // Bottom CTA Bar
-      Link(destination: squad.meCheckedInToday ? groupURL : captureURL) {
+      Link(destination: squad.captureURL) {
         HStack(spacing: 6) {
           OurneyIconView(
             name: squad.meCheckedInToday ? "check" : "camera",
@@ -319,7 +302,7 @@ private struct SquadLargeView: View {
             flat: true,
             overrideColor: squad.meCheckedInToday ? theme.ink : theme.onBrand
           )
-          Text(squad.meCheckedInToday ? WidgetL10n.viewSquad(locale: locale) : WidgetL10n.snapYours(locale: locale))
+          Text(squad.meCheckedInToday ? WidgetL10n.doneShort(locale: locale) : WidgetL10n.snapYours(locale: locale))
             .font(OurneyWidgetFont.body(12, bold: true))
             .foregroundColor(squad.meCheckedInToday ? theme.ink : theme.onBrand)
             .lineLimit(1)

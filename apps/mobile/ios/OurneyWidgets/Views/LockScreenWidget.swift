@@ -68,21 +68,6 @@ public struct LockScreenWidgetEntryView: View {
       }
     }()
 
-    let destination: URL = {
-      switch cardState {
-      case .ready(let item):
-        return item.checkedInToday
-          ? OurneyDeepLinks.journey(id: item.id)
-          : OurneyDeepLinks.capture(journeyId: item.id)
-      case .unsynced, .signedOut:
-        return OurneyDeepLinks.syncJourneys
-      case .appGroupUnavailable:
-        return OurneyDeepLinks.journeys
-      case .noJourneys:
-        return OurneyDeepLinks.newJourney
-      }
-    }()
-
     Group {
       if #available(iOSApplicationExtension 16.0, iOS 16.0, *) {
         if case .appGroupUnavailable = cardState {
@@ -131,7 +116,7 @@ public struct LockScreenWidgetEntryView: View {
     .ourneyWidgetContainerBackground {
       Color.clear
     }
-    .widgetURL(destination)
+    .widgetURL(cardState.tapURL)
   }
 }
 

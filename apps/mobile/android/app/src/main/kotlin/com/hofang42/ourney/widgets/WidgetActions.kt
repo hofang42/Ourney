@@ -55,11 +55,6 @@ object WidgetActions {
         return explicitMainActivityIntent(context, uri)
     }
 
-    fun journeyDetailIntent(context: Context, journeyId: String): Intent {
-        val uri = Uri.parse("ourney://journey/${Uri.encode(journeyId)}")
-        return explicitMainActivityIntent(context, uri)
-    }
-
     fun journeysHubIntent(context: Context): Intent =
         explicitMainActivityIntent(context, Uri.parse("ourney://journeys"))
 
@@ -69,19 +64,11 @@ object WidgetActions {
     fun createJourneyIntent(context: Context): Intent =
         explicitMainActivityIntent(context, Uri.parse("ourney://journeys/new"))
 
-    fun groupTodayIntent(context: Context, groupId: String): Intent {
-        val uri = Uri.parse("ourney://groups/${Uri.encode(groupId)}")
-        return explicitMainActivityIntent(context, uri)
-    }
-
     fun groupsHubIntent(context: Context): Intent =
         explicitMainActivityIntent(context, Uri.parse("ourney://groups"))
 
     fun captureAction(context: Context, journeyId: String? = null): Action =
         actionStartActivity(captureIntent(context, journeyId))
-
-    fun journeyDetailAction(context: Context, journeyId: String): Action =
-        actionStartActivity(journeyDetailIntent(context, journeyId))
 
     fun journeysHubAction(context: Context): Action =
         actionStartActivity(journeysHubIntent(context))
@@ -91,9 +78,6 @@ object WidgetActions {
 
     fun createJourneyAction(context: Context): Action =
         actionStartActivity(createJourneyIntent(context))
-
-    fun groupTodayAction(context: Context, groupId: String): Action =
-        actionStartActivity(groupTodayIntent(context, groupId))
 
     fun groupsHubAction(context: Context): Action =
         actionStartActivity(groupsHubIntent(context))

@@ -45,21 +45,6 @@ public struct StreakWidgetEntryView: View {
       systemScheme: colorScheme
     )
 
-    let destination: URL = {
-      switch cardState {
-      case .ready(let item):
-        return item.checkedInToday
-          ? OurneyDeepLinks.journey(id: item.id)
-          : OurneyDeepLinks.capture(journeyId: item.id)
-      case .unsynced, .signedOut:
-        return OurneyDeepLinks.syncJourneys
-      case .appGroupUnavailable:
-        return OurneyDeepLinks.journeys
-      case .noJourneys:
-        return OurneyDeepLinks.newJourney
-      }
-    }()
-
     Group {
       switch cardState {
       case .ready(let item):
@@ -105,7 +90,7 @@ public struct StreakWidgetEntryView: View {
     .ourneyWidgetContainerBackground {
       theme.bg
     }
-    .widgetURL(destination)
+    .widgetURL(cardState.tapURL)
   }
 }
 

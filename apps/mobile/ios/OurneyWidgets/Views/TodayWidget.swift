@@ -50,21 +50,6 @@ public struct TodayWidgetEntryView: View {
       systemScheme: colorScheme
     )
 
-    let rootDestination: URL = {
-      switch cardState {
-      case .ready(let journey):
-        return journey.checkedInToday
-          ? OurneyDeepLinks.journey(id: journey.id)
-          : OurneyDeepLinks.capture(journeyId: journey.id)
-      case .unsynced, .signedOut:
-        return OurneyDeepLinks.syncJourneys
-      case .appGroupUnavailable:
-        return OurneyDeepLinks.journeys
-      case .noJourneys:
-        return OurneyDeepLinks.newJourney
-      }
-    }()
-
     Group {
       switch cardState {
       case .ready(let journey):
@@ -132,7 +117,7 @@ public struct TodayWidgetEntryView: View {
     .ourneyWidgetContainerBackground {
       theme.bg
     }
-    .widgetURL(rootDestination)
+    .widgetURL(cardState.tapURL)
   }
 }
 
@@ -150,9 +135,7 @@ private struct TodaySmallView: View {
     let pendingList = snapshot.journeys.filter { !$0.checkedInToday }
     let pendingIndex = (pendingList.firstIndex(where: { $0.id == journey.id }) ?? 0) + 1
     let showCycleControl = pendingList.count >= 2 && !journey.checkedInToday
-    let destination = journey.checkedInToday
-      ? OurneyDeepLinks.journey(id: journey.id)
-      : OurneyDeepLinks.capture(journeyId: journey.id)
+    let destination = journey.captureURL
 
     VStack(alignment: .leading, spacing: 6) {
       // Top header: type icon + day pill + interactive cycle button if 2+ pending
@@ -312,9 +295,7 @@ private struct TodayMediumView: View {
     let phase = journey.phase(at: entryDate)
     let pendingList = snapshot.journeys.filter { !$0.checkedInToday }
     let pendingIndex = (pendingList.firstIndex(where: { $0.id == journey.id }) ?? 0) + 1
-    let destination = journey.checkedInToday
-      ? OurneyDeepLinks.journey(id: journey.id)
-      : OurneyDeepLinks.capture(journeyId: journey.id)
+    let destination = journey.captureURL
 
     HStack(spacing: 10) {
       // Left column: Title, urgency status badge, 7-day chain strip
@@ -468,9 +449,7 @@ private struct TodayLargeView: View {
     let pendingList = snapshot.journeys.filter { !$0.checkedInToday }
     let pendingIndex = (pendingList.firstIndex(where: { $0.id == journey.id }) ?? 0) + 1
     let otherJourneys = snapshot.journeys.filter { $0.id != journey.id }.prefix(2)
-    let destination = journey.checkedInToday
-      ? OurneyDeepLinks.journey(id: journey.id)
-      : OurneyDeepLinks.capture(journeyId: journey.id)
+    let destination = journey.captureURL
 
     VStack(alignment: .leading, spacing: 8) {
       // Top summary bar
@@ -591,10 +570,7 @@ private struct TodayLargeView: View {
       if !otherJourneys.isEmpty {
         VStack(spacing: 6) {
           ForEach(Array(otherJourneys)) { item in
-            let rowURL = item.checkedInToday
-              ? OurneyDeepLinks.journey(id: item.id)
-              : OurneyDeepLinks.capture(journeyId: item.id)
-            Link(destination: rowURL) {
+            Link(destination: item.captureURL) {
               HStack(spacing: 8) {
                 OurneyIconView(name: item.typeIcon, size: 17, ink: theme.ink)
 

@@ -625,6 +625,33 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
     XCTAssertTrue(legacyDecoded.squads.isEmpty)
   }
 
+  func testTodayTapUsesTheCycledCardAndItsOwnCaptureURL() {
+    let other = WidgetJourneyItem(id: "other", title: "Other Journey")
+    let trip = WidgetJourneyItem(id: "trip+last&day=11", title: "Trip", dayNumber: 11, totalDays: 11)
+    let snapshot = WidgetSnapshot(authState: "ready", defaultJourneyId: other.id, journeys: [other, trip])
+    let state = WidgetSnapshot.resolveTodayCardState(
+      snapshot: snapshot,
+      state: WidgetInteractiveState(selectedTodayJourneyId: trip.id)
+    )
+
+    XCTAssertEqual(state, .ready(trip))
+    XCTAssertEqual(state.tapURL.absoluteString, "ourney://capture?journeyId=trip%2Blast%26day%3D11")
+    XCTAssertEqual(state.tapURL, trip.captureURL)
+    XCTAssertEqual(other.captureURL.absoluteString, "ourney://capture?journeyId=other")
+  }
+
+  func testCompletedJourneyAndCoupleCardsStillOpenTheirOwnCamera() {
+    let trip = WidgetJourneyItem(id: "trip", title: "Trip", checkedInToday: true)
+    let couple = WidgetSquadItem(journeyId: "couple", title: "Couple", isCouple: true, meCheckedInToday: true)
+    let snapshot = WidgetSnapshot(authState: "ready", defaultJourneyId: trip.id, journeys: [trip], squads: [couple])
+
+    XCTAssertEqual(WidgetSnapshot.resolveTodayCardState(snapshot: snapshot).tapURL, trip.captureURL)
+    XCTAssertEqual(WidgetSnapshot.resolveStreakCardState(snapshot: snapshot).tapURL, trip.captureURL)
+    XCTAssertEqual(trip.captureURL.absoluteString, "ourney://capture?journeyId=trip")
+    XCTAssertEqual(WidgetSnapshot.resolveSquadCardState(snapshot: snapshot).tapURL, couple.captureURL)
+    XCTAssertEqual(couple.captureURL.absoluteString, "ourney://capture?journeyId=couple")
+  }
+
   func testFourStateCardResolutionAndSoloOnlySquadAndLockScreenSensitivity() throws {
     // 1. Unsynced (snapshot == nil)
     XCTAssertEqual(WidgetSnapshot.resolveTodayCardState(snapshot: nil), .unsynced)

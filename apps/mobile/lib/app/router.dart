@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/camera/capture_screen.dart' show CaptureScreen;
 import '../features/profile/profile_providers.dart'
     show profileGateStatusProvider;
 import 'app_routes.dart';
@@ -92,14 +95,37 @@ final routerProvider = Provider<GoRouter>((ref) {
     ..listen(authStatusProvider, bump)
     ..listen(profileGateStatusProvider, bump);
 
+  String? redirectFor(Uri uri) => resolveRedirect(
+    uri: uri,
+    onboarded: ref.read(onboardingCompleteProvider),
+    auth: ref.read(authStatusProvider),
+    profileGate: ref.read(profileGateStatusProvider),
+  );
+
   final router = createRouter(
     refreshListenable: refresh,
-    redirect: (context, state) => resolveRedirect(
-      uri: state.uri,
-      onboarded: ref.read(onboardingCompleteProvider),
-      auth: ref.read(authStatusProvider),
-      profileGate: ref.read(profileGateStatusProvider),
-    ),
+    redirect: (context, state) {
+      final location = redirectFor(state.uri);
+      if (state.uri.scheme != kDeepLinkScheme || location == null) {
+        return location;
+      }
+      final target = Uri.parse(location);
+      final id = target.queryParameters[CaptureScreen.journeyIdParam];
+      if (target.path != AppRoutes.capture || id == null || id.isEmpty) {
+        return location;
+      }
+      final gate = redirectFor(target);
+      if (gate != null) return gate;
+
+      // The camera page can be reused when the same widget URL is tapped
+      // again. Apply the selection before publishing the capture route.
+      return Future<String>.microtask(() {
+        if (ref.mounted) {
+          unawaited(ref.read(activeJourneyIdProvider.notifier).select(id));
+        }
+        return location;
+      });
+    },
   );
   ref.onDispose(() {
     router.dispose();
