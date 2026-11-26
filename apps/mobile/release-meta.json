@@ -4,22 +4,20 @@
     "ios": "1.0.0"
   },
   "recommended": {
-    "android": "1.1.0",
-    "ios": "1.1.0"
+    "android": "1.2.0",
+    "ios": "1.2.0"
   },
   "force_on_major": true,
   "notes": {
     "vi": [
-      "Tiện ích màn hình chính trên Android và khung giờ chụp buổi tối nhẹ nhàng hơn",
-      "Ourney nhắc nhẹ khi có bản mới, kèm ghi chú những gì vừa thay đổi",
-      "Hồ sơ và phần bạn bè gọn gàng, dễ dùng hơn",
-      "Đặt hoặc đổi mật khẩu, góp ý và bình chọn tính năng ngay trong app"
+      "Chọn điểm đến cho chuyến đi từ danh sách, gõ tìm bằng tiếng Việt hoặc tiếng Anh",
+      "Link chia sẻ hành trình dễ đọc hơn, tự ẩn tên khi bạn ẩn chỉ số",
+      "Mở link chia sẻ ổn định và an toàn hơn"
     ],
     "en": [
-      "Android home screen widgets and a calmer evening check-in window",
-      "Gentle in-app notice when a new version is ready, with what changed",
-      "A cleaner profile and friends experience",
-      "Set or change your password, and suggest or vote on features in the app"
+      "Pick trip destinations from a searchable list in Vietnamese or English",
+      "Readable journey share links that hide the title when you hide your stats",
+      "Steadier, safer shared link pages"
     ]
   }
 }
