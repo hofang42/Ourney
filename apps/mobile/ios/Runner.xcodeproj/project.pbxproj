@@ -57,6 +57,12 @@
 		7D0B00672F10000100000001 /* WidgetTimelineProviders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B006A2F10000100000001 /* WidgetTimelineProviders.swift */; };
 		7D0B00692F10000100000001 /* WidgetTimelineProviders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B006A2F10000100000001 /* WidgetTimelineProviders.swift */; };
 		7D0B006B2F10000100000001 /* WidgetTimelineProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B006C2F10000100000001 /* WidgetTimelineProviderTests.swift */; };
+		7D0C00000000000000000007 /* WidgetConfigurationProbes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0C00000000000000000001 /* WidgetConfigurationProbes.swift */; };
+		7D0C00000000000000000008 /* OurneyProbeSelection.intentdefinition in Sources */ = {isa = PBXBuildFile; fileRef = 7D0C00000000000000000002 /* OurneyProbeSelection.intentdefinition */; };
+		7D0C00000000000000000009 /* OurneyProbeSelection.intentdefinition in Sources */ = {isa = PBXBuildFile; fileRef = 7D0C00000000000000000002 /* OurneyProbeSelection.intentdefinition */; };
+		7D0C0000000000000000000A /* OurneyProbeSelection.intentdefinition in Sources */ = {isa = PBXBuildFile; fileRef = 7D0C00000000000000000002 /* OurneyProbeSelection.intentdefinition */; };
+		7D0C0000000000000000000B /* IntentHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0C00000000000000000003 /* IntentHandler.swift */; };
+		7D0C0000000000000000000C /* WidgetProbeIntents.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 7D0C00000000000000000005 /* WidgetProbeIntents.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -74,6 +80,13 @@
 			remoteGlobalIDString = 7D0B00462F10000100000001;
 			remoteInfo = OurneyWidgetsExtension;
 		};
+		7D0C0000000000000000000D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7D0C00000000000000000010;
+			remoteInfo = WidgetProbeIntents;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -84,6 +97,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				7D0B00242F10000100000001 /* OurneyWidgetsExtension.appex in Embed App Extensions */,
+				7D0C0000000000000000000C /* WidgetProbeIntents.appex in Embed App Extensions */,
 			);
 			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -154,6 +168,11 @@
 		7D0B00682F10000100000001 /* WidgetDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDiagnostics.swift; sourceTree = "<group>"; };
 		7D0B006A2F10000100000001 /* WidgetTimelineProviders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetTimelineProviders.swift; sourceTree = "<group>"; };
 		7D0B006C2F10000100000001 /* WidgetTimelineProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetTimelineProviderTests.swift; sourceTree = "<group>"; };
+		7D0C00000000000000000001 /* WidgetConfigurationProbes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/WidgetConfigurationProbes.swift; sourceTree = "<group>"; };
+		7D0C00000000000000000002 /* OurneyProbeSelection.intentdefinition */ = {isa = PBXFileReference; lastKnownFileType = file.intentdefinition; path = OurneyProbeSelection.intentdefinition; sourceTree = "<group>"; };
+		7D0C00000000000000000003 /* IntentHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentHandler.swift; sourceTree = "<group>"; };
+		7D0C00000000000000000004 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		7D0C00000000000000000005 /* WidgetProbeIntents.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WidgetProbeIntents.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -207,6 +226,7 @@
 			isa = PBXGroup;
 			children = (
 				7D0B00042F10000100000001 /* OurneyWidgetsBundle.swift */,
+				7D0C00000000000000000001 /* WidgetConfigurationProbes.swift */,
 				7D0B00052F10000100000001 /* WidgetSnapshot.swift */,
 				7D0B00062F10000100000001 /* OurneyWidgetTokens.swift */,
 				7D0B00072F10000100000001 /* OurneyWidgetIcons.swift */,
@@ -259,6 +279,7 @@
 				97C146F01CF9000F007C117D /* Runner */,
 				7D0B003C2F10000100000001 /* Shared */,
 				7D0B003D2F10000100000001 /* OurneyWidgets */,
+				7D0C00000000000000000006 /* WidgetProbeIntents */,
 				7D0B003E2F10000100000001 /* Frameworks */,
 				97C146EF1CF9000F007C117D /* Products */,
 				331C8082294A63A400263BE5 /* RunnerTests */,
@@ -271,6 +292,7 @@
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
 				7D0B00012F10000100000001 /* OurneyWidgetsExtension.appex */,
+				7D0C00000000000000000005 /* WidgetProbeIntents.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -293,6 +315,16 @@
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
+			sourceTree = "<group>";
+		};
+		7D0C00000000000000000006 /* WidgetProbeIntents */ = {
+			isa = PBXGroup;
+			children = (
+				7D0C00000000000000000003 /* IntentHandler.swift */,
+				7D0C00000000000000000002 /* OurneyProbeSelection.intentdefinition */,
+				7D0C00000000000000000004 /* Info.plist */,
+			);
+			path = WidgetProbeIntents;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -348,6 +380,7 @@
 			);
 			dependencies = (
 				7D0B00422F10000100000001 /* PBXTargetDependency */,
+				7D0C0000000000000000000E /* PBXTargetDependency */,
 			);
 			name = Runner;
 			packageProductDependencies = (
@@ -356,6 +389,21 @@
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
 			productType = "com.apple.product-type.application";
+		};
+		7D0C00000000000000000010 /* WidgetProbeIntents */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7D0C00000000000000000011 /* Build configuration list for PBXNativeTarget "WidgetProbeIntents" */;
+			buildPhases = (
+				7D0C0000000000000000000F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = WidgetProbeIntents;
+			productName = WidgetProbeIntents;
+			productReference = 7D0C00000000000000000005 /* WidgetProbeIntents.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -400,6 +448,7 @@
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
 				7D0B00462F10000100000001 /* OurneyWidgetsExtension */,
+				7D0C00000000000000000010 /* WidgetProbeIntents */,
 			);
 		};
 /* End PBXProject section */
@@ -492,6 +541,8 @@
 			files = (
 				7D0B00262F10000100000001 /* OurneyCheckInAttributes.swift in Sources */,
 				7D0B00272F10000100000001 /* OurneyWidgetsBundle.swift in Sources */,
+				7D0C00000000000000000007 /* WidgetConfigurationProbes.swift in Sources */,
+				7D0C00000000000000000008 /* OurneyProbeSelection.intentdefinition in Sources */,
 				7D0B00282F10000100000001 /* WidgetSnapshot.swift in Sources */,
 				7D0B00612F10000100000001 /* WidgetAppGroup.swift in Sources */,
 				7D0B00662F10000100000001 /* WidgetDiagnostics.swift in Sources */,
@@ -513,6 +564,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
+				7D0C00000000000000000009 /* OurneyProbeSelection.intentdefinition in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */,
 				7D0B00202F10000100000001 /* OurneyWidgetBridge.swift in Sources */,
@@ -523,6 +575,15 @@
 				7D0B00672F10000100000001 /* WidgetTimelineProviders.swift in Sources */,
 				7D0B004B2F10000100000001 /* WidgetIntents.swift in Sources */,
 				7D0B004D2F10000100000001 /* WidgetL10n.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7D0C0000000000000000000F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7D0C0000000000000000000B /* IntentHandler.swift in Sources */,
+				7D0C0000000000000000000A /* OurneyProbeSelection.intentdefinition in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -538,6 +599,11 @@
 			isa = PBXTargetDependency;
 			target = 7D0B00462F10000100000001 /* OurneyWidgetsExtension */;
 			targetProxy = 7D0B00412F10000100000001 /* PBXContainerItemProxy */;
+		};
+		7D0C0000000000000000000E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7D0C00000000000000000010 /* WidgetProbeIntents */;
+			targetProxy = 7D0C0000000000000000000D /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -973,6 +1039,75 @@
 			};
 			name = Release;
 		};
+		7D0C00000000000000000012 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9740EEB21CF90195004384FC /* Debug.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = WidgetProbeIntents/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.hofang42.ourney.WidgetProbeIntents;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		7D0C00000000000000000013 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = WidgetProbeIntents/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.hofang42.ourney.WidgetProbeIntents;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		7D0C00000000000000000014 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = WidgetProbeIntents/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.hofang42.ourney.WidgetProbeIntents;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Profile;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1012,6 +1147,16 @@
 				97C147061CF9000F007C117D /* Debug */,
 				97C147071CF9000F007C117D /* Release */,
 				249021D4217E4FDB00AE95B9 /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7D0C00000000000000000011 /* Build configuration list for PBXNativeTarget "WidgetProbeIntents" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7D0C00000000000000000012 /* Debug */,
+				7D0C00000000000000000013 /* Release */,
+				7D0C00000000000000000014 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

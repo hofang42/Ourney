@@ -87,12 +87,15 @@ jobs:
         run: |
           app=build/ios/iphoneos/Runner.app
           widget="$app/PlugIns/OurneyWidgetsExtension.appex"
+          probe_intents="$app/PlugIns/WidgetProbeIntents.appex"
 
           # Sign nested code before sealing its enclosing bundles.
           find "$app" -depth \( -type d -name '*.framework' -o -type f -name '*.dylib' \) -print0 |
             while IFS= read -r -d '' nested; do
               codesign --force --sign - "$nested"
             done
+          codesign --force --sign - "$probe_intents"
+          codesign --verify --strict "$probe_intents"
           codesign --force --sign - --entitlements ios/OurneyWidgets/OurneyWidgets.entitlements "$widget"
           codesign --force --sign - --entitlements ios/Runner/Runner.entitlements "$app"
 

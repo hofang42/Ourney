@@ -16,11 +16,22 @@ struct OurneyWidgetsBundle: WidgetBundle {
     StreakWidget()
     SquadWidget()
     LockScreenWidget()
+    if #available(iOSApplicationExtension 17.0, iOS 17.0, *) {
+      configurationProbes
+    }
     #if canImport(ActivityKit)
     if #available(iOSApplicationExtension 16.2, iOS 16.2, *) {
       CheckInLiveActivity()
     }
     #endif
+  }
+
+  @available(iOSApplicationExtension 17.0, iOS 17.0, *)
+  @WidgetBundleBuilder
+  private var configurationProbes: some Widget {
+    ConfigurationProbeAppWidget<ConfigurationProbeEntityIntent>()
+    ConfigurationProbeSiriKitWidget()
+    ConfigurationProbeAppWidget<ConfigurationProbeEnumIntent>()
   }
 }
 
