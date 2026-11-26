@@ -238,9 +238,9 @@ void main() {
     );
   });
 
-  group('M1 #5b — Dock Glyph Overshoot, Haptics & SnapPill <-> Shutter Morph', () {
+  group('M1 #5b — Dock Glyph Overshoot, Haptics & Camera Circle <-> Shutter Morph', () {
     testWidgets(
-      'DockTab active glyph scales to 1.08 over 180ms with UiCurves.dockOvershoot and fires UiHaptics.selection once (gated on !camera); center slot morphs 56x40 <-> 76x76 bounds with uniform 2dp border & 1:1 icon over 220ms and on TickerMode handoff',
+      'DockTab active glyph scales to 1.08 over 180ms with UiCurves.dockOvershoot and fires UiHaptics.selection once (gated on !camera); center slot morphs 60x60 (or 52x52 compact) <-> 76x76 bounds with uniform 2dp border & 1:1 icon over 220ms and on TickerMode handoff',
       (tester) async {
         final haptics = <String>[];
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -331,7 +331,7 @@ void main() {
         await tester.pump();
         expect(haptics, isEmpty);
 
-        // 2. Tap UiSnapPill -> fires lightImpact and morphs center slot into 76x76 UiShutter over 220ms.
+        // 2. Tap center camera circle -> fires lightImpact and morphs center slot into 76x76 UiShutter over 220ms.
         expect(find.byKey(const ValueKey('dock-center-morph')), findsNothing);
         await tester.tap(find.byKey(const ValueKey('dock-snap-pill')));
         await tester.pump();
@@ -465,6 +465,84 @@ void main() {
             tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
           }
         }
+      },
+    );
+
+    testWidgets(
+      'compact (52dp) -> camera (76dp) morph starts from 52dp without jumping to 60dp and Quiet skin preserves 2dp shadow',
+      (tester) async {
+        var camera = false;
+        late StateSetter setHost;
+
+        UiDockItem tab(String glyph, String label, int i) => UiDockItem(
+          itemKey: ValueKey('compact-morph-tab-$i'),
+          glyph: glyph,
+          label: label,
+          active: i == 0,
+          onPressed: () {},
+        );
+
+        await tester.pumpWidget(
+          _host(
+            UiSkinScope(
+              skinId: 'quiet',
+              child: StatefulBuilder(
+                builder: (context, setState) {
+                  setHost = setState;
+                  return Align(
+                    alignment: Alignment.bottomCenter,
+                    child: UiDock(
+                      camera: camera,
+                      compact: true,
+                      left: tab('journeys', 'Hành trình', 0),
+                      right: tab('profile', 'Hồ sơ', 1),
+                      snapLabel: 'Chụp',
+                      snapKey: const ValueKey('dock-snap-pill'),
+                      onSnap: () => setHost(() => camera = true),
+                      center: camera
+                          ? UiShutter(label: 'Chụp', onPressed: () {})
+                          : null,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Trigger camera = true from compact = true (52dp circle, Quiet 2dp shadow).
+        setHost(() => camera = true);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 16));
+
+        final morphFinder = find.byKey(const ValueKey('dock-center-morph'));
+        expect(morphFinder, findsOneWidget);
+        final earlySize = tester.getSize(morphFinder);
+        expect(
+          earlySize.width,
+          greaterThan(52.0),
+          reason: 'morph from compact must start at 52dp',
+        );
+        expect(
+          earlySize.width,
+          lessThan(60.0),
+          reason: 'morph from compact must not jump to 60dp at t=16ms',
+        );
+
+        // Quiet skin shadow lerps between 2dp (UiShadow.tiny) and 3dp (UiShadow.small), never 4dp.
+        final shadowTransform = tester.widget<Transform>(
+          find
+              .descendant(of: morphFinder, matching: find.byType(Transform))
+              .first,
+        );
+        final shadowDx = shadowTransform.transform.getTranslation().x;
+        expect(shadowDx, greaterThanOrEqualTo(UiShadow.tiny));
+        expect(shadowDx, lessThanOrEqualTo(UiShadow.small));
+
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('dock-center-morph')), findsNothing);
+        expect(tester.getSize(find.byType(UiShutter)), const Size(76, 76));
       },
     );
   });

@@ -10,8 +10,9 @@ import 'package:ourney_core/ourney_core.dart';
 import '../app/test_helpers.dart';
 import '../features/checkin/fakes.dart';
 
-/// The shared 3-tab dock (App.tsx `Dock`): Journeys, quick-snap pill in the
-/// active journey's accent, Squad; dark with the hero shutter on the camera.
+/// The shared E4 floating dock (`AppDock`): two glass islands flanking the
+/// 60dp/52dp camera circle in the active journey's accent (or the 76dp hero
+/// shutter on the camera route).
 void main() {
   Future<ProviderContainer> pump(
     WidgetTester tester, {

@@ -652,6 +652,175 @@ void main() {
         expect(_cameraCircleRect(tester).width, closeTo(60, 0.5));
         expect(tester.getRect(pillFinder).width, closeTo(60, 0.5));
         expect(tester.getRect(pillFinder).height, closeTo(52, 0.5));
+
+        // Mid-way reversal: start compacting again, flip back at +110ms,
+        // verify the reversal frame does not jump and the next +16ms frame
+        // progresses smoothly back toward T2.
+        setHost(() => compact = true);
+        await tester.pump();
+        await tester.pump(Duration.zero);
+        await tester.pump(const Duration(milliseconds: 110));
+        final revIsland0 = tester.getRect(find.byType(UiGlass).first);
+        final revCam0 = _cameraCircleRect(tester);
+        final revPill0 = tester.getRect(pillFinder);
+
+        setHost(() => compact = false);
+        await tester.pump();
+        final revIslandAt0 = tester.getRect(find.byType(UiGlass).first);
+        final revCamAt0 = _cameraCircleRect(tester);
+        final revPillAt0 = tester.getRect(pillFinder);
+        expect(
+          (revIslandAt0.height - revIsland0.height).abs(),
+          lessThan(0.01),
+          reason: 'reversal frame must start from exact mid-flight islandH',
+        );
+        expect(
+          (revCamAt0.width - revCam0.width).abs(),
+          lessThan(0.01),
+          reason: 'reversal frame must start from exact mid-flight camD',
+        );
+        expect(
+          (revPillAt0.width - revPill0.width).abs(),
+          lessThan(0.01),
+          reason: 'reversal frame must start from exact mid-flight pillW',
+        );
+
+        await tester.pump(const Duration(milliseconds: 16));
+        final revIsland1 = tester.getRect(find.byType(UiGlass).first);
+        final revCam1 = _cameraCircleRect(tester);
+        final revPill1 = tester.getRect(pillFinder);
+        expect(revIsland1.height, greaterThan(revIsland0.height));
+        expect(revIsland1.height, lessThan(60.0));
+        expect(revCam1.width, greaterThan(revCam0.width));
+        expect(revCam1.width, lessThan(58.0));
+        expect(revPill1.width, greaterThan(revPill0.width));
+        expect(revPill1.width, lessThan(56.0));
+
+        await tester.pump(const Duration(milliseconds: 220));
+        expect(
+          tester.getRect(find.byType(UiGlass).first).height,
+          closeTo(64, 0.5),
+        );
+        expect(_cameraCircleRect(tester).width, closeTo(60, 0.5));
+        expect(tester.getRect(pillFinder).width, closeTo(60, 0.5));
+        expect(tester.getRect(pillFinder).height, closeTo(52, 0.5));
+      },
+    );
+
+    testWidgets(
+      'tab tap while compact smoothly expands (220ms) and slides (280ms) with zero snap at completion',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(360, 800);
+        addTearDown(tester.view.reset);
+
+        var active = 0;
+        var compact = true;
+        late StateSetter setHost;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: OurneyTheme.build(Brightness.light),
+            home: MediaQuery(
+              data: const MediaQueryData(size: Size(360, 800)),
+              child: Scaffold(
+                body: StatefulBuilder(
+                  builder: (context, setState) {
+                    setHost = setState;
+                    return Align(
+                      alignment: Alignment.bottomCenter,
+                      child: _buildDock(
+                        active: active,
+                        compact: compact,
+                        onSelect: (i) => setHost(() {
+                          active = i;
+                          compact = false;
+                        }),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final pillFinder = find.byKey(const ValueKey('dock-selection-pill'));
+        expect(tester.getCenter(pillFinder).dx, closeTo(48, 0.5));
+
+        // Tap tab 1 (inner left) while compact -> simultaneously expands & slides.
+        await tester.tap(find.byKey(ValueKey(_tabKeys[1])));
+        await tester.pump();
+        await tester.pump(Duration.zero);
+
+        // Advance to 278ms (2ms before the 280ms slide finishes, after the 220ms expand finished).
+        await tester.pump(const Duration(milliseconds: 278));
+        final x278 = tester.getCenter(pillFinder).dx;
+        await tester.pump(const Duration(milliseconds: 2));
+        final x280 = tester.getCenter(pillFinder).dx;
+        await tester.pump(const Duration(milliseconds: 16));
+        final x296 = tester.getCenter(pillFinder).dx;
+
+        expect(
+          (x280 - x278).abs(),
+          lessThan(0.25),
+          reason: 'no snap when 280ms slide completes after compact expand',
+        );
+        expect((x296 - x280).abs(), lessThan(0.01));
+        expect(x296, closeTo(109, 0.5));
+      },
+    );
+
+    testWidgets(
+      'asymmetric tab counts (1 left, 2 right) map right-island selection to slots 2 and 3',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(390, 800);
+        addTearDown(tester.view.reset);
+
+        for (final active in [0, 1, 2]) {
+          UiDockItem item(String glyph, String label, int idx) => UiDockItem(
+            itemKey: ValueKey('asym-tab-$idx'),
+            glyph: glyph,
+            label: label,
+            active: active == idx,
+            onPressed: () {},
+          );
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: OurneyTheme.build(Brightness.light),
+              home: MediaQuery(
+                data: const MediaQueryData(size: Size(390, 800)),
+                child: Scaffold(
+                  body: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: UiDock(
+                      left: item('journeys', 'Hành trình', 0),
+                      extraRight: [item('activity', 'Hoạt động', 1)],
+                      right: item('profile', 'Hồ sơ', 2),
+                      snapLabel: 'Chụp',
+                      onSnap: () {},
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          final pillCenter = tester.getCenter(
+            find.byKey(const ValueKey('dock-selection-pill')),
+          );
+          final tabCenter = tester.getCenter(
+            find.byKey(ValueKey('asym-tab-$active')),
+          );
+          expect(
+            pillCenter.dx,
+            closeTo(tabCenter.dx, 0.5),
+            reason: 'active item $active capsule must align with its tab slot',
+          );
+        }
       },
     );
   });
