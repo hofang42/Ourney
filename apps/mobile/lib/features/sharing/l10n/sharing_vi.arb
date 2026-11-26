@@ -171,7 +171,7 @@
   "@sharing_allowRequestsHint": {
     "description": "S27 switch hint."
   },
-  "sharing_statsLine": "{views} lượt xem · {likes} ❤️ · {started} đã bắt đầu",
+  "sharing_statsLine": "{views} lượt xem · {likes} lượt thích · {started} đã bắt đầu",
   "@sharing_statsLine": {
     "description": "S21 owner stats line, opens SCR-88.",
     "placeholders": {
@@ -473,7 +473,7 @@
   "@sharing_less": {
     "description": "Collapses the intro."
   },
-  "sharing_counts": "❤️ {likes} · {follows} người đã làm hành trình này",
+  "sharing_counts": "{likes} lượt thích · {follows} người đã làm hành trình này",
   "@sharing_counts": {
     "description": "S22 counts line for viewers.",
     "placeholders": {

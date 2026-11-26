@@ -96,7 +96,7 @@
     }
   },
   "groups_noPhotoYet": "Chưa có check-in nào",
-  "groups_endedBanner": "Hành trình đã kết thúc. Ảnh và streak chỉ còn để xem.",
+  "groups_endedBanner": "Hành trình đã kết thúc. Ảnh và chuỗi chỉ còn để xem.",
   "groups_notFoundTitle": "Không tìm thấy nhóm",
   "groups_notMember": "Bạn không còn là thành viên của nhóm này.",
   "groups_todayLoadError": "Không tải được hoạt động hôm nay.",
@@ -136,7 +136,7 @@
   "groups_rotateDone": "Đã tạo mã mời mới.",
   "groups_actionEnd": "Kết thúc hành trình",
   "groups_endTitle": "Kết thúc hành trình cho cả nhóm?",
-  "groups_endMessage": "Sau đó không ai check-in được nữa. Ảnh và streak vẫn còn để mọi người xem lại.",
+  "groups_endMessage": "Sau đó không ai check-in được nữa. Ảnh và chuỗi vẫn còn để mọi người xem lại.",
   "groups_actionDelete": "Xóa hành trình",
   "groups_deleteTitle": "Xóa hành trình nhóm này?",
   "groups_deleteMessage": "Bạn là thành viên duy nhất. Hành trình và ảnh của bạn sẽ bị xóa vĩnh viễn.",

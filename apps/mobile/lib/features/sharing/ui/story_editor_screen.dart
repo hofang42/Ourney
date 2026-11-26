@@ -135,13 +135,14 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     final hidden = _hidden!;
     final hide = !hidden.contains(checkIn.id);
     final dropsCover = hide && _coverId == checkIn.id;
+    final hadInitialCover = dropsCover && _initial.coverCheckInId == checkIn.id;
     setState(() {
       _hidden = {...hidden}..let(hide, checkIn.id);
       // A hidden photo can no longer be the cover (S11).
       // Not an unsaved edit: the hide itself already dropped it (C-B14).
-      if (hide && _coverId == checkIn.id) {
+      if (dropsCover) {
         _coverId = null;
-        if (_initial.coverCheckInId == checkIn.id) {
+        if (hadInitialCover) {
           _initial = JourneyStory(
             title: _initial.title,
             intro: _initial.intro,
@@ -154,7 +155,13 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     // server) after this screen closes, when `ref` is no longer usable.
     final repo = ref.read(sharingRepositoryProvider);
     final job = _hideChain.then(
-      (_) => _persistHidden(repo, checkIn, hide, dropsCover),
+      (_) => _persistHidden(
+        repo,
+        checkIn,
+        hide,
+        dropsCover,
+        hadInitialCover: hadInitialCover,
+      ),
     );
     _hideChain = job;
     await job;
@@ -166,8 +173,9 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     SharingRepository repo,
     CheckIn checkIn,
     bool hide,
-    bool dropsCover,
-  ) async {
+    bool dropsCover, {
+    bool hadInitialCover = false,
+  }) async {
     try {
       await repo.setHiddenInShare(checkIn.id, hidden: hide);
       // Once a save started its story write already carries the cleared
@@ -188,7 +196,20 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
       }
     } on Object catch (e) {
       if (!mounted) return;
-      setState(() => _hidden = {..._hidden!}..let(!hide, checkIn.id));
+      setState(() {
+        _hidden = {..._hidden!}..let(!hide, checkIn.id);
+        if (dropsCover && _coverId == null) {
+          _coverId = checkIn.id;
+          if (hadInitialCover && _initial.coverCheckInId == null) {
+            _initial = JourneyStory(
+              title: _initial.title,
+              intro: _initial.intro,
+              lessons: _initial.lessons,
+              coverCheckInId: checkIn.id,
+            );
+          }
+        }
+      });
       showSharingSnack(context, sharingFailure(context, e));
     }
   }

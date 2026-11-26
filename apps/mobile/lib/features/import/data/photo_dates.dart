@@ -158,13 +158,30 @@ int secondsOfDayFor(PhotoMoment? moment, int index) =>
     : importNoonSeconds + index;
 
 /// The instant of [date] + [secondsOfDay] on the wall clock of [timezone].
+///
+/// Spring-forward gap: moved forward by the gap so it stays on [date].
+/// Fall-back overlap: the earlier of the two instants.
 DateTime instantInZone(LocalDate date, int secondsOfDay, String timezone) {
   final naive = DateTime.utc(
     date.year,
     date.month,
     date.day,
   ).add(Duration(seconds: secondsOfDay));
-  return naive.subtract(timeZoneOffsetAt(timezone, naive));
+  final wall = naive.millisecondsSinceEpoch;
+  int offsetAt(int utcMs) => timeZoneOffsetAt(
+    timezone,
+    DateTime.fromMillisecondsSinceEpoch(utcMs, isUtc: true),
+  ).inMilliseconds;
+
+  const window = 26 * 3600 * 1000;
+  final before = offsetAt(wall - window);
+  final after = offsetAt(wall + window);
+  final valid = <int>[
+    for (final o in {before, after})
+      if (offsetAt(wall - o) == o) wall - o,
+  ]..sort();
+  final utc = valid.isNotEmpty ? valid.first : wall - before;
+  return DateTime.fromMillisecondsSinceEpoch(utc, isUtc: true);
 }
 
 /// `captured_at` of a retold photo (what the server turns into its

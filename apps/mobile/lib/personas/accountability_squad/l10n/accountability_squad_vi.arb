@@ -40,7 +40,7 @@
       }
     }
   },
-  "accountability_squad_dayWeekMilestone": "NGÀY {day} ★ TUẦN {week}",
+  "accountability_squad_dayWeekMilestone": "NGÀY {day} · TUẦN {week}",
   "@accountability_squad_dayWeekMilestone": {
     "description": "Nhãn Polaroid ở các mốc 7, 14, 21...",
     "placeholders": {

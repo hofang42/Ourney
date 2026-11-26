@@ -384,10 +384,19 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
                   if (v.likeCount != null && v.followCount != null)
                     Padding(
                       padding: const EdgeInsets.only(top: UiSpace.md),
-                      child: Text(
-                        l10n.sharing_counts(v.likeCount!, v.followCount!),
-                        key: const ValueKey('shared-counts'),
-                        style: sharingLabel(context, size: 13),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const OurneyIcon(name: 'heart', size: 15),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              l10n.sharing_counts(v.likeCount!, v.followCount!),
+                              key: const ValueKey('shared-counts'),
+                              style: sharingLabel(context, size: 13),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   if (v.kind == JourneyKind.group && v.members.isNotEmpty)

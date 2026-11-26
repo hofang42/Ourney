@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney/features/journeys/domain/journey_progress.dart';
 import 'package:ourney/features/journeys/l10n/generated/journeys_localizations.dart';
 import 'package:ourney/features/journeys/ui/journey_actions.dart';
@@ -72,6 +73,46 @@ void main() {
       expect(find.text('All done for today'), findsWidgets);
       expect(find.text('Add more'), findsOneWidget);
     });
+
+    testWidgets(
+      'F-40: TodaySheetContent renders loading and error states instead of flashing 0/0',
+      (tester) async {
+        final j = testJourney();
+        var shouldFail = true;
+        final pending = StreamController<List<CheckIn>>.broadcast();
+        addTearDown(pending.close);
+        await pumpJourneys(
+          tester,
+          locale: const Locale('en'),
+          journeys: FakeJourneyRepository(
+            journeys: [j],
+            memberships: {j.id: testMembership(j)},
+          ),
+          extraOverrides: [
+            myCheckInsProvider(j.id).overrideWith(
+              (ref) => shouldFail
+                  ? pending.stream
+                  : Stream.value([testCheckIn(j.id, testToday)]),
+            ),
+          ],
+        );
+        unawaited(showTodaySheet(tester.element(_key('journeys-list'))));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
+        expect(_key('today-sheet-loading'), findsOneWidget);
+        expect(find.text('0/0'), findsNothing);
+
+        pending.addError(const OurneyException(OurneyErrorCode.offline));
+        await tester.pumpAndSettle();
+        expect(_key('today-sheet-error'), findsOneWidget);
+        expect(find.text('0/0'), findsNothing);
+
+        shouldFail = false;
+        await tester.tap(find.text('Retry'));
+        await tester.pumpAndSettle();
+        expect(find.text('All done for today'), findsWidgets);
+      },
+    );
   });
 
   group('Hub', () {

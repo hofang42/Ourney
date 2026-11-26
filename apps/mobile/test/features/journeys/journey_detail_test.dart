@@ -828,5 +828,43 @@ void main() {
         expect(numeral.style?.color, isNot(equals(UiCamera.onPhoto)));
       },
     );
+
+    testWidgets(
+      'F-40: DayViewerScreen renders journey-day-error with retry instead of noCheckIn when checkIns errors',
+      (tester) async {
+        final j = testJourney();
+        var shouldError = true;
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              journeyByIdProvider(j.id).overrideWith((_) => Stream.value(j)),
+              myCheckInsProvider(j.id).overrideWith(
+                (_) => shouldError
+                    ? Stream<List<CheckIn>>.error(StateError('db error'))
+                    : Stream.value([testCheckIn(j.id, testToday)]),
+              ),
+            ],
+            child: MaterialApp(
+              localizationsDelegates: const [
+                ...JourneysL10n.localizationsDelegates,
+                ...AppLocalizations.localizationsDelegates,
+              ],
+              supportedLocales: JourneysL10n.supportedLocales,
+              theme: OurneyTheme.build(Brightness.light),
+              home: DayViewerScreen(journeyId: j.id, date: testToday),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(_key('journey-day-error'), findsOneWidget);
+        expect(_key('journey-day-retry'), findsOneWidget);
+
+        shouldError = false;
+        await tester.tap(_key('journey-day-retry'));
+        await tester.pumpAndSettle();
+        expect(_key('journey-day-error'), findsNothing);
+        expect(_key('journey-day-photo'), findsOneWidget);
+      },
+    );
   });
 }

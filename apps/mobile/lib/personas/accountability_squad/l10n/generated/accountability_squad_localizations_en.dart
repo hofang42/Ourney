@@ -40,7 +40,7 @@ class AccountabilitySquadL10nEn extends AccountabilitySquadL10n {
 
   @override
   String accountability_squad_dayWeekMilestone(String day, int week) {
-    return 'DAY $day ★ WEEK $week';
+    return 'DAY $day · WEEK $week';
   }
 
   @override

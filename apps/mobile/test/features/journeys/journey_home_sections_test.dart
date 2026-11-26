@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/journeys/l10n/generated/journeys_localizations.dart';
@@ -80,6 +81,27 @@ void main() {
     await g.up();
     await tester.pump();
     expect(find.text('••,•'), findsNWidgets(2));
+
+    // F-40: Screen-reader SemanticsAction.tap toggles reveal on and off.
+    final handle = tester.ensureSemantics();
+    final holdNode = tester.getSemantics(_k('journey-chart-hold'));
+    expect(holdNode.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+    // ignore: deprecated_member_use
+    tester.binding.pipelineOwner.semanticsOwner!.performAction(
+      holdNode.id,
+      SemanticsAction.tap,
+    );
+    await tester.pump();
+    expect(find.text('65.2 kg'), findsOneWidget);
+    expect(find.text('62 kg'), findsOneWidget);
+    // ignore: deprecated_member_use
+    tester.binding.pipelineOwner.semanticsOwner!.performAction(
+      holdNode.id,
+      SemanticsAction.tap,
+    );
+    await tester.pump();
+    expect(find.text('••,•'), findsNWidgets(2));
+    handle.dispose();
   });
 
   testWidgets('flexer sparkline shows values and no hold button', (

@@ -155,6 +155,28 @@ void main() {
       expect(_key('wrapped-weights'), findsOneWidget);
     });
 
+    testWidgets(
+      'F-40: wrapped-hide-kg toggle reveals weights on weightLoss journeys and uses journey metricUnit',
+      (tester) async {
+        final j = testJourney(
+          status: JourneyStatus.ended,
+          templateId: TemplateId.weightLoss,
+          metricName: 'Weight',
+          metricUnit: 'lb',
+        );
+        await _open(tester, journey: j);
+        for (var i = 0; i < 4; i++) {
+          await tester.tapAt(const Offset(380, 500));
+          await tester.pumpAndSettle();
+        }
+        expect(_key('wrapped-weights'), findsNothing);
+        await tester.tap(_key('wrapped-hide-kg'));
+        await tester.pumpAndSettle();
+        expect(_key('wrapped-weights'), findsOneWidget);
+        expect(find.text('60.0 lb  >  56.0 lb'), findsOneWidget);
+      },
+    );
+
     testWidgets('U4: hide-kg and format are handed to the share card', (
       tester,
     ) async {

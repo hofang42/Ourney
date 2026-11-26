@@ -75,6 +75,7 @@ class FakeSharingRepository implements SharingRepository {
   final List<String> calls = [];
   final Completer<void>? unshareGate;
   Object? shareError;
+  Object? hideError;
   Object? linkError;
   PublicLinkResult? linkResult;
   Object? viewError;
@@ -154,6 +155,7 @@ class FakeSharingRepository implements SharingRepository {
   }) async {
     calls.add('hide:$checkInId:$hidden');
     await hideGate?.future;
+    if (hideError case final e?) throw e;
     final next = {...state.hiddenCheckInIds};
     hidden ? next.add(checkInId) : next.remove(checkInId);
     _setState(hidden: next);
