@@ -303,3 +303,6 @@ Deno.test("public-journey never falls back to an unthrottled lookup if the RPC f
   assertEquals(response.status, 500, "unavailable limiter status");
   assertEquals((await response.json()).error, "internal", "generic error body");
 });
+
+import "../waitlist-signup/index_test.ts";
+import "../notify-moderation/index_test.ts";

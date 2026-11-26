@@ -2,7 +2,7 @@
 //   POST /functions/v1/waitlist-signup
 //   body: {"email": "...", "lang": "vi"|"en", "platforms": ["ios","android"], "source": "landing",
 //          "website": ""}   <- honeypot, must stay empty
-// Stores the email through public.waitlist_signup (migration 0022, service role only) and sends a
+// Stores the email through public.waitlist_signup (migration 0022/0035, service role only) and sends a
 // thank-you email through Resend to NEW emails only (an existing email gets the same 200 and no
 // mail, so the form can neither reveal who signed up nor be used to mail-bomb someone).
 // Anonymous by design: deployed with --no-verify-jwt (config.toml verify_jwt = false).
@@ -14,8 +14,9 @@
 //   WAITLIST_NOTIFY_TO        optional: owner address that gets a short note for every new signup
 //   WAITLIST_ALLOWED_ORIGINS  optional comma-separated CORS allow-list
 //                             (default https://ourney.tech,https://www.ourney.tech)
-// No raw IP is stored: rate limiting keys on sha256 of the client IP.
-import { adminClient, json } from "../_shared/admin.ts";
+// No raw IP is stored: rate limiting keys on a keyed HMAC-SHA256 of cf-connecting-ip.
+import { isIP } from "node:net";
+import { adminClient, json, serviceRoleKey } from "../_shared/admin.ts";
 
 const MAX_BODY_BYTES = 2048;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -26,14 +27,24 @@ const RESEND_TIMEOUT_MS = 8000;
 type Lang = "vi" | "en";
 type SignupResult = { status: "created" | "exists" | "rate_limited" | "invalid"; id?: string };
 
-export function allowedOrigins(): string[] {
-  const raw = Deno.env.get("WAITLIST_ALLOWED_ORIGINS");
+export type WaitlistDeps = {
+  createAdmin?: typeof adminClient;
+  rateLimitSecret?: string;
+  fetchFn?: typeof fetch;
+  envGet?: (key: string) => string | undefined;
+};
+
+export function allowedOrigins(envGet: (key: string) => string | undefined = Deno.env.get): string[] {
+  const raw = envGet("WAITLIST_ALLOWED_ORIGINS");
   if (!raw) return DEFAULT_ORIGINS;
   return raw.split(",").map((s) => s.trim().replace(/\/+$/, "")).filter(Boolean);
 }
 
-function corsHeaders(origin: string | null): Record<string, string> {
-  const list = allowedOrigins();
+function corsHeaders(
+  origin: string | null,
+  envGet: (key: string) => string | undefined = Deno.env.get,
+): Record<string, string> {
+  const list = allowedOrigins(envGet);
   const allow = list.includes("*") ? "*" : origin && list.includes(origin) ? origin : list[0] ?? "";
   return {
     "Access-Control-Allow-Origin": allow,
@@ -44,8 +55,11 @@ function corsHeaders(origin: string | null): Record<string, string> {
   };
 }
 
-function originAllowed(origin: string | null): boolean {
-  const list = allowedOrigins();
+function originAllowed(
+  origin: string | null,
+  envGet: (key: string) => string | undefined = Deno.env.get,
+): boolean {
+  const list = allowedOrigins(envGet);
   if (list.includes("*")) return true;
   // Browsers always send Origin on a cross-origin POST; a missing Origin is a script, which the
   // rate limit and the honeypot cover.
@@ -65,14 +79,27 @@ export function normalizePlatforms(raw: unknown): string[] {
   return unique.length ? unique : ["android", "ios"];
 }
 
-function clientIp(req: Request): string | null {
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim() || null;
-  return req.headers.get("cf-connecting-ip") ?? req.headers.get("x-real-ip");
-}
-
-async function sha256Hex(input: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+/**
+ * F-05: Use Cloudflare's ingress `cf-connecting-ip` exclusively (never client-spoofable
+ * `X-Forwarded-For` or `X-Real-IP`), canonicalize IPv6, and compute a keyed HMAC-SHA256 digest.
+ * When no usable client IP is present, returns `null` so SQL charges the shared fallback bucket.
+ */
+export async function rateLimitIpHash(req: Request, secret?: string): Promise<string | null> {
+  const ip = (req.headers.get("cf-connecting-ip") ?? "").trim();
+  const family = isIP(ip);
+  if (family === 0 || ip.includes("%")) return null;
+  const canonicalIp = family === 6 ? new URL(`http://[${ip}]`).hostname : ip;
+  // Cloudflare uses this shared address for cross-zone Worker subrequests.
+  if (canonicalIp === "[2a06:98c0:3600::103]") return null;
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret ?? serviceRoleKey()),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const digest = await crypto.subtle.sign("HMAC", key, encoder.encode(`waitlist-signup-ip:v1:${canonicalIp}`));
   return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
@@ -128,11 +155,15 @@ ${paragraphs}
   return { subject: c.subject, text, html };
 }
 
-async function sendResend(payload: Record<string, unknown>): Promise<string | null> {
-  const key = Deno.env.get("RESEND_API_KEY");
+async function sendResend(
+  payload: Record<string, unknown>,
+  fetchFn: typeof fetch,
+  envGet: (key: string) => string | undefined,
+): Promise<string | null> {
+  const key = envGet("RESEND_API_KEY");
   if (!key) return "mail_not_configured: RESEND_API_KEY missing";
   try {
-    const res = await fetch(RESEND_URL, {
+    const res = await fetchFn(RESEND_URL, {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -148,40 +179,61 @@ async function sendResend(payload: Record<string, unknown>): Promise<string | nu
   }
 }
 
-async function sendConfirmation(email: string, lang: Lang): Promise<string | null> {
-  const from = Deno.env.get("WAITLIST_FROM");
+async function sendConfirmation(
+  email: string,
+  lang: Lang,
+  fetchFn: typeof fetch,
+  envGet: (key: string) => string | undefined,
+): Promise<string | null> {
+  const from = envGet("WAITLIST_FROM");
   if (!from) return "mail_not_configured: WAITLIST_FROM missing";
   const mail = confirmationEmail(lang);
-  const replyTo = Deno.env.get("WAITLIST_REPLY_TO");
-  return await sendResend({
-    from,
-    to: [email],
-    subject: mail.subject,
-    text: mail.text,
-    html: mail.html,
-    ...(replyTo ? { reply_to: replyTo } : {}),
-  });
+  const replyTo = envGet("WAITLIST_REPLY_TO");
+  return await sendResend(
+    {
+      from,
+      to: [email],
+      subject: mail.subject,
+      text: mail.text,
+      html: mail.html,
+      ...(replyTo ? { reply_to: replyTo } : {}),
+    },
+    fetchFn,
+    envGet,
+  );
 }
 
-async function notifyOwner(email: string, lang: Lang, platforms: string[]): Promise<void> {
-  const to = Deno.env.get("WAITLIST_NOTIFY_TO");
-  const from = Deno.env.get("WAITLIST_FROM");
+async function notifyOwner(
+  email: string,
+  lang: Lang,
+  platforms: string[],
+  fetchFn: typeof fetch,
+  envGet: (key: string) => string | undefined,
+): Promise<void> {
+  const to = envGet("WAITLIST_NOTIFY_TO");
+  const from = envGet("WAITLIST_FROM");
   if (!to || !from) return;
-  const err = await sendResend({
-    from,
-    to: to.split(",").map((s) => s.trim()).filter(Boolean),
-    subject: `[Ourney waitlist] ${email}`,
-    text: `New beta signup\nemail: ${email}\nlang: ${lang}\nplatforms: ${platforms.join(", ")}\n`,
-  });
+  const err = await sendResend(
+    {
+      from,
+      to: to.split(",").map((s) => s.trim()).filter(Boolean),
+      subject: `[Ourney waitlist] ${email}`,
+      text: `New beta signup\nemail: ${email}\nlang: ${lang}\nplatforms: ${platforms.join(", ")}\n`,
+    },
+    fetchFn,
+    envGet,
+  );
   if (err) console.error("waitlist-signup owner notify failed", err);
 }
 
-export async function handle(req: Request): Promise<Response> {
+export async function handle(req: Request, deps: WaitlistDeps = {}): Promise<Response> {
+  const envGet = deps.envGet ?? ((k: string) => Deno.env.get(k));
+  const fetchFn = deps.fetchFn ?? fetch;
   const origin = req.headers.get("origin");
-  const cors = corsHeaders(origin);
+  const cors = corsHeaders(origin, envGet);
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405, { ...cors, Allow: "POST" });
-  if (!originAllowed(origin)) return json({ error: "forbidden_origin" }, 403, cors);
+  if (!originAllowed(origin, envGet)) return json({ error: "forbidden_origin" }, 403, cors);
 
   const raw = await req.text();
   if (raw.length > MAX_BODY_BYTES) return json({ error: "payload_too_large" }, 413, cors);
@@ -202,10 +254,9 @@ export async function handle(req: Request): Promise<Response> {
   const lang: Lang = body.lang === "en" ? "en" : "vi";
   const platforms = normalizePlatforms(body.platforms);
   const source = typeof body.source === "string" ? body.source.slice(0, 64) : "landing";
-  const ip = clientIp(req);
-  const ipHash = ip ? await sha256Hex(`ourney-waitlist|${ip}`) : null;
+  const ipHash = await rateLimitIpHash(req, deps.rateLimitSecret);
 
-  const admin = adminClient();
+  const admin = (deps.createAdmin ?? adminClient)();
   const { data, error } = await admin.rpc("waitlist_signup", {
     p_email: email,
     p_lang: lang,
@@ -223,8 +274,8 @@ export async function handle(req: Request): Promise<Response> {
 
   if (result.status === "created" && result.id) {
     const [mailError] = await Promise.all([
-      sendConfirmation(email, lang),
-      notifyOwner(email, lang, platforms),
+      sendConfirmation(email, lang, fetchFn, envGet),
+      notifyOwner(email, lang, platforms, fetchFn, envGet),
     ]);
     if (mailError) console.error("waitlist-signup confirmation failed", mailError);
     const { error: markError } = await admin.rpc("waitlist_mark_confirmation", {
