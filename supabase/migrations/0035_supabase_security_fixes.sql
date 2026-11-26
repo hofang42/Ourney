@@ -821,8 +821,24 @@ as $$
      and not private.conversation_read_only(public.try_uuid((storage.foldername(p_name))[2]))
      and not exists (
        select 1 from public.messages m
-        where m.media_path = p_name
-           or m.id = public.try_uuid(substring(p_name from '/([0-9a-f-]{36})\.jpg$'))
+        where (
+          m.media_path = p_name
+          or m.id = public.try_uuid(substring(p_name from '/([0-9a-f-]{36})\.jpg$'))
+        )
+          and (
+            m.sender_id <> (select auth.uid())
+            or m.conversation_id <> public.try_uuid((storage.foldername(p_name))[2])
+            or m.deleted_at is not null
+            or m.moderated_at is not null
+            or exists (
+              select 1 from public.reports r
+               where r.target_message_id = m.id and r.deleted_at is null
+            )
+            or exists (
+              select 1 from public.moderation_queue mq
+               where mq.target_message_id = m.id
+            )
+          )
      )
      and not exists (
        select 1 from private.pending_storage_purge s

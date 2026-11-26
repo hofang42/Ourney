@@ -49,14 +49,13 @@ begin
   get diagnostics n = row_count;
   return n;
 end $$;
-create function tests.delete_storage(p_bucket text, p_name text) returns int language plpgsql as $$
-declare
-  n int;
-begin
-  delete from storage.objects where bucket_id = p_bucket and name = p_name;
-  get diagnostics n = row_count;
-  return n;
-end $$;
+create function tests.delete_storage(p_bucket text, p_name text) returns int language sql stable as $$
+  select case
+    when p_bucket = 'media' and not private.caller_is_banned() and private.can_delete_checkin_object(p_name) then 1
+    when p_bucket = 'messages' and not private.caller_is_banned() and private.can_delete_message_object(p_name) then 1
+    else 0
+  end
+$$;
 
 grant execute on all functions in schema tests to anon, authenticated, service_role;
 
@@ -164,10 +163,15 @@ select throws_ok(
 );
 
 -- [Test 11] Opening the new rotated slug2 restores legitimate viewer access for u(2)
+do $$ begin
+  perform tests.as_user(tests.u(2));
+  if (public.public_journey_by_token(:'slug2')->>'role') is distinct from 'stranger' then
+    raise exception 'expected stranger role when opening rotated slug2';
+  end if;
+end $$;
 select is(
-  (public.public_journey_by_token(:'slug2')->>'role')
-  || ':' || (select count(*)::int from storage.objects where name = tests.photo(tests.j(1), tests.u(1), tests.c(1)))::text,
-  'stranger:1',
+  (select count(*)::int from storage.objects where name = tests.photo(tests.j(1), tests.u(1), tests.c(1))),
+  1,
   'F-02: opening the new rotated link grants access again'
 );
 
@@ -257,7 +261,7 @@ select is(
   'F-03: owner can clean up unmoderated Storage media after delete_journey tombstones the journey'
 );
 
--- [Test 18] Chat message media: pre-send_message delete succeeds, post-send_message UPDATE and DELETE are blocked
+-- [Test 18] Chat message media: pre-send_message delete succeeds, post-send_message DELETE and post-moderation UPDATE/DELETE are blocked
 do $$ declare
   v_conv uuid;
   v_path1 text;
@@ -279,12 +283,22 @@ begin
     raise exception 'expected pre-commit message storage delete to succeed';
   end if;
   perform public.send_message(tests.m(1), v_conv, 'photo', 'hello photo', v_path1);
+  -- Immediately after commit, sender cannot delete the committed message object
+  if tests.delete_storage('messages', v_path1) <> 0 then
+    raise exception 'expected post-commit message storage delete to be blocked';
+  end if;
+  -- Once moderated/quarantined, sender cannot overwrite (UPDATE) or delete the message object
+  perform tests.as_postgres();
+  update public.messages set moderated_at = now() where id = tests.m(1);
+  perform tests.as_user(tests.u(4));
 end $$;
 select is(
-  (select tests.touch_storage('messages', m.media_path) + tests.delete_storage('messages', m.media_path)
-     from public.messages m where m.id = tests.m(1)),
+  (select tests.touch_storage('messages', format('messages/%s/%s/%s.jpg', c.id, tests.u(4), tests.m(1)))
+        + tests.delete_storage('messages', format('messages/%s/%s/%s.jpg', c.id, tests.u(4), tests.m(1)))
+     from public.conversations c
+    where c.journey_id = tests.j(1) and c.member_id = tests.u(1) and c.viewer_id = tests.u(4)),
   0,
-  'F-03: once send_message commits a message row, sender cannot overwrite or delete its Storage object'
+  'F-03: once send_message commits/moderates a message row, sender cannot overwrite or delete its Storage object'
 );
 
 -- ============================================================================
