@@ -49,7 +49,6 @@ Deno.test("public-journey resolves both links with the same privacy rules and re
     show_counts: false,
   };
   const tableRows: Record<string, Record<string, unknown>[]> = {
-    journeys: [journey],
     memberships: [membership],
     journey_share_consents: [],
     profiles: [{ display_name: "Test owner" }],
@@ -77,6 +76,18 @@ Deno.test("public-journey resolves both links with the same privacy rules and re
       fetch: async (input, init) => {
         const request = new Request(input, init);
         const url = new URL(request.url);
+        if (url.pathname === "/rest/v1/rpc/lookup_public_journey_for_edge") {
+          const { p_token, p_ip_hash } = await request.json();
+          assertEquals(request.method, "POST", "quota update method");
+          assertEquals(p_ip_hash, null, "missing Cloudflare IP uses the SQL fallback");
+          return Response.json({
+            journey: journey.public_token !== null &&
+                (p_token === journey.public_token || p_token === journey.public_slug)
+              ? journey
+              : null,
+            retry_after: 0,
+          });
+        }
         if (url.pathname === "/rest/v1/rpc/record_journey_view") {
           const { p_viewer_key } = await request.json();
           recordedViewerKeys.push(p_viewer_key);
@@ -89,26 +100,6 @@ Deno.test("public-journey resolves both links with the same privacy rules and re
         if (!rows || !columns) {
           throw new Error(`Unexpected Supabase request: ${url}`);
         }
-        let matchingRows = rows;
-        if (table === "journeys") {
-          const slugFilter = url.searchParams.get("public_slug");
-          const tokenFilter = url.searchParams.get("public_token");
-          assertEquals(
-            url.searchParams.get("deleted_at"),
-            "is.null",
-            "deleted journey filter",
-          );
-          if (slugFilter) {
-            assertEquals(tokenFilter, "not.is.null", "active token filter");
-            matchingRows = rows.filter((row) =>
-              slugFilter === `eq.${row.public_slug}` && row.public_token !== null
-            );
-          } else {
-            matchingRows = rows.filter((row) =>
-              tokenFilter === `eq.${row.public_token}`
-            );
-          }
-        }
         if (table === "memberships") {
           assertEquals(
             url.searchParams.get("journey_id"),
@@ -117,7 +108,7 @@ Deno.test("public-journey resolves both links with the same privacy rules and re
           );
         }
         return Response.json(
-          matchingRows.map((row) =>
+          rows.map((row) =>
             Object.fromEntries(columns.map((column) => [column, row[column]]))
           ),
         );
@@ -229,4 +220,86 @@ Deno.test("public-journey rejects missing and malformed identifiers before looku
     assertEquals(response.status, 404, "invalid link status");
     assertEquals((await response.json()).error, "not_found", "invalid link body");
   }
+});
+
+Deno.test("public-journey returns a non-cacheable 429 before loading journey data", async () => {
+  let lookupCalls = 0;
+  let tableCalls = 0;
+  const client = {
+    rpc(name: string) {
+      assertEquals(name, "lookup_public_journey_for_edge", "lookup RPC");
+      lookupCalls++;
+      return Promise.resolve({ data: { retry_after: 17, journey: null }, error: null });
+    },
+    from() {
+      tableCalls++;
+      return {
+        select: () => ({
+          eq: () => ({
+            is: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }),
+          }),
+        }),
+      };
+    },
+  } as unknown as ReturnType<typeof createClient>;
+  const response = await handle(
+    new Request(`https://public-journey.example.test/?token=${"a".repeat(40)}`),
+    { createAdmin: () => client },
+  );
+  assertEquals(response.status, 429, "throttled status");
+  assertEquals(response.headers.get("Retry-After"), "17", "window reset");
+  assertEquals(response.headers.get("Access-Control-Expose-Headers"), "Retry-After", "browser retry header");
+  assertEquals(response.headers.get("Cache-Control"), "no-store", "cache policy");
+  assertEquals((await response.json()).error, "rate_limited", "throttled body");
+  assertEquals(lookupCalls, 1, "one database round trip");
+  assertEquals(tableCalls, 0, "no downstream table calls");
+});
+
+Deno.test("public-journey sends only a keyed hash of the Cloudflare ingress IP", async () => {
+  const hashes: (string | null)[] = [];
+  const client = {
+    rpc(_name: string, { p_ip_hash }: { p_ip_hash: string | null }) {
+      hashes.push(p_ip_hash);
+      return Promise.resolve({ data: { retry_after: 0, journey: null }, error: null });
+    },
+  } as unknown as ReturnType<typeof createClient>;
+  const url = `https://public-journey.example.test/?token=${"a".repeat(40)}`;
+  const cases: Record<string, string>[] = [
+    { "cf-connecting-ip": "2001:db8::7", "x-forwarded-for": "203.0.113.8" },
+    { "cf-connecting-ip": "2001:0db8:0:0:0:0:0:0007", "x-real-ip": "203.0.113.9" },
+    { "cf-connecting-ip": "198.51.100.25" },
+    { "x-forwarded-for": "203.0.113.8", "x-real-ip": "203.0.113.9" },
+    { "cf-connecting-ip": "198.51.100.1, 198.51.100.2" },
+    { "cf-connecting-ip": "2a06:98c0:3600:0:0:0:0:103" },
+  ];
+  for (const headers of cases) {
+    await handle(new Request(url, { headers }), {
+      createAdmin: () => client,
+      rateLimitSecret: "test-key",
+    });
+  }
+  await handle(new Request(url, { headers: cases[0] }), {
+    createAdmin: () => client,
+    rateLimitSecret: "different-key",
+  });
+  assertEquals(/^[a-f0-9]{64}$/.test(hashes[0] ?? ""), true, "SHA-256 HMAC output");
+  assertEquals(hashes[0], hashes[1], "same IP across IPv6 spellings and forwarding values");
+  assertEquals(hashes[0] === hashes[2], false, "separate IP buckets");
+  assertEquals(hashes[3], null, "no caller-supplied forwarding fallback");
+  assertEquals(hashes[4], null, "reject a list instead of a single IP");
+  assertEquals(hashes[5], null, "the shared Cloudflare Worker address is not a client IP");
+  assertEquals(hashes[0] === hashes[6], false, "hash depends on the server key");
+});
+
+Deno.test("public-journey never falls back to an unthrottled lookup if the RPC fails", async () => {
+  const client = {
+    rpc: () => Promise.resolve({ data: null, error: { code: "PGRST202" } }),
+    from: () => { throw new Error("Lookup must stop when the limiter is unavailable"); },
+  } as unknown as ReturnType<typeof createClient>;
+  const response = await handle(
+    new Request(`https://public-journey.example.test/?token=${"a".repeat(40)}`),
+    { createAdmin: () => client },
+  );
+  assertEquals(response.status, 500, "unavailable limiter status");
+  assertEquals((await response.json()).error, "internal", "generic error body");
 });

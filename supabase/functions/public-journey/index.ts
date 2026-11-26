@@ -12,7 +12,8 @@
 // A view is recorded with viewer_key = sha256(token | user-agent | day salt) — no raw IP (S19).
 // Spike S7: Supabase rewrites `text/html` GET responses to `text/plain` on the default
 // supabase.co domain, so this returns JSON for a static page (e.g. GitHub Pages) to render.
-import { adminClient, chunk, json } from "../_shared/admin.ts";
+import { isIP } from "node:net";
+import { adminClient, chunk, json, serviceRoleKey } from "../_shared/admin.ts";
 
 const LEGACY_TOKEN_RE = /^[a-z0-9]{32,64}$/;
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*-[a-z2-7]{16}$/;
@@ -70,6 +71,23 @@ async function sha256Hex(input: string): Promise<string> {
   return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+async function rateLimitIpHash(req: Request, secret?: string): Promise<string | null> {
+  // Best-effort only: Supabase does not document an end-to-end trust guarantee here.
+  // A missing client address skips the IP quota. SQL always caps the resolved journey.
+  const ip = req.headers.get("cf-connecting-ip") ?? "";
+  const family = isIP(ip);
+  if (family === 0 || ip.includes("%")) return null;
+  const canonicalIp = family === 6 ? new URL(`http://[${ip}]`).hostname : ip;
+  // Cloudflare uses this shared address for cross-zone Worker subrequests.
+  if (canonicalIp === "[2a06:98c0:3600::103]") return null;
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw", encoder.encode(secret ?? serviceRoleKey()), { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+  );
+  const digest = await crypto.subtle.sign("HMAC", key, encoder.encode(`public-journey-ip:v1:${canonicalIp}`));
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 /** Formats `now` as `YYYY-MM-DD` in the journey's IANA timezone (fallback to UTC). */
 export function journeyLocalDay(timezone: string, now: Date = new Date()): string {
   try {
@@ -86,7 +104,7 @@ export function journeyLocalDay(timezone: string, now: Date = new Date()): strin
 
 export async function handle(
   req: Request,
-  deps: { createAdmin?: typeof adminClient; viewSalt?: string } = {},
+  deps: { createAdmin?: typeof adminClient; viewSalt?: string; rateLimitSecret?: string } = {},
 ): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (req.method !== "GET") return json({ error: "method_not_allowed" }, 405, { ...cors, Allow: "GET" });
@@ -100,22 +118,23 @@ export async function handle(
   }
 
   const admin = (deps.createAdmin ?? adminClient)();
-  const lookup = admin
-    .from("journeys")
-    .select(
-      "id, owner_id, public_token, kind, template_id, title, emoji, metric_name, metric_unit, start_date, duration_days, " +
-        "timezone, status, origin, layout, color, cover, story_title, story_intro, story_lessons, cover_checkin_id, show_counts",
-    )
-    .eq(isSlug ? "public_slug" : "public_token", token)
-    .is("deleted_at", null);
-  if (isSlug) lookup.not("public_token", "is", null);
-  const { data: journeyData, error } = await lookup.maybeSingle();
-  if (error) {
-    console.error("journey lookup failed", error.message);
+  const { data, error } = await admin.rpc("lookup_public_journey_for_edge", {
+    p_token: token,
+    p_ip_hash: await rateLimitIpHash(req, deps.rateLimitSecret),
+  });
+  if (error || !data || !Number.isInteger(data.retry_after) || data.retry_after < 0 || data.retry_after > 60) {
+    console.error("journey lookup failed", error?.code ?? "invalid_response");
     return json({ error: "internal" }, 500, cors);
   }
-  if (!journeyData) return notFound();
-  const journey = journeyData as unknown as JourneyRow;
+  if (data.retry_after > 0) {
+    return json({ error: "rate_limited" }, 429, {
+      ...cors,
+      "Retry-After": String(data.retry_after),
+      "Access-Control-Expose-Headers": "Retry-After",
+    });
+  }
+  if (!data.journey) return notFound();
+  const journey = data.journey as JourneyRow;
 
   const [members, consents, owner, checkIns, followers] = await Promise.all([
     admin.from("memberships").select("user_id, hide_metric, blur_media, joined_at")
