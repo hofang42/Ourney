@@ -4,18 +4,18 @@
     "ios": "1.0.0"
   },
   "recommended": {
-    "android": "1.2.1",
-    "ios": "1.2.1"
+    "android": "1.2.2",
+    "ios": "1.2.2"
   },
   "force_on_major": true,
   "notes": {
     "vi": [
-      "Tiện ích iOS đã hiển thị đúng nội dung hành trình",
-      "Chạm vào tiện ích mở camera đúng hành trình đang hiện"
+      "Cặp đôi: mỗi người tự đăng ảnh của mình, hai ảnh được ghép cạnh nhau mỗi ngày",
+      "Mời người ấy tham gia ngay từ màn đăng ảnh"
     ],
     "en": [
-      "iOS widgets now show your journey content",
-      "Tapping a widget opens the camera for the journey it shows"
+      "Couple: each partner posts their own photo, shown side by side each day",
+      "Invite your partner right from the post screen"
     ]
   }
 }
