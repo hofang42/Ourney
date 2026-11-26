@@ -319,7 +319,7 @@ do $$ declare
 begin
   perform tests.as_user(tests.u(5));
   v_code := (public.create_journey(
-    tests.j(4), 'group', 'couple', 'Couple Ritual', '💞',
+    tests.j(4), 'group', 'custom', 'Couple Ritual', '💞',
     null, null, false, current_date - 3, 30, 'UTC', 2, 'private', 'An', 'Binh'
   )).invite_code;
   perform tests.as_user(tests.u(6));
