@@ -4,18 +4,22 @@
     "ios": "1.0.0"
   },
   "recommended": {
-    "android": "1.2.2",
-    "ios": "1.2.2"
+    "android": "1.2.3",
+    "ios": "1.2.3"
   },
   "force_on_major": true,
   "notes": {
     "vi": [
-      "Cặp đôi: mỗi người tự đăng ảnh của mình, hai ảnh được ghép cạnh nhau mỗi ngày",
-      "Mời người ấy tham gia ngay từ màn đăng ảnh"
+      "Widget và thông báo nhẹ nhàng hơn: bỏ đồng hồ đếm ngược, có thể ẩn tên hành trình trên màn hình khoá",
+      "Xoá tài khoản xác nhận bằng mật khẩu hoặc mã OTP",
+      "Giờ nhắc đồng bộ giữa các máy; ảnh chưa gửi được giữ lại khi phiên đăng nhập hết hạn",
+      "Cải thiện độ tương phản, trình đọc màn hình và sửa nhiều lỗi nhỏ"
     ],
     "en": [
-      "Couple: each partner posts their own photo, shown side by side each day",
-      "Invite your partner right from the post screen"
+      "Gentler widgets and notifications: no countdown timers, option to hide journey names on the lock screen",
+      "Delete account can be confirmed with your password or a one-time code",
+      "Reminder times sync across devices; unsent photos are kept if your session expires",
+      "Better contrast and screen reader support, plus many small fixes"
     ]
   }
 }
