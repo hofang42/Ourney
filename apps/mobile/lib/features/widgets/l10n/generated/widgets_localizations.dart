@@ -146,6 +146,12 @@ abstract class WidgetsL10n {
   /// **'Đã sao chép nhật ký tiện ích'**
   String get widgets_diagnosticsCopied;
 
+  /// Toast shown when hidden widget diagnostics mode is unlocked.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã bật chế độ chẩn đoán'**
+  String get widgets_diagnosticsUnlocked;
+
   /// Section heading for the interactive widget preview gallery.
   ///
   /// In vi, this message translates to:

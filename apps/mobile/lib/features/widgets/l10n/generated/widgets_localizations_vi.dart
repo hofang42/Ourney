@@ -37,6 +37,9 @@ class WidgetsL10nVi extends WidgetsL10n {
   String get widgets_diagnosticsCopied => 'Đã sao chép nhật ký tiện ích';
 
   @override
+  String get widgets_diagnosticsUnlocked => 'Đã bật chế độ chẩn đoán';
+
+  @override
   String get widgets_secPreview => 'xem trước tiện ích';
 
   @override
