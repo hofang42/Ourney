@@ -39,7 +39,7 @@
       qr_desc: 'Quét mã QR bằng camera điện thoại để mở trực tiếp trang này trên iOS hoặc Android.',
       footer_tagline: 'Góp tấm hình, giữ nhịp mình',
       footer_home: 'trang chủ',
-      footer_beta: 'nhận lời mời',
+      footer_beta: 'Tải APK / Chờ iOS',
 
       /* Friend (/f/:token) */
       f_meta_title: 'ourney · lời mời kết bạn trên Ourney',
@@ -81,7 +81,7 @@
       p_meta_desc: 'Xem nhật ký ảnh mỗi ngày được chia sẻ trên Ourney: Góp tấm hình, giữ nhịp mình.',
       p_kicker: 'NHẬT KÝ ẢNH ĐƯỢC CHIA SẺ',
       p_kicker_group: 'NHẬT KÝ NHÓM ĐƯỢC CHIA SẺ',
-      p_kicker_imported: 'BỘ ẢNH KỶ NIỆM',
+      p_kicker_imported: 'BỘ ẢNH ĐÃ LƯU',
       p_loading: 'Đang tải nhật ký ảnh…',
       p_by_owner: (name) => `bởi ${name}`,
       p_by_anon: 'bởi Thành viên Ourney',
@@ -130,7 +130,7 @@
       qr_desc: 'Scan this QR code with your phone camera to open this link directly on iOS or Android.',
       footer_tagline: 'One photo at a time, at your own pace',
       footer_home: 'home',
-      footer_beta: 'get invite',
+      footer_beta: 'Android APK / iOS waitlist',
 
       /* Friend (/f/:token) */
       f_meta_title: 'ourney · friend invite on Ourney',
@@ -161,7 +161,7 @@
       j_desc: 'Easy to forget alone, easier when friends check in together. Open straight in the Ourney app or copy the code below to join the group’s Polaroid wall.',
       j_code_label: 'GROUP INVITE CODE',
       j_expired_h1: 'This group invite code is no longer active',
-      j_expired_desc: 'This group may have rotated its invite code or wrapped up its goal. Ask a member to send you the latest invite link.',
+      j_expired_desc: 'This group may have rotated its invite code or finished its goal. Ask a member to send you the latest invite link.',
       j_full_h1: 'This group is already full',
       j_full_desc: 'This group has reached its maximum member limit. You can start your own goal or ask your friends to create another group on Ourney.',
       j_invalid_h1: 'Invalid group invite code',
@@ -1537,22 +1537,10 @@
       introEl.textContent = introTxt;
     }
 
-    /* Photo & Day Count pills (never show "0 ảnh" / "0 photos") */
+    /* Photo & Day Count pills (never show "0 ảnh" / "0 photos", never mislabel consecutive streak as total days logged) */
     const statsRow = $('p-stats-row');
     const streakPill = $('p-streak-pill');
     const streakText = $('p-streak-text');
-    const streakVal = streak && typeof streak.current === 'number' && streak.current > 0
-      ? streak.current
-      : (streak && typeof streak.best === 'number' && streak.best > 0 ? streak.best : 0);
-
-    if (streakPill && streakText) {
-      if (streakVal > 0) {
-        streakPill.hidden = false;
-        streakText.textContent = dict.p_streak(streakVal);
-      } else {
-        streakPill.hidden = true;
-      }
-    }
 
     const uniqueDays = new Set(
       checkIns.map((c) => (c && typeof c.local_date === 'string' ? c.local_date : '')).filter(Boolean)
@@ -1572,6 +1560,16 @@
       } else {
         daysPill.hidden = true;
         daysText.textContent = '';
+      }
+    }
+
+    if (streakPill && streakText) {
+      if (checkIns.length === 0 && completedDays > 0) {
+        streakPill.hidden = false;
+        streakText.textContent = dict.p_streak(completedDays);
+      } else {
+        streakPill.hidden = true;
+        streakText.textContent = '';
       }
     }
 
@@ -1834,6 +1832,10 @@
     const homeHref = curLang === 'en' ? '/?lang=en' : '/';
     document.querySelectorAll('[data-home-link]').forEach((el) => {
       el.setAttribute('href', homeHref);
+    });
+    const betaHref = curLang === 'en' ? '/?lang=en#beta' : '/#beta';
+    document.querySelectorAll('[data-beta-link]').forEach((el) => {
+      el.setAttribute('href', betaHref);
     });
     document.querySelectorAll('[data-waitlist-link]').forEach((el) => {
       const forcedPlat = el.getAttribute('data-waitlist-plat') || (el.id === 'fallback-ios' ? 'ios' : '');

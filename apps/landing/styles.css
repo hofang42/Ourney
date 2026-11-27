@@ -2993,10 +2993,7 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   .hero-checkin-card,
   .hero-scroll-cue,
   .nav-inner > *,
-  .hcc-flame,
-  .hcc-flame.pop,
   .react-chip.pop .o-sticker,
-  .polaroid-waiting.wiggle,
   .link-skel-avatar,
   .link-skel-bar {
     animation: none !important;

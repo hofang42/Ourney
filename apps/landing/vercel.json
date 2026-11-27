@@ -5,7 +5,7 @@
   "redirects": [
     {
       "source": "/Ourney.apk",
-      "destination": "https://github.com/hofang42/ourney-releases/releases/latest/download/Ourney.apk",
+      "destination": "https://github.com/hofang42/ourney-releases/releases/download/v1.2.3/Ourney.apk",
       "permanent": false
     }
   ],

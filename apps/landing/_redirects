@@ -7,7 +7,7 @@
 # serve f.html, j.html, and p.html directly with HTTP 200 while preserving the
 # visitor's URL (/f/:token, /j/:code, /join/:code, /p/:token).
 
-/Ourney.apk  https://github.com/hofang42/ourney-releases/releases/latest/download/Ourney.apk  302
+/Ourney.apk  https://github.com/hofang42/ourney-releases/releases/download/v1.2.3/Ourney.apk  302
 
 /f/:token     /f  200
 /f/:token/    /f  200

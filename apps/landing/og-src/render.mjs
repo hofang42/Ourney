@@ -7,6 +7,7 @@
  */
 import http from 'node:http';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -15,7 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LANDING_DIR = path.resolve(__dirname, '..');
 const OG_OUT_DIR = path.join(LANDING_DIR, 'assets', 'og');
 const BRAND_OUT_DIR = path.join(LANDING_DIR, 'assets', 'brand');
-const REPORT_SHOTS_DIR = 'E:/Ourney/agy-work/reports/landing-seo-shots';
+const REPORT_SHOTS_DIR = path.join(os.tmpdir(), 'ourney-og-shots');
 
 fs.mkdirSync(OG_OUT_DIR, { recursive: true });
 fs.mkdirSync(BRAND_OUT_DIR, { recursive: true });

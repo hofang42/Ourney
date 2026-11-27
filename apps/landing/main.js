@@ -33,10 +33,16 @@
       stamp_1: 'Góp tấm hình,',
       stamp_2: 'giữ nhịp mình,',
       stamp_3: 'đi cùng nhau.',
-      hero_ticket_aria: 'Tải APK thử nghiệm cho Android hoặc đăng ký danh sách chờ iOS',
+      hero_ticket_aria: 'Tải APK cho Android hoặc đăng ký danh sách chờ iOS',
+      hero_ticket_aria_android: 'Tải APK cho Android',
+      hero_ticket_aria_ios: 'Đăng ký danh sách chờ iOS',
       ticket_kicker: 'BẢN THỬ NGHIỆM',
-      ticket_title: 'Android APK · Chờ iOS',
-      ticket_sub: 'Tải cho Android hoặc đăng ký chờ iOS',
+      ticket_title: 'Tải APK / Chờ iOS',
+      ticket_title_android: 'Tải APK cho Android',
+      ticket_title_ios: 'Đăng ký danh sách chờ iOS',
+      ticket_sub: 'Tải APK cho Android · Đăng ký danh sách chờ iOS',
+      ticket_sub_android: 'Bản cài đặt trực tiếp (Ourney.apk)',
+      ticket_sub_ios: 'Dành cho iPhone & iPad',
       hero_phone_alt: 'Màn hình chính Ourney: mục IELTS 7.5 ngày 21/30, 21 ngày đã chụp và nút Chụp hôm nay',
       hcc_t0: 'IELTS 7.5 · Ngày 21/30',
       hcc_b0: '21 ngày đã chụp',
@@ -51,10 +57,10 @@
       hero_cta_android: 'Tải APK cho Android',
       hero_cta_ios: 'Đăng ký danh sách chờ iOS',
       hero_apk_note: 'Android đã có bản thử nghiệm để tải (APK). Nếu dùng iPhone, bạn có thể đăng ký danh sách chờ.',
-      hero_apk_note_android: 'Android đã có bản thử nghiệm để tải trực tiếp (Ourney.apk). Nếu dùng thêm iPhone, bạn có thể đăng ký danh sách chờ bên dưới.',
-      hero_apk_note_ios: 'Bản iPhone đang mở đăng ký danh sách chờ ở bên dưới (Android đã có file APK thử nghiệm).',
       hero_scroll_aria: 'Cuộn xuống xem 6 giao diện',
       dock_cta_aria: 'Tải APK cho Android hoặc đăng ký danh sách chờ iOS',
+      dock_cta_aria_android: 'Tải APK cho Android',
+      dock_cta_aria_ios: 'Đăng ký danh sách chờ iOS',
       dock_cta_text: 'Bản thử nghiệm',
       dock_cta_text_android: 'Bản thử nghiệm',
       dock_cta_text_ios: 'Trên iPhone',
@@ -94,7 +100,7 @@
       how_s3_alt: 'Thẻ chia sẻ Story của mục Chạy sáng: 4,6 km, ngày 21',
       squad_eyebrow: 'đi cùng nhóm',
       squad_h2: 'Một mình dễ quên, có hội nhắc nhau thì nhớ',
-      squad_desc: 'Nhóm tối đa 10 thành viên, tham gia bằng mã mời 8 ký tự, không bảng xếp hạng hay đếm người theo dõi. Mở ứng dụng là thấy tường ảnh hôm nay ai đã check-in để thả cảm xúc cho nhau.',
+      squad_desc: 'Nhóm tối đa 10 thành viên, tham gia bằng mã mời 8 ký tự, không bảng xếp hạng hay đếm người theo dõi. Mở ứng dụng để xem hôm nay ai đã check-in và thả cảm xúc vào ảnh của nhau.',
       squad_chip_1: 'Nhóm tối đa 10 người · Mã mời 8 ký tự',
       squad_chip_2: 'Chạm thả cảm xúc trực tiếp bên cạnh',
       squad_wall_title: 'IELTS 7.5 · HỘI 4 NGƯỜI',
@@ -110,7 +116,7 @@
       finish_tick_2: 'Hiện tổng số ngày đã chụp và cột mốc đạt được',
       finish_tick_3: 'Ẩn bất kỳ con số nhạy cảm nào trước khi xuất',
       finish_a_alt: 'Poster chuyến đi Đà Lạt 7 ngày với cuộn phim các ngày',
-      finish_b_alt: 'Thẻ tổng kết chặng đường: 20 bức ảnh trong 20 ngày',
+      finish_b_alt: 'Thẻ tổng kết chặng 30 ngày: 20 ngày đã chụp trong 30 ngày',
       priv_eyebrow: 'riêng tư & trên máy',
       priv_h2: 'Có những mục tiêu chỉ cần lưu cho riêng mình',
       priv_desc: 'Bạn chọn quyền xem riêng cho từng mục tiêu. Với mục theo dõi cân nặng, số kg luôn được che thành dấu chấm, nhấn giữ nút bên dưới để xem thử.',
@@ -211,10 +217,16 @@
       stamp_1: 'One photo at a time,',
       stamp_2: 'at your own pace,',
       stamp_3: 'on your own or together.',
-      hero_ticket_aria: 'Download Android beta APK or join the iOS waitlist',
+      hero_ticket_aria: 'Download Android APK or join the iOS beta waitlist',
+      hero_ticket_aria_android: 'Download Android APK',
+      hero_ticket_aria_ios: 'Join iOS beta waitlist',
       ticket_kicker: 'BETA ACCESS',
-      ticket_title: 'Android APK · iOS Waitlist',
-      ticket_sub: 'Download on Android or join iOS waitlist',
+      ticket_title: 'Android APK / iOS waitlist',
+      ticket_title_android: 'Download Android APK',
+      ticket_title_ios: 'Join iOS beta waitlist',
+      ticket_sub: 'Download Android APK · Join iOS beta waitlist',
+      ticket_sub_android: 'Direct install (Ourney.apk)',
+      ticket_sub_ios: 'For iPhone & iPad',
       hero_phone_alt: 'Ourney app Hub screen: IELTS 7.5 Day 21/30 card, 21 days logged, and Snap Today button',
       hcc_t0: 'IELTS 7.5 · Day 21/30',
       hcc_b0: '21 days logged',
@@ -229,10 +241,10 @@
       hero_cta_android: 'Download Android APK',
       hero_cta_ios: 'Join iOS beta waitlist',
       hero_apk_note: 'Android already has a beta APK to download. If you use an iPhone, you can join the iOS waitlist.',
-      hero_apk_note_android: 'Android already has a direct beta APK download (Ourney.apk). Also on iPhone? Join the iOS waitlist below.',
-      hero_apk_note_ios: 'The iPhone beta waitlist is open below (Android already has a direct beta APK).',
       hero_scroll_aria: 'Scroll down to explore 6 layouts',
-      dock_cta_aria: 'Download Android APK or join the iOS waitlist',
+      dock_cta_aria: 'Download Android APK or join the iOS beta waitlist',
+      dock_cta_aria_android: 'Download Android APK',
+      dock_cta_aria_ios: 'Join iOS beta waitlist',
       dock_cta_text: 'Beta release',
       dock_cta_text_android: 'Beta release',
       dock_cta_text_ios: 'For iPhone',
@@ -288,7 +300,7 @@
       finish_tick_2: 'Show total days logged and milestones reached',
       finish_tick_3: 'Hide any sensitive metric before exporting',
       finish_a_alt: 'Da Lat 7-day trip poster with 35mm film strip frames',
-      finish_b_alt: 'Completed recap card: 20 photos across 20 days',
+      finish_b_alt: 'Completed 30-day recap card: 20 days logged out of 30',
       priv_eyebrow: 'privacy & local-first',
       priv_h2: 'Some goals are meant for your eyes only',
       priv_desc: 'Set visibility separately for each goal. On body and weight logs, exact numbers stay masked behind dots until you press and hold below.',
@@ -517,7 +529,11 @@
   const heroAndroidDl = $('hero-android-dl');
   const heroIosBeta = $('hero-ios-beta');
   const heroApkNote = $('hero-apk-note') || document.querySelector('.hero-apk-note');
+  const heroTicket = $('hero-ticket') || document.querySelector('.hero-ticket');
+  const ticketTitle = $('ticket-title') || document.querySelector('[data-i18n^="ticket_title"]');
+  const ticketSub = $('ticket-sub') || document.querySelector('[data-i18n^="ticket_sub"]');
   const navCta = $('nav-cta') || document.querySelector('.nav-cta');
+  const mobileDockEl = $('mobile-dock-cta') || document.querySelector('.mobile-dock-cta');
   const dockCtaText = $('dock-cta-text') || document.querySelector('[data-i18n^="dock_cta_text"]');
   const dockCtaBtn = $('dock-cta-btn') || document.querySelector('[data-i18n^="dock_cta_btn"]');
   const footerBeta = $('footer-beta') || document.querySelector('[data-i18n^="footer_beta"]');
@@ -536,10 +552,29 @@
         heroIosBeta.classList.remove('btn-secondary');
         heroIosBeta.classList.add('btn-primary');
       }
+      if (heroTicket) {
+        heroTicket.dataset.i18nAria = 'hero_ticket_aria_ios';
+        heroTicket.setAttribute('aria-label', dict.hero_ticket_aria_ios);
+        heroTicket.setAttribute('href', '#beta-waitlist-box');
+        heroTicket.setAttribute('data-select-plat', 'ios');
+      }
+      if (ticketTitle) {
+        ticketTitle.dataset.i18n = 'ticket_title_ios';
+        ticketTitle.textContent = dict.ticket_title_ios;
+      }
+      if (ticketSub) {
+        ticketSub.dataset.i18n = 'ticket_sub_ios';
+        ticketSub.textContent = dict.ticket_sub_ios;
+      }
       if (navCta) {
         navCta.dataset.i18n = 'nav_cta_ios';
         navCta.textContent = dict.nav_cta_ios;
         navCta.setAttribute('href', '#beta-waitlist-box');
+        navCta.setAttribute('data-select-plat', 'ios');
+      }
+      if (mobileDockEl) {
+        mobileDockEl.dataset.i18nAria = 'dock_cta_aria_ios';
+        mobileDockEl.setAttribute('aria-label', dict.dock_cta_aria_ios);
       }
       if (dockCtaText) {
         dockCtaText.dataset.i18n = 'dock_cta_text_ios';
@@ -549,16 +584,18 @@
         dockCtaBtn.dataset.i18n = 'dock_cta_btn_ios';
         dockCtaBtn.textContent = dict.dock_cta_btn_ios;
         dockCtaBtn.setAttribute('href', '#beta-waitlist-box');
+        dockCtaBtn.setAttribute('data-select-plat', 'ios');
         dockCtaBtn.removeAttribute('download');
       }
       if (footerBeta) {
         footerBeta.dataset.i18n = 'footer_beta_ios';
         footerBeta.textContent = dict.footer_beta_ios;
         footerBeta.setAttribute('href', '#beta-waitlist-box');
+        footerBeta.setAttribute('data-select-plat', 'ios');
       }
       if (heroApkNote) {
-        heroApkNote.dataset.i18n = 'hero_apk_note_ios';
-        heroApkNote.textContent = dict.hero_apk_note_ios;
+        heroApkNote.dataset.i18n = 'hero_apk_note';
+        heroApkNote.textContent = dict.hero_apk_note;
       }
       if (betaEyebrow) {
         betaEyebrow.dataset.i18n = 'beta_eyebrow_ios';
@@ -573,10 +610,29 @@
       if (heroAndroidDl) heroAndroidDl.hidden = false;
       if (betaApkBox) betaApkBox.hidden = false;
       if (heroIosBeta) heroIosBeta.hidden = true;
+      if (heroTicket) {
+        heroTicket.dataset.i18nAria = 'hero_ticket_aria_android';
+        heroTicket.setAttribute('aria-label', dict.hero_ticket_aria_android);
+        heroTicket.setAttribute('href', '#beta-apk-box');
+        heroTicket.removeAttribute('data-select-plat');
+      }
+      if (ticketTitle) {
+        ticketTitle.dataset.i18n = 'ticket_title_android';
+        ticketTitle.textContent = dict.ticket_title_android;
+      }
+      if (ticketSub) {
+        ticketSub.dataset.i18n = 'ticket_sub_android';
+        ticketSub.textContent = dict.ticket_sub_android;
+      }
       if (navCta) {
         navCta.dataset.i18n = 'nav_cta_android';
         navCta.textContent = dict.nav_cta_android;
         navCta.setAttribute('href', '#beta-apk-box');
+        navCta.removeAttribute('data-select-plat');
+      }
+      if (mobileDockEl) {
+        mobileDockEl.dataset.i18nAria = 'dock_cta_aria_android';
+        mobileDockEl.setAttribute('aria-label', dict.dock_cta_aria_android);
       }
       if (dockCtaText) {
         dockCtaText.dataset.i18n = 'dock_cta_text_android';
@@ -587,15 +643,17 @@
         dockCtaBtn.textContent = dict.dock_cta_btn_android;
         dockCtaBtn.setAttribute('href', '/Ourney.apk');
         dockCtaBtn.setAttribute('download', 'Ourney.apk');
+        dockCtaBtn.removeAttribute('data-select-plat');
       }
       if (footerBeta) {
         footerBeta.dataset.i18n = 'footer_beta_android';
         footerBeta.textContent = dict.footer_beta_android;
         footerBeta.setAttribute('href', '#beta-apk-box');
+        footerBeta.removeAttribute('data-select-plat');
       }
       if (heroApkNote) {
-        heroApkNote.dataset.i18n = 'hero_apk_note_android';
-        heroApkNote.textContent = dict.hero_apk_note_android;
+        heroApkNote.dataset.i18n = 'hero_apk_note';
+        heroApkNote.textContent = dict.hero_apk_note;
       }
       if (betaEyebrow) {
         betaEyebrow.dataset.i18n = 'beta_eyebrow_android';
@@ -614,10 +672,29 @@
         heroIosBeta.classList.remove('btn-primary');
         heroIosBeta.classList.add('btn-secondary');
       }
+      if (heroTicket) {
+        heroTicket.dataset.i18nAria = 'hero_ticket_aria';
+        heroTicket.setAttribute('aria-label', dict.hero_ticket_aria);
+        heroTicket.setAttribute('href', '#beta');
+        heroTicket.removeAttribute('data-select-plat');
+      }
+      if (ticketTitle) {
+        ticketTitle.dataset.i18n = 'ticket_title';
+        ticketTitle.textContent = dict.ticket_title;
+      }
+      if (ticketSub) {
+        ticketSub.dataset.i18n = 'ticket_sub';
+        ticketSub.textContent = dict.ticket_sub;
+      }
       if (navCta) {
         navCta.dataset.i18n = 'nav_cta';
         navCta.textContent = dict.nav_cta;
         navCta.setAttribute('href', '#beta');
+        navCta.removeAttribute('data-select-plat');
+      }
+      if (mobileDockEl) {
+        mobileDockEl.dataset.i18nAria = 'dock_cta_aria';
+        mobileDockEl.setAttribute('aria-label', dict.dock_cta_aria);
       }
       if (dockCtaText) {
         dockCtaText.dataset.i18n = 'dock_cta_text';
@@ -628,11 +705,13 @@
         dockCtaBtn.textContent = dict.dock_cta_btn;
         dockCtaBtn.setAttribute('href', '#beta');
         dockCtaBtn.removeAttribute('download');
+        dockCtaBtn.removeAttribute('data-select-plat');
       }
       if (footerBeta) {
         footerBeta.dataset.i18n = 'footer_beta';
         footerBeta.textContent = dict.footer_beta;
         footerBeta.setAttribute('href', '#beta');
+        footerBeta.removeAttribute('data-select-plat');
       }
       if (heroApkNote) {
         heroApkNote.dataset.i18n = 'hero_apk_note';
@@ -1029,13 +1108,10 @@
 
   reduceMotionMql.addEventListener('change', () => {
     if (isReducedMotion()) {
-      clearTimeout(streakTickTimer);
       clearTimeout(swapTimer);
-      streakTicked = true;
       settleHero();
       renderHeroCycle(curHeroCycle);
       resetHeroTransforms();
-      if (hccFlame) hccFlame.classList.remove('pop');
       reactChips.forEach((c) => c.classList.remove('pop'));
       if (phoneJ) phoneJ.classList.remove('swapping');
       if (finishPhones) finishPhones.classList.add('in');
@@ -1215,16 +1291,21 @@
     });
   });
 
-  document.querySelectorAll('[data-select-plat]').forEach((link) => {
+  const platSelectLinks = new Set(
+    [...document.querySelectorAll('[data-select-plat]'), heroIosBeta, heroTicket, navCta, dockCtaBtn, footerBeta]
+      .filter(Boolean)
+  );
+  platSelectLinks.forEach((link) => {
     link.addEventListener('click', () => {
-      const targetPlat = link.getAttribute('data-select-plat');
+      const targetPlat = link.getAttribute('data-select-plat') ||
+        (platform === 'ios' && link.getAttribute('href') === '#beta-waitlist-box' ? 'ios' : '');
       if (targetPlat === 'ios' || targetPlat === 'android') {
         setSelectedPlatforms([targetPlat]);
         if (formMsgKey === 'form_plat_err') announce('');
+        setTimeout(() => {
+          if (email) email.focus({ preventScroll: true });
+        }, 320);
       }
-      setTimeout(() => {
-        if (email) email.focus({ preventScroll: true });
-      }, 320);
     });
   });
 
