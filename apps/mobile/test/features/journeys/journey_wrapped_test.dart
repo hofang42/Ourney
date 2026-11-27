@@ -24,7 +24,7 @@ import 'package:ourney/features/sharing/data/sharing_providers.dart'
     show shareStateProvider;
 import 'package:ourney/features/social/data/social_providers.dart'
     show defaultSharePositionOrigin;
-import 'package:ourney/ui/ui.dart' show OurneyTheme, UiButton;
+import 'package:ourney/ui/ui.dart' show OurneyTheme, UiButton, UiBackHeader;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart' show testBackendConfig;
@@ -39,6 +39,8 @@ Future<JourneysHarness> _open(
   WidgetTester tester, {
   Journey? journey,
   Size size = const Size(420, 1000),
+  Locale locale = const Locale('en'),
+  double? textScale,
 }) async {
   final j =
       journey ??
@@ -46,7 +48,7 @@ Future<JourneysHarness> _open(
   final days = [10, 11, 12, 14].map((d) => LocalDate(2026, 10, d));
   final h = await pumpJourneys(
     tester,
-    locale: const Locale('en'),
+    locale: locale,
     location: JourneysPaths.wrapped(j.id),
     journeys: FakeJourneyRepository(
       journeys: [j],
@@ -58,11 +60,34 @@ Future<JourneysHarness> _open(
     ]),
   );
   tester.view.physicalSize = size;
+  if (textScale != null) {
+    tester.platformDispatcher.textScaleFactorTestValue = textScale;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+  }
   await tester.pumpAndSettle();
   return h;
 }
 
 void main() {
+  testWidgets(
+    'Vietnamese wrapped header has no clipped title on a small phone',
+    (tester) async {
+      await _open(
+        tester,
+        size: const Size(360, 640),
+        locale: const Locale('vi'),
+        textScale: 1.35,
+      );
+      final header = find.byType(UiBackHeader);
+      expect(tester.widget<UiBackHeader>(header).title, isNull);
+      expect(
+        find.descendant(of: header, matching: find.byType(Text)),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('memory summary title with length does not repeat duration', (
     tester,
   ) async {
@@ -84,7 +109,8 @@ void main() {
     ) async {
       await _open(tester);
       expect(_key('journey-wrapped'), findsOneWidget);
-      expect(find.text('Journey complete'), findsOneWidget);
+      expect(find.text('Journey complete'), findsNothing);
+      expect(find.bySemanticsLabel('Journey complete'), findsOneWidget);
       // Minimal skin has two pages.
       expect(find.text('4 MOMENTS OVER 4 DAYS'), findsOneWidget);
       expect(_key('wrapped-segment-0'), findsOneWidget);
