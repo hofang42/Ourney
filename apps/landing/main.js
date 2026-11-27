@@ -9,9 +9,9 @@
   /* --- 1. Bilingual Copy Dictionary (vi default + en) --- */
   const COPY = {
     vi: {
-      title: 'ourney · Góp tấm hình, giữ nhịp mình · nhật ký ảnh mỗi ngày',
-      meta_desc: 'Ourney là nhật ký ảnh mỗi ngày cho việc bạn muốn làm đều: học ngoại ngữ, chạy bộ, giảm cân, đi du lịch hay đọc sách, tự lưu riêng hoặc chụp cùng hội bạn.',
-      og_title: 'ourney · Góp tấm hình, giữ nhịp mình',
+      title: 'Ourney · Góp tấm hình, giữ nhịp mình · nhật ký ảnh mỗi ngày',
+      meta_desc: 'Nhật ký ảnh cho việc bạn muốn làm đều: học tiếng Anh, chạy bộ, giảm cân, du lịch, đọc sách. Mỗi lần check-in là một tấm hình, lưu riêng hoặc cùng hội bạn.',
+      og_title: 'Ourney · Góp tấm hình, giữ nhịp mình',
       og_image: 'https://ourney.tech/assets/og/og-default.png',
       og_image_alt: 'Ourney: Góp tấm hình, giữ nhịp mình. Nhật ký ảnh mỗi ngày trên Android và iOS',
       og_url: 'https://ourney.tech/',
@@ -197,9 +197,9 @@
       nf_cta: 'về trang chủ ourney'
     },
     en: {
-      title: 'ourney · One photo at a time, at your own pace · daily photo diary',
-      meta_desc: 'Ourney is a daily photo diary for what you want to keep up: language study, running, body goals, a trip, or daily reading, on your own or with close friends.',
-      og_title: 'ourney · One photo at a time, at your own pace',
+      title: 'Ourney · One photo at a time, at your own pace',
+      meta_desc: 'A photo diary for what you want to keep up: study, running, body goals, a trip, reading. Each check-in is one photo, kept private or shared with friends.',
+      og_title: 'Ourney · One photo at a time, at your own pace',
       og_image: 'https://ourney.tech/assets/og/og-default-en.png',
       og_image_alt: 'Ourney: One photo at a time, at your own pace. Daily photo diary on Android and iOS',
       og_url: 'https://ourney.tech/?lang=en',
