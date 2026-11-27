@@ -231,8 +231,7 @@ class WidgetsL10nVi extends WidgetsL10n {
   String get widgets_autoOptionTitle => 'Tự động';
 
   @override
-  String get widgets_autoTodaySubtitle =>
-      'Ưu tiên hành trình cần chụp hôm nay';
+  String get widgets_autoTodaySubtitle => 'Ưu tiên hành trình cần chụp hôm nay';
 
   @override
   String get widgets_autoStreakSubtitle =>
