@@ -121,10 +121,10 @@ class OnboardingL10nEn extends OnboardingL10n {
   String get onboarding_quizStart => 'Let us start';
 
   @override
-  String get onboarding_splashTagline1 => 'snap one.';
+  String get onboarding_splashTagline1 => 'One photo at a time,';
 
   @override
-  String get onboarding_splashTagline2 => 'keep a streak.';
+  String get onboarding_splashTagline2 => 'at your own pace';
 
   @override
   String get onboarding_splashTagline3 => 'go together.';

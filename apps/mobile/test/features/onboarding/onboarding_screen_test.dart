@@ -42,11 +42,11 @@ void main() {
     ) async {
       await tester.pumpWidget(
         testApp(
-          const SizedBox.expand(child: UiSplash(tagline: 'giữ một chuỗi.')),
+          const SizedBox.expand(child: UiSplash(tagline: 'giữ nhịp mình')),
         ),
       );
       expect(byKey('ui-splash'), findsOneWidget);
-      expect(find.text('giữ một chuỗi.'), findsOneWidget);
+      expect(find.text('giữ nhịp mình'), findsOneWidget);
       expect(find.bySemanticsLabel('Ourney'), findsOneWidget);
       expect(find.byType(UiStickerTile), findsNWidgets(6));
     });
@@ -70,9 +70,9 @@ void main() {
 
     testWidgets('the gate rotates taglines, then fades out', (tester) async {
       await pumpUnsettled(tester);
-      expect(find.text('chụp một tấm.'), findsOneWidget);
+      expect(find.text('Góp tấm hình,'), findsOneWidget);
       await tester.pump(const Duration(milliseconds: 1200));
-      expect(find.text('giữ một chuỗi.'), findsOneWidget);
+      expect(find.text('giữ nhịp mình'), findsOneWidget);
       await tester.pumpAndSettle();
       expect(byKey('ui-splash'), findsNothing);
     });
