@@ -27,22 +27,21 @@ abstract final class _E4 {
   static const double camD = 60;
   static const double camDCompact = 52;
   static const double camDRoute = UiSize.shutter;
-  static const double capH = 52;
+  static const double capH = dockE4CapsuleHeight;
   static const double capsuleSlotInset = 2;
-  static const double capsuleVertPad = 10.4;
+  static const double capsuleLabelSidePad = dockE4CapsuleLabelSidePad;
+  static const double capsuleVertPad = dockE4CapsuleVertPad;
   static const double islandOverCapsule = 12;
   static const double ring = 40;
-  static const double glyph = 24;
-  static const double glyphActiveScale = 1.08;
-  static const double labelGap = 3;
+  static const double glyph = dockE4GlyphSize;
+  static const double labelGap = dockE4LabelGap;
   static const double camIcon = 28;
   static const double camIconCompact = 24;
   static const double camIconRoute = 30;
   static const double topPad = UiSpace.xs;
   static const double minBottomInset = 8;
   static const double bottomExtra = 8;
-  static const double capsuleOpticalLift =
-      glyph * (glyphActiveScale - 1) / 4; // 0.48
+  static const double capsuleOpticalLift = dockE4CapsuleOpticalLift;
 }
 
 /// Pure E4 dock layout geometry for a given screen [width] and state.
@@ -309,7 +308,9 @@ class UiDock extends StatelessWidget {
 
   /// E4 compact state (scroll-driven): islands and camera shrink to 52dp,
   /// labels collapse, and the selection capsule morphs into a 40dp circle.
-  /// Ignored when [camera] is true.
+  /// Ignored at rest when [camera] is true; if [camera] flips from false to
+  /// true while compact, the 220ms camera morph starts from the 52dp compact
+  /// geometry.
   final bool compact;
 
   /// Fired after a 400ms press on the center (journey wheel).
@@ -373,44 +374,37 @@ class UiDock extends StatelessWidget {
           islandH: _E4.islandH,
           tabsPerSide: tabsPerSide,
         );
-        final labels = [for (final e in items) e.label];
-        final fallbackMaxW = math.max(
+        final labelMaxW = math.max(
           0.0,
-          shownBaseGeo.capsuleWidth - 2 * UiBorder.thin,
+          shownBaseGeo.capsuleWidth - _E4.capsuleLabelSidePad,
         );
-        final labelFit = dockLabelFit(
-          context,
-          labels,
-          fallbackMaxW,
-          slotW: shownBaseGeo.slotWidth,
-          pillW: shownBaseGeo.capsuleWidth,
-        );
+        final labels = [for (final e in items) e.label];
+        final labelFit = dockLabelFit(context, labels, labelMaxW);
         final textScale = MediaQuery.textScalerOf(context)
             .clamp(maxScaleFactor: dockLabelMaxScale)
             .scale(1);
-        final effectiveScale = math.max(1.0, labelFit * textScale);
-        final labelMaxW = dockLabelChordWidth(
-          shownBaseGeo.slotWidth,
-          shownBaseGeo.capsuleWidth,
-          effectiveScale: effectiveScale,
-        );
-        final lineH = dockLabelLineHeight * effectiveScale;
+        final lineH = dockLabelLineHeight * labelFit * textScale;
         final capH = math.max(
           _E4.capH,
           _E4.glyph + _E4.labelGap + lineH + _E4.capsuleVertPad,
         );
         final baseIslandH = math.max(_E4.islandH, capH + _E4.islandOverCapsule);
 
-        final targetT = compact ? 1.0 : 0.0;
+        final effectiveCompact = !camera && compact;
+        final targetT = effectiveCompact ? 1.0 : 0.0;
 
         return TweenAnimationBuilder<double>(
           tween: Tween<double>(end: targetT),
-          duration: UiMotion.of(context, UiMotion.medium),
+          duration: camera
+              ? Duration.zero
+              : UiMotion.of(context, UiMotion.medium),
           curve: UiCurves.easeOutStrong,
           builder: (context, compactT, _) {
-            final liveCompactT = UiMotion.reduced(context)
-                ? targetT
-                : compactT.clamp(0.0, 1.0);
+            final liveCompactT = camera
+                ? 0.0
+                : (UiMotion.reduced(context)
+                      ? targetT
+                      : compactT.clamp(0.0, 1.0));
             final shellCam = lerpDouble(
               _E4.camD,
               _E4.camDCompact,
@@ -419,11 +413,6 @@ class UiDock extends StatelessWidget {
             final shellCamIcon = lerpDouble(
               _E4.camIcon,
               _E4.camIconCompact,
-              liveCompactT,
-            )!;
-            final shellIslandH = lerpDouble(
-              baseIslandH,
-              _E4.islandHCompact,
               liveCompactT,
             )!;
 
@@ -454,9 +443,6 @@ class UiDock extends StatelessWidget {
 
             return _UiDockCenterMorph(
               camera: camera,
-              fromDiameter: shellCam,
-              fromIconSize: shellCamIcon,
-              fromIslandH: shellIslandH,
               fromCompactT: liveCompactT,
               accent: pillFill,
               onAccent: fgOnAccent,
@@ -465,140 +451,143 @@ class UiDock extends StatelessWidget {
               shellShadowOffset: shellShadowOffset,
               shadowColor: shadowColor,
               child: centerSlot,
-              builder:
-                  (
-                    context,
-                    cameraT,
-                    effShellCam,
-                    effShellIslandH,
-                    effCompactT,
-                    morphingCenter,
-                  ) {
-                    final currentCam = lerpDouble(
-                      effShellCam,
-                      _E4.camDRoute,
-                      cameraT,
-                    )!;
-                    final currentIslandH = lerpDouble(
-                      effShellIslandH,
-                      _E4.islandH,
-                      cameraT,
-                    )!;
-                    final currentBaseIslandH = lerpDouble(
-                      baseIslandH,
-                      _E4.islandH,
-                      cameraT,
-                    )!;
-                    final currentBandH = lerpDouble(
-                      baseIslandH,
-                      _E4.camDRoute,
-                      cameraT,
-                    )!;
-                    final geo = UiDockGeometry.compute(
-                      width: width,
-                      cam: currentCam,
-                      islandH: currentIslandH,
-                      topPad: _E4.topPad,
-                      bandH: currentBandH,
-                      bottomGap: bottomGap,
-                      baseIslandH: currentBaseIslandH,
-                      capH: capH,
-                      tabsPerSide: tabsPerSide,
-                    );
-                    final centerBoxSize = math.max(
-                      geo.cameraRect.width,
-                      _E4.camDRoute,
-                    );
+              builder: (context, cameraT, shellCompactT, morphingCenter) {
+                final effShellCam = lerpDouble(
+                  _E4.camD,
+                  _E4.camDCompact,
+                  shellCompactT,
+                )!;
+                final effShellIslandH = lerpDouble(
+                  baseIslandH,
+                  _E4.islandHCompact,
+                  shellCompactT,
+                )!;
+                final effCompactT = lerpDouble(shellCompactT, 0.0, cameraT)!;
+                final currentCam = lerpDouble(
+                  effShellCam,
+                  _E4.camDRoute,
+                  cameraT,
+                )!;
+                final currentIslandH = lerpDouble(
+                  effShellIslandH,
+                  _E4.islandH,
+                  cameraT,
+                )!;
+                final currentBaseIslandH = lerpDouble(
+                  baseIslandH,
+                  _E4.islandH,
+                  cameraT,
+                )!;
+                final currentBandH = lerpDouble(
+                  baseIslandH,
+                  _E4.camDRoute,
+                  cameraT,
+                )!;
+                final geo = UiDockGeometry.compute(
+                  width: width,
+                  cam: currentCam,
+                  islandH: currentIslandH,
+                  topPad: _E4.topPad,
+                  bandH: currentBandH,
+                  bottomGap: bottomGap,
+                  baseIslandH: currentBaseIslandH,
+                  capH: capH,
+                  tabsPerSide: tabsPerSide,
+                );
+                final centerBoxSize = math.max(
+                  geo.cameraRect.width,
+                  _E4.camDRoute,
+                );
 
-                    return SizedBox(
-                      width: width,
-                      height: geo.dockHeight,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          _DockIsland(
-                            rect: geo.leftIsland,
-                            camera: camera,
-                            useLiquid: useLiquid,
-                            dark: dark,
-                            tintAlpha: tintAlpha,
-                            outline: outline,
-                            stroke: stroke,
-                            shadowOffset: shadowOffset,
-                            shadowColor: shadowColor,
-                            reduceTransparency: reduceTransparency,
-                          ),
-                          _DockIsland(
-                            rect: geo.rightIsland,
-                            camera: camera,
-                            useLiquid: useLiquid,
-                            dark: dark,
-                            tintAlpha: tintAlpha,
-                            outline: outline,
-                            stroke: stroke,
-                            shadowOffset: shadowOffset,
-                            shadowColor: shadowColor,
-                            reduceTransparency: reduceTransparency,
-                          ),
-                          if (!camera && activeSlotIndex >= 0)
-                            _DockSelectionSlide(
-                              activeIndex: activeSlotIndex,
-                              geometry: geo,
-                              expandedCapsuleWidth: shownBaseGeo.capsuleWidth,
-                              compactT: effCompactT,
-                              accent: pillFill,
-                              surface: ui.surface,
-                              outline: outline,
-                              shadow: shadowColor,
-                              useLiquid: useLiquid,
-                              dark: dark,
-                            ),
-                          for (var i = 0; i < leftItems.length; i++)
-                            Positioned.fromRect(
-                              rect: geo.tabSlots[i],
-                              child: DockTab(
-                                item: leftItems[i],
-                                camera: camera,
-                                onAccent: onAccent,
-                                labelFit: labelFit,
-                                labelMaxWidth: labelMaxW,
-                                lift: 0,
-                                labelGap: _E4.labelGap,
-                                compactT: effCompactT,
-                              ),
-                            ),
-                          for (var i = 0; i < rightItems.length; i++)
-                            Positioned.fromRect(
-                              rect: geo.tabSlots[tabsPerSide + i],
-                              child: DockTab(
-                                item: rightItems[i],
-                                camera: camera,
-                                onAccent: onAccent,
-                                labelFit: labelFit,
-                                labelMaxWidth: labelMaxW,
-                                lift: 0,
-                                labelGap: _E4.labelGap,
-                                compactT: effCompactT,
-                              ),
-                            ),
-                          Positioned(
-                            left: (width - centerBoxSize) / 2,
-                            top: geo.centerY - centerBoxSize / 2,
-                            width: centerBoxSize,
-                            height: centerBoxSize,
-                            child: Center(
-                              child: centerAnchorKey != null
-                                  ? KeyedSubtree(
-                                      key: centerAnchorKey,
-                                      child: morphingCenter,
-                                    )
-                                  : morphingCenter,
-                            ),
-                          ),
-                        ],
+                return SizedBox(
+                  width: width,
+                  height: geo.dockHeight,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      _DockIsland(
+                        rect: geo.leftIsland,
+                        camera: camera,
+                        useLiquid: useLiquid,
+                        dark: dark,
+                        tintAlpha: tintAlpha,
+                        outline: outline,
+                        stroke: stroke,
+                        shadowOffset: shadowOffset,
+                        shadowColor: shadowColor,
+                        reduceTransparency: reduceTransparency,
                       ),
-                    );
-                  },
+                      _DockIsland(
+                        rect: geo.rightIsland,
+                        camera: camera,
+                        useLiquid: useLiquid,
+                        dark: dark,
+                        tintAlpha: tintAlpha,
+                        outline: outline,
+                        stroke: stroke,
+                        shadowOffset: shadowOffset,
+                        shadowColor: shadowColor,
+                        reduceTransparency: reduceTransparency,
+                      ),
+                      if (!camera && activeSlotIndex >= 0)
+                        _DockSelectionSlide(
+                          activeIndex: activeSlotIndex,
+                          geometry: geo,
+                          expandedCapsuleWidth: shownBaseGeo.capsuleWidth,
+                          compactT: effCompactT,
+                          accent: pillFill,
+                          surface: ui.surface,
+                          outline: outline,
+                          shadow: shadowColor,
+                          useLiquid: useLiquid,
+                          dark: dark,
+                        ),
+                      for (var i = 0; i < leftItems.length; i++)
+                        Positioned.fromRect(
+                          rect: geo.tabSlots[i],
+                          child: DockTab(
+                            item: leftItems[i],
+                            camera: camera,
+                            onAccent: onAccent,
+                            labelFit: labelFit,
+                            labelMaxWidth: labelMaxW,
+                            lift: 0,
+                            labelGap: _E4.labelGap,
+                            compactT: effCompactT,
+                          ),
+                        ),
+                      for (var i = 0; i < rightItems.length; i++)
+                        Positioned.fromRect(
+                          rect: geo.tabSlots[tabsPerSide + i],
+                          child: DockTab(
+                            item: rightItems[i],
+                            camera: camera,
+                            onAccent: onAccent,
+                            labelFit: labelFit,
+                            labelMaxWidth: labelMaxW,
+                            lift: 0,
+                            labelGap: _E4.labelGap,
+                            compactT: effCompactT,
+                          ),
+                        ),
+                      Positioned(
+                        left: (width - centerBoxSize) / 2,
+                        top: geo.centerY - centerBoxSize / 2,
+                        width: centerBoxSize,
+                        height: centerBoxSize,
+                        child: Center(
+                          child: centerAnchorKey != null
+                              ? KeyedSubtree(
+                                  key: centerAnchorKey,
+                                  child: morphingCenter,
+                                )
+                              : morphingCenter,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             );
           },
         );
@@ -1095,29 +1084,9 @@ class UiSnapPill extends StatelessWidget {
 ///    (entering Tab 2 Camera in `UiShellBranchContainer`), or
 /// 3. Another active [UiDock] with the opposite [camera] mode hands off within
 ///    the same frame (leaving Tab 2 Camera back to the shell dock).
-@immutable
-class _DockHandoff {
-  const _DockHandoff({
-    required this.fromCamera,
-    required this.diameter,
-    required this.iconSize,
-    required this.islandH,
-    required this.compactT,
-  });
-
-  final bool fromCamera;
-  final double diameter;
-  final double iconSize;
-  final double islandH;
-  final double compactT;
-}
-
 class _UiDockCenterMorph extends StatefulWidget {
   const _UiDockCenterMorph({
     required this.camera,
-    required this.fromDiameter,
-    required this.fromIconSize,
-    required this.fromIslandH,
     required this.fromCompactT,
     required this.accent,
     required this.onAccent,
@@ -1130,9 +1099,6 @@ class _UiDockCenterMorph extends StatefulWidget {
   });
 
   final bool camera;
-  final double fromDiameter;
-  final double fromIconSize;
-  final double fromIslandH;
   final double fromCompactT;
   final Color accent;
   final Color onAccent;
@@ -1144,9 +1110,7 @@ class _UiDockCenterMorph extends StatefulWidget {
   final Widget Function(
     BuildContext context,
     double cameraT,
-    double effShellCam,
-    double effShellIslandH,
-    double effCompactT,
+    double shellCompactT,
     Widget center,
   )
   builder;
@@ -1157,12 +1121,12 @@ class _UiDockCenterMorph extends StatefulWidget {
 
 class _UiDockCenterMorphState extends State<_UiDockCenterMorph>
     with SingleTickerProviderStateMixin {
-  static _DockHandoff? _pendingHandoff;
-  static _DockHandoff? _lastShellSnapshot;
+  static _UiDockCenterMorphState? _activeShellOwner;
+  static (bool fromCamera, double shellCompactT)? _pendingHandoff;
   static bool _handoffClearScheduled = false;
 
-  static void _recordHandoff(_DockHandoff handoff) {
-    _pendingHandoff = handoff;
+  static void _recordHandoff(bool fromCamera, double shellCompactT) {
+    _pendingHandoff = (fromCamera, shellCompactT);
     if (!_handoffClearScheduled) {
       _handoffClearScheduled = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1178,26 +1142,9 @@ class _UiDockCenterMorphState extends State<_UiDockCenterMorph>
   bool _lastTickerEnabled = true;
   late double _fromT = widget.camera ? 1.0 : 0.0;
   late double _toT = widget.camera ? 1.0 : 0.0;
-  late double _latchedShellDiameter = widget.fromDiameter;
-  late double _latchedShellIconSize = widget.fromIconSize;
-  late double _latchedShellIslandH = widget.fromIslandH;
-  late double _latchedShellCompactT = widget.fromCompactT;
+  late double _shellCompactT = widget.fromCompactT;
 
-  _DockHandoff _snapshot() => _DockHandoff(
-    fromCamera: widget.camera,
-    diameter: widget.camera ? _latchedShellDiameter : widget.fromDiameter,
-    iconSize: widget.camera ? _latchedShellIconSize : widget.fromIconSize,
-    islandH: widget.camera ? _latchedShellIslandH : widget.fromIslandH,
-    compactT: widget.camera ? _latchedShellCompactT : widget.fromCompactT,
-  );
-
-  void _applyHandoff(_DockHandoff? handoff) {
-    if (handoff == null) return;
-    _latchedShellDiameter = handoff.diameter;
-    _latchedShellIconSize = handoff.iconSize;
-    _latchedShellIslandH = handoff.islandH;
-    _latchedShellCompactT = handoff.compactT;
-  }
+  double get _ownCompactT => widget.fromCompactT;
 
   double get _currentT {
     final curved = _curved;
@@ -1242,23 +1189,21 @@ class _UiDockCenterMorphState extends State<_UiDockCenterMorph>
       _didInit = true;
       _lastTickerEnabled = tickerEnabled;
       final handoff = _pendingHandoff;
-      if (tickerEnabled &&
-          handoff != null &&
-          handoff.fromCamera != widget.camera) {
+      if (tickerEnabled && handoff != null && handoff.$1 != widget.camera) {
         _pendingHandoff = null;
         if (widget.camera) {
-          _applyHandoff(handoff);
+          _shellCompactT = handoff.$2;
         }
-        _startMorph(from: handoff.fromCamera ? 1.0 : 0.0, to: target);
+        _startMorph(from: handoff.$1 ? 1.0 : 0.0, to: target);
       } else {
-        if (widget.camera && _lastShellSnapshot != null) {
-          _applyHandoff(_lastShellSnapshot);
+        if (widget.camera && _activeShellOwner != null) {
+          _shellCompactT = _activeShellOwner!._ownCompactT;
         }
         _fromT = target;
         _toT = target;
       }
       if (!widget.camera && tickerEnabled) {
-        _lastShellSnapshot = _snapshot();
+        _activeShellOwner = this;
       }
       return;
     }
@@ -1268,18 +1213,24 @@ class _UiDockCenterMorphState extends State<_UiDockCenterMorph>
       _fromT = target;
       _toT = target;
     } else if (!_lastTickerEnabled && tickerEnabled) {
-      final handoff = _pendingHandoff ?? _lastShellSnapshot;
-      if (widget.camera && handoff != null) {
-        _applyHandoff(handoff);
+      final handoffCompactT =
+          _pendingHandoff?.$2 ?? _activeShellOwner?._ownCompactT;
+      if (widget.camera && handoffCompactT != null) {
+        _shellCompactT = handoffCompactT;
+      }
+      if (!widget.camera) {
+        _activeShellOwner = this;
       }
       _pendingHandoff = null;
       _startMorph(from: widget.camera ? 0.0 : 1.0, to: target);
     } else if (_lastTickerEnabled && !tickerEnabled) {
-      final snap = _snapshot();
-      if (!widget.camera) {
-        _lastShellSnapshot = snap;
+      _recordHandoff(
+        widget.camera,
+        widget.camera ? _shellCompactT : widget.fromCompactT,
+      );
+      if (identical(_activeShellOwner, this)) {
+        _activeShellOwner = null;
       }
-      _recordHandoff(snap);
       _ctrl?.stop();
       _fromT = target;
       _toT = target;
@@ -1291,26 +1242,20 @@ class _UiDockCenterMorphState extends State<_UiDockCenterMorph>
   void didUpdateWidget(covariant _UiDockCenterMorph oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.camera != widget.camera) {
-      if (widget.camera) {
-        _latchedShellDiameter = oldWidget.fromDiameter;
-        _latchedShellIconSize = oldWidget.fromIconSize;
-        _latchedShellIslandH = oldWidget.fromIslandH;
-        _latchedShellCompactT = oldWidget.fromCompactT;
-      } else {
-        _latchedShellDiameter = widget.fromDiameter;
-        _latchedShellIconSize = widget.fromIconSize;
-        _latchedShellIslandH = widget.fromIslandH;
-        _latchedShellCompactT = widget.fromCompactT;
+      _shellCompactT = widget.camera
+          ? oldWidget.fromCompactT
+          : widget.fromCompactT;
+      if (!widget.camera && _lastTickerEnabled) {
+        _activeShellOwner = this;
+      } else if (widget.camera && identical(_activeShellOwner, this)) {
+        _activeShellOwner = null;
       }
       final target = widget.camera ? 1.0 : 0.0;
       _startMorph(from: _currentT, to: target);
     } else if (!widget.camera) {
-      _latchedShellDiameter = widget.fromDiameter;
-      _latchedShellIconSize = widget.fromIconSize;
-      _latchedShellIslandH = widget.fromIslandH;
-      _latchedShellCompactT = widget.fromCompactT;
+      _shellCompactT = widget.fromCompactT;
       if (_lastTickerEnabled) {
-        _lastShellSnapshot = _snapshot();
+        _activeShellOwner = this;
       }
     }
   }
@@ -1318,11 +1263,13 @@ class _UiDockCenterMorphState extends State<_UiDockCenterMorph>
   @override
   void deactivate() {
     if (_lastTickerEnabled) {
-      final snap = _snapshot();
-      if (!widget.camera) {
-        _lastShellSnapshot = snap;
-      }
-      _recordHandoff(snap);
+      _recordHandoff(
+        widget.camera,
+        widget.camera ? _shellCompactT : widget.fromCompactT,
+      );
+    }
+    if (identical(_activeShellOwner, this)) {
+      _activeShellOwner = null;
     }
     _ctrl?.stop();
     super.deactivate();
@@ -1330,6 +1277,9 @@ class _UiDockCenterMorphState extends State<_UiDockCenterMorph>
 
   @override
   void dispose() {
+    if (identical(_activeShellOwner, this)) {
+      _activeShellOwner = null;
+    }
     _curved?.dispose();
     _ctrl?.dispose();
     super.dispose();
@@ -1337,38 +1287,32 @@ class _UiDockCenterMorphState extends State<_UiDockCenterMorph>
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.camera && _lastTickerEnabled) {
-      _lastShellSnapshot = _snapshot();
-    }
     final ctrl = _ctrl;
     final curved = _curved;
     final settledT = widget.camera ? 1.0 : 0.0;
-    final settledCompactT = widget.camera ? 0.0 : widget.fromCompactT;
-    final effShellCam = widget.camera
-        ? _latchedShellDiameter
-        : widget.fromDiameter;
-    final effShellIcon = widget.camera
-        ? _latchedShellIconSize
-        : widget.fromIconSize;
-    final effShellIslandH = widget.camera
-        ? _latchedShellIslandH
-        : widget.fromIslandH;
+    final effShellCompactT = widget.camera
+        ? _shellCompactT
+        : widget.fromCompactT;
 
     if (UiMotion.reduced(context) ||
         ctrl == null ||
         curved == null ||
         (!ctrl.isAnimating && (_fromT - _toT).abs() < 0.001)) {
-      return widget.builder(
-        context,
-        settledT,
-        effShellCam,
-        effShellIslandH,
-        settledCompactT,
-        widget.child,
-      );
+      return widget.builder(context, settledT, effShellCompactT, widget.child);
     }
 
     final ui = context.ui;
+    final fromDiameter = lerpDouble(
+      _E4.camD,
+      _E4.camDCompact,
+      effShellCompactT,
+    )!;
+    final fromIconSize = lerpDouble(
+      _E4.camIcon,
+      _E4.camIconCompact,
+      effShellCompactT,
+    )!;
+
     return AnimatedBuilder(
       animation: curved,
       child: widget.child,
@@ -1378,15 +1322,13 @@ class _UiDockCenterMorphState extends State<_UiDockCenterMorph>
           return widget.builder(
             context,
             settledT,
-            effShellCam,
-            effShellIslandH,
-            settledCompactT,
+            effShellCompactT,
             settledChild!,
           );
         }
-        final diameter = lerpDouble(effShellCam, _E4.camDRoute, t)!;
+        final diameter = lerpDouble(fromDiameter, _E4.camDRoute, t)!;
         final radius = BorderRadius.circular(diameter / 2);
-        final iconSize = lerpDouble(effShellIcon, _E4.camIconRoute, t)!;
+        final iconSize = lerpDouble(fromIconSize, _E4.camIconRoute, t)!;
         final outline = Color.lerp(ui.outline, UiCamera.outline, t)!;
         final shadowColor = Color.lerp(ui.hardShadowColor, UiCamera.shadow, t)!;
         final shadowOff = lerpDouble(
@@ -1394,9 +1336,6 @@ class _UiDockCenterMorphState extends State<_UiDockCenterMorph>
           UiShadow.small,
           t,
         )!;
-        final effCompactT = widget.camera
-            ? 0.0
-            : lerpDouble(widget.fromCompactT, 0.0, t)!;
 
         final morphCenter = SizedBox(
           key: const ValueKey('dock-center-morph'),
@@ -1442,14 +1381,7 @@ class _UiDockCenterMorphState extends State<_UiDockCenterMorph>
             ],
           ),
         );
-        return widget.builder(
-          context,
-          t,
-          effShellCam,
-          effShellIslandH,
-          effCompactT,
-          morphCenter,
-        );
+        return widget.builder(context, t, effShellCompactT, morphCenter);
       },
     );
   }

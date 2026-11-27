@@ -43,20 +43,18 @@ class _AppShellState extends ConsumerState<AppShell> {
   bool _userScrolling = false;
   GoRouter? _router;
   GoRouterDelegate? _routerDelegate;
-  String? _lastRouteSignature;
+  String? _lastRoutePath;
 
-  String? _routeSignature(GoRouter? router) {
+  String? _currentRoutePath(GoRouter? router) {
     if (router == null) return null;
-    final config = router.routerDelegate.currentConfiguration;
-    if (config.isEmpty) return null;
-    return '${router.state.uri}#${router.state.matchedLocation}#'
-        '${config.last.matchedLocation}#${config.matches.length}';
+    if (router.routerDelegate.currentConfiguration.isEmpty) return null;
+    return router.state.uri.path;
   }
 
   void _onRouteChanged() {
-    final sig = _routeSignature(_router);
-    if (sig != _lastRouteSignature) {
-      _lastRouteSignature = sig;
+    final path = _currentRoutePath(_router);
+    if (path != _lastRoutePath) {
+      _lastRoutePath = path;
       _userScrolling = false;
       _setCompact(false);
     }
@@ -71,7 +69,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     if (!identical(delegate, _routerDelegate)) {
       _routerDelegate?.removeListener(_onRouteChanged);
       _routerDelegate = delegate;
-      _lastRouteSignature = _routeSignature(router);
+      _lastRoutePath = _currentRoutePath(router);
       _routerDelegate?.addListener(_onRouteChanged);
     }
   }
@@ -79,7 +77,6 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   void didUpdateWidget(covariant AppShell oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _onRouteChanged();
     final idx = widget.navigationShell.currentIndex;
     if (idx != oldWidget.navigationShell.currentIndex ||
         idx == AppShell.captureIndex) {

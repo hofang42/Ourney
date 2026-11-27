@@ -514,6 +514,20 @@ void main() {
         // Trigger camera = true from compact = true (52dp circle, Quiet 2dp shadow).
         setHost(() => camera = true);
         await tester.pump();
+        // Frame 0: labels must stay collapsed (opacity == 0), never pop to full height at t=0.
+        final frame0Opacities = tester
+            .widgetList<Opacity>(
+              find.descendant(
+                of: find.byType(UiDock),
+                matching: find.byType(Opacity),
+              ),
+            )
+            .toList();
+        expect(frame0Opacities, isNotEmpty);
+        for (final op in frame0Opacities) {
+          expect(op.opacity, 0.0, reason: 'no frame-0 label pop from compact');
+        }
+
         await tester.pump(const Duration(milliseconds: 16));
 
         final morphFinder = find.byKey(const ValueKey('dock-center-morph'));
@@ -529,6 +543,18 @@ void main() {
           lessThan(60.0),
           reason: 'morph from compact must not jump to 60dp at t=16ms',
         );
+        final earlyOpacities = tester
+            .widgetList<Opacity>(
+              find.descendant(
+                of: find.byType(UiDock),
+                matching: find.byType(Opacity),
+              ),
+            )
+            .toList();
+        for (final op in earlyOpacities) {
+          expect(op.opacity, greaterThan(0.0));
+          expect(op.opacity, lessThan(0.5));
+        }
 
         // Quiet skin shadow lerps between 2dp (UiShadow.tiny) and 3dp (UiShadow.small), never 4dp.
         final shadowTransform = tester.widget<Transform>(

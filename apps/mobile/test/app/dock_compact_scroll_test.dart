@@ -206,10 +206,19 @@ void main() {
           reason: 'post-gesture programmatic animateTo must not compact',
         );
 
-        // 4. Compact via user drag down, then push intra-branch sub-route (/journey/j1) -> resets to expanded.
+        // 4. Compact via user drag down, verify query-only route change stays compact,
+        // then push intra-branch sub-route (/journey/j1) -> resets to expanded.
         await tester.drag(list, const Offset(0, -150));
         await tester.pumpAndSettle();
         expect(tester.widget<AppDock>(find.byType(AppDock)).compact, isTrue);
+
+        h.container.read(routerProvider).go('${AppRoutes.journeys}?filter=1');
+        await tester.pumpAndSettle();
+        expect(
+          tester.widget<AppDock>(find.byType(AppDock)).compact,
+          isTrue,
+          reason: 'query-only URI change on the same path must not expand dock',
+        );
 
         unawaited(
           h.container.read(routerProvider).push(AppRoutes.journey('j1')),
@@ -223,11 +232,11 @@ void main() {
           reason: 'pushing a sub-route inside a branch must expand the dock',
         );
 
-        // Pop back to /journeys -> stays expanded.
+        // Pop back to /journeys?filter=1 -> expands because path changed from /journey/j1.
         h.container.read(routerProvider).pop();
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 350));
-        expect(h.location, AppRoutes.journeys);
+        expect(h.location, '${AppRoutes.journeys}?filter=1');
         expect(tester.widget<AppDock>(find.byType(AppDock)).compact, isFalse);
 
         // 5. Compact on Journeys, switch tab -> resets to expanded.
