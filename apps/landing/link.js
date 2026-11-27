@@ -33,76 +33,76 @@
       fallback_note_desktop: 'Sau khi cài đặt ứng dụng trên điện thoại, quét mã QR bên cạnh hoặc mở lại liên kết này để vào thẳng lời mời.',
       fallback_note_ios: 'Bản iOS đang mở đăng ký danh sách chờ beta. Để lại email để nhận lời mời ngay khi Ourney ra mắt trên iPhone.',
       fallback_note_j: 'Sau khi cài ứng dụng, mở tab Nhóm → Nhập mã mời để tham gia cùng hội bạn.',
-      fallback_note_p: 'Chụp một tấm mỗi ngày, giữ một chuỗi, đi một mình hoặc cùng hội bạn thân.',
+      fallback_note_p: 'Góp tấm hình, giữ nhịp mình. Tự lưu riêng hoặc chụp cùng hội bạn thân.',
       qr_aria: 'Mã QR của liên kết hiện tại để mở trên điện thoại',
       qr_heading: 'Mở trên điện thoại',
       qr_desc: 'Quét mã QR bằng camera điện thoại để mở trực tiếp trang này trên iOS hoặc Android.',
-      footer_tagline: 'chụp một tấm. giữ một chuỗi. đi cùng nhau.',
+      footer_tagline: 'Góp tấm hình, giữ nhịp mình',
       footer_home: 'trang chủ',
-      footer_beta: 'nhận lời mời',
+      footer_beta: 'Tải APK / Chờ iOS',
 
       /* Friend (/f/:token) */
       f_meta_title: 'ourney · lời mời kết bạn trên Ourney',
-      f_meta_desc: 'Bạn được mời kết bạn trên Ourney — mở trong ứng dụng để kết nối, chia sẻ hành trình ảnh mỗi ngày và giữ chuỗi cùng nhau.',
+      f_meta_desc: 'Bạn được mời kết bạn trên Ourney: mở trong ứng dụng để kết nối, cùng chụp ảnh check-in mỗi ngày và giữ nhịp với nhau.',
       f_kicker: 'VÉ MỜI KẾT BẠN · OURNEY',
       f_loading: 'Đang tải lời mời kết bạn…',
       f_headline: 'Bạn được mời kết bạn trên Ourney',
       f_invited_suffix: ' mời bạn kết bạn trên Ourney',
-      f_desc: 'Mở lời mời trong ứng dụng Ourney để kết bạn ngay, cùng chia sẻ hành trình ảnh mỗi ngày và giữ liền chuỗi ngày không bỏ cuộc.',
+      f_desc: 'Mở lời mời trong ứng dụng Ourney để kết bạn ngay, cùng chụp ảnh check-in mỗi ngày và thả cảm xúc cho nhau.',
       f_expired_h1: 'Lời mời không còn hiệu lực',
       f_expired_desc: 'Có thể bạn ấy đã đổi sang liên kết mời mới. Hãy nhờ bạn ấy gửi lại liên kết mới cho bạn nhé.',
       f_invalid_h1: 'Liên kết lời mời không hợp lệ',
       f_invalid_desc: 'Đường dẫn kết bạn này bị thiếu mã hoặc không đúng định dạng. Nhờ bạn bè gửi lại liên kết mới hoặc mở trực tiếp trong ứng dụng Ourney.',
 
       /* Squad (/j/:code, /join/:code) */
-      j_meta_title: 'ourney · lời mời vào squad trên Ourney',
-      j_meta_desc: 'Bạn được mời vào squad trên Ourney — mở trong ứng dụng hoặc sao chép mã mời để tham gia tường Polaroid mỗi ngày cùng nhóm bạn.',
-      j_kicker: 'VÉ MỜI SQUAD · TỐI ĐA 10 BẠN',
+      j_meta_title: 'ourney · lời mời vào nhóm trên Ourney',
+      j_meta_desc: 'Bạn được mời vào nhóm trên Ourney: mở trong ứng dụng hoặc sao chép mã mời để tham gia tường Polaroid mỗi ngày cùng hội bạn.',
+      j_kicker: 'VÉ MỜI VÀO NHÓM · TỐI ĐA 10 NGƯỜI',
       j_kicker_fmt: (max) =>
-        (typeof max === 'number' && max > 0 ? `VÉ MỜI SQUAD · TỐI ĐA ${max} BẠN` : 'VÉ MỜI SQUAD · TỐI ĐA 10 BẠN'),
-      j_loading: 'Đang tải thông tin squad…',
-      j_headline: 'Bạn được mời vào squad',
-      j_headline_named_prefix: 'Vào squad ',
+        (typeof max === 'number' && max > 0 ? `VÉ MỜI VÀO NHÓM · TỐI ĐA ${max} NGƯỜI` : 'VÉ MỜI VÀO NHÓM · TỐI ĐA 10 NGƯỜI'),
+      j_loading: 'Đang tải thông tin nhóm…',
+      j_headline: 'Bạn được mời vào nhóm',
+      j_headline_named_prefix: 'Vào nhóm ',
       j_headline_named_suffix: ' trên Ourney',
       j_members_fmt: (count, max) =>
         (typeof max === 'number' && max > 0 ? `${count}/${max} thành viên` : `${count} thành viên`),
-      j_owner_fmt: (name) => `Squad của ${name}`,
-      j_desc: 'Một mình dễ quên, có hội thì giữ được. Mở thẳng trong ứng dụng Ourney hoặc sao chép mã bên dưới để vào tường Polaroid của nhóm.',
-      j_code_label: 'MÃ MỜI VÀO SQUAD',
+      j_owner_fmt: (name) => `Nhóm của ${name}`,
+      j_desc: 'Một mình dễ quên, có hội nhắc nhau thì nhớ. Mở thẳng trong ứng dụng Ourney hoặc sao chép mã bên dưới để vào tường Polaroid của nhóm.',
+      j_code_label: 'MÃ MỜI VÀO NHÓM',
       j_expired_h1: 'Mã mời không còn hiệu lực',
-      j_expired_desc: 'Squad này có thể đã đổi mã mời mới hoặc đã kết thúc hành trình. Hãy nhờ thành viên trong nhóm gửi lại liên kết mời mới nhé.',
-      j_full_h1: 'Squad này đã đủ thành viên',
-      j_full_desc: 'Nhóm đã đạt số lượng thành viên tối đa. Bạn có thể tự mở một hành trình mới hoặc nhờ bạn bè tạo squad khác trên Ourney.',
-      j_invalid_h1: 'Mã mời squad không hợp lệ',
+      j_expired_desc: 'Nhóm này có thể đã đổi mã mời mới hoặc đã khép lại mục tiêu. Hãy nhờ thành viên trong nhóm gửi lại liên kết mời mới nhé.',
+      j_full_h1: 'Nhóm này đã đủ thành viên',
+      j_full_desc: 'Nhóm đã đạt số lượng thành viên tối đa. Bạn có thể tự tạo một mục tiêu mới hoặc nhờ bạn bè lập nhóm khác trên Ourney.',
+      j_invalid_h1: 'Mã mời vào nhóm không hợp lệ',
       j_invalid_desc: 'Mã mời vào nhóm trong liên kết này bị thiếu hoặc không đúng định dạng. Hãy kiểm tra lại mã mời từ trưởng nhóm.',
 
       /* Public Journey (/p/:token) */
-      p_meta_title: 'ourney · hành trình ảnh được chia sẻ trên Ourney',
-      p_meta_desc: 'Xem trọn chuỗi ngày không bỏ cuộc trên Ourney — nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì.',
-      p_kicker: 'HÀNH TRÌNH ĐƯỢC CHIA SẺ',
-      p_kicker_group: 'HÀNH TRÌNH NHÓM ĐƯỢC CHIA SẺ',
-      p_kicker_imported: 'HÀNH TRÌNH KỶ NIỆM',
-      p_loading: 'Đang tải hành trình…',
+      p_meta_title: 'ourney · nhật ký ảnh được chia sẻ trên Ourney',
+      p_meta_desc: 'Xem nhật ký ảnh mỗi ngày được chia sẻ trên Ourney: Góp tấm hình, giữ nhịp mình.',
+      p_kicker: 'NHẬT KÝ ẢNH ĐƯỢC CHIA SẺ',
+      p_kicker_group: 'NHẬT KÝ NHÓM ĐƯỢC CHIA SẺ',
+      p_kicker_imported: 'BỘ ẢNH ĐÃ LƯU',
+      p_loading: 'Đang tải nhật ký ảnh…',
       p_by_owner: (name) => `bởi ${name}`,
       p_by_anon: 'bởi Thành viên Ourney',
-      p_streak: (n) => `Chuỗi ${n} ngày`,
+      p_streak: (n) => `${n} ngày đã chụp`,
       p_days_moments: (days, photos) => `${days} ngày · ${photos} ảnh`,
-      p_moments_only: (photos) => `${photos} khoảnh khắc`,
+      p_moments_only: (photos) => `${photos} tấm ảnh`,
       p_duration: (d) => `Mục tiêu ${d} ngày`,
       p_status_ended: 'ĐÃ VỀ ĐÍCH',
       p_status_live: 'ĐANG DIỄN RA',
       p_lessons_label: 'Bài học rút ra',
       p_grid_h: 'Nhật ký ảnh từng ngày',
-      p_empty_photos: 'Hành trình này chưa có ảnh công khai nào.',
+      p_empty_photos: 'Mục tiêu này chưa có ảnh công khai nào.',
       p_day_n: (n) => `Ngày ${n}`,
       p_blurred_label: 'Ảnh được làm mờ theo cài đặt riêng tư',
       p_photo_alt: (title, dayLabel, dateStr, cap) => {
         const when = [dayLabel, dateStr ? (dayLabel ? `(${dateStr})` : dateStr) : ''].filter(Boolean).join(' ');
-        return `${title}${when ? ' — ' + when : ''}${cap ? ': ' + cap : ''}`;
+        return `${title}${when ? ' · ' + when : ''}${cap ? ': ' + cap : ''}`;
       },
       p_expired_h1: 'Liên kết không tồn tại hoặc đã thu hồi',
-      p_expired_desc: 'Hành trình này đã chuyển về riêng tư, chủ nhân đã đặt lại liên kết chia sẻ, hoặc địa chỉ không đúng.',
-      p_error_h1: 'Chưa tải được hành trình',
+      p_expired_desc: 'Nhật ký ảnh này đã chuyển về riêng tư, chủ nhân đã đặt lại liên kết chia sẻ, hoặc địa chỉ không đúng.',
+      p_error_h1: 'Chưa tải được nhật ký ảnh',
       p_error_desc: 'Kết nối tạm thời bị gián đoạn. Bạn thử tải lại hoặc mở trực tiếp trong ứng dụng Ourney.',
       p_retry: 'Thử lại'
     },
@@ -123,77 +123,78 @@
       fallback_note: 'Once installed, tap this link again to open the invite in the app.',
       fallback_note_desktop: 'Once installed on your phone, scan the QR code or reopen this link to open the invite.',
       fallback_note_ios: 'Ourney for iOS is on the beta waitlist. Leave your email to get invited as soon as it launches on iPhone.',
-      fallback_note_j: 'Once installed, open the Squad tab → Enter invite code to join your friends.',
-      fallback_note_p: 'Snap one photo a day, keep one streak, go solo or with your closest friends.',
+      fallback_note_j: 'Once installed, open the Groups tab → Enter invite code to join your friends.',
+      fallback_note_p: 'One photo at a time, at your own pace. Keep it private or check in with close friends.',
       qr_aria: 'QR code of the current URL to open on your phone',
       qr_heading: 'Open on your phone',
       qr_desc: 'Scan this QR code with your phone camera to open this link directly on iOS or Android.',
-      footer_tagline: 'snap one photo. keep one streak. go together.',
+      footer_tagline: 'One photo at a time, at your own pace',
       footer_home: 'home',
-      footer_beta: 'get invite',
+      footer_beta: 'Android APK / iOS waitlist',
 
       /* Friend (/f/:token) */
       f_meta_title: 'ourney · friend invite on Ourney',
-      f_meta_desc: 'You’re invited to be friends on Ourney — open in the app to connect, share daily photo journeys, and keep streaks together.',
+      f_meta_desc: 'You’re invited to be friends on Ourney: open in the app to connect and share daily check-in photos at your own pace.',
       f_kicker: 'FRIEND INVITE PASS · OURNEY',
       f_loading: 'Loading friend invite…',
       f_headline: 'You’re invited to be friends on Ourney',
       f_invited_suffix: ' invited you to be friends on Ourney',
-      f_desc: 'Open this invite in the Ourney app to connect right away, share daily photo journeys, and keep your streak alive together.',
+      f_desc: 'Open this invite in the Ourney app to connect right away, share daily check-in photos, and drop sticker reactions together.',
       f_expired_h1: 'This invite link is no longer active',
       f_expired_desc: 'Your friend may have created a new invite link. Ask them to resend their latest link.',
       f_invalid_h1: 'Invalid friend invite link',
       f_invalid_desc: 'This friend invite link is missing a token or has an invalid format. Ask your friend for a fresh link or open Ourney directly.',
 
       /* Squad (/j/:code, /join/:code) */
-      j_meta_title: 'ourney · squad invite on Ourney',
-      j_meta_desc: 'You’re invited to join a squad on Ourney — open in the app or copy the invite code to join the daily Polaroid wall.',
-      j_kicker: 'SQUAD INVITE · UP TO 10 FRIENDS',
+      j_meta_title: 'ourney · group invite on Ourney',
+      j_meta_desc: 'You’re invited to join a group on Ourney: open in the app or copy the invite code to join the daily Polaroid wall.',
+      j_kicker: 'GROUP INVITE · UP TO 10 MEMBERS',
       j_kicker_fmt: (max) =>
-        (typeof max === 'number' && max > 0 ? `SQUAD INVITE · UP TO ${max} FRIENDS` : 'SQUAD INVITE · UP TO 10 FRIENDS'),
-      j_loading: 'Loading squad invite…',
-      j_headline: 'You’re invited to join a squad',
-      j_headline_named_prefix: 'Join squad ',
+        (typeof max === 'number' && max > 0 ? `GROUP INVITE · UP TO ${max} MEMBERS` : 'GROUP INVITE · UP TO 10 MEMBERS'),
+      j_loading: 'Loading group invite…',
+      j_headline: 'You’re invited to join a group',
+      j_headline_named_prefix: 'Join group ',
       j_headline_named_suffix: ' on Ourney',
       j_members_fmt: (count, max) =>
-        (typeof max === 'number' && max > 0 ? `${count}/${max} members` : `${count} members`),
-      j_owner_fmt: (name) => `${name}'s squad`,
-      j_desc: 'Solo fades fast, squads stick together. Open straight in the Ourney app or copy the code below to join your squad’s Polaroid wall.',
-      j_code_label: 'SQUAD INVITE CODE',
-      j_expired_h1: 'This squad invite code is no longer active',
-      j_expired_desc: 'This squad may have rotated its invite code or completed its journey. Ask a squad member to send you the latest invite link.',
-      j_full_h1: 'This squad is already full',
-      j_full_desc: 'This squad has reached its maximum member limit. You can start your own journey or ask your friends to create another squad on Ourney.',
-      j_invalid_h1: 'Invalid squad invite code',
-      j_invalid_desc: 'The squad invite code in this link is missing or malformed. Please double-check the code with your squad owner.',
+        (typeof max === 'number' && max > 0 ? `${count}/${max} members` : `${count} ${count === 1 ? 'member' : 'members'}`),
+      j_owner_fmt: (name) => `${name}'s group`,
+      j_desc: 'Easy to forget alone, easier when friends check in together. Open straight in the Ourney app or copy the code below to join the group’s Polaroid wall.',
+      j_code_label: 'GROUP INVITE CODE',
+      j_expired_h1: 'This group invite code is no longer active',
+      j_expired_desc: 'This group may have rotated its invite code or finished its goal. Ask a member to send you the latest invite link.',
+      j_full_h1: 'This group is already full',
+      j_full_desc: 'This group has reached its maximum member limit. You can start your own goal or ask your friends to create another group on Ourney.',
+      j_invalid_h1: 'Invalid group invite code',
+      j_invalid_desc: 'The group invite code in this link is missing or malformed. Please double-check the code with your group owner.',
 
       /* Public Journey (/p/:token) */
-      p_meta_title: 'ourney · shared photo journey on Ourney',
-      p_meta_desc: 'See a full daily photo journey on Ourney — one photo a day to keep the streak alive.',
-      p_kicker: 'SHARED PHOTO JOURNEY',
-      p_kicker_group: 'SHARED SQUAD JOURNEY',
-      p_kicker_imported: 'KEEPSAKE JOURNEY',
-      p_loading: 'Loading journey…',
+      p_meta_title: 'ourney · shared photo diary on Ourney',
+      p_meta_desc: 'See a shared daily photo diary on Ourney: One photo at a time, at your own pace.',
+      p_kicker: 'SHARED PHOTO DIARY',
+      p_kicker_group: 'SHARED GROUP DIARY',
+      p_kicker_imported: 'KEEPSAKE PHOTO ALBUM',
+      p_loading: 'Loading photo diary…',
       p_by_owner: (name) => `by ${name}`,
       p_by_anon: 'by Ourney member',
-      p_streak: (n) => `${n}-day streak`,
-      p_days_moments: (days, photos) => `${days} days · ${photos} photos`,
-      p_moments_only: (photos) => `${photos} moments`,
+      p_streak: (n) => `${n} ${n === 1 ? 'day' : 'days'} logged`,
+      p_days_moments: (days, photos) =>
+        `${days} ${days === 1 ? 'day' : 'days'} · ${photos} ${photos === 1 ? 'photo' : 'photos'}`,
+      p_moments_only: (photos) => `${photos} ${photos === 1 ? 'photo' : 'photos'}`,
       p_duration: (d) => `${d}-day goal`,
       p_status_ended: 'COMPLETED',
       p_status_live: 'ACTIVE',
       p_lessons_label: 'Lessons learned',
       p_grid_h: 'Daily photo timeline',
-      p_empty_photos: 'No public photos in this journey yet.',
+      p_empty_photos: 'No public photos in this goal yet.',
       p_day_n: (n) => `Day ${n}`,
       p_blurred_label: 'Photo blurred by author’s privacy settings',
       p_photo_alt: (title, dayLabel, dateStr, cap) => {
         const when = [dayLabel, dateStr ? (dayLabel ? `(${dateStr})` : dateStr) : ''].filter(Boolean).join(' ');
-        return `${title}${when ? ' — ' + when : ''}${cap ? ': ' + cap : ''}`;
+        return `${title}${when ? ' · ' + when : ''}${cap ? ': ' + cap : ''}`;
       },
       p_expired_h1: 'Link expired, invalid, or revoked',
-      p_expired_desc: 'This journey is now private, its owner rotated the share link, or the address is invalid.',
-      p_error_h1: 'Couldn’t load this journey',
+      p_expired_desc: 'This photo diary is now private, its owner rotated the share link, or the address is invalid.',
+      p_error_h1: 'Couldn’t load this photo diary',
       p_error_desc: 'The connection was interrupted. Please try again or open the link directly in the Ourney app.',
       p_retry: 'Try again'
     }
@@ -1347,10 +1348,15 @@
     });
   }
 
+  function getVisibleCheckIns(data) {
+    const list = data && Array.isArray(data.check_ins) ? data.check_ins : [];
+    return list.filter((c) => c && typeof c === 'object' && !c.hidden_from_share && !c.hidden && !c.is_hidden);
+  }
+
   function scheduleProactiveUrlRefresh() {
     clearTimeout(journeyTtlTimer);
     if (!loadedJourneyData || !route.valid || journeyAutoRefreshCount >= MAX_AUTO_REFRESHES) return;
-    const checkIns = Array.isArray(loadedJourneyData.check_ins) ? loadedJourneyData.check_ins : [];
+    const checkIns = getVisibleCheckIns(loadedJourneyData);
     if (checkIns.length === 0 || !hasUnloadedOrRetryableImages()) return;
     const delayMs = Math.max(15000, Math.floor(journeyTtlMs * 0.85));
     journeyTtlTimer = setTimeout(() => {
@@ -1361,7 +1367,7 @@
   }
 
   function updateRenderedPhotoUrls(data) {
-    const checkIns = data && Array.isArray(data.check_ins) ? data.check_ins : [];
+    const checkIns = getVisibleCheckIns(data);
     const gridEl = $('p-photo-grid');
     if (!gridEl || checkIns.length === 0) return;
 
@@ -1486,8 +1492,7 @@
     const dict = COPY[curLang];
     const j = data.journey || {};
     const story = data.story || {};
-    const streak = data.streak || null;
-    const checkIns = Array.isArray(data.check_ins) ? data.check_ins : [];
+    const checkIns = getVisibleCheckIns(data);
 
     const title = (typeof story.title === 'string' && story.title.trim())
       ? story.title.trim()
@@ -1537,42 +1542,32 @@
       introEl.textContent = introTxt;
     }
 
-    /* Streak & Day Count pills (never show "0 khoảnh khắc" / "0 moments") */
+    /* Photo & Day Count pills (computed strictly from visible shared photos on the page) */
     const statsRow = $('p-stats-row');
     const streakPill = $('p-streak-pill');
     const streakText = $('p-streak-text');
-    const streakVal = streak && typeof streak.current === 'number' && streak.current > 0
-      ? streak.current
-      : (streak && typeof streak.best === 'number' && streak.best > 0 ? streak.best : 0);
 
-    if (streakPill && streakText) {
-      if (streakVal > 0) {
-        streakPill.hidden = false;
-        streakText.textContent = dict.p_streak(streakVal);
-      } else {
-        streakPill.hidden = true;
-      }
-    }
-
-    const uniqueDays = new Set(
-      checkIns.map((c) => (c && typeof c.local_date === 'string' ? c.local_date : '')).filter(Boolean)
+    const visibleDays = new Set(
+      checkIns.map((c) => (c && typeof c.local_date === 'string' ? c.local_date.trim() : '')).filter(Boolean)
     ).size;
-    const completedDays = (streak && typeof streak.completed === 'number' && streak.completed > 0)
-      ? streak.completed
-      : uniqueDays;
 
     const daysPill = $('p-days-pill');
     const daysText = $('p-days-text');
     if (daysPill && daysText) {
       if (checkIns.length > 0) {
         daysPill.hidden = false;
-        daysText.textContent = completedDays > 0
-          ? dict.p_days_moments(completedDays, checkIns.length)
+        daysText.textContent = visibleDays > 0
+          ? dict.p_days_moments(visibleDays, checkIns.length)
           : dict.p_moments_only(checkIns.length);
       } else {
         daysPill.hidden = true;
         daysText.textContent = '';
       }
+    }
+
+    if (streakPill && streakText) {
+      streakPill.hidden = true;
+      streakText.textContent = '';
     }
 
     const durationPill = $('p-duration-pill');
@@ -1834,6 +1829,10 @@
     const homeHref = curLang === 'en' ? '/?lang=en' : '/';
     document.querySelectorAll('[data-home-link]').forEach((el) => {
       el.setAttribute('href', homeHref);
+    });
+    const betaHref = curLang === 'en' ? '/?lang=en#beta' : '/#beta';
+    document.querySelectorAll('[data-beta-link]').forEach((el) => {
+      el.setAttribute('href', betaHref);
     });
     document.querySelectorAll('[data-waitlist-link]').forEach((el) => {
       const forcedPlat = el.getAttribute('data-waitlist-plat') || (el.id === 'fallback-ios' ? 'ios' : '');

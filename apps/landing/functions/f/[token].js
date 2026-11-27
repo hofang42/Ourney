@@ -124,8 +124,8 @@ export async function onRequestGet(context) {
   const { preview } = lookup;
   const headline = `${preview.displayName} mời bạn kết bạn trên Ourney`;
   const description = preview.handle
-    ? `${headline} (@${preview.handle}) — mở trong ứng dụng để kết nối, chia sẻ hành trình ảnh mỗi ngày và giữ chuỗi cùng nhau.`
-    : `${headline} — mở trong ứng dụng để kết nối, chia sẻ hành trình ảnh mỗi ngày và giữ chuỗi cùng nhau.`;
+    ? `${headline} (@${preview.handle}): mở trong ứng dụng để kết nối, cùng chụp ảnh check-in mỗi ngày và giữ nhịp với nhau.`
+    : `${headline}: mở trong ứng dụng để kết nối, cùng chụp ảnh check-in mỗi ngày và giữ nhịp với nhau.`;
   const canonicalUrl = `https://ourney.tech/f/${encodeURIComponent(token)}`;
   const embeddedPayload = serializeEmbeddedJson({
     status: 'ok',

@@ -1152,8 +1152,8 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   box-shadow: none;
 }
 
-/* DNA Departure Ticket Panel */
-.dna-ticket {
+/* Template Departure Ticket Panel */
+.j-ticket {
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto;
@@ -1167,11 +1167,11 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   overflow: hidden;
   transition: background-color 320ms var(--ease-ui), box-shadow 320ms var(--ease-ui), border-radius 320ms var(--ease-ui);
 }
-.journeys-stage[data-skin="quiet"] .dna-ticket { border-width: 1.5px; box-shadow: 2px 2px 0 var(--outline); }
-.journeys-stage[data-skin="couple"] .dna-ticket { border-radius: 24px; }
-.journeys-stage[data-skin="minimal"] .dna-ticket { border-width: 1px; box-shadow: none; border-radius: 4px; }
-.dna-ticket::before,
-.dna-ticket::after {
+.journeys-stage[data-skin="quiet"] .j-ticket { border-width: 1.5px; box-shadow: 2px 2px 0 var(--outline); }
+.journeys-stage[data-skin="couple"] .j-ticket { border-radius: 24px; }
+.journeys-stage[data-skin="minimal"] .j-ticket { border-width: 1px; box-shadow: none; border-radius: 4px; }
+.j-ticket::before,
+.j-ticket::after {
   content: '';
   position: absolute;
   right: 64px;
@@ -1181,20 +1181,20 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   border: 2px solid var(--outline);
   border-radius: 50%;
 }
-.dna-ticket::before { top: -11px; }
-.dna-ticket::after { bottom: -11px; }
+.j-ticket::before { top: -11px; }
+.j-ticket::after { bottom: -11px; }
 .j-kind { font: 700 0.8125rem/1.4 var(--heading); color: var(--skin-muted); margin-bottom: 6px; }
-.dna-main h3 { margin-bottom: 8px; }
+.j-card-main h3 { margin-bottom: 8px; }
 .j-desc { color: var(--skin-muted); font-size: 0.96875rem; line-height: 1.55; }
-.dna-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-.dna-chip {
+.j-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.j-chip {
   padding: 5px 10px;
   border: 1.5px solid var(--outline);
   border-radius: 9px;
   background: var(--skin-bg);
   font: 700 0.78rem/1.2 var(--heading);
 }
-.dna-stub {
+.j-stub {
   padding-left: 16px;
   border-left: 1.5px dashed var(--outline);
   display: flex;
@@ -1203,15 +1203,15 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   justify-content: center;
   min-width: 52px;
 }
-.dna-no {
+.j-no {
   font: 700 1.75rem/1 var(--heading);
   color: var(--skin-accent);
   font-variant-numeric: tabular-nums;
 }
-.dna-stub small { font: 700 0.6875rem/1.2 var(--heading); color: var(--skin-muted); margin-top: 4px; }
+.j-stub small { font: 700 0.6875rem/1.2 var(--heading); color: var(--skin-muted); margin-bottom: 4px; text-transform: uppercase; }
 @media (max-width: 480px) {
-  .dna-ticket { grid-template-columns: 1fr; }
-  .dna-ticket::before, .dna-ticket::after, .dna-stub { display: none; }
+  .j-ticket { grid-template-columns: 1fr; }
+  .j-ticket::before, .j-ticket::after, .j-stub { display: none; }
 }
 
 .j-phone-stage { display: flex; justify-content: center; }
@@ -1588,7 +1588,6 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   background: var(--fill);
 }
 .squad-meter i.done { background: var(--primary); }
-.squad-meter i.nudged { background: var(--pastel-study); }
 
 .polaroid-grid {
   display: grid;
@@ -1674,57 +1673,18 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
 .react-chip:active { transform: translate(2px, 2px); box-shadow: none; }
 .react-chip.pop .o-sticker { animation: flame-pop 240ms var(--spring-stamp); }
 
-/* 4th Polaroid: Waiting & Nudge State */
+/* 4th Polaroid: Waiting State */
 .polaroid-waiting {
   border-style: dashed;
   background: var(--surface);
   padding: 12px;
   text-align: center;
   align-items: center;
+  justify-content: center;
 }
-.polaroid-waiting.wiggle { animation: card-wiggle 280ms var(--ease-ui); }
-@keyframes card-wiggle {
-  0%, 100% { transform: rotate(0deg); }
-  30% { transform: rotate(-2.2deg); }
-  70% { transform: rotate(2.2deg); }
-}
-.sp-clock-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border: 1.5px solid var(--outline);
-  border-radius: var(--r-pill);
-  background: var(--fill);
-  font: 700 0.75rem/1.2 var(--heading);
-}
-.sp-clock-pill svg { width: 15px; height: 15px; }
 .sp-wait-mid { margin: 12px 0; }
 .sp-wait-mid b { display: block; font: 700 1rem/1.2 var(--heading); }
 .sp-wait-mid p { font-size: 0.8125rem; color: var(--muted); margin-top: 4px; }
-.btn-nudge {
-  width: 100%;
-  min-height: 48px;
-  padding: 6px 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: 2px solid #1A1A1A;
-  border-radius: var(--r-pill);
-  background: var(--pastel-workout);
-  color: #1A1A1A;
-  font: 700 0.84rem/1.2 var(--heading);
-  box-shadow: 3px 3px 0 var(--hard);
-  cursor: pointer;
-  transition: transform 110ms ease, box-shadow 110ms ease, background-color 180ms ease;
-}
-.btn-nudge:active { transform: translate(3px, 3px); box-shadow: none; }
-.btn-nudge.done {
-  background: var(--pastel-weight);
-  color: #1A1A1A;
-}
-.btn-nudge.done .nudge-svg { display: none; }
 
 /* Section 5: Finish Line Artifacts (with fan-open scroll choreography) */
 .finish {
@@ -2079,6 +2039,25 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   font-size: 0.875rem;
   line-height: 1.5;
   color: #3F3A34;
+}
+.beta-apk-sha {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #3F3A34;
+  overflow-wrap: anywhere;
+}
+.beta-apk-sha code {
+  padding: 2px 6px;
+  background: #F3EAD8;
+  border: 1px solid #1A1A1A;
+  border-radius: 6px;
+  font-size: 0.74rem;
+}
+.beta-apk-sha a {
+  font-weight: 700;
+  color: #1A1A1A;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 .beta-waitlist-box {
   margin-top: 22px;
@@ -3014,10 +2993,7 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   .hero-checkin-card,
   .hero-scroll-cue,
   .nav-inner > *,
-  .hcc-flame,
-  .hcc-flame.pop,
   .react-chip.pop .o-sticker,
-  .polaroid-waiting.wiggle,
   .link-skel-avatar,
   .link-skel-bar {
     animation: none !important;
