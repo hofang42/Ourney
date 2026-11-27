@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../tokens.dart';
 import '../typography.dart';
+import 'brand_logo_paths.dart';
 import 'flow_kit.dart';
 
 export 'brand_logo_paths.dart';
@@ -132,7 +133,9 @@ class _UiSplashState extends State<UiSplash>
     final reduce = UiMotion.reduced(context);
     const size = 174.0;
     final animateStickers =
-        _showStickers && !reduce && _scaleAnims.length == UiSplash._stickers.length;
+        _showStickers &&
+        !reduce &&
+        _scaleAnims.length == UiSplash._stickers.length;
 
     return ColoredBox(
       key: const ValueKey('ui-splash'),
@@ -178,7 +181,7 @@ class _UiSplashState extends State<UiSplash>
                   children: [
                     SizedBox(
                       width: size,
-                      height: size * .3,
+                      height: size * FullWordmarkPainter.aspectRatio,
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
@@ -265,7 +268,7 @@ class _LoaderState extends State<_Loader> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     final ui = context.ui;
     return Semantics(
-      label: 'ourney',
+      label: 'Ourney',
       child: RotationTransition(
         turns: _c,
         child: SizedBox(

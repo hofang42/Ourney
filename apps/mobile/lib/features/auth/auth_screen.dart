@@ -113,11 +113,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   bool get _isPhone => _flow == _Flow.phoneCode;
   bool get _needsPasswordField => _flow == _Flow.password;
 
-  AnimationController _ensureOtpShakeCtrl() =>
-      _otpShakeCtrl ??= AnimationController(
-        vsync: this,
-        duration: _kOtpShakeDuration,
-      );
+  AnimationController _ensureOtpShakeCtrl() => _otpShakeCtrl ??=
+      AnimationController(vsync: this, duration: _kOtpShakeDuration);
 
   /// 4-oscillation damped horizontal shake (`±6dp`) over `280ms`.
   static double _otpShakeDx(double t) {
@@ -458,7 +455,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     final result = profiles == null
         ? (profile: null, loaded: true)
         : await _loadProfile(profiles);
-    final needsSetup = profiles != null && (!result.loaded || result.profile == null);
+    final needsSetup =
+        profiles != null && (!result.loaded || result.profile == null);
     if (!needsSetup) {
       // Push the locally stored onboarding answers once the account has a
       // profile row (`ProfileSetupScreen._save` syncs after `upsertMe` for new

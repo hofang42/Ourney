@@ -170,7 +170,7 @@ class UiTopBar extends StatelessWidget {
                     style: UiText.eyebrow(color: ui.inkMuted),
                   ),
                 if (titleWidget != null)
-                  titleWidget!
+                  Semantics(header: true, child: titleWidget!)
                 else if (title != null)
                   Semantics(
                     header: true,

@@ -47,7 +47,7 @@ void main() {
       );
       expect(byKey('ui-splash'), findsOneWidget);
       expect(find.text('giữ một chuỗi.'), findsOneWidget);
-      expect(find.bySemanticsLabel('ourney'), findsOneWidget);
+      expect(find.bySemanticsLabel('Ourney'), findsOneWidget);
       expect(find.byType(UiStickerTile), findsNWidgets(6));
     });
 
@@ -154,10 +154,7 @@ void main() {
       await tester.tap(byKey('onboarding-reminder-21:30'));
       await tester.pumpAndSettle();
       expect(byKey('onboarding-quiz-result'), findsOneWidget);
-      expect(
-        byKey('onboarding-quiz-result-photo-english'),
-        findsOneWidget,
-      );
+      expect(byKey('onboarding-quiz-result-photo-english'), findsOneWidget);
       expect(
         find.descendant(
           of: byKey('onboarding-quiz-result'),
@@ -212,48 +209,49 @@ void main() {
       expect(byKey('onboarding-quiz-result-photo-trip'), findsOneWidget);
     });
 
-    testWidgets('each of the 6 quiz goals renders its sample photo in result Polaroid', (
-      tester,
-    ) async {
-      const goals = [
-        'weight_loss',
-        'english',
-        'workout',
-        'trip',
-        'couple',
-        'habit',
-      ];
-      for (final g in goals) {
-        await tester.pumpWidget(const SizedBox());
-        await pumpOurneyApp(tester, onboarded: false);
-        await tester.ensureVisible(byKey('onboarding-goal-$g'));
-        await tester.tap(byKey('onboarding-goal-$g'));
-        await tester.pump();
-        await tester.tap(byKey('onboarding-quiz-next'));
-        await tester.pumpAndSettle();
-        await tester.tap(byKey('onboarding-who-solo'));
-        await tester.pump();
-        await tester.tap(byKey('onboarding-quiz-next'));
-        await tester.pumpAndSettle();
-        await tester.tap(byKey('onboarding-reminder-07:00'));
-        await tester.pumpAndSettle();
-        expect(byKey('onboarding-quiz-result-photo-$g'), findsOneWidget);
-        expect(
-          find.descendant(
-            of: byKey('onboarding-quiz-result'),
-            matching: find.byType(Image),
-          ),
-          findsOneWidget,
-        );
-        expect(
-          find.descendant(
-            of: byKey('onboarding-quiz-result'),
-            matching: find.byType(UiGoalGlyph),
-          ),
-          findsNothing,
-        );
-      }
-    });
+    testWidgets(
+      'each of the 6 quiz goals renders its sample photo in result Polaroid',
+      (tester) async {
+        const goals = [
+          'weight_loss',
+          'english',
+          'workout',
+          'trip',
+          'couple',
+          'habit',
+        ];
+        for (final g in goals) {
+          await tester.pumpWidget(const SizedBox());
+          await pumpOurneyApp(tester, onboarded: false);
+          await tester.ensureVisible(byKey('onboarding-goal-$g'));
+          await tester.tap(byKey('onboarding-goal-$g'));
+          await tester.pump();
+          await tester.tap(byKey('onboarding-quiz-next'));
+          await tester.pumpAndSettle();
+          await tester.tap(byKey('onboarding-who-solo'));
+          await tester.pump();
+          await tester.tap(byKey('onboarding-quiz-next'));
+          await tester.pumpAndSettle();
+          await tester.tap(byKey('onboarding-reminder-07:00'));
+          await tester.pumpAndSettle();
+          expect(byKey('onboarding-quiz-result-photo-$g'), findsOneWidget);
+          expect(
+            find.descendant(
+              of: byKey('onboarding-quiz-result'),
+              matching: find.byType(Image),
+            ),
+            findsOneWidget,
+          );
+          expect(
+            find.descendant(
+              of: byKey('onboarding-quiz-result'),
+              matching: find.byType(UiGoalGlyph),
+            ),
+            findsNothing,
+          );
+        }
+      },
+    );
 
     testWidgets('back returns to the previous question', (tester) async {
       await pumpOurneyApp(tester, onboarded: false);
@@ -453,10 +451,7 @@ void main() {
         (c) => showNotificationSheet(c, timeLabel: '21:00'),
         (v) => result = v,
       );
-      expect(
-        find.text('để ourney nhắc nhẹ vào giờ bạn chọn.'),
-        findsOneWidget,
-      );
+      expect(find.text('để ourney nhắc nhẹ vào giờ bạn chọn.'), findsOneWidget);
       expect(find.textContaining('21:00'), findsOneWidget);
       await tester.tap(byKey('notification-turn-on'));
       await tester.pumpAndSettle();

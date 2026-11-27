@@ -215,25 +215,24 @@ void main() {
       },
     );
 
-    testWidgets(
-      'open-ended memory card singularizes Day 1 (UX-20)',
-      (tester) async {
-        final day1Trip = testJourney(
-          templateId: TemplateId.travel,
-          title: 'Da Lat',
-          startDate: const LocalDate(2026, 10, 16),
-          durationDays: null,
-        );
-        await pumpShare(
-          tester,
-          journey: day1Trip,
-          checkIns: [testCheckIn(day1Trip.id, const LocalDate(2026, 10, 16))],
-          locale: const Locale('en'),
-        );
-        expect(find.text('1 DAY · DA LAT'), findsWidgets);
-        expect(find.textContaining('1 DAYS'), findsNothing);
-      },
-    );
+    testWidgets('open-ended memory card singularizes Day 1 (UX-20)', (
+      tester,
+    ) async {
+      final day1Trip = testJourney(
+        templateId: TemplateId.travel,
+        title: 'Da Lat',
+        startDate: const LocalDate(2026, 10, 16),
+        durationDays: null,
+      );
+      await pumpShare(
+        tester,
+        journey: day1Trip,
+        checkIns: [testCheckIn(day1Trip.id, const LocalDate(2026, 10, 16))],
+        locale: const Locale('en'),
+      );
+      expect(find.text('1 DAY · DA LAT'), findsWidgets);
+      expect(find.textContaining('1 DAYS'), findsNothing);
+    });
 
     testWidgets(
       'ended open-ended minimal card freezes consistency at lastDay (UX-20)',
@@ -618,10 +617,7 @@ void main() {
           message: 'denied',
         );
         await _tap(tester, _key('share-card-save'));
-        expect(
-          find.text('Cần quyền thư viện ảnh để lưu thẻ.'),
-          findsOneWidget,
-        );
+        expect(find.text('Cần quyền thư viện ảnh để lưu thẻ.'), findsOneWidget);
         await tester.tap(_key('ui-toast-action'));
         await tester.pumpAndSettle();
         expect(settings.opened, 1);

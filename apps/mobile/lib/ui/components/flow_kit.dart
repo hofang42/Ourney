@@ -145,7 +145,7 @@ class UiStickerTile extends StatelessWidget {
 class UiRansomWordmark extends StatelessWidget {
   const UiRansomWordmark({
     this.size = 174,
-    this.semanticsLabel = 'ourney',
+    this.semanticsLabel = 'Ourney',
     super.key,
   });
 

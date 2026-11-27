@@ -71,11 +71,7 @@ String wrappedShareText(
   final lead = hideTitle
       ? (journey.emoji.isEmpty ? summary : '${journey.emoji} $summary')
       : '${journey.emoji} ${journey.title} — $summary';
-  return [
-    lead,
-    ?weights,
-    ?footer,
-  ].join('\n');
+  return [lead, ?weights, ?footer].join('\n');
 }
 
 /// `/journey/:id/wrapped`, Figma `JourneyWrappedScreen` ("Hành trình đã về
@@ -107,7 +103,9 @@ class JourneyWrappedScreen extends ConsumerWidget {
           context.pop();
         } else {
           context.go(
-            journey != null ? JourneysPaths.home(journeyId) : AppRoutes.journeys,
+            journey != null
+                ? JourneysPaths.home(journeyId)
+                : AppRoutes.journeys,
           );
         }
       }
@@ -117,10 +115,7 @@ class JourneyWrappedScreen extends ConsumerWidget {
         padTop: 0,
         child: Column(
           children: [
-            UiBackHeader(
-              onBack: back,
-              backLabel: l10n.journeys_back,
-            ),
+            UiBackHeader(onBack: back, backLabel: l10n.journeys_back),
             if (isLoading)
               Padding(
                 padding: const EdgeInsets.only(top: 120),
@@ -698,7 +693,9 @@ class _SummaryState extends ConsumerState<_Summary> {
           if (!context.mounted) return true;
           final m = ref.read(membershipProvider);
           final hideW = ref.read(hideWeightOnShareProvider);
-          return ((quiet || isWeightMetric(journey) || journey.hideMetricDefault) &&
+          return ((quiet ||
+                      isWeightMetric(journey) ||
+                      journey.hideMetricDefault) &&
                   (m.isLoading || m.hasError || m.value == null)) ||
               shareMetricHidden(
                 journey,
@@ -817,8 +814,10 @@ class _SummaryState extends ConsumerState<_Summary> {
                 ),
                 curve: UiCurves.easeInOutStrong,
                 builder: (context, aspect, child) {
-                  final t = ((aspect - (9 / 16)) / ((4 / 5) - (9 / 16)))
-                      .clamp(0.0, 1.0);
+                  final t = ((aspect - (9 / 16)) / ((4 / 5) - (9 / 16))).clamp(
+                    0.0,
+                    1.0,
+                  );
                   final maxW = lerpDouble(230, 290, t)!;
                   return ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: maxW),
@@ -832,10 +831,7 @@ class _SummaryState extends ConsumerState<_Summary> {
                           borderRadius: BorderRadius.circular(UiRadius.card),
                           border: Border.all(color: ui.outline, width: 2),
                         ),
-                        child: FittedBox(
-                          fit: BoxFit.contain,
-                          child: child,
-                        ),
+                        child: FittedBox(fit: BoxFit.contain, child: child),
                       ),
                     ),
                   );
