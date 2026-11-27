@@ -20,8 +20,6 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.annotation.DrawableRes
 import androidx.annotation.Keep
-import androidx.glance.appwidget.GlanceAppWidgetManager
-import androidx.glance.appwidget.state.updateAppWidgetState
 import com.hofang42.ourney.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -653,6 +651,11 @@ class OurneyWidgetConfigureActivity : Activity() {
         saving = true
         val appCtx = applicationContext
         val id = appWidgetId
+        val kindName = when (widgetKind) {
+            WidgetConfigKind.TODAY -> "today"
+            WidgetConfigKind.STREAK -> "streak"
+            WidgetConfigKind.SQUAD -> "squad"
+        }
 
         CoroutineScope(Dispatchers.Default).launch {
             WidgetActions.applyWidgetSelection(
@@ -660,6 +663,7 @@ class OurneyWidgetConfigureActivity : Activity() {
                 appWidgetId = id,
                 selectedId = chosenId,
                 store = store,
+                widgetKind = kindName,
             )
             runOnUiThread {
                 val resultValue = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)

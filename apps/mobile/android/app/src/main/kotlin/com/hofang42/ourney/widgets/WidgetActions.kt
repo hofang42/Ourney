@@ -195,6 +195,7 @@ object WidgetActions {
         appWidgetId: Int,
         selectedId: String?,
         store: WidgetSnapshotStore = WidgetSnapshotStore.fromContext(context.applicationContext),
+        widgetKind: String? = null,
     ): Boolean {
         if (appWidgetId <= 0) return false
         val appCtx = context.applicationContext
@@ -217,18 +218,17 @@ object WidgetActions {
             } catch (_: Throwable) {
                 ""
             }
-            when {
-                providerClass.endsWith("OurneySquadWidgetReceiver") ->
-                    SquadGlanceWidget().update(appCtx, glanceId)
-                providerClass.endsWith("OurneyStreakWidgetReceiver") ->
-                    StreakGlanceWidget().update(appCtx, glanceId)
-                providerClass.endsWith("OurneyTodayWidgetReceiver") ->
-                    TodayGlanceWidget().update(appCtx, glanceId)
-                else -> {
-                    TodayGlanceWidget().update(appCtx, glanceId)
-                    StreakGlanceWidget().update(appCtx, glanceId)
-                    SquadGlanceWidget().update(appCtx, glanceId)
-                }
+            val resolvedKind = when {
+                providerClass.endsWith("OurneySquadWidgetReceiver") -> "squad"
+                providerClass.endsWith("OurneyStreakWidgetReceiver") -> "streak"
+                providerClass.endsWith("OurneyTodayWidgetReceiver") -> "today"
+                else -> widgetKind?.lowercase().orEmpty()
+            }
+            when (resolvedKind) {
+                "squad" -> SquadGlanceWidget().update(appCtx, glanceId)
+                "streak" -> StreakGlanceWidget().update(appCtx, glanceId)
+                "today" -> TodayGlanceWidget().update(appCtx, glanceId)
+                else -> refreshAllWidgets(appCtx)
             }
         } catch (_: Throwable) {
             refreshAllWidgets(appCtx)

@@ -1171,5 +1171,56 @@ void main() {
         expect(fakeBridge.snapshotSyncs, hasLength(3));
       },
     );
+
+    test(
+      'defaultWidgetJourneyIdProvider and defaultWidgetSquadIdProvider use .v2 keys '
+      'and one-time delete legacy v1 keys so old values never pin silently',
+      () async {
+        final prefs = await testPrefs();
+        await prefs.setString('widgets.defaultJourneyId', 'legacy-pinned-j1');
+        await prefs.setString('widgets.defaultSquadId', 'legacy-pinned-s1');
+
+        expect(WidgetPrefs.defaultJourneyId, 'widgets.defaultJourneyId.v2');
+        expect(WidgetPrefs.defaultSquadId, 'widgets.defaultSquadId.v2');
+
+        final container = ProviderContainer(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        // Reading the providers must return null (Automatic) and delete the legacy v1 keys.
+        expect(container.read(defaultWidgetJourneyIdProvider), isNull);
+        expect(container.read(defaultWidgetSquadIdProvider), isNull);
+        await pumpEventQueue();
+
+        expect(prefs.containsKey('widgets.defaultJourneyId'), isFalse);
+        expect(prefs.containsKey('widgets.defaultSquadId'), isFalse);
+
+        // Setting a new v2 selection persists under the .v2 keys and clears on 'auto' / null.
+        await container
+            .read(defaultWidgetJourneyIdProvider.notifier)
+            .set('j-v2-selected');
+        await container
+            .read(defaultWidgetSquadIdProvider.notifier)
+            .set('s-v2-selected');
+        expect(
+          prefs.getString('widgets.defaultJourneyId.v2'),
+          'j-v2-selected',
+        );
+        expect(
+          prefs.getString('widgets.defaultSquadId.v2'),
+          's-v2-selected',
+        );
+
+        await container
+            .read(defaultWidgetJourneyIdProvider.notifier)
+            .set('auto');
+        await container.read(defaultWidgetSquadIdProvider.notifier).set(null);
+        expect(prefs.containsKey('widgets.defaultJourneyId.v2'), isFalse);
+        expect(prefs.containsKey('widgets.defaultSquadId.v2'), isFalse);
+      },
+    );
   });
 }

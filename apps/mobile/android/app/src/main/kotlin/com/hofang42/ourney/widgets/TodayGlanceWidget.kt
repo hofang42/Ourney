@@ -314,6 +314,15 @@ class TodayGlanceWidget : GlanceAppWidget() {
 
             Spacer(modifier = GlanceModifier.defaultWeight())
 
+            val cellWidth = LocalSize.current.width
+            val streakWidth = when {
+                pendingCount >= 2 && cellWidth < 125.dp -> 38.dp
+                pendingCount >= 2 && cellWidth < 150.dp -> 54.dp
+                cellWidth < 125.dp -> 64.dp
+                else -> 78.dp
+            }
+            val streakHeight = if (pendingCount >= 2 && cellWidth < 125.dp) 28.dp else 34.dp
+
             Row(
                 modifier = GlanceModifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -322,7 +331,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
                     Image(
                         provider = ImageProvider(streakBitmap),
                         contentDescription = null,
-                        modifier = GlanceModifier.height(34.dp).width(78.dp),
+                        modifier = GlanceModifier.height(streakHeight).width(streakWidth),
                         contentScale = ContentScale.Fit,
                     )
                 }
@@ -528,7 +537,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
                 .padding(16.dp),
         ) {
             Row(
-                modifier = GlanceModifier.fillMaxWidth().padding(end = 56.dp),
+                modifier = GlanceModifier.fillMaxWidth().padding(end = 64.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Image(

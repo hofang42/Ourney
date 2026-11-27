@@ -1070,4 +1070,51 @@ class WidgetSnapshotStoreTest {
         val resolvedSquad = WidgetSnapshot.resolveSquadCardState(squadWithDefault) as SquadWidgetCardState.Ready
         assertEquals("s-couple-2", resolvedSquad.squad.journeyId)
     }
+
+    @Test
+    fun `collectPlacedWidgetsAndPruneOrphans removes unplaced or invalid widget selections from state json`() {
+        val store = WidgetSnapshotStore(tempFolder.newFolder("ourney_widgets_prune_orphans"))
+        store.setWidgetSelection(11, "j-active-today")
+        store.setWidgetSelection(22, "j-orphan-deleted")
+        store.setWidgetSelection(33, "j-active-squad")
+        store.setWidgetSelection(44, "j-null-provider-info")
+
+        val placed = OurneyWidgetBridge.collectPlacedWidgetsAndPruneOrphans(
+            store = store,
+            rawPlacedByKind = listOf(
+                "today" to intArrayOf(11, 44),
+                "streak" to intArrayOf(),
+                "squad" to intArrayOf(33),
+            ),
+            hasValidInfo = { id -> id != 44 },
+        )
+
+        assertEquals(2, placed.size)
+        assertEquals(
+            mapOf(
+                "appWidgetId" to 11,
+                "kind" to "today",
+                "selectedId" to "j-active-today",
+            ),
+            placed[0],
+        )
+        assertEquals(
+            mapOf(
+                "appWidgetId" to 33,
+                "kind" to "squad",
+                "selectedId" to "j-active-squad",
+            ),
+            placed[1],
+        )
+
+        // Active placed widgets retain their pinned selections in state.json
+        assertEquals("j-active-today", store.getWidgetSelection(11))
+        assertEquals("j-active-squad", store.getWidgetSelection(33))
+
+        // Orphaned IDs (22 not returned by AppWidgetManager, 44 had null AppWidgetProviderInfo)
+        // are pruned from state.json so they fall back to "auto"
+        assertEquals(WidgetSnapshot.AUTO_SELECTION_ID, store.getWidgetSelection(22))
+        assertEquals(WidgetSnapshot.AUTO_SELECTION_ID, store.getWidgetSelection(44))
+        assertEquals(mapOf(11 to "j-active-today", 33 to "j-active-squad"), store.readState().widgetSelections)
+    }
 }

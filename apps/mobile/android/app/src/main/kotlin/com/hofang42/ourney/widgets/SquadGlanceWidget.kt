@@ -274,7 +274,7 @@ class SquadGlanceWidget : GlanceAppWidget() {
                 .padding(14.dp),
         ) {
             Row(
-                modifier = GlanceModifier.fillMaxWidth().padding(end = 56.dp),
+                modifier = GlanceModifier.fillMaxWidth().padding(end = 64.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Image(

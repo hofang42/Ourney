@@ -283,16 +283,12 @@ public struct WidgetSnapshot: Codable, Equatable {
   }
 
   /// Prioritizes the explicit `defaultJourneyId` or pending check-ins, honoring the
-  /// Today cycle action's shared state across all active journeys.
+  /// Today cycle action's shared index-based state across all active journeys.
   public func selectedTodayJourney(
     state: WidgetInteractiveState = WidgetInteractiveState()
   ) -> WidgetJourneyItem? {
     let pool = todayCyclePool()
     guard !pool.isEmpty else { return nil }
-    if let preferredId = state.selectedTodayJourneyId,
-       let match = pool.first(where: { $0.id == preferredId }) {
-      return match
-    }
     let idx = ((state.selectedTodayIndex % pool.count) + pool.count) % pool.count
     return pool[idx]
   }
@@ -1343,14 +1339,7 @@ public enum WidgetSnapshotStore {
       return state
     }
 
-    let currentIdx: Int
-    if let currentId = state.selectedTodayJourneyId,
-       let idx = pool.firstIndex(where: { $0.id == currentId }) {
-      currentIdx = idx
-    } else {
-      currentIdx = ((state.selectedTodayIndex % pool.count) + pool.count) % pool.count
-    }
-
+    let currentIdx = ((state.selectedTodayIndex % pool.count) + pool.count) % pool.count
     let nextIdx = (currentIdx + 1) % pool.count
     state.selectedTodayIndex = nextIdx
     state.selectedTodayJourneyId = pool[nextIdx].id

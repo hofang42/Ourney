@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -27,13 +29,21 @@ abstract final class WidgetPrefs {
   /// reopening the app later that evening does not re-spawn the Live Activity (§6.2).
   static const dismissedWindowKey = 'widgets.dismissedWindowKey';
 
+  /// Legacy v1 default journey selection key — deleted one-time on read and on
+  /// account reset so stale values from earlier builds never pin silently.
+  static const legacyDefaultJourneyIdV1 = 'widgets.defaultJourneyId';
+
+  /// Legacy v1 default squad selection key — deleted one-time on read and on
+  /// account reset.
+  static const legacyDefaultSquadIdV1 = 'widgets.defaultSquadId';
+
   /// Account-scoped default journey selection for `Today`, `Streak`, and
   /// `LockScreen` widgets (`null` = Automatic / `"Tự động"`).
-  static const defaultJourneyId = 'widgets.defaultJourneyId';
+  static const defaultJourneyId = 'widgets.defaultJourneyId.v2';
 
   /// Account-scoped default squad/couple selection for the `Squad` widget
   /// (`null` = Automatic / `"Tự động"`).
-  static const defaultSquadId = 'widgets.defaultSquadId';
+  static const defaultSquadId = 'widgets.defaultSquadId.v2';
 
   static const List<String> accountKeys = [
     photoMode,
@@ -41,6 +51,8 @@ abstract final class WidgetPrefs {
     liveActivityEnabled,
     defaultJourneyId,
     defaultSquadId,
+    legacyDefaultJourneyIdV1,
+    legacyDefaultSquadIdV1,
     dismissedWindowKey,
   ];
 }
@@ -163,9 +175,11 @@ class DefaultWidgetJourneyIdController extends Notifier<String?> {
 
   @override
   String? build() {
-    final raw = ref
-        .watch(sharedPreferencesProvider)
-        .getString(WidgetPrefs.defaultJourneyId);
+    final prefs = ref.watch(sharedPreferencesProvider);
+    if (prefs.containsKey(WidgetPrefs.legacyDefaultJourneyIdV1)) {
+      unawaited(prefs.remove(WidgetPrefs.legacyDefaultJourneyIdV1));
+    }
+    final raw = prefs.getString(WidgetPrefs.defaultJourneyId);
     return _normalize(raw);
   }
 
@@ -195,9 +209,11 @@ class DefaultWidgetSquadIdController extends Notifier<String?> {
 
   @override
   String? build() {
-    final raw = ref
-        .watch(sharedPreferencesProvider)
-        .getString(WidgetPrefs.defaultSquadId);
+    final prefs = ref.watch(sharedPreferencesProvider);
+    if (prefs.containsKey(WidgetPrefs.legacyDefaultSquadIdV1)) {
+      unawaited(prefs.remove(WidgetPrefs.legacyDefaultSquadIdV1));
+    }
+    final raw = prefs.getString(WidgetPrefs.defaultSquadId);
     return _normalize(raw);
   }
 

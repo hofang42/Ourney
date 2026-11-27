@@ -635,8 +635,16 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
     XCTAssertEqual(snapshot.selectedSquad()?.journeyId, "6f8c9a10-ielts")
 
     // When only 1 journey is pending and 1 is checked in, todayCyclePool still includes both
-    // journeys so the Today widget's 1/N › cycle button keeps working after check-in.
+    // journeys so the Today widget's 1/N › cycle button keeps working after check-in, and
+    // index-based selection moves to the remaining pending journey at index 0 (matching Android)
+    // even if selectedTodayJourneyId in state.json still holds the just-checked-in journey id.
     XCTAssertEqual(snapshot.todayCyclePool().map(\.id), ["6f8c9a10-ielts", "8a10b220-run"])
+    XCTAssertEqual(
+      snapshot.selectedTodayJourney(
+        state: WidgetInteractiveState(selectedTodayIndex: 0, selectedTodayJourneyId: "8a10b220-run")
+      )?.id,
+      "6f8c9a10-ielts"
+    )
     XCTAssertEqual(
       snapshot.selectedTodayJourney(state: WidgetInteractiveState(selectedTodayIndex: 1))?.id,
       "8a10b220-run"
@@ -683,7 +691,7 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
     let snapshot = WidgetSnapshot(authState: "ready", defaultJourneyId: other.id, journeys: [other, trip])
     let state = WidgetSnapshot.resolveTodayCardState(
       snapshot: snapshot,
-      state: WidgetInteractiveState(selectedTodayJourneyId: trip.id)
+      state: WidgetInteractiveState(selectedTodayIndex: 1, selectedTodayJourneyId: trip.id)
     )
 
     XCTAssertEqual(state, .ready(trip))

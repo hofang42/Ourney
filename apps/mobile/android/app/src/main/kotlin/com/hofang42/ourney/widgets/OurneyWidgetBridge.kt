@@ -161,35 +161,66 @@ class OurneyWidgetBridge(context: Context) : MethodChannel.MethodCallHandler {
             OurneyStreakWidgetReceiver::class.java to "streak",
             OurneySquadWidgetReceiver::class.java to "squad",
         )
-        val state = store.readState()
-        val entries = mutableListOf<Pair<Int, Map<String, Any>>>()
+        val rawPlacedByKind = mutableListOf<Pair<String, IntArray>>()
+        var allQueriesSucceeded = true
         for ((receiverClass, kind) in receivers) {
             val ids = try {
                 manager.getAppWidgetIds(ComponentName(appContext, receiverClass))
             } catch (_: Throwable) {
+                allQueriesSucceeded = false
                 IntArray(0)
             }
-            for (id in ids) {
-                if (id <= 0) continue
-                val info = try {
-                    manager.getAppWidgetInfo(id)
-                } catch (_: Throwable) {
-                    null
-                }
-                if (info == null) continue
-                entries.add(
-                    id to mapOf(
-                        "appWidgetId" to id,
-                        "kind" to kind,
-                        "selectedId" to state.selectionFor(id),
-                    ),
-                )
-            }
+            rawPlacedByKind.add(kind to ids)
         }
-        return entries.sortedBy { it.first }.map { it.second }
+        return collectPlacedWidgetsAndPruneOrphans(
+            store = store,
+            rawPlacedByKind = rawPlacedByKind,
+            pruneOrphans = allQueriesSucceeded,
+            hasValidInfo = { id ->
+                try {
+                    manager.getAppWidgetInfo(id) != null
+                } catch (_: Throwable) {
+                    false
+                }
+            },
+        )
     }
 
     companion object {
         const val CHANNEL_NAME = "ourney/widgets"
+
+        internal fun collectPlacedWidgetsAndPruneOrphans(
+            store: WidgetSnapshotStore,
+            rawPlacedByKind: List<Pair<String, IntArray>>,
+            pruneOrphans: Boolean = true,
+            hasValidInfo: (Int) -> Boolean = { true },
+        ): List<Map<String, Any>> {
+            val state = store.readState()
+            val placedIds = mutableSetOf<Int>()
+            val entries = mutableListOf<Pair<Int, Map<String, Any>>>()
+            for ((kind, ids) in rawPlacedByKind) {
+                for (id in ids) {
+                    if (id <= 0) continue
+                    if (!hasValidInfo(id)) continue
+                    if (!placedIds.add(id)) continue
+                    entries.add(
+                        id to mapOf(
+                            "appWidgetId" to id,
+                            "kind" to kind,
+                            "selectedId" to state.selectionFor(id),
+                        ),
+                    )
+                }
+            }
+            if (pruneOrphans && state.widgetSelections.isNotEmpty()) {
+                val orphanIds = state.widgetSelections.keys
+                    .filter { it !in placedIds }
+                    .toIntArray()
+                if (orphanIds.isNotEmpty()) {
+                    store.removeWidgetSelections(orphanIds)
+                }
+            }
+            return entries.sortedBy { it.first }.map { it.second }
+        }
     }
 }
