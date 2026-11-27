@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../ui/ui.dart';
+import '../../journeys/domain/journey_title.dart';
 import '../domain/share_card_content.dart';
 import '../l10n/generated/share_card_localizations.dart';
 
@@ -626,9 +627,13 @@ class _MemoryCard extends StatelessWidget {
     final c = ctx.content;
     final total = math.min(ctx.story ? 24 : 20, math.max(ctx.total, 1));
     final shot = math.min(c.photoCount, total);
-    final title = ctx.l10n.share_card_tripPosterTitle(
-      ctx.total,
-      c.title.toUpperCase(),
+    final title = keepNumberWithUnit(
+      titleStatesLength(c.title)
+          ? c.title.toUpperCase()
+          : ctx.l10n.share_card_tripPosterTitle(
+              ctx.total,
+              c.title.toUpperCase(),
+            ),
     );
     return DecoratedBox(
       decoration: const BoxDecoration(
@@ -661,12 +666,14 @@ class _MemoryCard extends StatelessWidget {
                   Text(
                     title,
                     key: const ValueKey('share-card-title'),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
                     style: _heading(
                       'Fraunces',
                       size: 17,
                       weight: 600,
-                      height: 1.25,
+                      height: 1.3,
                       color: _ink,
                     ),
                   ),
@@ -831,7 +838,7 @@ class _CoupleCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   GridView.count(
-                    crossAxisCount: cols,
+                    crossAxisCount: 4,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     mainAxisSpacing: 4,

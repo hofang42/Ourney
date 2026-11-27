@@ -63,6 +63,21 @@ Future<JourneysHarness> _open(
 }
 
 void main() {
+  testWidgets('memory summary title with length does not repeat duration', (
+    tester,
+  ) async {
+    final j = testJourney(
+      templateId: TemplateId.travel,
+      title: 'Đà Lạt 7 ngày',
+      durationDays: 7,
+      status: JourneyStatus.ended,
+    );
+    await _open(tester, journey: j);
+    await tester.tap(_key('wrapped-segment-4'));
+    await tester.pumpAndSettle();
+    expect(find.text('ĐÀ LẠT 7\u00A0NGÀY'), findsOneWidget);
+  });
+
   group('Wrapped story', () {
     testWidgets('pages advance by tap, segments jump, then the summary', (
       tester,

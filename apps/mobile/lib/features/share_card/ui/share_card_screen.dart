@@ -15,6 +15,7 @@ import '../../../personas/persona_contract.dart' show personaSkinOf;
 import '../../../ui/ui.dart';
 import '../../camera/capture_services.dart' show appSettingsOpenerProvider;
 import '../../journeys/domain/journey_progress.dart';
+import '../../journeys/domain/journey_title.dart';
 import '../../profile/settings_providers.dart';
 import '../../sharing/data/sharing_providers.dart';
 import '../data/share_card_exporter.dart';
@@ -308,16 +309,22 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
               ),
             ),
             'memory' => Text(
-              l10n.share_card_tripPosterTitle(
-                content.totalDays ?? content.dayNumber,
-                content.title.toUpperCase(),
+              keepNumberWithUnit(
+                titleStatesLength(content.title)
+                    ? content.title.toUpperCase()
+                    : l10n.share_card_tripPosterTitle(
+                        content.totalDays ?? content.dayNumber,
+                        content.title.toUpperCase(),
+                      ),
               ),
               key: const ValueKey('share-card-heading'),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
               style: UiText.heading(
                 font: 'Fraunces',
                 size: 26,
                 weight: 300,
-                height: 1.25,
+                height: 1.3,
                 color: ui.ink,
               ),
             ),
