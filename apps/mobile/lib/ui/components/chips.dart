@@ -14,7 +14,9 @@ class UiChip extends StatelessWidget {
     required this.onPressed,
     @Deprecated('Use glyph: OurneyIcon(...)') this.icon,
     this.glyph,
+    this.trailing,
     this.selected = false,
+    this.fillWhenSelected = true,
     this.semanticHint,
     super.key,
   });
@@ -26,13 +28,23 @@ class UiChip extends StatelessWidget {
   /// A drawn glyph (e.g. `OurneyIcon`) shown instead of [icon]. Lets screens
   /// use the Ourney sticker icon set where a matching icon exists.
   final Widget? glyph;
+
+  /// Optional trailing glyph rendered after [label] (e.g. a selection check on
+  /// a surface-filled colour-swatch chip).
+  final Widget? trailing;
   final bool selected;
+
+  /// Whether [selected] fills the pill with `ui.accent` (default `true`).
+  /// Set to `false` for colour-swatch chips so the swatch dot keeps its figure-
+  /// ground contrast against `ui.surface`.
+  final bool fillWhenSelected;
   final String? semanticHint;
 
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final fg = selected ? ui.onAccent : ui.ink;
+    final accentFill = selected && fillWhenSelected;
+    final fg = accentFill ? ui.onAccent : ui.ink;
     return UiPressable(
       onPressed: onPressed,
       selected: selected,
@@ -45,9 +57,11 @@ class UiChip extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 44),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? ui.accent : ui.surface,
+          color: accentFill ? ui.accent : ui.surface,
           borderRadius: BorderRadius.circular(UiRadius.capsule),
-          border: ui.stickerBorder(UiBorder.thin),
+          border: ui.stickerBorder(
+            selected && !fillWhenSelected ? UiBorder.standard : UiBorder.thin,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -69,6 +83,10 @@ class UiChip extends StatelessWidget {
                 ),
               ),
             ),
+            if (trailing != null) ...[
+              const SizedBox(width: 6),
+              trailing!,
+            ],
           ],
         ),
       ),

@@ -258,19 +258,19 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     required Brightness brightness,
   }) {
     final dark = brightness == Brightness.dark;
+    var seed = accent;
     if (accent == const Color(0xFFFF8A3D) ||
         accent == const Color(0xFFEA580C) ||
         accent == const Color(0xFFF07A3A) ||
         (!dark && accent == const Color(0xFFFF9F1C))) {
-      return dark ? const Color(0xFFFFC39B) : const Color(0xFFB4470F);
-    }
-    if (!dark && accent == const Color(0xFF3DE88C)) {
-      return const Color(0xFF047857);
+      seed = dark ? const Color(0xFFFFC39B) : const Color(0xFFB4470F);
+    } else if (!dark && accent == const Color(0xFF3DE88C)) {
+      seed = const Color(0xFF047857);
     }
     bool passes(Color c) =>
         uiContrast(c, bg) >= 4.5 && uiContrast(c, surface) >= 4.5;
-    if (passes(accent)) return accent;
-    final hsl = HSLColor.fromColor(accent);
+    if (passes(seed)) return seed;
+    final hsl = HSLColor.fromColor(seed);
     for (var step = 1; step <= 100; step++) {
       final delta = step * 0.01;
       final nextL = dark

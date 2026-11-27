@@ -723,10 +723,7 @@ class _Style {
   final bool isDark;
 
   Color get ink => ui.ink;
-  Color get onAccent =>
-      ThemeData.estimateBrightnessForColor(accent) == Brightness.dark
-      ? (isDark ? ui.ink : const Color(0xFFFFFFFF))
-      : (isDark ? ui.bg : const Color(0xFF1C1C1E));
+  Color get onAccent => ui.onAccent;
 
   TextStyle h(double size, {int w = 700}) => UiText.heading(
     font: font,
