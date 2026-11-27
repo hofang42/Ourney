@@ -97,6 +97,14 @@ const double dockE4IslandRadiusCompact = 26.0;
 /// Horizontal padding deducted from equal-slot `capsuleWidth` for `labelMaxW`.
 const double dockE4CapsuleLabelSidePad = 6.0;
 
+/// Horizontal padding deducted from the active long-slot capsule width
+/// (`activeLongCapW - 17`) so that at `1.35x` (`dockLabelMaxScale`),
+/// Vietnamese descenders (`Hoạt động` `'g'` bowl) still clear the `r=16`
+/// (`r_inner=14.5`) inner border by `>= 4.5dp` across `360/390/412dp` while
+/// leaving `1.0x` font sizes (`10.0dp` `< 390dp`, `10.5dp` `>= 390dp`)
+/// unchanged.
+const double dockE4ActiveLongCapsuleLabelPad = 17.0;
+
 /// Total horizontal clearance + corner curve margin (`2 * 1.5dp` border +
 /// `8.0dp` `r=16` descender curve inset + `2 * 4.0dp` inner clearance) added to
 /// the label width to determine whether the active slot needs adaptive flex.
@@ -223,7 +231,7 @@ class DockTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final active = item.active;
+    final active = !camera && item.active;
     final Color labelColor;
     if (camera) {
       labelColor = active ? (onAccent ?? ui.onBrand) : UiCamera.ink;

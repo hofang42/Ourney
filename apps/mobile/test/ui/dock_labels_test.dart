@@ -239,130 +239,175 @@ void main() {
     });
   }
 
-  for (final w in [360.0, 390.0, 412.0]) {
-    testWidgets(
-      'C1 Vietnamese dock labels at ${w.toInt()}dp across all 4 active tabs: '
-      'font 10.0 (<390) / 10.5 (>=390), -0.01em tracking, adaptive slot flex, '
-      'partner >=48dp, and 3x pixel ink-to-inner-edge clearance >=4.5dp',
-      (tester) async {
-        tester.view.devicePixelRatio = 1;
-        tester.view.physicalSize = Size(w, 700);
-        addTearDown(tester.view.reset);
+  for (final scale in [1.0, dockLabelMaxScale]) {
+    for (final w in [360.0, 390.0, 412.0]) {
+      testWidgets(
+        'C1 Vietnamese dock labels at ${w.toInt()}dp x$scale across all 4 active tabs: '
+        'font >=10dp (10.0 <390 / 10.5 >=390 at 1x), -0.01em tracking, adaptive slot flex, '
+        'partner >=48dp, and 3x pixel ink-to-inner-edge clearance >=4.5dp',
+        (tester) async {
+          tester.view.devicePixelRatio = 1;
+          tester.view.physicalSize = Size(w, 700);
+          addTearDown(tester.view.reset);
 
-        final equalGeo = UiDockGeometry.compute(width: w, cam: 60, islandH: 64);
-        final maxLabelW = equalGeo.capsuleWidth - dockE4CapsuleLabelSidePad;
-        final expectedFont = w < 390 ? 10.0 : 10.5;
-
-        for (var activeIdx = 0; activeIdx < 4; activeIdx++) {
-          await _pump(tester, w, 1.0, active: activeIdx);
-          await tester.pumpAndSettle();
-
-          final activeGeo = UiDockGeometry.compute(
+          final equalGeo = UiDockGeometry.compute(
             width: w,
             cam: 60,
             islandH: 64,
-            activeTabIndex: activeIdx,
           );
+          final maxLabelW = equalGeo.labelMaxWidth;
+          expect(
+            maxLabelW,
+            closeTo(w < 390 ? 53.0 : 56.0, 0.01),
+            reason: 'labelMaxW at W=$w',
+          );
+          final base1xFont = w < 390 ? 10.0 : 10.5;
 
-          // 1. All 4 labels share exact font size (10.0 at <390, 10.5 at >=390) and -0.01em tracking
-          for (final l in _labels) {
-            final text = tester.widget<Text>(find.text(l));
-            expect(
-              text.style!.fontSize!,
-              closeTo(expectedFont, 0.01),
-              reason: '$l fontSize at W=$w active=$activeIdx',
-            );
-            expect(
-              text.style!.letterSpacing!,
-              closeTo(expectedFont * dockLabelLetterSpacingEm, 0.001),
-              reason: '$l letterSpacing (-0.01em) at W=$w active=$activeIdx',
-            );
-            expect(
-              tester.getSize(find.text(l)).width,
-              lessThanOrEqualTo(maxLabelW + 0.5),
-              reason: '$l width <= equalCapW - 6 at W=$w',
-            );
-          }
+          for (var activeIdx = 0; activeIdx < 4; activeIdx++) {
+            await _pump(tester, w, scale, active: activeIdx);
+            await tester.pumpAndSettle();
 
-          // 2. Slot widths match C1 adaptive flex (equal when short tab active, widened when long tab active; partner >= 48dp)
-          final dockTabs = tester
-              .widgetList<DockTab>(find.byType(DockTab))
-              .toList();
-          expect(dockTabs, hasLength(4));
-          for (var i = 0; i < 4; i++) {
-            expect(
-              dockTabs[i].labelMaxWidth,
-              closeTo(maxLabelW, 0.05),
-              reason: 'tab $i labelMaxWidth',
+            final activeGeo = UiDockGeometry.compute(
+              width: w,
+              cam: 60,
+              islandH: 64,
+              activeTabIndex: activeIdx,
             );
-            final slotSize = tester.getSize(find.byKey(ValueKey('t$i')));
-            expect(
-              slotSize.width,
-              closeTo(activeGeo.tabSlots[i].width, 0.5),
-              reason: 'tab $i slot width at W=$w active=$activeIdx',
-            );
-            expect(
-              slotSize.width,
-              greaterThanOrEqualTo(48.0),
-              reason:
-                  'tab $i partner tap target >= 48dp at W=$w active=$activeIdx',
-            );
-          }
-          if (activeIdx == 1 || activeIdx == 3) {
-            // Short labels (Nhóm / Hồ sơ) -> strictly equal slots
-            for (var i = 0; i < 4; i++) {
+
+            // 1. All 4 labels share one font size (>= 1x font size and >= 10.0dp) and -0.01em tracking
+            final seenFonts = <double>{};
+            for (final l in _labels) {
+              final text = tester.widget<Text>(find.text(l));
+              final fontSize = text.style!.fontSize!;
+              seenFonts.add(fontSize);
+              final effectiveFont = fontSize * scale;
+              if (scale == 1.0) {
+                expect(
+                  effectiveFont,
+                  closeTo(base1xFont, 0.01),
+                  reason: '$l 1x fontSize at W=$w active=$activeIdx',
+                );
+              } else {
+                expect(
+                  effectiveFont,
+                  greaterThanOrEqualTo(base1xFont),
+                  reason:
+                      '$l effective fontSize ($effectiveFont) >= 1x ($base1xFont) at W=$w x$scale',
+                );
+                expect(
+                  effectiveFont,
+                  greaterThanOrEqualTo(10.0),
+                  reason: '$l effective fontSize >= 10dp at W=$w x$scale',
+                );
+              }
               expect(
-                tester.getSize(find.byKey(ValueKey('t$i'))).width,
-                closeTo(equalGeo.slotWidth, 0.01),
-                reason: 'short tab $activeIdx must keep equal slots at W=$w',
+                text.style!.letterSpacing!,
+                closeTo(effectiveFont * dockLabelLetterSpacingEm, 0.001),
+                reason:
+                    '$l letterSpacing (-0.01em) at W=$w x$scale active=$activeIdx',
+              );
+              expect(
+                tester.getSize(find.text(l)).width,
+                lessThanOrEqualTo(maxLabelW + 0.5),
+                reason: '$l width <= labelMaxW ($maxLabelW) at W=$w x$scale',
               );
             }
-          }
+            expect(seenFonts, hasLength(1));
 
-          // 3. Concentric radii at expanded state (R_island = 22, r_pill = 16 -> 6dp moat)
-          final glasses = tester
-              .widgetList<UiGlass>(find.byType(UiGlass))
-              .toList();
-          for (final g in glasses) {
-            expect(g.borderRadius, BorderRadius.circular(22));
-          }
-          final pillFinder = find.byKey(const ValueKey('dock-selection-pill'));
-          final pill = tester.getRect(pillFinder);
-          expect(
-            pill.width,
-            closeTo(activeGeo.capsuleWidthForTab(activeIdx), 0.5),
-            reason: 'active=$activeIdx capsule width at W=$w',
-          );
-          final pillDeco =
-              tester.widget<DecoratedBox>(pillFinder).decoration
-                  as BoxDecoration;
-          expect(pillDeco.borderRadius, BorderRadius.circular(16));
+            // 2. Slot widths match C1 adaptive flex (equal when short tab active, widened when long tab active; partner >= 48dp)
+            final dockTabs = tester
+                .widgetList<DockTab>(find.byType(DockTab))
+                .toList();
+            expect(dockTabs, hasLength(4));
+            for (var i = 0; i < 4; i++) {
+              expect(
+                dockTabs[i].labelMaxWidth,
+                closeTo(maxLabelW, 0.05),
+                reason: 'tab $i labelMaxWidth at W=$w x$scale',
+              );
+              final slotSize = tester.getSize(find.byKey(ValueKey('t$i')));
+              expect(
+                slotSize.width,
+                closeTo(activeGeo.tabSlots[i].width, 0.5),
+                reason: 'tab $i slot width at W=$w x$scale active=$activeIdx',
+              );
+              expect(
+                slotSize.width,
+                greaterThanOrEqualTo(48.0),
+                reason:
+                    'tab $i partner tap target >= 48dp at W=$w x$scale active=$activeIdx',
+              );
+            }
+            if (activeIdx == 1 || activeIdx == 3) {
+              // Short labels (Nhóm / Hồ sơ) -> strictly equal slots
+              for (var i = 0; i < 4; i++) {
+                expect(
+                  tester.getSize(find.byKey(ValueKey('t$i'))).width,
+                  closeTo(equalGeo.slotWidth, 0.01),
+                  reason:
+                      'short tab $activeIdx must keep equal slots at W=$w x$scale',
+                );
+              }
+            }
 
-          // 4. Real 3x bitmap ink-scan clearance inside the r=16 (r_inner=14.5) pill
-          final labelText = _labels[activeIdx];
-          final labelRect = tester.getRect(find.text(labelText));
-          final scan = await _scanActivePillClearance(
-            tester,
-            pillGlobal: pill,
-            labelGlobal: labelRect,
-            pillRadius: 16.0,
-          );
-          expect(
-            scan.minHorizDp,
-            greaterThanOrEqualTo(4.5),
-            reason:
-                '$labelText at W=$w horiz clearance=${scan.minHorizDp.toStringAsFixed(2)}dp '
-                '(L=${scan.leftDp.toStringAsFixed(2)}, R=${scan.rightDp.toStringAsFixed(2)})',
-          );
-          expect(
-            scan.minRadialDp,
-            greaterThanOrEqualTo(3.5),
-            reason:
-                '$labelText at W=$w 2D radial clearance=${scan.minRadialDp.toStringAsFixed(2)}dp',
-          );
-        }
-      },
-    );
+            // 3. Concentric radii at expanded state (R_island = 22, r_pill = 16 -> 6dp moat)
+            final glasses = tester
+                .widgetList<UiGlass>(find.byType(UiGlass))
+                .toList();
+            for (final g in glasses) {
+              expect(g.borderRadius, BorderRadius.circular(22));
+            }
+            final pillFinder = find.byKey(
+              const ValueKey('dock-selection-pill'),
+            );
+            final pill = tester.getRect(pillFinder);
+            expect(
+              pill.width,
+              closeTo(activeGeo.capsuleWidthForTab(activeIdx), 0.5),
+              reason: 'active=$activeIdx capsule width at W=$w x$scale',
+            );
+            final pillDeco =
+                tester.widget<DecoratedBox>(pillFinder).decoration
+                    as BoxDecoration;
+            expect(pillDeco.borderRadius, BorderRadius.circular(16));
+
+            // 4. Vertical inner containment (N3) + real 3x bitmap ink-scan clearance inside r=16 (r_inner=14.5) pill
+            final labelText = _labels[activeIdx];
+            final labelRect = tester.getRect(find.text(labelText));
+            expect(
+              labelRect.top,
+              greaterThanOrEqualTo(pill.top + UiBorder.thin),
+              reason: '$labelText top inside inner pill border at W=$w x$scale',
+            );
+            expect(
+              labelRect.bottom,
+              lessThanOrEqualTo(pill.bottom - UiBorder.thin),
+              reason:
+                  '$labelText bottom inside inner pill border at W=$w x$scale',
+            );
+            final scan = await _scanActivePillClearance(
+              tester,
+              pillGlobal: pill,
+              labelGlobal: labelRect,
+              pillRadius: 16.0,
+            );
+            expect(
+              scan.minHorizDp,
+              greaterThanOrEqualTo(4.5),
+              reason:
+                  '$labelText at W=$w x$scale horiz clearance=${scan.minHorizDp.toStringAsFixed(2)}dp '
+                  '(L=${scan.leftDp.toStringAsFixed(2)}, R=${scan.rightDp.toStringAsFixed(2)})',
+            );
+            expect(
+              scan.minRadialDp,
+              greaterThanOrEqualTo(scale == 1.0 ? 3.5 : 3.2),
+              reason:
+                  '$labelText at W=$w x$scale 2D radial clearance=${scan.minRadialDp.toStringAsFixed(2)}dp',
+            );
+          }
+        },
+      );
+    }
   }
 
   for (final (locale, labels) in [('vi', _labels), ('en', _enLabels)]) {

@@ -35,6 +35,8 @@ abstract final class _E4 {
   static const double capH = dockE4CapsuleHeight;
   static const double capsuleSlotInset = 2;
   static const double capsuleLabelSidePad = dockE4CapsuleLabelSidePad;
+  static const double activeLongCapsuleLabelPad =
+      dockE4ActiveLongCapsuleLabelPad;
   static const double capsuleDescenderClearanceMargin =
       dockE4DescenderClearanceMargin;
   static const double capsuleVertPad = dockE4CapsuleVertPad;
@@ -108,6 +110,20 @@ class UiDockGeometry {
   /// `390dp`, `75.0dp` (`capW = 73.0dp`) at `>= 390dp`.
   static double activeLongSlotTargetAt(double width) =>
       width < dockLabelWidthBreakpoint ? _E4.slotMaxCompactWidth : _E4.slotMax;
+
+  /// Maximum label width inside the selection capsule at [width]:
+  /// `min(capsuleWidth - 6, activeLongCapW - 17)` (`53.0dp` at `360dp`,
+  /// `56.0dp` at `>= 390dp`).
+  double get labelMaxWidth {
+    final activeLongCapW = activeLongSlotTargetAt(width) - _E4.capsuleSlotInset;
+    return math.max(
+      0.0,
+      math.min(
+        capsuleWidth - _E4.capsuleLabelSidePad,
+        activeLongCapW - _E4.activeLongCapsuleLabelPad,
+      ),
+    );
+  }
 
   /// Computes the E4 (C1) geometry.
   ///
@@ -468,10 +484,7 @@ class UiDock extends StatelessWidget {
           islandH: _E4.islandH,
           tabsPerSide: tabsPerSide,
         );
-        final labelMaxW = math.max(
-          0.0,
-          shownBaseGeo.capsuleWidth - _E4.capsuleLabelSidePad,
-        );
+        final labelMaxW = shownBaseGeo.labelMaxWidth;
         final labels = [for (final e in items) e.label];
         final labelFit = dockLabelFit(
           context,

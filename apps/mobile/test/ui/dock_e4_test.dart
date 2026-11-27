@@ -1029,6 +1029,39 @@ void main() {
         handle.dispose();
       },
     );
+
+    testWidgets(
+      'camera dock suppresses tab active state (UiCamera.ink foreground and isSelected: false) even when item.active is true',
+      (tester) async {
+        final handle = tester.ensureSemantics();
+        await _pumpDock(tester, width: 390, active: 0, camera: true);
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const ValueKey('dock-selection-pill')), findsNothing);
+        for (var i = 0; i < 4; i++) {
+          final text = tester.widget<Text>(find.text(_viLabels[i]));
+          expect(
+            text.style!.color,
+            UiCamera.ink,
+            reason: 'camera tab $i must use UiCamera.ink, never dark onBrand',
+          );
+          expect(
+            tester.getSemantics(find.byKey(ValueKey(_tabKeys[i]))),
+            matchesSemantics(
+              label: _viLabels[i],
+              isButton: true,
+              isSelected: false,
+              isEnabled: true,
+              hasEnabledState: true,
+              hasSelectedState: true,
+              hasTapAction: true,
+            ),
+            reason: 'camera tab $i must not announce isSelected: true',
+          );
+        }
+        handle.dispose();
+      },
+    );
   });
 
   group('T7 — Tap Targets >= 48x48 at 320, 360, 390 in both states', () {
