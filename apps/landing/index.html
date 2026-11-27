@@ -90,12 +90,24 @@
         "publisher": {
           "@id": "https://ourney.tech/#organization"
         },
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD",
-          "availability": "https://schema.org/PreOrder"
-        }
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "Ourney Android Beta APK",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock",
+            "url": "https://ourney.tech/Ourney.apk"
+          },
+          {
+            "@type": "Offer",
+            "name": "Ourney iOS Beta Waitlist",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/PreOrder",
+            "url": "https://ourney.tech/#beta-waitlist-box"
+          }
+        ]
       }
     ]
   }
@@ -415,7 +427,7 @@
             <g class="o-fill"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/></g>
           </svg>
         </button>
-        <a class="btn btn-primary btn-sm nav-cta" href="#beta" data-i18n="nav_cta">Tải APK / Chờ iOS</a>
+        <a class="btn btn-primary btn-sm nav-cta" id="nav-cta" href="#beta" data-i18n="nav_cta">Tải APK / Chờ iOS</a>
       </div>
     </div>
   </header>
@@ -436,7 +448,7 @@
           </div>
           <div class="intro-recoil-2">
             <div class="intro-stamp stamp-2">
-              <svg class="o-sticker" width="36" height="36" aria-hidden="true"><use href="#i-flame"/></svg>
+              <svg class="o-sticker" width="36" height="36" aria-hidden="true"><use href="#i-sparkle"/></svg>
               <span data-i18n="stamp_2">giữ nhịp mình,</span>
             </div>
           </div>
@@ -454,7 +466,7 @@
             <span class="orbit-tile tile-study"><svg class="o-sticker" width="36" height="36"><use href="#i-book"/></svg></span>
           </div>
           <div class="hero-orbit-item orbit-2" aria-hidden="true">
-            <span class="orbit-tile tile-flame"><svg class="o-sticker" width="36" height="36"><use href="#i-flame"/></svg></span>
+            <span class="orbit-tile tile-flame"><svg class="o-sticker" width="36" height="36"><use href="#i-sparkle"/></svg></span>
           </div>
           <div class="hero-orbit-item orbit-3" aria-hidden="true">
             <span class="orbit-tile tile-couple"><svg class="o-sticker" width="36" height="36"><use href="#i-couple"/></svg></span>
@@ -506,7 +518,7 @@
               <img class="hcc-art art-1" src="/assets/photos/hcc-run.webp" alt="" width="186" height="108" loading="lazy" decoding="async">
               <img class="hcc-art art-2" src="/assets/photos/hcc-travel.webp" alt="" width="186" height="108" loading="lazy" decoding="async">
               <span class="hcc-pill">
-                <svg class="o-sticker hcc-flame" id="hcc-flame" width="18" height="18"><use href="#i-flame"/></svg>
+                <svg class="o-sticker" width="18" height="18"><use href="#i-camera"/></svg>
                 <b class="hcc-streak" id="hcc-streak">21</b>
               </span>
             </div>
@@ -515,7 +527,7 @@
               <div class="hcc-row">
                 <span class="hcc-badge" id="hcc-badge" data-i18n="hcc_b0">21 ngày đã chụp</span>
                 <span class="hcc-reacts">
-                  <svg class="o-sticker" width="16" height="16"><use href="#i-flame"/></svg><b id="hcc-fire-cnt">4</b>
+                  <svg class="o-sticker" width="16" height="16"><use href="#i-couple"/></svg><b id="hcc-fire-cnt">4</b>
                   <svg class="o-sticker" width="16" height="16"><use href="#i-react-clap"/></svg><b id="hcc-clap-cnt">3</b>
                 </span>
               </div>
@@ -693,10 +705,10 @@
         <div class="squad-copy">
           <p class="eyebrow" data-i18n="squad_eyebrow">đi cùng nhóm</p>
           <h2 class="section-h" data-i18n="squad_h2">Một mình dễ quên, có hội nhắc nhau thì nhớ</h2>
-          <p class="muted" data-i18n="squad_desc">Mời tối đa 10 người bạn thân bằng mã 8 ký tự, không bảng xếp hạng, không đếm người theo dõi. Mở ứng dụng là thấy tường ảnh hôm nay ai đã check-in để thả cảm xúc cho nhau.</p>
+          <p class="muted" data-i18n="squad_desc">Nhóm tối đa 10 thành viên, tham gia bằng mã mời 8 ký tự, không bảng xếp hạng hay đếm người theo dõi. Mở ứng dụng là thấy tường ảnh hôm nay ai đã check-in để thả cảm xúc cho nhau.</p>
           <div class="squad-badges">
-            <span class="chip"><svg class="o-sticker" width="22" height="22" aria-hidden="true"><use href="#i-squad"/></svg><span data-i18n="squad_chip_1">Tối đa 10 bạn · Mã mời 8 ký tự</span></span>
-            <span class="chip"><svg class="o-sticker" width="22" height="22" aria-hidden="true"><use href="#i-flame"/></svg><span data-i18n="squad_chip_2">Chạm thả cảm xúc trực tiếp bên cạnh</span></span>
+            <span class="chip"><svg class="o-sticker" width="22" height="22" aria-hidden="true"><use href="#i-squad"/></svg><span data-i18n="squad_chip_1">Nhóm tối đa 10 người · Mã mời 8 ký tự</span></span>
+            <span class="chip"><svg class="o-sticker" width="22" height="22" aria-hidden="true"><use href="#i-couple"/></svg><span data-i18n="squad_chip_2">Chạm thả cảm xúc trực tiếp bên cạnh</span></span>
           </div>
         </div>
 
@@ -707,7 +719,7 @@
               <strong data-i18n="squad_wall_title">IELTS 7.5 · HỘI 4 NGƯỜI</strong>
             </div>
             <span class="squad-prog-pill">
-              <svg class="o-sticker" width="18" height="18" aria-hidden="true"><use href="#i-flame"/></svg>
+              <svg class="o-sticker" width="18" height="18" aria-hidden="true"><use href="#i-camera"/></svg>
               <b id="squad-prog-txt" data-i18n="squad_wall_prog">3/4 đã chụp hôm nay</b>
             </span>
           </div>
@@ -724,7 +736,7 @@
                 <span class="sp-time">06:40</span>
               </div>
               <div class="sp-body">
-                <div class="sp-meta"><b>Linh</b><span class="sp-streak"><svg class="o-sticker" width="14" height="14" aria-hidden="true"><use href="#i-flame"/></svg>21</span></div>
+                <div class="sp-meta"><b>Linh</b><span class="sp-streak"><svg class="o-sticker" width="14" height="14" aria-hidden="true"><use href="#i-camera"/></svg>21</span></div>
                 <p data-i18n="sq_c1_cap">“45 phút Reading xong!”</p>
                 <div class="sp-reacts">
                   <button type="button" class="react-chip" aria-pressed="false" data-count="4" data-rx-kind="fire" data-rx-who="Linh" aria-label="Thả lửa cho ảnh của Linh (4)">
@@ -744,7 +756,7 @@
                 <span class="sp-time">07:15</span>
               </div>
               <div class="sp-body">
-                <div class="sp-meta"><b>Nam</b><span class="sp-streak"><svg class="o-sticker" width="14" height="14" aria-hidden="true"><use href="#i-flame"/></svg>21</span></div>
+                <div class="sp-meta"><b>Nam</b><span class="sp-streak"><svg class="o-sticker" width="14" height="14" aria-hidden="true"><use href="#i-camera"/></svg>21</span></div>
                 <p data-i18n="sq_c2_cap">“Ngày 21, xong gọn bài Reading”</p>
                 <div class="sp-reacts">
                   <button type="button" class="react-chip" aria-pressed="true" data-count="3" data-rx-kind="clap" data-rx-who="Nam" aria-label="Vỗ tay cho ảnh của Nam (3)">
@@ -761,7 +773,7 @@
                 <span class="sp-time">12:05</span>
               </div>
               <div class="sp-body">
-                <div class="sp-meta"><b>Hà</b><span class="sp-streak"><svg class="o-sticker" width="14" height="14" aria-hidden="true"><use href="#i-flame"/></svg>19</span></div>
+                <div class="sp-meta"><b>Hà</b><span class="sp-streak"><svg class="o-sticker" width="14" height="14" aria-hidden="true"><use href="#i-camera"/></svg>19</span></div>
                 <p data-i18n="sq_c3_cap">“Thêm 30 từ mới vào sổ”</p>
                 <div class="sp-reacts">
                   <button type="button" class="react-chip" aria-pressed="false" data-count="5" data-rx-kind="flex" data-rx-who="Hà" aria-label="Thả cơ bắp cho ảnh của Hà (5)">
@@ -917,12 +929,12 @@
         <div class="faq-list">
           <details name="faq" open>
             <summary>
-              <span data-i18n="faq_q1">Không có mạng hay chưa muốn đăng ký thì dùng được không?</span>
+              <span data-i18n="faq_q1">Mất mạng thì có chụp và lưu ảnh được không?</span>
               <span class="faq-disc" aria-hidden="true">
                 <svg class="o-svg-flat" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
               </span>
             </summary>
-            <div class="ans"><p data-i18n="faq_a1">Khi mất mạng, bạn vẫn mở camera chụp và lưu ảnh check-in ngay trên điện thoại. Khi có mạng trở lại hoặc khi tham gia nhóm, ứng dụng sẽ tự đồng bộ dữ liệu của bạn.</p></div>
+            <div class="ans"><p data-i18n="faq_a1">Bạn cần đăng nhập trong lần đầu mở ứng dụng. Sau đó, ngay cả khi mất mạng, bạn vẫn mở được camera để chụp và lưu ảnh check-in trên điện thoại. Khi có mạng trở lại, ứng dụng sẽ tự đồng bộ ảnh lên tài khoản và nhóm của bạn.</p></div>
           </details>
           <details name="faq">
             <summary>
@@ -970,7 +982,7 @@
         <div class="cta-ticket card">
           <svg class="o-sticker cta-sticker" width="78" height="78" aria-hidden="true"><use href="#i-star"/></svg>
           <div class="cta-main">
-            <p class="eyebrow" id="beta-eyebrow" data-i18n="beta_eyebrow">tải bản beta · android &amp; ios</p>
+            <p class="eyebrow" id="beta-eyebrow" data-i18n="beta_eyebrow">tải APK Android · danh sách chờ iOS</p>
             <h2 class="cta-h" data-i18n="beta_h2">Bắt đầu từ tấm ảnh đầu tiên hôm nay</h2>
 
             <!-- Direct Android APK Download Block -->
@@ -984,6 +996,11 @@
                 <span data-i18n="beta_apk_btn">Tải APK cho Android (Ourney.apk)</span>
               </a>
               <p class="beta-apk-note" data-i18n="beta_apk_note">Tải trực tiếp file Ourney.apk cho điện thoại Android và mở file vừa tải để cài đặt.</p>
+              <p class="beta-apk-sha">
+                <span data-i18n="beta_apk_sha_label">Mã kiểm tra SHA-256 (v1.2.3):</span>
+                <code translate="no">be4e4775ce3c83963e8bbe9e2fdeb264876c51a990ae700e0905764fd9d90725</code>
+                · <a href="https://github.com/hofang42/ourney-releases/releases/tag/v1.2.3" target="_blank" rel="noopener noreferrer" data-i18n="beta_apk_sha_link">Đối chiếu trên GitHub Releases</a>
+              </p>
             </div>
 
             <!-- iOS & Beta Release Notification Form -->
@@ -1028,8 +1045,8 @@
 
   <!-- Mobile Thumb-Zone Floating CTA Pill (<768px only) -->
   <aside class="mobile-dock-cta" id="mobile-dock-cta" aria-label="Tải APK cho Android hoặc đăng ký danh sách chờ iOS" data-i18n-aria="dock_cta_aria" hidden>
-    <span class="mdc-text" data-i18n="dock_cta_text">Có APK Android · Chờ iOS</span>
-    <a class="btn btn-primary btn-sm" href="#beta" data-i18n="dock_cta_btn">Tải APK / Chờ iOS</a>
+    <span class="mdc-text" id="dock-cta-text" data-i18n="dock_cta_text">Bản thử nghiệm</span>
+    <a class="btn btn-primary btn-sm" id="dock-cta-btn" href="#beta" data-i18n="dock_cta_btn">Tải APK / Chờ iOS</a>
   </aside>
 
   <footer class="footer">
@@ -1047,7 +1064,7 @@
         <li><a href="#journeys" data-i18n="footer_journeys">6 giao diện</a></li>
         <li><a href="#privacy" data-i18n="footer_privacy">riêng tư</a></li>
         <li><a href="#faq" data-i18n="footer_faq">hỏi đáp</a></li>
-        <li><a href="#beta" data-i18n="footer_beta">Tải APK / Chờ iOS</a></li>
+        <li><a id="footer-beta" href="#beta" data-i18n="footer_beta">Tải APK / Chờ iOS</a></li>
       </ul>
     </div>
   </footer>

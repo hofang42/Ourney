@@ -1,7 +1,7 @@
 // Cloudflare Pages Function: /j/:code
 // Calls public.preview_group_invite server-side and rewrites Open Graph / Twitter / meta tags
 // with HTMLRewriter so crawlers that do not execute JS (Messenger, Zalo, iMessage, Telegram)
-// display "Vào squad {name} trên Ourney", and embeds the preview payload on <html data-invite-preview>
+// display "Vào nhóm {name} trên Ourney", and embeds the preview payload on <html data-invite-preview>
 // so browsers do not fire a second redundant RPC. Fails open to static /j on timeout (~1.5s) or error.
 
 const DEFAULT_SUPABASE_URL = 'https://dmgpwpaouiphhrtukcie.supabase.co';
@@ -125,7 +125,7 @@ export async function handleSquadInviteRequest(context, routePrefix = 'j') {
   }
 
   const { preview } = lookup;
-  const headline = `Vào squad ${preview.title} trên Ourney`;
+  const headline = `Vào nhóm ${preview.title} trên Ourney`;
   const parts = [];
   if (preview.memberCount !== null && preview.maxMembers !== null) {
     parts.push(`${preview.memberCount}/${preview.maxMembers} thành viên`);
@@ -133,10 +133,10 @@ export async function handleSquadInviteRequest(context, routePrefix = 'j') {
     parts.push(`${preview.memberCount} thành viên`);
   }
   if (preview.ownerName) {
-    parts.push(`Squad của ${preview.ownerName}`);
+    parts.push(`Nhóm của ${preview.ownerName}`);
   }
   const detail = parts.length > 0 ? ` (${parts.join(' · ')})` : '';
-  const description = `${headline}${detail} — mở trong ứng dụng hoặc dùng mã mời ${code} để tham gia ngay.`;
+  const description = `${headline}${detail}: mở trong ứng dụng hoặc dùng mã mời ${code} để tham gia ngay.`;
   const canonicalUrl = `https://ourney.tech/${routePrefix}/${encodeURIComponent(code)}`;
   const embeddedPayload = serializeEmbeddedJson({
     status: 'ok',

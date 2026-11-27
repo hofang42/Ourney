@@ -37,9 +37,7 @@ const MIME = {
   '.txt': 'text/plain; charset=utf-8',
 };
 
-const NEW_SCREENS_DIR = fs.existsSync('E:/Ourney/Ourney/.claude/worktrees/landing-screens/apps/landing/assets/screens/hub.webp')
-  ? 'E:/Ourney/Ourney/.claude/worktrees/landing-screens/apps/landing/assets/screens'
-  : path.join(LANDING_DIR, 'assets', 'screens');
+const NEW_SCREENS_DIR = path.join(LANDING_DIR, 'assets', 'screens');
 
 const PHOTO_MAP = {
   '/og-src/photos/ielts-cover.webp': 'E:/Ourney/agy-work/photos/ielts_study/cover.webp',

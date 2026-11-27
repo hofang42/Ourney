@@ -26,6 +26,8 @@
       nav_privacy: 'riêng tư',
       nav_faq: 'hỏi đáp',
       nav_cta: 'Tải APK / Chờ iOS',
+      nav_cta_android: 'Tải APK cho Android',
+      nav_cta_ios: 'Đăng ký danh sách chờ iOS',
       nav_lang_aria: 'Chuyển ngôn ngữ sang tiếng Anh',
       nav_theme_aria: 'Đổi giao diện sáng hoặc tối',
       stamp_1: 'Góp tấm hình,',
@@ -37,7 +39,6 @@
       ticket_sub: 'Tải cho Android hoặc đăng ký chờ iOS',
       hero_phone_alt: 'Màn hình chính Ourney: mục IELTS 7.5 ngày 21/30, 21 ngày đã chụp và nút Chụp hôm nay',
       hcc_t0: 'IELTS 7.5 · Ngày 21/30',
-      hcc_b0_pre: '20 ngày đã chụp',
       hcc_b0: '21 ngày đã chụp',
       hcc_t1: 'Chạy sáng · 5,4 km',
       hcc_b1: '20/30 buổi',
@@ -50,12 +51,16 @@
       hero_cta_android: 'Tải APK cho Android',
       hero_cta_ios: 'Đăng ký danh sách chờ iOS',
       hero_apk_note: 'Android đã có bản thử nghiệm để tải (APK). Nếu dùng iPhone, bạn có thể đăng ký danh sách chờ.',
-      hero_apk_note_android: 'Android đã có bản thử nghiệm để tải trực tiếp (Ourney.apk).',
-      hero_apk_note_ios: 'Nếu dùng iPhone, bạn có thể đăng ký danh sách chờ bản thử nghiệm iOS ở bên dưới.',
+      hero_apk_note_android: 'Android đã có bản thử nghiệm để tải trực tiếp (Ourney.apk). Nếu dùng thêm iPhone, bạn có thể đăng ký danh sách chờ bên dưới.',
+      hero_apk_note_ios: 'Bản iPhone đang mở đăng ký danh sách chờ ở bên dưới (Android đã có file APK thử nghiệm).',
       hero_scroll_aria: 'Cuộn xuống xem 6 giao diện',
       dock_cta_aria: 'Tải APK cho Android hoặc đăng ký danh sách chờ iOS',
-      dock_cta_text: 'Có APK Android · Chờ iOS',
+      dock_cta_text: 'Bản thử nghiệm',
+      dock_cta_text_android: 'Bản thử nghiệm',
+      dock_cta_text_ios: 'Trên iPhone',
       dock_cta_btn: 'Tải APK / Chờ iOS',
+      dock_cta_btn_android: 'Tải APK cho Android',
+      dock_cta_btn_ios: 'Đăng ký danh sách chờ iOS',
       j_eyebrow: 'mỗi mục tiêu một giao diện',
       j_h2: 'Đổi mục tiêu, đổi luôn cách bày biện',
       j_intro: 'Học tiếng Anh đi theo từng chặng tới chiếc cúp ngày 30, chạy bộ vẽ biểu đồ số km, còn chuyến đi nối thành cuộn phim dán băng keo. Chạm thử từng mẫu bên dưới để xem giao diện thật.',
@@ -89,8 +94,8 @@
       how_s3_alt: 'Thẻ chia sẻ Story của mục Chạy sáng: 4,6 km, ngày 21',
       squad_eyebrow: 'đi cùng nhóm',
       squad_h2: 'Một mình dễ quên, có hội nhắc nhau thì nhớ',
-      squad_desc: 'Mời tối đa 10 người bạn thân bằng mã 8 ký tự, không bảng xếp hạng, không đếm người theo dõi. Mở ứng dụng là thấy tường ảnh hôm nay ai đã check-in để thả cảm xúc cho nhau.',
-      squad_chip_1: 'Tối đa 10 bạn · Mã mời 8 ký tự',
+      squad_desc: 'Nhóm tối đa 10 thành viên, tham gia bằng mã mời 8 ký tự, không bảng xếp hạng hay đếm người theo dõi. Mở ứng dụng là thấy tường ảnh hôm nay ai đã check-in để thả cảm xúc cho nhau.',
+      squad_chip_1: 'Nhóm tối đa 10 người · Mã mời 8 ký tự',
       squad_chip_2: 'Chạm thả cảm xúc trực tiếp bên cạnh',
       squad_wall_title: 'IELTS 7.5 · HỘI 4 NGƯỜI',
       squad_wall_prog: '3/4 đã chụp hôm nay',
@@ -129,8 +134,8 @@
       priv_phone_alt: 'Màn hình 30 ngày cơ thể: biểu đồ cân nặng với con số được ẩn và nút Giữ để xem',
       faq_eyebrow: 'hỏi đáp',
       faq_h2: 'Một vài câu hỏi thường gặp',
-      faq_q1: 'Không có mạng hay chưa muốn đăng ký thì dùng được không?',
-      faq_a1: 'Khi mất mạng, bạn vẫn mở camera chụp và lưu ảnh check-in ngay trên điện thoại. Khi có mạng trở lại hoặc khi tham gia nhóm, ứng dụng sẽ tự đồng bộ dữ liệu của bạn.',
+      faq_q1: 'Mất mạng thì có chụp và lưu ảnh được không?',
+      faq_a1: 'Bạn cần đăng nhập trong lần đầu mở ứng dụng. Sau đó, ngay cả khi mất mạng, bạn vẫn mở được camera để chụp và lưu ảnh check-in trên điện thoại. Khi có mạng trở lại, ứng dụng sẽ tự đồng bộ ảnh lên tài khoản và nhóm của bạn.',
       faq_q2: 'Một nhóm tối đa bao nhiêu người? Vào muộn có thiệt không?',
       faq_a2: 'Mỗi nhóm tối đa 10 người, tham gia bằng mã mời 8 ký tự. Tiến độ của người vào sau được tính từ đúng ngày họ bắt đầu tham gia, và vẫn xem được toàn bộ ảnh nhóm đã chụp trước đó.',
       faq_q3: 'Ai có thể xem ảnh và chỉ số của tôi?',
@@ -139,13 +144,15 @@
       faq_a4: 'Chụp nhiều tấm trong cùng một ngày sẽ được gom gọn vào ngày hôm đó. Bạn cũng có thể chọn ảnh từ chuyến đi đã qua theo ngày chụp trong máy để ứng dụng xếp lại thành dòng thời gian riêng.',
       faq_q5: 'Khi nào Ourney mở tải trên iOS và Android?',
       faq_a5: 'Android đã có bản thử nghiệm để tải (APK). Nếu dùng iPhone, bạn có thể đăng ký danh sách chờ.',
-      beta_eyebrow: 'tải bản beta · android & ios',
-      beta_eyebrow_android: 'tải bản beta · android',
-      beta_eyebrow_ios: 'danh sách chờ beta · ios',
+      beta_eyebrow: 'tải APK Android · danh sách chờ iOS',
+      beta_eyebrow_android: 'tải APK thử nghiệm · android',
+      beta_eyebrow_ios: 'danh sách chờ bản thử nghiệm · ios',
       beta_h2: 'Bắt đầu từ tấm ảnh đầu tiên hôm nay',
       beta_apk_kicker: 'Đã có bản cài đặt trực tiếp',
       beta_apk_btn: 'Tải APK cho Android (Ourney.apk)',
       beta_apk_note: 'Tải trực tiếp file Ourney.apk cho điện thoại Android và mở file vừa tải để cài đặt.',
+      beta_apk_sha_label: 'Mã kiểm tra SHA-256 (v1.2.3):',
+      beta_apk_sha_link: 'Đối chiếu trên GitHub Releases',
       beta_ios_lead: 'Dùng iOS (iPhone) hoặc muốn nhận thông báo khi có bản cập nhật mới? Để lại email nhận thông tin beta:',
       beta_ios_lead_android: 'Muốn nhận thông báo khi có bản cập nhật Android mới hoặc khi lên Google Play? Để lại email nhận thông tin beta:',
       beta_ios_lead_ios: 'Để lại email để đăng ký danh sách chờ beta cho iOS (iPhone):',
@@ -170,6 +177,8 @@
       footer_privacy: 'riêng tư',
       footer_faq: 'hỏi đáp',
       footer_beta: 'Tải APK / Chờ iOS',
+      footer_beta_android: 'Tải APK cho Android',
+      footer_beta_ios: 'Đăng ký danh sách chờ iOS',
       nf_title: 'ourney · 404 · lạc đường một nhịp',
       nf_brand_aria: 'Ourney, về trang chủ',
       nf_eyebrow: '404 · không tìm thấy trang',
@@ -195,6 +204,8 @@
       nav_privacy: 'privacy',
       nav_faq: 'faq',
       nav_cta: 'Android APK / iOS waitlist',
+      nav_cta_android: 'Download Android APK',
+      nav_cta_ios: 'Join iOS beta waitlist',
       nav_lang_aria: 'Switch language to Vietnamese',
       nav_theme_aria: 'Toggle light or dark theme',
       stamp_1: 'One photo at a time,',
@@ -206,7 +217,6 @@
       ticket_sub: 'Download on Android or join iOS waitlist',
       hero_phone_alt: 'Ourney app Hub screen: IELTS 7.5 Day 21/30 card, 21 days logged, and Snap Today button',
       hcc_t0: 'IELTS 7.5 · Day 21/30',
-      hcc_b0_pre: '20 days logged',
       hcc_b0: '21 days logged',
       hcc_t1: 'Morning Run · 5.4 km',
       hcc_b1: '20/30 sessions',
@@ -219,12 +229,16 @@
       hero_cta_android: 'Download Android APK',
       hero_cta_ios: 'Join iOS beta waitlist',
       hero_apk_note: 'Android already has a beta APK to download. If you use an iPhone, you can join the iOS waitlist.',
-      hero_apk_note_android: 'Android already has a direct beta APK download (Ourney.apk).',
-      hero_apk_note_ios: 'If you use an iPhone, you can join the iOS beta waitlist below.',
+      hero_apk_note_android: 'Android already has a direct beta APK download (Ourney.apk). Also on iPhone? Join the iOS waitlist below.',
+      hero_apk_note_ios: 'The iPhone beta waitlist is open below (Android already has a direct beta APK).',
       hero_scroll_aria: 'Scroll down to explore 6 layouts',
       dock_cta_aria: 'Download Android APK or join the iOS waitlist',
-      dock_cta_text: 'Android APK · iOS waitlist',
-      dock_cta_btn: 'Get APK / iOS',
+      dock_cta_text: 'Beta release',
+      dock_cta_text_android: 'Beta release',
+      dock_cta_text_ios: 'For iPhone',
+      dock_cta_btn: 'Android APK / iOS waitlist',
+      dock_cta_btn_android: 'Download Android APK',
+      dock_cta_btn_ios: 'Join iOS beta waitlist',
       j_eyebrow: 'six templates, six distinct layouts',
       j_h2: 'Each goal gets a layout built for it',
       j_intro: 'Language study follows a stepping-stone path to a Day 30 trophy, running plots a kilometer sparkline, and a trip tapes daily photos along a 35mm film roll. Tap each template below to preview the real screen.',
@@ -258,8 +272,8 @@
       how_s3_alt: 'Story share card for Morning Run: 4.6 km, Day 21',
       squad_eyebrow: 'with close friends',
       squad_h2: 'Easy to forget alone, easier when friends check in together',
-      squad_desc: 'Invite up to 10 close friends with an 8-character code, with no public follower counts or leaderboards. Open the app to see today’s Polaroid wall and drop sticker reactions on each other’s check-ins.',
-      squad_chip_1: 'Up to 10 friends · 8-char invite code',
+      squad_desc: 'Each group holds up to 10 members via an 8-character invite code, with no public follower counts or leaderboards. Open the app to see today’s Polaroid wall and drop sticker reactions on each other’s check-ins.',
+      squad_chip_1: 'Groups up to 10 · 8-char invite code',
       squad_chip_2: 'Tap sticker reactions on the board',
       squad_wall_title: 'IELTS 7.5 · GROUP OF 4',
       squad_wall_prog: '3/4 snapped today',
@@ -298,8 +312,8 @@
       priv_phone_alt: '30-Day Body screen: weight trend curve with masked numbers and Hold to view button',
       faq_eyebrow: 'faq',
       faq_h2: 'Things you might ask',
-      faq_q1: 'Can I use Ourney offline or without creating an account?',
-      faq_a1: 'When you are offline, you can still open the camera, snap your check-in photo, and save it on your phone. Your photos sync automatically once you reconnect or join a group.',
+      faq_q1: 'Can I snap and save check-in photos while offline?',
+      faq_a1: 'You need to sign in the first time you open Ourney. After that, even when offline, you can open the camera, snap your check-in photo, and save it on your phone. Your photos sync automatically once you are back online.',
       faq_q2: 'How big can a group be, and what if someone joins late?',
       faq_a2: 'Each group holds up to 10 people via an 8-character invite code. Late joiners track their days from the date they join while still seeing the group’s earlier photos.',
       faq_q3: 'Who can see my check-in photos and numbers?',
@@ -308,13 +322,15 @@
       faq_a4: 'Multiple photos taken on the same day group cleanly into that day’s entry. You can also import photos from a past trip by capture date to build a dedicated trip timeline.',
       faq_q5: 'When will Ourney launch on iOS and Android?',
       faq_a5: 'Android already has a beta APK to download. If you use an iPhone, you can join the iOS waitlist.',
-      beta_eyebrow: 'beta release · android & ios',
-      beta_eyebrow_android: 'beta release · android',
-      beta_eyebrow_ios: 'beta waitlist · ios',
+      beta_eyebrow: 'Android APK · iOS beta waitlist',
+      beta_eyebrow_android: 'Android beta APK · direct download',
+      beta_eyebrow_ios: 'iOS beta waitlist · iPhone',
       beta_h2: 'Start with your first photo today',
       beta_apk_kicker: 'Direct install available now',
       beta_apk_btn: 'Download Android APK (Ourney.apk)',
       beta_apk_note: 'Download Ourney.apk directly for Android phones and open the file to install.',
+      beta_apk_sha_label: 'SHA-256 checksum (v1.2.3):',
+      beta_apk_sha_link: 'Verify on GitHub Releases',
       beta_ios_lead: 'Using iOS (iPhone) or want notifications when a new update drops? Leave your email for beta updates:',
       beta_ios_lead_android: 'Want notifications when a new Android beta update or Google Play release drops? Leave your email for beta updates:',
       beta_ios_lead_ios: 'Leave your email to join the iOS beta waitlist:',
@@ -339,6 +355,8 @@
       footer_privacy: 'privacy',
       footer_faq: 'faq',
       footer_beta: 'Android APK / iOS waitlist',
+      footer_beta_android: 'Download Android APK',
+      footer_beta_ios: 'Join iOS beta waitlist',
       nf_title: 'ourney · 404 · off the trail for a beat',
       nf_brand_aria: 'Ourney, back to home',
       nf_eyebrow: '404 · page not found',
@@ -472,7 +490,6 @@
   const is404 = Boolean(document.querySelector('.notfound-stage'));
   let curTab = 0;
   let curHeroCycle = 0;
-  let streakTicked = isReducedMotion() || root.classList.contains('intro-seen');
 
   /* --- 2b. Detect Platform (Android / iOS / Desktop) & Sync Platform CTAs --- */
   const detectPlatform = () => {
@@ -500,8 +517,12 @@
   const heroAndroidDl = $('hero-android-dl');
   const heroIosBeta = $('hero-ios-beta');
   const heroApkNote = $('hero-apk-note') || document.querySelector('.hero-apk-note');
+  const navCta = $('nav-cta') || document.querySelector('.nav-cta');
+  const dockCtaText = $('dock-cta-text') || document.querySelector('[data-i18n^="dock_cta_text"]');
+  const dockCtaBtn = $('dock-cta-btn') || document.querySelector('[data-i18n^="dock_cta_btn"]');
+  const footerBeta = $('footer-beta') || document.querySelector('[data-i18n^="footer_beta"]');
   const betaApkBox = $('beta-apk-box');
-  const betaEyebrow = $('beta-eyebrow') || document.querySelector('[data-i18n="beta_eyebrow"]');
+  const betaEyebrow = $('beta-eyebrow') || document.querySelector('[data-i18n^="beta_eyebrow"]');
   const betaIosLead = $('beta-ios-lead') || document.querySelector('.beta-ios-lead');
   const betaStubCode = $('beta-stub-code') || document.querySelector('.cta-stub-code');
 
@@ -514,6 +535,26 @@
         heroIosBeta.hidden = false;
         heroIosBeta.classList.remove('btn-secondary');
         heroIosBeta.classList.add('btn-primary');
+      }
+      if (navCta) {
+        navCta.dataset.i18n = 'nav_cta_ios';
+        navCta.textContent = dict.nav_cta_ios;
+        navCta.setAttribute('href', '#beta-waitlist-box');
+      }
+      if (dockCtaText) {
+        dockCtaText.dataset.i18n = 'dock_cta_text_ios';
+        dockCtaText.textContent = dict.dock_cta_text_ios;
+      }
+      if (dockCtaBtn) {
+        dockCtaBtn.dataset.i18n = 'dock_cta_btn_ios';
+        dockCtaBtn.textContent = dict.dock_cta_btn_ios;
+        dockCtaBtn.setAttribute('href', '#beta-waitlist-box');
+        dockCtaBtn.removeAttribute('download');
+      }
+      if (footerBeta) {
+        footerBeta.dataset.i18n = 'footer_beta_ios';
+        footerBeta.textContent = dict.footer_beta_ios;
+        footerBeta.setAttribute('href', '#beta-waitlist-box');
       }
       if (heroApkNote) {
         heroApkNote.dataset.i18n = 'hero_apk_note_ios';
@@ -532,6 +573,26 @@
       if (heroAndroidDl) heroAndroidDl.hidden = false;
       if (betaApkBox) betaApkBox.hidden = false;
       if (heroIosBeta) heroIosBeta.hidden = true;
+      if (navCta) {
+        navCta.dataset.i18n = 'nav_cta_android';
+        navCta.textContent = dict.nav_cta_android;
+        navCta.setAttribute('href', '#beta-apk-box');
+      }
+      if (dockCtaText) {
+        dockCtaText.dataset.i18n = 'dock_cta_text_android';
+        dockCtaText.textContent = dict.dock_cta_text_android;
+      }
+      if (dockCtaBtn) {
+        dockCtaBtn.dataset.i18n = 'dock_cta_btn_android';
+        dockCtaBtn.textContent = dict.dock_cta_btn_android;
+        dockCtaBtn.setAttribute('href', '/Ourney.apk');
+        dockCtaBtn.setAttribute('download', 'Ourney.apk');
+      }
+      if (footerBeta) {
+        footerBeta.dataset.i18n = 'footer_beta_android';
+        footerBeta.textContent = dict.footer_beta_android;
+        footerBeta.setAttribute('href', '#beta-apk-box');
+      }
       if (heroApkNote) {
         heroApkNote.dataset.i18n = 'hero_apk_note_android';
         heroApkNote.textContent = dict.hero_apk_note_android;
@@ -552,6 +613,26 @@
         heroIosBeta.hidden = false;
         heroIosBeta.classList.remove('btn-primary');
         heroIosBeta.classList.add('btn-secondary');
+      }
+      if (navCta) {
+        navCta.dataset.i18n = 'nav_cta';
+        navCta.textContent = dict.nav_cta;
+        navCta.setAttribute('href', '#beta');
+      }
+      if (dockCtaText) {
+        dockCtaText.dataset.i18n = 'dock_cta_text';
+        dockCtaText.textContent = dict.dock_cta_text;
+      }
+      if (dockCtaBtn) {
+        dockCtaBtn.dataset.i18n = 'dock_cta_btn';
+        dockCtaBtn.textContent = dict.dock_cta_btn;
+        dockCtaBtn.setAttribute('href', '#beta');
+        dockCtaBtn.removeAttribute('download');
+      }
+      if (footerBeta) {
+        footerBeta.dataset.i18n = 'footer_beta';
+        footerBeta.textContent = dict.footer_beta;
+        footerBeta.setAttribute('href', '#beta');
       }
       if (heroApkNote) {
         heroApkNote.dataset.i18n = 'hero_apk_note';
@@ -602,7 +683,6 @@
   darkMql.addEventListener('change', syncThemePictures);
 
   /* --- 4. First-Load Intro Skip & Clean Settle Disarm --- */
-  let streakTickTimer = null;
   const markIntroSeen = () => {
     try { sessionStorage.setItem('ourney-intro-seen', '1'); } catch (e) {}
   };
@@ -618,9 +698,7 @@
     };
     function skipIntro() {
       disarmSkip();
-      clearTimeout(streakTickTimer);
       root.classList.add('intro-skip', 'hero-settled');
-      streakTicked = true;
       renderHeroCycle(curHeroCycle);
       markIntroSeen();
     }
@@ -631,12 +709,11 @@
     setTimeout(settleHero, 420);
   }
 
-  /* --- 5. Hero Live Check-In Card Streak Flip & 3.6s Cycle --- */
+  /* --- 5. Hero Live Check-In Card 3.6s Cycle --- */
   const heroSec = $('hero');
   const checkinCard = $('hero-checkin-card');
   const hccPhoto = $('hcc-photo');
   const hccStreak = $('hcc-streak');
-  const hccFlame = $('hcc-flame');
   const hccTitle = $('hcc-title');
   const hccBadge = $('hcc-badge');
   const hccFireCnt = $('hcc-fire-cnt');
@@ -647,11 +724,11 @@
     const dict = COPY[curLang];
     const meta = HERO_CYCLES[idx] || HERO_CYCLES[0];
     const titleKey = `hcc_t${idx}`;
-    const badgeKey = (idx === 0 && !streakTicked) ? 'hcc_b0_pre' : `hcc_b${idx}`;
+    const badgeKey = `hcc_b${idx}`;
     hccPhoto.dataset.cycle = String(idx);
     hccTitle.dataset.i18n = titleKey;
     hccTitle.textContent = dict[titleKey];
-    hccStreak.textContent = (idx === 0 && !streakTicked) ? '20' : meta.streak;
+    hccStreak.textContent = meta.streak;
     hccBadge.dataset.i18n = badgeKey;
     hccBadge.textContent = dict[badgeKey];
     if (hccFireCnt) hccFireCnt.textContent = meta.fire;
@@ -674,18 +751,8 @@
     checkinCard.addEventListener('pointerenter', () => { heroHovered = true; });
     checkinCard.addEventListener('pointerleave', () => { heroHovered = false; });
   }
-  if (hccFlame) {
-    hccFlame.addEventListener('animationend', () => hccFlame.classList.remove('pop'));
-  }
 
   if (!is404 && !isReducedMotion()) {
-    if (!streakTicked) {
-      streakTickTimer = setTimeout(() => {
-        streakTicked = true;
-        if (curHeroCycle === 0) renderHeroCycle(0);
-        if (hccFlame && !isReducedMotion()) hccFlame.classList.add('pop');
-      }, 1740);
-    }
     setInterval(() => {
       if (isReducedMotion() || !heroVisible || heroHovered || document.hidden) return;
       curHeroCycle = (curHeroCycle + 1) % 3;

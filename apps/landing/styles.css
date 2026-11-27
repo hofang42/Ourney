@@ -1588,7 +1588,6 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   background: var(--fill);
 }
 .squad-meter i.done { background: var(--primary); }
-.squad-meter i.nudged { background: var(--pastel-study); }
 
 .polaroid-grid {
   display: grid;
@@ -1683,49 +1682,9 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   align-items: center;
   justify-content: center;
 }
-.polaroid-waiting.wiggle { animation: card-wiggle 280ms var(--ease-ui); }
-@keyframes card-wiggle {
-  0%, 100% { transform: rotate(0deg); }
-  30% { transform: rotate(-2.2deg); }
-  70% { transform: rotate(2.2deg); }
-}
-.sp-clock-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border: 1.5px solid var(--outline);
-  border-radius: var(--r-pill);
-  background: var(--fill);
-  font: 700 0.75rem/1.2 var(--heading);
-}
-.sp-clock-pill svg { width: 15px; height: 15px; }
 .sp-wait-mid { margin: 12px 0; }
 .sp-wait-mid b { display: block; font: 700 1rem/1.2 var(--heading); }
 .sp-wait-mid p { font-size: 0.8125rem; color: var(--muted); margin-top: 4px; }
-.btn-nudge {
-  width: 100%;
-  min-height: 48px;
-  padding: 6px 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: 2px solid #1A1A1A;
-  border-radius: var(--r-pill);
-  background: var(--pastel-workout);
-  color: #1A1A1A;
-  font: 700 0.84rem/1.2 var(--heading);
-  box-shadow: 3px 3px 0 var(--hard);
-  cursor: pointer;
-  transition: transform 110ms ease, box-shadow 110ms ease, background-color 180ms ease;
-}
-.btn-nudge:active { transform: translate(3px, 3px); box-shadow: none; }
-.btn-nudge.done {
-  background: var(--pastel-weight);
-  color: #1A1A1A;
-}
-.btn-nudge.done .nudge-svg { display: none; }
 
 /* Section 5: Finish Line Artifacts (with fan-open scroll choreography) */
 .finish {
@@ -2080,6 +2039,25 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   font-size: 0.875rem;
   line-height: 1.5;
   color: #3F3A34;
+}
+.beta-apk-sha {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #3F3A34;
+  overflow-wrap: anywhere;
+}
+.beta-apk-sha code {
+  padding: 2px 6px;
+  background: #F3EAD8;
+  border: 1px solid #1A1A1A;
+  border-radius: 6px;
+  font-size: 0.74rem;
+}
+.beta-apk-sha a {
+  font-weight: 700;
+  color: #1A1A1A;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 .beta-waitlist-box {
   margin-top: 22px;
