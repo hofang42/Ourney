@@ -247,6 +247,14 @@ h1 {
   letter-spacing: -0.03em;
   text-wrap: balance;
 }
+.section-subline {
+  margin-top: 10px;
+  font: 600 0.96875rem/1.45 var(--heading);
+  color: var(--soft);
+}
+.section-subline + .muted {
+  margin-top: 10px !important;
+}
 h3 {
   font: 700 clamp(1.25rem, 2.1vw, 1.65rem)/1.28 var(--heading);
   letter-spacing: -0.02em;
@@ -2271,6 +2279,16 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   justify-content: space-between;
 }
 .footer-inner > img { width: 98px; height: auto; }
+.footer-tagline-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.footer-subline {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
 .footer-social {
   display: flex;
   align-items: center;
