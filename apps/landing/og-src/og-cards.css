@@ -1,6 +1,12 @@
 /* Ourney Open Graph Brand Card Stylesheet
    Uses exact landing V2 Soft Neo-Brutalism tokens, fonts, sticker primitives, and screenshots. */
 @font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url(/og-src/fonts/BricolageGrotesque-Variable.ttf) format('truetype');
+  font-weight: 500 800;
+  font-display: block;
+}
+@font-face {
   font-family: 'Space Grotesk';
   src: url(../assets/fonts/SpaceGrotesk-Variable.woff2) format('woff2');
   font-weight: 500 700;
@@ -34,7 +40,7 @@
   --pastel-couple: #FF7E7E;
   --pastel-workout:#CF9FFF;
   --pastel-custom: #7EC8E3;
-  --heading: 'Space Grotesk', 'Be Vietnam Pro', system-ui, sans-serif;
+  --heading: 'Bricolage Grotesque', 'Space Grotesk', 'Be Vietnam Pro', system-ui, sans-serif;
   --body: 'Be Vietnam Pro', system-ui, sans-serif;
 }
 
@@ -144,7 +150,7 @@ body.og-square, html.og-square {
 }
 
 .og-wordmark {
-  height: 48px;
+  height: 54px;
   width: auto;
   display: block;
 }

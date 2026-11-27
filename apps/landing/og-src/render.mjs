@@ -2,7 +2,8 @@
 /**
  * Ourney OG & Brand Icon Renderer (apps/landing/og-src/render.mjs)
  * Renders all Open Graph share cards (1200x630 + 1200x1200 square) and
- * app icons (apple-touch-icon 180x180, icon-192, icon-512, favicon.ico)
+ * app icons (apple-touch-icon 180x180, icon-192, icon-512, favicon-16x16,
+ * favicon-32x32, favicon.ico, plus admin favicon.svg sync)
  * from apps/landing/og-src/*.html using headless Chrome via CDP.
  */
 import http from 'node:http';
@@ -16,6 +17,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LANDING_DIR = path.resolve(__dirname, '..');
 const OG_OUT_DIR = path.join(LANDING_DIR, 'assets', 'og');
 const BRAND_OUT_DIR = path.join(LANDING_DIR, 'assets', 'brand');
+const ADMIN_PUBLIC_DIR = path.resolve(LANDING_DIR, '../admin/public');
 const REPORT_SHOTS_DIR = path.join(os.tmpdir(), 'ourney-og-shots');
 
 fs.mkdirSync(OG_OUT_DIR, { recursive: true });
@@ -31,6 +33,7 @@ const MIME = {
   '.webp': 'image/webp',
   '.svg': 'image/svg+xml',
   '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
   '.ico': 'image/x-icon',
   '.json': 'application/json; charset=utf-8',
   '.webmanifest': 'application/manifest+json; charset=utf-8',
@@ -41,6 +44,7 @@ const MIME = {
 const NEW_SCREENS_DIR = path.join(LANDING_DIR, 'assets', 'screens');
 
 const PHOTO_MAP = {
+  '/og-src/fonts/BricolageGrotesque-Variable.ttf': path.resolve(LANDING_DIR, '../mobile/assets/fonts/BricolageGrotesque-Variable.ttf'),
   '/og-src/photos/ielts-cover.webp': 'E:/Ourney/agy-work/photos/ielts_study/cover.webp',
   '/og-src/photos/ielts-01.webp': 'E:/Ourney/agy-work/photos/ielts_study/01.webp',
   '/og-src/photos/ielts-03.webp': 'E:/Ourney/agy-work/photos/ielts_study/03.webp',
@@ -60,7 +64,8 @@ function startServer(rootDir) {
     const server = http.createServer((req, res) => {
       const urlPath = decodeURIComponent(req.url.split('?')[0]);
       if (PHOTO_MAP[urlPath] && fs.existsSync(PHOTO_MAP[urlPath])) {
-        res.writeHead(200, { 'Content-Type': 'image/webp' });
+        const mappedExt = path.extname(PHOTO_MAP[urlPath]).toLowerCase();
+        res.writeHead(200, { 'Content-Type': MIME[mappedExt] || 'image/webp' });
         fs.createReadStream(PHOTO_MAP[urlPath]).pipe(res);
         return;
       }
@@ -154,6 +159,68 @@ class CdpClient {
   }
 }
 
+async function patchFinishSectionPosterScreenshots(cdp, port) {
+  // Replace the typed "oumey" wordmark on the flat cream poster corner of
+  // share-travel.webp and share-travel-dark.webp with Compact A (wordmark-compact.svg).
+  await cdp.send('Page.navigate', { url: `http://127.0.0.1:${port}/index.html` });
+  for (const fileName of ['share-travel.webp', 'share-travel-dark.webp']) {
+    const filePath = path.join(NEW_SCREENS_DIR, fileName);
+    if (!fs.existsSync(filePath)) continue;
+    const evalRes = await cdp.send('Runtime.evaluate', {
+      expression: `new Promise((resolve, reject) => {
+        const screenImg = new Image();
+        const logoImg = new Image();
+        let loaded = 0;
+        const onDone = () => {
+          if (++loaded < 2) return;
+          const c = document.createElement('canvas');
+          c.width = screenImg.naturalWidth;
+          c.height = screenImg.naturalHeight;
+          const ctx = c.getContext('2d');
+          ctx.drawImage(screenImg, 0, 0);
+          // Sample the uniform cream paper surface inside the poster
+          const p = ctx.getImageData(400, 1180, 1, 1).data;
+          // Detect right & bottom inner edges of the cream poster paper
+          let rightEdge = Math.round(c.width * 0.828);
+          for (let x = 580; x < c.width - 40; x++) {
+            const px = ctx.getImageData(x, 1100, 1, 1).data;
+            if (Math.abs(px[0] - p[0]) > 25) { rightEdge = x; break; }
+          }
+          let bottomEdge = Math.round(c.height * 0.791);
+          for (let y = 1180; y < c.height - 150; y++) {
+            const py = ctx.getImageData(400, y, 1, 1).data;
+            if (Math.abs(py[0] - p[0]) > 25) { bottomEdge = y; break; }
+          }
+          ctx.fillStyle = \`rgb(\${p[0]}, \${p[1]}, \${p[2]})\`;
+          // Erase the typed "oumey" region strictly inside the poster border
+          const eraseW = Math.round(c.width * 0.21);
+          const eraseH = Math.round(c.height * 0.048);
+          ctx.fillRect(rightEdge - eraseW - 6, bottomEdge - eraseH - 6, eraseW, eraseH);
+          // Draw the Compact A sticker wordmark inside the bottom-right poster margin
+          const logoW = Math.round(c.width * 0.19);
+          const logoH = Math.round(logoW * (210 / 680));
+          ctx.drawImage(logoImg, rightEdge - logoW - 14, bottomEdge - logoH - 16, logoW, logoH);
+          resolve(c.toDataURL('image/webp', 0.92));
+        };
+        screenImg.onerror = reject;
+        logoImg.onerror = reject;
+        screenImg.onload = onDone;
+        logoImg.onload = onDone;
+        screenImg.src = '/assets/screens/${fileName}?t=' + Date.now();
+        logoImg.src = '/assets/brand/wordmark-compact.svg?t=' + Date.now();
+      })`,
+      awaitPromise: true,
+      returnByValue: true,
+    });
+    const dataUrl = evalRes?.result?.value;
+    if (typeof dataUrl === 'string' && dataUrl.startsWith('data:image/webp;base64,')) {
+      const buf = Buffer.from(dataUrl.slice('data:image/webp;base64,'.length), 'base64');
+      fs.writeFileSync(filePath, buf);
+      console.log(`Patched finish-section poster screenshot ${fileName} with Compact A wordmark (${(buf.length / 1024).toFixed(1)}KB)`);
+    }
+  }
+}
+
 async function main() {
   const { server, port } = await startServer(LANDING_DIR);
   const chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
@@ -178,6 +245,8 @@ async function main() {
     await cdp.ready();
     await cdp.send('Page.enable');
     await cdp.send('Runtime.enable');
+
+    await patchFinishSectionPosterScreenshots(cdp, port);
 
     const cards = [
       { name: 'og-default', file: 'og-default.html', width: 1200, height: 630 },
@@ -232,14 +301,18 @@ async function main() {
       console.log(`Rendered ${card.name} (${card.width}x${card.height}): PNG=${(pngBuf.length / 1024).toFixed(1)}KB, JPG=${(jpgBuf.length / 1024).toFixed(1)}KB`);
     }
 
-    // Render App Icons (apple-touch-icon 180x180, icon-192, icon-512, and 16/32/48 for favicon.ico)
+    // Render App Icons (apple-touch-icon 180x180, icon-192, icon-512, favicon-16x16, favicon-32x32, and 16/32/48 for favicon.ico)
+    await cdp.send('Emulation.setDefaultBackgroundColorOverride', {
+      color: { r: 0, g: 0, b: 0, a: 0 },
+    });
+
     const iconSizes = [
-      { size: 180, out: path.join(BRAND_OUT_DIR, 'apple-touch-icon.png') },
-      { size: 192, out: path.join(BRAND_OUT_DIR, 'icon-192.png') },
-      { size: 512, out: path.join(BRAND_OUT_DIR, 'icon-512.png') },
-      { size: 16, out: null },
-      { size: 32, out: null },
-      { size: 48, out: null },
+      { size: 180, out: path.join(BRAND_OUT_DIR, 'apple-touch-icon.png'), inIco: false },
+      { size: 192, out: path.join(BRAND_OUT_DIR, 'icon-192.png'), inIco: false },
+      { size: 512, out: path.join(BRAND_OUT_DIR, 'icon-512.png'), inIco: false },
+      { size: 16, out: path.join(BRAND_OUT_DIR, 'favicon-16x16.png'), inIco: true },
+      { size: 32, out: path.join(BRAND_OUT_DIR, 'favicon-32x32.png'), inIco: true },
+      { size: 48, out: null, inIco: true },
     ];
     const icoFrames = [];
 
@@ -263,14 +336,24 @@ async function main() {
       if (item.out) {
         fs.writeFileSync(item.out, buf);
         console.log(`Rendered icon ${path.basename(item.out)} (${item.size}x${item.size}): ${(buf.length / 1024).toFixed(1)}KB`);
-      } else {
+      }
+      if (item.inIco) {
         icoFrames.push({ size: item.size, buf });
       }
     }
 
+    await cdp.send('Emulation.setDefaultBackgroundColorOverride');
+
     const icoBuf = buildIcoFromPngs(icoFrames);
     fs.writeFileSync(path.join(LANDING_DIR, 'favicon.ico'), icoBuf);
     console.log(`Built favicon.ico (16x16, 32x32, 48x48): ${(icoBuf.length / 1024).toFixed(1)}KB`);
+
+    const faviconSvgPath = path.join(BRAND_OUT_DIR, 'favicon.svg');
+    const adminFaviconPath = path.join(ADMIN_PUBLIC_DIR, 'favicon.svg');
+    if (fs.existsSync(faviconSvgPath) && fs.existsSync(ADMIN_PUBLIC_DIR)) {
+      fs.copyFileSync(faviconSvgPath, adminFaviconPath);
+      console.log(`Synced favicon.svg -> ${adminFaviconPath}`);
+    }
 
     // Render Messenger & Zalo Unfurl Mockup Preview Sheet
     await cdp.send('Emulation.setDeviceMetricsOverride', {
