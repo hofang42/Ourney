@@ -627,12 +627,10 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
     var snapshot = try JSONDecoder().decode(WidgetSnapshot.self, from: Data(sampleJson.utf8)).evaluated(at: now)
 
     XCTAssertEqual(snapshot.selectedTodayJourney()?.id, "6f8c9a10-ielts")
-    XCTAssertEqual(snapshot.selectedStreakJourney()?.id, "6f8c9a10-ielts")
-    XCTAssertEqual(snapshot.selectedSquad()?.journeyId, "6f8c9a10-ielts")
-
-    snapshot.defaultJourneyId = nil
     XCTAssertEqual(snapshot.selectedStreakJourney()?.id, "8a10b220-run")
     XCTAssertEqual(snapshot.selectedSquad()?.journeyId, "6f8c9a10-ielts")
+    snapshot.defaultJourneyId = "8a10b220-run"
+    XCTAssertEqual(snapshot.selectedTodayJourney()?.id, "6f8c9a10-ielts")
 
     // When only 1 journey is pending and 1 is checked in, todayCyclePool still includes both
     // journeys so the Today widget's 1/N › cycle button keeps working after check-in, and
@@ -650,7 +648,7 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
       "8a10b220-run"
     )
 
-    // Explicit defaultSquadId selects the matching squad independent of defaultJourneyId.
+    // Existing payloads can carry a legacy squad default. Only a per-widget pin selects it.
     let secondSquad = WidgetSquadItem(
       journeyId: "couple-ritual-2",
       title: "Đôi mình",
@@ -666,7 +664,8 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
     )
     snapshot.squads.append(secondSquad)
     snapshot.defaultSquadId = "couple-ritual-2"
-    XCTAssertEqual(snapshot.selectedSquad()?.journeyId, "couple-ritual-2")
+    XCTAssertEqual(snapshot.selectedSquad()?.journeyId, "6f8c9a10-ielts")
+    XCTAssertEqual(snapshot.selectedSquad(preferredId: secondSquad.journeyId)?.journeyId, secondSquad.journeyId)
 
     // Older snapshots can omit both lists.
     let legacyJsonWithoutLists = """
@@ -977,5 +976,81 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
     XCTAssertEqual(WidgetL10n.liveActivityOpenStatus(locale: "vi"), "Vẫn kịp cho hôm nay")
     XCTAssertEqual(WidgetL10n.liveActivityCompactStatus(locale: "en"), "Tonight")
     XCTAssertEqual(WidgetL10n.liveActivityCompactStatus(locale: "vi"), "Tối nay")
+  }
+
+  func testPerWidgetPinningAndEntityOptionResolution() throws {
+    let tempRoot = FileManager.default.temporaryDirectory
+      .appendingPathComponent("ourney_widget_pinning_\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: tempRoot) }
+    try WidgetSnapshotStore.ensureDirectoryPrepared(tempRoot)
+
+    var snap = try JSONDecoder().decode(WidgetSnapshot.self, from: Data(sampleJson.utf8))
+    snap.defaultJourneyId = nil
+    snap.defaultSquadId = nil
+    let coupleSquad = WidgetSquadItem(
+      journeyId: "couple-2",
+      title: "Đôi mình 365",
+      skinId: "couple",
+      colorVariant: 0,
+      typeIcon: "type-couple",
+      isCouple: true,
+      dayNumber: 18,
+      totalDays: 30,
+      doneCount: 2,
+      memberCount: 2,
+      meCheckedInToday: true
+    )
+    snap.squads.append(coupleSquad)
+    try JSONEncoder().encode(snap).write(
+      to: tempRoot.appendingPathComponent(OurneyWidgetConstants.snapshotFileName)
+    )
+
+    // 1. normalizedPinnedId and isTodayJourneyPinned
+    XCTAssertNil(WidgetSnapshot.normalizedPinnedId(nil))
+    XCTAssertNil(WidgetSnapshot.normalizedPinnedId(""))
+    XCTAssertNil(WidgetSnapshot.normalizedPinnedId("  auto  "))
+    XCTAssertNil(WidgetSnapshot.normalizedPinnedId("AUTO"))
+    XCTAssertEqual(WidgetSnapshot.normalizedPinnedId("8a10b220-run"), "8a10b220-run")
+    XCTAssertFalse(snap.isTodayJourneyPinned(nil))
+    XCTAssertFalse(snap.isTodayJourneyPinned("auto"))
+    XCTAssertFalse(snap.isTodayJourneyPinned("archived-missing-id"))
+    XCTAssertTrue(snap.isTodayJourneyPinned("8a10b220-run"))
+
+    // 2. Pinning Today / Streak / LockScreen / Squad overrides Automatic selection,
+    //    and archived/unknown IDs fall back gracefully to Automatic.
+    XCTAssertEqual(snap.selectedTodayJourney(pinnedId: "8a10b220-run")?.id, "8a10b220-run")
+    XCTAssertEqual(snap.selectedTodayJourney(pinnedId: "archived-id")?.id, "6f8c9a10-ielts")
+    XCTAssertEqual(snap.selectedStreakJourney(preferredId: "6f8c9a10-ielts")?.id, "6f8c9a10-ielts")
+    XCTAssertEqual(snap.selectedStreakJourney(preferredId: "archived-id")?.id, "8a10b220-run")
+    XCTAssertEqual(snap.selectedSquad(preferredId: "couple-2")?.journeyId, "couple-2")
+    XCTAssertEqual(snap.selectedSquad(preferredId: "archived-id")?.journeyId, "6f8c9a10-ielts")
+    XCTAssertEqual(snap.selectedLockScreenJourney(pinnedId: "8a10b220-run")?.id, "8a10b220-run")
+
+    // 3. Entity options: default is pure in-memory O(1) "Tự động" / "Automatic",
+    //    suggested lists only active journeys/squads (never individual members).
+    let defJourneyVi = WidgetSnapshotStore.defaultJourneyEntityOption(fallbackLocale: "vi")
+    XCTAssertEqual(defJourneyVi.id, "auto")
+    XCTAssertEqual(defJourneyVi.title, "Tự động")
+    let defJourneyEn = WidgetSnapshotStore.defaultJourneyEntityOption(fallbackLocale: "en")
+    XCTAssertEqual(defJourneyEn.title, "Automatic")
+
+    let referenceDate = try XCTUnwrap(WidgetDateParser.parseISO8601("2026-11-24T10:00:00.000Z"))
+    let suggestedJourneys = WidgetSnapshotStore.suggestedJourneyEntityOptions(at: referenceDate, rootDirectory: tempRoot)
+    XCTAssertEqual(suggestedJourneys.map(\.id), ["auto", "6f8c9a10-ielts", "8a10b220-run"])
+    XCTAssertEqual(suggestedJourneys[0].title, "Tự động")
+    XCTAssertEqual(suggestedJourneys[1].title, "Tự học IELTS 30 ngày")
+    XCTAssertEqual(suggestedJourneys[1].subtitle, "Ngày 15/30")
+
+    let resolvedJourneys = WidgetSnapshotStore.journeyEntityOptions(
+      for: ["auto", "8a10b220-run", "archived-id"],
+      rootDirectory: tempRoot
+    )
+    XCTAssertEqual(resolvedJourneys.map(\.id), ["auto", "8a10b220-run", "archived-id"])
+    XCTAssertEqual(resolvedJourneys[1].title, "Chạy bộ sáng 5km")
+    XCTAssertEqual(resolvedJourneys[2].title, "Tự động")
+
+    let suggestedSquads = WidgetSnapshotStore.suggestedSquadEntityOptions(at: referenceDate, rootDirectory: tempRoot)
+    XCTAssertEqual(suggestedSquads.map(\.id), ["auto", "6f8c9a10-ielts", "couple-2"])
+    XCTAssertEqual(suggestedSquads[1].subtitle, "Ngày 15 · 1/2 đã check-in")
   }
 }

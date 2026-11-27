@@ -3,6 +3,10 @@ name: iOS (unsigned IPA)
 on:
   push:
     tags: ['v*']
+  pull_request:
+    paths:
+      - '.github/workflows/ios.yml'
+      - 'apps/mobile/ios/**'
   workflow_dispatch:
     inputs:
       macos_runner:
@@ -54,6 +58,7 @@ jobs:
       # On release tags (v*), SUPABASE_URL and SUPABASE_ANON_KEY are mandatory (FS-34).
       # SUPPORT_EMAIL is only added when set (an empty key would be useless; the app falls back to its default).
       - name: Write dart-define file
+        if: github.event_name != 'pull_request'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
@@ -112,6 +117,28 @@ jobs:
             echo "Verified App Group $group in ${bundle##*/}."
           done
 
+      - name: Verify AppIntents extract.actionsdata mangledTypeName
+        working-directory: apps/mobile
+        shell: bash
+        run: |
+          app=build/ios/iphoneos/Runner.app
+          widget="$app/PlugIns/OurneyWidgetsExtension.appex"
+          for bundle in "$app" "$widget"; do
+            actions="$bundle/Metadata.appintents/extract.actionsdata"
+            test -f "$actions" || { echo "::error::Missing $actions"; exit 1; }
+            for intent in SelectTodayJourneyIntent SelectStreakJourneyIntent SelectSquadIntent SelectLockScreenJourneyIntent; do
+              jq -e --arg k "$intent" '
+                any((.actions // {}) | to_entries[];
+                  (.key == $k or (.key | endswith("." + $k))) and
+                  (.value.mangledTypeName | strings | length > 0))
+              ' "$actions" >/dev/null || {
+                echo "::error::$intent missing or has empty mangledTypeName in $actions"
+                exit 1
+              }
+            done
+            echo "Verified AppIntents mangledTypeName in ${bundle##*/}."
+          done
+
       - name: Package IPA for re-signing
         run: scripts/ios/package_ipa.sh apps/mobile/build/ios/iphoneos/Runner.app Ourney-unsigned.ipa
 
@@ -123,7 +150,7 @@ jobs:
           retention-days: 30
 
       - name: Test widget App Group, timelines, and snapshot behavior
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
         timeout-minutes: 15
         working-directory: apps/mobile
         run: |
