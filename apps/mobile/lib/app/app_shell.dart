@@ -17,9 +17,14 @@ import 'providers.dart';
 /// app's start tab. On the Capture tab the camera screen draws its own
 /// dark dock around the hero shutter, so the shell shows none.
 class AppShell extends ConsumerStatefulWidget {
-  const AppShell({required this.navigationShell, super.key});
+  const AppShell({required this.navigationShell, this.routePath, super.key});
 
   final StatefulNavigationShell navigationShell;
+
+  /// Active path inside this shell branch (`state.uri.path` from
+  /// [StatefulShellRoute.builder]). Changes on intra-branch push/pop while
+  /// ignoring query-only updates and root-navigator overlays.
+  final String? routePath;
 
   static const int journeysIndex = AppDock.journeysIndex;
   static const int captureIndex = AppDock.captureIndex;
@@ -41,45 +46,14 @@ class _AppShellState extends ConsumerState<AppShell> {
   bool _termsSheetOpen = false;
   final ValueNotifier<bool> _dockCompact = ValueNotifier<bool>(false);
   bool _userScrolling = false;
-  GoRouter? _router;
-  GoRouterDelegate? _routerDelegate;
-  String? _lastRoutePath;
-
-  String? _currentRoutePath(GoRouter? router) {
-    if (router == null) return null;
-    if (router.routerDelegate.currentConfiguration.isEmpty) return null;
-    return router.state.uri.path;
-  }
-
-  void _onRouteChanged() {
-    final path = _currentRoutePath(_router);
-    if (path != _lastRoutePath) {
-      _lastRoutePath = path;
-      _userScrolling = false;
-      _setCompact(false);
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final router = GoRouter.maybeOf(context);
-    final delegate = router?.routerDelegate;
-    _router = router;
-    if (!identical(delegate, _routerDelegate)) {
-      _routerDelegate?.removeListener(_onRouteChanged);
-      _routerDelegate = delegate;
-      _lastRoutePath = _currentRoutePath(router);
-      _routerDelegate?.addListener(_onRouteChanged);
-    }
-  }
 
   @override
   void didUpdateWidget(covariant AppShell oldWidget) {
     super.didUpdateWidget(oldWidget);
     final idx = widget.navigationShell.currentIndex;
     if (idx != oldWidget.navigationShell.currentIndex ||
-        idx == AppShell.captureIndex) {
+        idx == AppShell.captureIndex ||
+        widget.routePath != oldWidget.routePath) {
       _userScrolling = false;
       _setCompact(false);
     }
@@ -87,7 +61,6 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   @override
   void dispose() {
-    _routerDelegate?.removeListener(_onRouteChanged);
     _dockCompact.dispose();
     super.dispose();
   }

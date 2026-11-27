@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney/app/app_dock.dart';
 import 'package:ourney/app/app_shell.dart';
 import 'package:ourney/app/router.dart';
+import 'package:ourney/features/journeys/journeys_paths.dart';
 import 'package:ourney/ui/components/dock.dart';
 import 'package:ourney/ui/components/glass.dart';
 
@@ -232,12 +233,66 @@ void main() {
           reason: 'pushing a sub-route inside a branch must expand the dock',
         );
 
-        // Pop back to /journeys?filter=1 -> expands because path changed from /journey/j1.
+        // Compact the dock on the pushed /journey/j1 detail screen before popping.
+        final detailScroll = find
+            .descendant(
+              of: find.byKey(const ValueKey('journey-detail')),
+              matching: find.byType(Scrollable),
+            )
+            .first;
+        await tester.drag(detailScroll, const Offset(0, -250));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(
+          tester.widget<AppDock>(find.byType(AppDock)).compact,
+          isTrue,
+          reason: 'scrolling down on pushed sub-route compacts the dock',
+        );
+
+        // Pop back to /journeys?filter=1 -> expands from compact because branch path changed.
         h.container.read(routerProvider).pop();
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 350));
         expect(h.location, '${AppRoutes.journeys}?filter=1');
-        expect(tester.widget<AppDock>(find.byType(AppDock)).compact, isFalse);
+        expect(
+          tester.widget<AppDock>(find.byType(AppDock)).compact,
+          isFalse,
+          reason: 'popping an in-branch sub-route must expand a compact dock',
+        );
+
+        // Compact on /journeys, then push and pop a root-navigator overlay
+        // (day viewer) -> obscured dock underneath must stay compact.
+        await tester.drag(list, const Offset(0, -200));
+        await tester.pumpAndSettle();
+        expect(tester.widget<AppDock>(find.byType(AppDock)).compact, isTrue);
+
+        unawaited(
+          h.container
+              .read(routerProvider)
+              .push(JourneysPaths.day('j1', testToday)),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 350));
+        expect(h.location, JourneysPaths.day('j1', testToday));
+        expect(
+          tester
+              .widgetList<AppDock>(find.byType(AppDock, skipOffstage: false))
+              .singleWhere((d) => d.shutter == null)
+              .compact,
+          isTrue,
+          reason: 'pushing a root-navigator overlay must not reset shell dock',
+        );
+
+        h.container.read(routerProvider).pop();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 350));
+        expect(h.location, '${AppRoutes.journeys}?filter=1');
+        expect(
+          tester.widget<AppDock>(find.byType(AppDock)).compact,
+          isTrue,
+          reason:
+              'popping a root-navigator overlay must keep shell dock compact',
+        );
 
         // 5. Compact on Journeys, switch tab -> resets to expanded.
         await tester.drag(list, const Offset(0, -200));
