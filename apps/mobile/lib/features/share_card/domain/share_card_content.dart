@@ -139,6 +139,7 @@ class ShareCardContent {
     );
     final hasMetric = journey.metricName != null || journey.metricUnit != null;
     double? metric;
+    var metricUnit = journey.metricUnit;
     if (!hideMetric && hasMetric) {
       CheckIn? latest;
       for (final c in checkIns) {
@@ -148,6 +149,19 @@ class ShareCardContent {
         }
       }
       metric = latest?.metricValue;
+    } else if (!hideMetric && !hasMetric) {
+      CheckIn? latest;
+      for (final c in checkIns) {
+        if (c.extras.km == null) continue;
+        if (latest == null ||
+            c.localDate.isAfter(latest.localDate) ||
+            (c.localDate == latest.localDate &&
+                c.capturedAt.isAfter(latest.capturedAt))) {
+          latest = c;
+        }
+      }
+      metric = latest?.extras.km;
+      metricUnit = 'km';
     }
 
     final days = <LocalDate>{for (final c in checkIns) c.localDate};
@@ -178,7 +192,7 @@ class ShareCardContent {
           (membership?.blurMedia ?? false),
       metricHidden: hideMetric && hasMetric,
       metricValue: metric,
-      metricUnit: metric == null ? null : journey.metricUnit,
+      metricUnit: metric == null ? null : metricUnit,
     );
   }
 
