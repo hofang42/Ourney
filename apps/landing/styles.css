@@ -1928,6 +1928,12 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
 .faq-disc svg { width: 16px; height: 16px; stroke-width: 2.5; }
 .faq-list details[open] .faq-disc { transform: rotate(45deg); }
 .ans p { padding: 0 18px 18px; color: var(--muted); }
+.ans a {
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 @supports (interpolate-size: allow-keywords) {
   .faq-list { interpolate-size: allow-keywords; }
   .faq-list details::details-content {
@@ -2039,25 +2045,6 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   font-size: 0.875rem;
   line-height: 1.5;
   color: #3F3A34;
-}
-.beta-apk-sha {
-  font-size: 0.78rem;
-  line-height: 1.45;
-  color: #3F3A34;
-  overflow-wrap: anywhere;
-}
-.beta-apk-sha code {
-  padding: 2px 6px;
-  background: #F3EAD8;
-  border: 1px solid #1A1A1A;
-  border-radius: 6px;
-  font-size: 0.74rem;
-}
-.beta-apk-sha a {
-  font-weight: 700;
-  color: #1A1A1A;
-  text-decoration: underline;
-  text-underline-offset: 2px;
 }
 .beta-waitlist-box {
   margin-top: 22px;
