@@ -378,7 +378,7 @@ h3 {
   min-height: 48px;
   padding: 4px 0;
 }
-.brand img { width: 118px; height: auto; }
+.brand img { width: 122px; height: auto; }
 .nav-links { display: none; gap: 4px; }
 .nav-links a {
   display: inline-flex;
@@ -462,7 +462,6 @@ h3 {
 @media (max-width: 460px) {
   .nav-cta { display: none; }
   .nav-inner { min-height: 62px; }
-  .brand img { width: 96px; }
 }
 
 /* Phone Frame */
@@ -2278,7 +2277,7 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   align-items: center;
   justify-content: space-between;
 }
-.footer-inner > img { width: 98px; height: auto; }
+.footer-inner > img, .footer-inner .brand img { width: 98px; height: auto; }
 .footer-tagline-wrap {
   display: flex;
   flex-direction: column;
