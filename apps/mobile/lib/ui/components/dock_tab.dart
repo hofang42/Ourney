@@ -192,7 +192,7 @@ class DockTab extends StatelessWidget {
       // one solid onBrand colour, i.e. a black blob. Keep the sticker
       // palette and the ink outline in every state.
       glyph = AnimatedScale(
-        scale: active ? 1.08 : 1,
+        scale: active ? dockE4GlyphActiveScale : 1,
         duration: UiMotion.of(context, _kDockGlyphDuration),
         curve: UiCurves.dockOvershoot,
         child: OurneyIcon(name: item.glyph!, active: active),
