@@ -4,22 +4,22 @@
     "ios": "1.0.0"
   },
   "recommended": {
-    "android": "1.2.3",
-    "ios": "1.2.3"
+    "android": "1.2.4",
+    "ios": "1.2.4"
   },
   "force_on_major": true,
   "notes": {
     "vi": [
-      "Widget và thông báo nhẹ nhàng hơn: bỏ đồng hồ đếm ngược, có thể ẩn tên hành trình trên màn hình khoá",
-      "Xoá tài khoản xác nhận bằng mật khẩu hoặc mã OTP",
-      "Giờ nhắc đồng bộ giữa các máy; ảnh chưa gửi được giữ lại khi phiên đăng nhập hết hạn",
-      "Cải thiện độ tương phản, trình đọc màn hình và sửa nhiều lỗi nhỏ"
+      "Thanh điều hướng mới: chữ rõ, không bị cắt kể cả khi phóng to cỡ chữ",
+      "Widget Android có nút Đổi để chọn hành trình riêng cho từng widget; chỉnh trong Cài đặt → Tiện ích",
+      "Logo mới gọn hơn trên trang chủ và thẻ chia sẻ",
+      "Câu chữ nhẹ nhàng hơn, màu dễ đọc hơn, ảnh nháp được giữ an toàn khi gửi chưa xong"
     ],
     "en": [
-      "Gentler widgets and notifications: no countdown timers, option to hide journey names on the lock screen",
-      "Delete account can be confirmed with your password or a one-time code",
-      "Reminder times sync across devices; unsent photos are kept if your session expires",
-      "Better contrast and screen reader support, plus many small fixes"
+      "New navigation bar: labels stay clear, even with larger text",
+      "Android widgets get a Switch button to pick a journey per widget; manage them in Settings → Widgets",
+      "Cleaner new logo on Home and share cards",
+      "Calmer wording, easier-to-read colours, and drafts kept safe while uploads finish"
     ]
   }
 }
