@@ -106,7 +106,7 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_done_saved => 'Đã lưu vào hành trình của bạn.';
 
   @override
-  String get checkin_done_savedPrivate => 'Đã lưu. Chỉ mình bạn thấy.';
+  String get checkin_done_savedPrivate => 'Chỉ mình bạn xem được ảnh này.';
 
   @override
   String get checkin_done_futureMembers =>
@@ -152,7 +152,7 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_chooseAnother => 'Chọn ảnh khác';
 
   @override
-  String get checkin_done_stampChecked => 'ĐÃ ĐIỂM DANH';
+  String get checkin_done_stampChecked => 'ĐÃ CHECK-IN';
 
   @override
   String get checkin_done_stampWeek1 => 'TUẦN 1 XONG';
@@ -203,7 +203,9 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_done => 'Xong';
 
   @override
-  String get checkin_chainKept => 'Giữ được chuỗi.';
+  String checkin_chainKept(int day) {
+    return 'Đã lưu ảnh ngày $day';
+  }
 
   @override
   String checkin_daysUnit(int count) {

@@ -368,41 +368,41 @@ abstract class AppLocalizations {
   /// **'NGÀY {day}.'**
   String reminderBanner_daily_minimal(int day);
 
-  /// Streak-at-risk reminder banner copy, quiet skin.
+  /// Evening 21:00 photo reminder banner copy, quiet skin.
   ///
   /// In vi, this message translates to:
-  /// **'Chuỗi {streak} ngày rồi. Một tấm ảnh hôm nay là đủ.'**
-  String reminderBanner_streak_quiet(int streak);
+  /// **'Hôm nay thêm một tấm là đủ rồi.'**
+  String get reminderBanner_streak_quiet;
 
-  /// Streak-at-risk reminder banner copy, squad skin.
+  /// Evening 21:00 photo reminder banner copy, squad skin.
   ///
   /// In vi, this message translates to:
-  /// **'Chuỗi {streak} ngày cùng nhau. Góp một tấm hôm nay nhé.'**
-  String reminderBanner_streak_squad(int streak);
+  /// **'Góp một tấm cho nhóm hôm nay nhé.'**
+  String get reminderBanner_streak_squad;
 
-  /// Streak-at-risk reminder banner copy, memory skin.
+  /// Evening 21:00 photo reminder banner copy, memory skin.
   ///
   /// In vi, this message translates to:
   /// **'Thêm một khung hình cho cuộn phim hôm nay nhé.'**
   String get reminderBanner_streak_memory;
 
-  /// Streak-at-risk reminder banner copy, couple skin.
+  /// Evening 21:00 photo reminder banner copy, couple skin.
   ///
   /// In vi, this message translates to:
-  /// **'Chuỗi {streak} ngày của hai đứa. Lưu một khoảnh khắc hôm nay nhé.'**
-  String reminderBanner_streak_couple(int streak);
+  /// **'Hôm nay hai bạn chụp một tấm nhé.'**
+  String get reminderBanner_streak_couple;
 
-  /// Streak-at-risk reminder banner copy, flexer skin.
+  /// Evening 21:00 photo reminder banner copy, flexer skin.
   ///
   /// In vi, this message translates to:
-  /// **'CHUỖI {streak} NGÀY. MỘT TẤM CHO HÔM NAY.'**
-  String reminderBanner_streak_flexer(int streak);
+  /// **'THÊM MỘT TẤM CHO BUỔI TẬP HÔM NAY'**
+  String get reminderBanner_streak_flexer;
 
-  /// Streak-at-risk reminder banner copy, minimal skin.
+  /// Evening 21:00 photo reminder banner copy, minimal skin.
   ///
   /// In vi, this message translates to:
-  /// **'CHUỖI {streak} NGÀY · HÔM NAY.'**
-  String reminderBanner_streak_minimal(int streak);
+  /// **'HÔM NAY · MỘT TẤM'**
+  String get reminderBanner_streak_minimal;
 
   /// Missed-day chip, squad skin.
   ///

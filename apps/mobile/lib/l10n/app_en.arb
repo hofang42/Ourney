@@ -107,54 +107,29 @@
       }
     }
   },
-  "reminderBanner_streak_quiet": "{streak}-day streak so far. One photo today is plenty.",
+  "reminderBanner_streak_quiet": "One photo today is plenty.",
   "@reminderBanner_streak_quiet": {
-    "description": "Streak-at-risk reminder banner copy, quiet skin.",
-    "placeholders": {
-      "streak": {
-        "type": "int"
-      }
-    }
+    "description": "Evening 21:00 photo reminder banner copy, quiet skin."
   },
-  "reminderBanner_streak_squad": "{streak}-day streak going. Add your photo today.",
+  "reminderBanner_streak_squad": "Add your photo to the squad today.",
   "@reminderBanner_streak_squad": {
-    "description": "Streak-at-risk reminder banner copy, squad skin.",
-    "placeholders": {
-      "streak": {
-        "type": "int"
-      }
-    }
+    "description": "Evening 21:00 photo reminder banner copy, squad skin."
   },
   "reminderBanner_streak_memory": "Room for one more frame on today's film roll.",
   "@reminderBanner_streak_memory": {
-    "description": "Streak-at-risk reminder banner copy, memory skin."
+    "description": "Evening 21:00 photo reminder banner copy, memory skin."
   },
-  "reminderBanner_streak_couple": "{streak} days together. Save a moment for today.",
+  "reminderBanner_streak_couple": "Snap a photo for the two of you today.",
   "@reminderBanner_streak_couple": {
-    "description": "Streak-at-risk reminder banner copy, couple skin.",
-    "placeholders": {
-      "streak": {
-        "type": "int"
-      }
-    }
+    "description": "Evening 21:00 photo reminder banner copy, couple skin."
   },
-  "reminderBanner_streak_flexer": "STREAK {streak}. ONE PHOTO FOR TODAY.",
+  "reminderBanner_streak_flexer": "ADD TODAY'S WORKOUT PHOTO",
   "@reminderBanner_streak_flexer": {
-    "description": "Streak-at-risk reminder banner copy, flexer skin.",
-    "placeholders": {
-      "streak": {
-        "type": "int"
-      }
-    }
+    "description": "Evening 21:00 photo reminder banner copy, flexer skin."
   },
-  "reminderBanner_streak_minimal": "STREAK {streak} · TODAY.",
+  "reminderBanner_streak_minimal": "TODAY · ONE PHOTO",
   "@reminderBanner_streak_minimal": {
-    "description": "Streak-at-risk reminder banner copy, minimal skin.",
-    "placeholders": {
-      "streak": {
-        "type": "int"
-      }
-    }
+    "description": "Evening 21:00 photo reminder banner copy, minimal skin."
   },
   "missedDay_chipSquad": "DAY {day} · PAUSE",
   "@missedDay_chipSquad": {

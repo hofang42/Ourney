@@ -41,11 +41,11 @@ class RemindersL10nEn extends RemindersL10n {
   String get reminders_pickTimeHelp => 'Check-in reminder time';
 
   @override
-  String get reminders_streakAlertTitle => 'Evening streak reminder at 21:00';
+  String get reminders_streakAlertTitle => 'Photo reminder at 9 PM';
 
   @override
   String get reminders_streakAlertSubtitle =>
-      'A calm reminder at 21:00 if you have a streak going and haven\'t checked in yet.';
+      'Reminds you at 9 PM if you haven\'t taken a photo today.';
 
   @override
   String get reminders_emptyTitle => 'No journeys yet';
@@ -93,16 +93,16 @@ class RemindersL10nEn extends RemindersL10n {
   }
 
   @override
-  String get reminders_alertTitle => 'A moment for today';
+  String get reminders_alertTitle => 'What photo do you want to save today?';
 
   @override
-  String reminders_alertBody(String journey, int count) {
-    return '$journey: $count-day streak — one photo today is plenty.';
+  String reminders_alertBody(String journey) {
+    return '$journey: one photo today is plenty.';
   }
 
   @override
-  String reminders_alertBodyAt(String journey, int count, String time) {
-    return '$journey: $count-day streak — one photo today is plenty (new journey day starts at $time).';
+  String reminders_alertBodyAt(String journey, String time) {
+    return '$journey: one photo today is plenty (new journey day starts at $time).';
   }
 
   @override

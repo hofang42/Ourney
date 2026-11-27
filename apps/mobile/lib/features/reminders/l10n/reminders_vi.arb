@@ -50,11 +50,11 @@
   "@reminders_pickTimeHelp": {
     "description": "Help text at the top of the time picker dialog."
   },
-  "reminders_streakAlertTitle": "Nhắc giữ chuỗi lúc 21:00",
+  "reminders_streakAlertTitle": "Nhắc chụp ảnh lúc 21:00",
   "@reminders_streakAlertTitle": {
     "description": "Title of the switch for the 21:00 streak-about-to-break alert."
   },
-  "reminders_streakAlertSubtitle": "Nhắc nhẹ lúc 21:00 nếu bạn đang có chuỗi mà chưa chụp hôm nay.",
+  "reminders_streakAlertSubtitle": "Nhắc lúc 21:00 nếu hôm nay bạn chưa chụp ảnh.",
   "@reminders_streakAlertSubtitle": {
     "description": "Subtitle of the streak alert switch."
   },
@@ -116,35 +116,27 @@
       }
     }
   },
-  "reminders_alertTitle": "Hôm nay vẫn còn kịp",
+  "reminders_alertTitle": "Hôm nay bạn muốn lưu tấm nào?",
   "@reminders_alertTitle": {
     "description": "Title of the 21:00 streak alert notification."
   },
-  "reminders_alertBody": "{journey}: chuỗi {count} ngày — một tấm ảnh hôm nay là đủ rồi.",
+  "reminders_alertBody": "{journey}: một tấm hôm nay là đủ rồi.",
   "@reminders_alertBody": {
     "description": "Body of the 21:00 streak alert notification.",
     "placeholders": {
       "journey": {
         "type": "String",
         "example": "30 ngày nói tiếng Anh"
-      },
-      "count": {
-        "type": "int",
-        "example": "5"
       }
     }
   },
-  "reminders_alertBodyAt": "{journey}: chuỗi {count} ngày — một tấm ảnh hôm nay là đủ rồi (ngày mới của hành trình bắt đầu lúc {time}).",
+  "reminders_alertBodyAt": "{journey}: một tấm hôm nay là đủ rồi (ngày mới của hành trình bắt đầu lúc {time}).",
   "@reminders_alertBodyAt": {
     "description": "Body of the 21:00 streak alert notification when the device timezone differs from the journey timezone.",
     "placeholders": {
       "journey": {
         "type": "String",
         "example": "30 ngày nói tiếng Anh"
-      },
-      "count": {
-        "type": "int",
-        "example": "5"
       },
       "time": {
         "type": "String",

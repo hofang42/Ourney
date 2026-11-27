@@ -142,6 +142,21 @@ class UiStreakHero extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (subtitle != null) ...[
+          Text(
+            subtitle!,
+            key: const ValueKey('streak-hero-subtitle'),
+            maxLines: large ? null : 2,
+            overflow: large ? TextOverflow.visible : TextOverflow.ellipsis,
+            style: UiText.body(
+              size: 14,
+              weight: FontWeight.w600,
+              height: 1.4,
+              color: _onPastel,
+            ),
+          ),
+          const SizedBox(height: 6),
+        ],
         Text(
           title,
           key: const ValueKey('streak-hero-title'),
@@ -155,20 +170,6 @@ class UiStreakHero extends StatelessWidget {
             color: _onPastel,
           ),
         ),
-        if (subtitle != null) ...[
-          const SizedBox(height: 6),
-          Text(
-            subtitle!,
-            maxLines: large ? null : 2,
-            overflow: large ? TextOverflow.visible : TextOverflow.ellipsis,
-            style: UiText.body(
-              size: 14,
-              weight: FontWeight.w600,
-              height: 1.4,
-              color: _onPastel,
-            ),
-          ),
-        ],
       ],
     );
     final number = ConstrainedBox(
@@ -208,9 +209,9 @@ class UiStreakHero extends StatelessWidget {
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                number,
-                const SizedBox(height: UiSpace.sm),
                 texts,
+                const SizedBox(height: UiSpace.sm),
+                number,
               ],
             )
           : Row(

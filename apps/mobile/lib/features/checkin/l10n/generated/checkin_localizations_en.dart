@@ -106,7 +106,7 @@ class CheckinL10nEn extends CheckinL10n {
   String get checkin_done_saved => 'Saved to your journey.';
 
   @override
-  String get checkin_done_savedPrivate => 'Saved. Only you can see it.';
+  String get checkin_done_savedPrivate => 'Only you can see this one.';
 
   @override
   String get checkin_done_futureMembers =>
@@ -210,7 +210,9 @@ class CheckinL10nEn extends CheckinL10n {
   String get checkin_done => 'Done';
 
   @override
-  String get checkin_chainKept => 'Chain kept.';
+  String checkin_chainKept(int day) {
+    return 'Day $day photo saved';
+  }
 
   @override
   String checkin_daysUnit(int count) {

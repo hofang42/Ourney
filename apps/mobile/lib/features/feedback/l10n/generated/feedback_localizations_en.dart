@@ -310,7 +310,7 @@ class FeedbackL10nEn extends FeedbackL10n {
 
   @override
   String get feedback_errorRateLimitedAction =>
-      'You\'re doing that too fast. Please wait a moment and try again.';
+      'You\'re tapping a bit fast. Wait a moment and try again.';
 
   @override
   String get feedback_errorOfflineDraftSaved =>

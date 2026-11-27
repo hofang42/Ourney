@@ -50,13 +50,47 @@ void main() {
         ),
       );
       await t.pumpAndSettle();
-      expect(find.text('CHUỖI 21 NGÀY. MỘT TẤM CHO HÔM NAY.'), findsOneWidget);
+      expect(
+        find.text('THÊM MỘT TẤM CHO BUỔI TẬP HÔM NAY'),
+        findsOneWidget,
+      );
       expect(find.text('Chạy sáng'), findsOneWidget);
       expect(t.takeException(), isNull);
     }
     await t.tap(find.byKey(const ValueKey('reminder-banner-open')));
     await t.tap(find.byKey(const ValueKey('reminder-banner-dismiss')));
     expect((opened, dismissed), (1, 1));
+
+    for (final locale in const [Locale('vi'), Locale('en')]) {
+      final l10n = lookupAppLocalizations(locale);
+      for (final skin in const [
+        'quiet',
+        'squad',
+        'memory',
+        'couple',
+        'flexer',
+        'minimal',
+      ]) {
+        for (final streak in const [1, 4, 21]) {
+          final copy = reminderBannerCopy(
+            l10n,
+            ReminderBannerData(
+              journeyId: 'j',
+              journeyName: 'Chạy sáng',
+              skinId: skin,
+              kind: ReminderBannerKind.streak,
+              streak: streak,
+            ),
+          );
+          expect(
+            RegExp(r'\d').hasMatch(copy),
+            isFalse,
+            reason:
+                '${locale.languageCode} streak banner for $skin must contain no digit: "$copy"',
+          );
+        }
+      }
+    }
   });
 
   testWidgets('banner host shows and hides from the provider', (t) async {

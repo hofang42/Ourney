@@ -49,7 +49,7 @@ class CameraL10nEn extends CameraL10n {
 
   @override
   String get camera_noJourneyMessage =>
-      'Create a journey, then snap one photo a day to keep your streak.';
+      'Pick something you want to do regularly, then take your first photo.';
 
   @override
   String get camera_noJourneyAction => 'Create journey';

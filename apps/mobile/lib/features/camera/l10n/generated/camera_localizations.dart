@@ -173,7 +173,7 @@ abstract class CameraL10n {
   /// No description provided for @camera_noJourneyMessage.
   ///
   /// In vi, this message translates to:
-  /// **'Tạo một hành trình, rồi mỗi ngày chụp một tấm để giữ chuỗi.'**
+  /// **'Chọn một việc muốn làm đều, rồi chụp tấm đầu tiên nhé.'**
   String get camera_noJourneyMessage;
 
   /// No description provided for @camera_noJourneyAction.

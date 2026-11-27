@@ -275,7 +275,7 @@ abstract class CheckinL10n {
   /// No description provided for @checkin_done_savedPrivate.
   ///
   /// In vi, this message translates to:
-  /// **'Đã lưu. Chỉ mình bạn thấy.'**
+  /// **'Chỉ mình bạn xem được ảnh này.'**
   String get checkin_done_savedPrivate;
 
   /// No description provided for @checkin_done_futureMembers.
@@ -353,7 +353,7 @@ abstract class CheckinL10n {
   /// No description provided for @checkin_done_stampChecked.
   ///
   /// In vi, this message translates to:
-  /// **'ĐÃ ĐIỂM DANH'**
+  /// **'ĐÃ CHECK-IN'**
   String get checkin_done_stampChecked;
 
   /// No description provided for @checkin_done_stampWeek1.
@@ -443,8 +443,8 @@ abstract class CheckinL10n {
   /// Headline of the success screen without a milestone.
   ///
   /// In vi, this message translates to:
-  /// **'Giữ được chuỗi.'**
-  String get checkin_chainKept;
+  /// **'Đã lưu ảnh ngày {day}'**
+  String checkin_chainKept(int day);
 
   /// Unit after the big streak number.
   ///

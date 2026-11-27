@@ -413,7 +413,7 @@ abstract class ShareCardL10n {
   /// Squad poster heading.
   ///
   /// In vi, this message translates to:
-  /// **'{done}/{total} ĐÃ ĐIỂM DANH · NGÀY {day}'**
+  /// **'{done}/{total} ĐÃ CHECK-IN · NGÀY {day}'**
   String share_card_attended(int done, int total, int day);
 
   /// Squad trophy stamp.

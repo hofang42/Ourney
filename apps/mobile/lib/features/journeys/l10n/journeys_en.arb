@@ -506,7 +506,7 @@
   "journeys_dna_habit_hint": "Read 10 pages",
   "journeys_dna_reason_label": "why.",
   "journeys_dna_reason_hint": "to sleep better",
-  "journeys_dna_forge_title": "forging your DNA…",
+  "journeys_dna_forge_title": "Creating your journey…",
   "journeys_dna_forge_a11y": "Creating your journey",
   "journeys_dna_import_link": "Retell a past journey",
   "journeys_home_introQuiet": "Look back, a little at a time.",
@@ -1105,7 +1105,15 @@
   },
   "journeys_createDeckChoose": "Choose this type",
   "journeys_cardStreak": "{days}-day streak",
-  "journeys_heroSemantics": "{streak}-day streak. {title}",
+  "journeys_heroSemantics": "{title}, {streak}-day streak",
+  "journeys_hubDaysLogged": "{count, plural, =1{1 day logged} other{{count} days logged}}",
+  "@journeys_hubDaysLogged": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_deadUploads": "{count, plural, one{1 photo couldn't be sent} other{{count} photos couldn't be sent}}",
   "journeys_deadRetry": "Retry",
   "journeys_deadDiscard": "Discard",

@@ -171,33 +171,25 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String reminderBanner_streak_quiet(int streak) {
-    return '$streak-day streak so far. One photo today is plenty.';
-  }
+  String get reminderBanner_streak_quiet => 'One photo today is plenty.';
 
   @override
-  String reminderBanner_streak_squad(int streak) {
-    return '$streak-day streak going. Add your photo today.';
-  }
+  String get reminderBanner_streak_squad =>
+      'Add your photo to the squad today.';
 
   @override
   String get reminderBanner_streak_memory =>
       'Room for one more frame on today\'s film roll.';
 
   @override
-  String reminderBanner_streak_couple(int streak) {
-    return '$streak days together. Save a moment for today.';
-  }
+  String get reminderBanner_streak_couple =>
+      'Snap a photo for the two of you today.';
 
   @override
-  String reminderBanner_streak_flexer(int streak) {
-    return 'STREAK $streak. ONE PHOTO FOR TODAY.';
-  }
+  String get reminderBanner_streak_flexer => 'ADD TODAY\'S WORKOUT PHOTO';
 
   @override
-  String reminderBanner_streak_minimal(int streak) {
-    return 'STREAK $streak · TODAY.';
-  }
+  String get reminderBanner_streak_minimal => 'TODAY · ONE PHOTO';
 
   @override
   String missedDay_chipSquad(int day) {

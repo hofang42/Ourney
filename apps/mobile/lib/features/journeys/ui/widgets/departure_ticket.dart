@@ -73,7 +73,7 @@ class DepartureTicket extends StatefulWidget {
 
   static const _taglines = {
     'quiet': 'Chỉ mình bạn thấy. Từng chút một.',
-    'squad': 'Điểm danh mỗi ngày, cả nhóm cùng lên!',
+    'squad': 'Check-in mỗi ngày, cả nhóm cùng lên!',
     'memory': 'Mang về thật nhiều khung hình.',
     'couple': 'Mỗi ngày một nửa, ghép lại thành một.',
     'flexer': 'Bền bỉ từng buổi. Tập tiếp.',

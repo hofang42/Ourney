@@ -451,6 +451,37 @@ void main() {
       expect(find.text('12'), findsOneWidget);
     });
 
+    testWidgets(
+      '320dp at 200% text places cumulative days subtitle before title and flame without overflow',
+      (tester) async {
+        const title = 'Còn 1 hành trình chờ ảnh hôm nay.';
+        const subtitle = '1234 ngày đã ghi';
+        await tester.pumpWidget(
+          host(
+            const UiStreakHero(
+              semanticLabel:
+                  '1234 ngày đã ghi. Còn 1 hành trình chờ ảnh hôm nay, chuỗi 12 ngày',
+              streak: 12,
+              title: title,
+              subtitle: subtitle,
+            ),
+            textScale: 2,
+            size: const Size(320, 800),
+          ),
+        );
+        expect(tester.takeException(), isNull);
+        final subY = tester
+            .getTopLeft(find.byKey(const ValueKey('streak-hero-subtitle')))
+            .dy;
+        final titleY = tester
+            .getTopLeft(find.byKey(const ValueKey('streak-hero-title')))
+            .dy;
+        final flameNumberY = tester.getTopLeft(find.text('12')).dy;
+        expect(subY, lessThan(titleY));
+        expect(titleY, lessThan(flameNumberY));
+      },
+    );
+
     testWidgets('pastel fill per state and semantics', (tester) async {
       await tester.pumpWidget(
         host(

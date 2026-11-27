@@ -73,7 +73,7 @@
   "checkin_shareSkinMinimal": "Xuất thẻ",
   "checkin_shareSkinQuiet": "Tạo thiệp",
   "checkin_done_saved": "Đã lưu vào hành trình của bạn.",
-  "checkin_done_savedPrivate": "Đã lưu. Chỉ mình bạn thấy.",
+  "checkin_done_savedPrivate": "Chỉ mình bạn xem được ảnh này.",
   "checkin_done_futureMembers": "Đã gửi ảnh lên nhóm. Người tham gia sau có thể xem ảnh này.",
   "checkin_done_coupleFutureMembers": "Đã lưu nửa ảnh của bạn. Người ấy tham gia sau có thể xem ảnh này.",
   "checkin_done_sharedSquad": "Đã gửi ảnh lên nhóm rồi.",
@@ -91,7 +91,7 @@
   "checkin_draftCue": "Bản nháp · chạm để mở lại",
   "checkin_discardDraft": "Bỏ bản nháp",
   "checkin_chooseAnother": "Chọn ảnh khác",
-  "checkin_done_stampChecked": "ĐÃ ĐIỂM DANH",
+  "checkin_done_stampChecked": "ĐÃ CHECK-IN",
   "checkin_done_stampWeek1": "TUẦN 1 XONG",
   "checkin_done_stampCup": "CÚP VỀ TAY",
   "checkin_done_memoryStamp": "ĐÃ DÁN · NGÀY {day} HÀNH TRÌNH",
@@ -130,9 +130,14 @@
   "checkin_done_minimalWeek": "7 NGÀY LIỀN",
   "checkin_done_minimalFull": "ĐỦ 30 NGÀY",
   "checkin_done": "Xong",
-  "checkin_chainKept": "Giữ được chuỗi.",
+  "checkin_chainKept": "Đã lưu ảnh ngày {day}",
   "@checkin_chainKept": {
-    "description": "Headline of the success screen without a milestone."
+    "description": "Headline of the success screen without a milestone.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
   },
   "checkin_daysUnit": "{count, plural, other{ngày}}",
   "@checkin_daysUnit": {

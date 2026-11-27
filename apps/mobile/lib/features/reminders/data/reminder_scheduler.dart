@@ -172,10 +172,9 @@ class ReminderScheduler {
       if (isAlert) {
         final deadline = p.deadlineLocalTime(deviceTimezone);
         body = deadline == const ReminderTime(0, 0)
-            ? l10n.reminders_alertBody(p.journeyTitle, p.streak)
+            ? l10n.reminders_alertBody(p.journeyTitle)
             : l10n.reminders_alertBodyAt(
                 p.journeyTitle,
-                p.streak,
                 deadline.toString(),
               );
       } else {
@@ -346,7 +345,6 @@ class _ReminderLifecycleHookState extends ConsumerState<ReminderLifecycleHook>
       kind: p.kind == PlannedKind.streakAlert
           ? ReminderBannerKind.streak
           : ReminderBannerKind.daily,
-      streak: p.streak,
       day: day,
       deadline: deadline ?? '00:00',
     );
@@ -380,7 +378,6 @@ class _ReminderLifecycleHookState extends ConsumerState<ReminderLifecycleHook>
       journeyName: current.journeyName,
       skinId: current.skinId,
       kind: current.kind,
-      streak: current.streak,
       day: current.day,
       deadline: deadline,
     );

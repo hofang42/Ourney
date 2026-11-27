@@ -38,9 +38,6 @@ class MinimalistHabitL10nVi extends MinimalistHabitL10n {
   }
 
   @override
-  String get minimalist_habit_quickSnapHint => '1 chạm · Không cần gõ chữ';
-
-  @override
   String minimalist_habit_summaryCompleted(int done, int total) {
     return '$done / $total NGÀY HOÀN THÀNH';
   }

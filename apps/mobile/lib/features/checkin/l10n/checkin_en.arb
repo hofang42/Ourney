@@ -29,7 +29,7 @@
   "checkin_shareSkinMinimal": "Export card",
   "checkin_shareSkinQuiet": "Make a card",
   "checkin_done_saved": "Saved to your journey.",
-  "checkin_done_savedPrivate": "Saved. Only you can see it.",
+  "checkin_done_savedPrivate": "Only you can see this one.",
   "checkin_done_futureMembers": "Photo sent to your squad. People who join can see it.",
   "checkin_done_coupleFutureMembers": "Your half of the photo is saved. Your partner can see it once they join.",
   "checkin_done_sharedSquad": "Photo sent to your squad.",
@@ -81,7 +81,14 @@
   "checkin_done_minimalWeek": "7 DAYS STRAIGHT",
   "checkin_done_minimalFull": "ALL 30 DAYS",
   "checkin_done": "Done",
-  "checkin_chainKept": "Chain kept.",
+  "checkin_chainKept": "Day {day} photo saved",
+  "@checkin_chainKept": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
   "checkin_daysUnit": "{count, plural, one{day} other{days}}",
   "checkin_retake": "Retake",
   "checkin_privacyPrivate": "Only you",

@@ -149,13 +149,13 @@ abstract class RemindersL10n {
   /// Title of the switch for the 21:00 streak-about-to-break alert.
   ///
   /// In vi, this message translates to:
-  /// **'Nhắc giữ chuỗi lúc 21:00'**
+  /// **'Nhắc chụp ảnh lúc 21:00'**
   String get reminders_streakAlertTitle;
 
   /// Subtitle of the streak alert switch.
   ///
   /// In vi, this message translates to:
-  /// **'Nhắc nhẹ lúc 21:00 nếu bạn đang có chuỗi mà chưa chụp hôm nay.'**
+  /// **'Nhắc lúc 21:00 nếu hôm nay bạn chưa chụp ảnh.'**
   String get reminders_streakAlertSubtitle;
 
   /// Empty state title when there is no active journey.
@@ -239,20 +239,20 @@ abstract class RemindersL10n {
   /// Title of the 21:00 streak alert notification.
   ///
   /// In vi, this message translates to:
-  /// **'Hôm nay vẫn còn kịp'**
+  /// **'Hôm nay bạn muốn lưu tấm nào?'**
   String get reminders_alertTitle;
 
   /// Body of the 21:00 streak alert notification.
   ///
   /// In vi, this message translates to:
-  /// **'{journey}: chuỗi {count} ngày — một tấm ảnh hôm nay là đủ rồi.'**
-  String reminders_alertBody(String journey, int count);
+  /// **'{journey}: một tấm hôm nay là đủ rồi.'**
+  String reminders_alertBody(String journey);
 
   /// Body of the 21:00 streak alert notification when the device timezone differs from the journey timezone.
   ///
   /// In vi, this message translates to:
-  /// **'{journey}: chuỗi {count} ngày — một tấm ảnh hôm nay là đủ rồi (ngày mới của hành trình bắt đầu lúc {time}).'**
-  String reminders_alertBodyAt(String journey, int count, String time);
+  /// **'{journey}: một tấm hôm nay là đủ rồi (ngày mới của hành trình bắt đầu lúc {time}).'**
+  String reminders_alertBodyAt(String journey, String time);
 
   /// Android notification channel name (shown in system settings).
   ///

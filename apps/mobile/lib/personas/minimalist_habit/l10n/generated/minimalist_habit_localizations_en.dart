@@ -44,9 +44,6 @@ class MinimalistHabitL10nEn extends MinimalistHabitL10n {
   }
 
   @override
-  String get minimalist_habit_quickSnapHint => '1-tap · Zero text';
-
-  @override
   String minimalist_habit_summaryCompleted(int done, int total) {
     return '$done / $total DAYS COMPLETED';
   }
