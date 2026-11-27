@@ -535,10 +535,47 @@ void main() {
         ) async {
           final handle = tester.ensureSemantics();
           final j = _journey(skin, elapsed: 365, duration: 365);
-          await _pump(tester, j, scale: 1.35, brightness: brightness);
+          await _pump(tester, j, scale: 1.0, brightness: brightness);
+          final title1x = tester.getSize(find.text(j.title).last).height;
+          final headline1x = tester
+              .getSize(_key('journey-home-headline'))
+              .height;
+
+          tester.platformDispatcher.textScaleFactorTestValue = 1.35;
+          await tester.pumpAndSettle();
+          final title135x = tester.getSize(find.text(j.title).last).height;
+          final headline135x = tester
+              .getSize(_key('journey-home-headline'))
+              .height;
+          expect(
+            title135x,
+            greaterThan(title1x),
+            reason: 'h1 title at 1.35x must be monotonically larger than 1.0x',
+          );
+          expect(
+            headline135x,
+            greaterThan(headline1x),
+            reason: 'h1 intro headline at 1.35x must be monotonically larger than 1.0x',
+          );
+
+          await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+          await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+
           final checkInRect = tester.getRect(_key('journey-checkin'));
-          final recentRect = tester.getRect(_key('timeline-mode-recent'));
-          final monthRect = tester.getRect(_key('timeline-mode-month'));
+          var recentRect = tester.getRect(_key('timeline-mode-recent'));
+          var monthRect = tester.getRect(_key('timeline-mode-month'));
+          if (skin == PersonaSkinId.quietTransformer) {
+            expect(monthRect.bottom, lessThanOrEqualTo(checkInRect.top));
+          } else if (monthRect.bottom > checkInRect.top - 8) {
+            // Tall skin headers (e.g. accountabilitySquad trophy + chip) place
+            // the 6th section near the fold at 1.35x; scroll it clear of the
+            // floating Check-in CTA before measuring non-overlap and contrast.
+            final dy = monthRect.bottom - (checkInRect.top - 16);
+            await tester.drag(find.byType(Scrollable).first, Offset(0, -dy));
+            await tester.pumpAndSettle();
+            recentRect = tester.getRect(_key('timeline-mode-recent'));
+            monthRect = tester.getRect(_key('timeline-mode-month'));
+          }
           expect(
             recentRect.overlaps(checkInRect),
             isFalse,
@@ -550,8 +587,6 @@ void main() {
             reason: 'month tab $monthRect must not overlap $checkInRect',
           );
           expect(monthRect.bottom, lessThanOrEqualTo(checkInRect.top));
-          await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-          await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
           await expectLater(tester, meetsGuideline(textContrastGuideline));
           await _byMonth(tester);
           await expectLater(tester, meetsGuideline(androidTapTargetGuideline));

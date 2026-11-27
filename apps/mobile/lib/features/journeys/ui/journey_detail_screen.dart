@@ -270,7 +270,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
               ),
             ),
             Divider(height: 1, color: ui.border),
-            SizedBox(height: bigText ? 8 : 22),
+            SizedBox(height: bigText ? 12 : 22),
             if (progress != null)
               JourneyHomeIntro(
                 skin: skin,
@@ -284,18 +284,18 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                 readOnly: !perms.isActive,
                 ritual: journey.dna?['ritual'] as String?,
               ),
-            if (progress != null) SizedBox(height: bigText ? 6 : UiSpace.lg),
+            if (progress != null) SizedBox(height: bigText ? 10 : UiSpace.lg),
             DeadUploadsBanner(journeyId: journey.id),
             UiEyebrow(_dateRange(context, journey).toUpperCase()),
             const SizedBox(height: 4),
             Semantics(
               header: true,
-              child: Text(
-                journey.title,
-                style: UiText.h1(color: ui.ink, size: bigText ? 20 : 28),
+              child: MediaQuery.withClampedTextScaling(
+                maxScaleFactor: 1.2,
+                child: Text(journey.title, style: UiText.h1(color: ui.ink)),
               ),
             ),
-            SizedBox(height: bigText ? 8 : 22),
+            SizedBox(height: bigText ? 12 : 22),
             if (progress != null) ...[
               if (skin != 'quiet') ...[
                 JourneyHomeSkinHeader(
@@ -311,11 +311,11 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                         : JourneysPaths.wrapped(journey.id),
                   ),
                 ),
-                SizedBox(height: bigText ? 8 : UiSpace.lg),
+                const SizedBox(height: UiSpace.lg),
               ],
             ],
             _SectionTab(title: l10n.journeys_timelineTitle, accent: pal.accent),
-            SizedBox(height: bigText ? 8 : UiSpace.xl),
+            SizedBox(height: bigText ? 12 : UiSpace.xl),
           ];
           final startingWeight = skin == 'quiet'
               ? ref
