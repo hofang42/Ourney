@@ -110,13 +110,30 @@ class CheckinL10nEn extends CheckinL10n {
 
   @override
   String get checkin_done_futureMembers =>
-      'Saved. People who join can see this photo.';
+      'Photo sent to your squad. People who join can see it.';
 
   @override
-  String get checkin_done_sharedSquad => 'Shared with your squad.';
+  String get checkin_done_sharedSquad => 'Photo sent to your squad.';
 
   @override
   String get checkin_done_sharedLink => 'Visible on your shared journey.';
+
+  @override
+  String get checkin_done_pendingGroup =>
+      'Your photo is saved on this device. We’ll send it to your squad when you’re back online.';
+
+  @override
+  String get checkin_done_pending =>
+      'Your photo is saved on this device. It’ll sync when you’re back online.';
+
+  @override
+  String get checkin_done_uploadFailed =>
+      'Your photo is saved on this device. You can retry from your journey.';
+
+  @override
+  String checkin_resumeDraft(String journey) {
+    return 'Resume draft for $journey';
+  }
 
   @override
   String get checkin_chooseAnother => 'Choose another';
@@ -141,7 +158,7 @@ class CheckinL10nEn extends CheckinL10n {
   }
 
   @override
-  String get checkin_done_coupleSent => 'Your half is sent.';
+  String get checkin_done_coupleSent => 'Your half of the photo was sent.';
 
   @override
   String get checkin_done_coupleWeek => 'First week together';

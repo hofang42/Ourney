@@ -281,13 +281,13 @@ abstract class CheckinL10n {
   /// No description provided for @checkin_done_futureMembers.
   ///
   /// In vi, this message translates to:
-  /// **'Đã lưu. Người tham gia sau có thể xem ảnh này.'**
+  /// **'Đã gửi ảnh lên nhóm. Người tham gia sau có thể xem ảnh này.'**
   String get checkin_done_futureMembers;
 
   /// No description provided for @checkin_done_sharedSquad.
   ///
   /// In vi, this message translates to:
-  /// **'Đã chia sẻ với cả nhóm.'**
+  /// **'Đã gửi ảnh lên nhóm rồi.'**
   String get checkin_done_sharedSquad;
 
   /// No description provided for @checkin_done_sharedLink.
@@ -295,6 +295,30 @@ abstract class CheckinL10n {
   /// In vi, this message translates to:
   /// **'Đã hiển thị trên hành trình chia sẻ.'**
   String get checkin_done_sharedLink;
+
+  /// No description provided for @checkin_done_pendingGroup.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lưu ảnh của bạn, có mạng sẽ gửi lên nhóm'**
+  String get checkin_done_pendingGroup;
+
+  /// No description provided for @checkin_done_pending.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lưu ảnh trên máy. Có mạng sẽ đồng bộ.'**
+  String get checkin_done_pending;
+
+  /// No description provided for @checkin_done_uploadFailed.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lưu ảnh trên máy. Bạn có thể thử gửi lại từ hành trình.'**
+  String get checkin_done_uploadFailed;
+
+  /// No description provided for @checkin_resumeDraft.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mở lại bản nháp cho {journey}'**
+  String checkin_resumeDraft(String journey);
 
   /// No description provided for @checkin_chooseAnother.
   ///
@@ -335,7 +359,7 @@ abstract class CheckinL10n {
   /// No description provided for @checkin_done_coupleSent.
   ///
   /// In vi, this message translates to:
-  /// **'Nửa của bạn đã được gửi.'**
+  /// **'Đã gửi nửa ảnh của bạn rồi.'**
   String get checkin_done_coupleSent;
 
   /// No description provided for @checkin_done_coupleWeek.

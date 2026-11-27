@@ -2111,8 +2111,14 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_home_offlineSquad.
   ///
   /// In vi, this message translates to:
-  /// **'CHỜ ĐỒNG BỘ · ĐÃ LƯU TRÊN MÁY'**
+  /// **'Đã lưu ảnh của bạn, có mạng sẽ gửi lên nhóm'**
   String get journeys_home_offlineSquad;
+
+  /// No description provided for @journeys_home_offline.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa có kết nối mạng'**
+  String get journeys_home_offline;
 
   /// No description provided for @journeys_home_offlineMemory.
   ///

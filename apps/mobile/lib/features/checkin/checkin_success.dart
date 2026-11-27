@@ -10,11 +10,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 
+import '../../app/providers.dart' show appConfigProvider;
+import '../../data/data_providers.dart' show deadJourneyUploadsProvider;
 import '../../l10n/generated/app_localizations.dart';
 import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
 import '../groups/ui/group_photo.dart';
 import 'checkin_audience.dart';
+import 'checkin_controller.dart' show myCheckInsProvider;
 import 'checkin_progress.dart';
 import 'l10n/generated/checkin_localizations.dart';
 
@@ -56,6 +59,7 @@ class CheckinSuccessView extends ConsumerStatefulWidget {
 class _CheckinSuccessViewState extends ConsumerState<CheckinSuccessView>
     with SingleTickerProviderStateMixin {
   Timer? _autoClose;
+  bool _waitingToArmAutoClose = false;
   bool _started = false;
   bool _confettiStarted = false;
   bool _confettiStopped = false;
@@ -188,11 +192,18 @@ class _CheckinSuccessViewState extends ConsumerState<CheckinSuccessView>
         _timelineCtrl.duration = UiMotion.confetti;
         _timelineCtrl.forward(from: 0.0);
       }
-      if (widget.outcome.milestone == null) unawaited(_armAutoClose());
     } else if (reduced && _timelineCtrl.duration != UiMotion.reducedFade) {
       _stopConfettiIfNeeded();
       _timelineCtrl.stop();
       _timelineCtrl.value = 1.0;
+    }
+    if (MediaQuery.accessibleNavigationOf(context)) {
+      _autoClose?.cancel();
+      _autoClose = null;
+    } else if (widget.outcome.milestone == null &&
+        _autoClose == null &&
+        !_waitingToArmAutoClose) {
+      unawaited(_armAutoClose());
     }
   }
 
@@ -236,6 +247,7 @@ class _CheckinSuccessViewState extends ConsumerState<CheckinSuccessView>
   }
 
   Future<void> _armAutoClose() async {
+    _waitingToArmAutoClose = true;
     final hold = widget.holdAutoClose;
     if (hold != null) {
       try {
@@ -244,7 +256,8 @@ class _CheckinSuccessViewState extends ConsumerState<CheckinSuccessView>
         // The offer never throws; close anyway if it somehow does.
       }
     }
-    if (!mounted) return;
+    _waitingToArmAutoClose = false;
+    if (!mounted || MediaQuery.accessibleNavigationOf(context)) return;
     _autoClose = Timer(CheckinSuccessView.autoCloseDelay, widget.onDone);
   }
 
@@ -319,6 +332,47 @@ class _CheckinSuccessViewState extends ConsumerState<CheckinSuccessView>
           );
   }
 
+  String _deliveryMessage(
+    CheckinL10n l10n,
+    Journey? journey,
+    CheckIn saved, {
+    required bool canSync,
+  }) {
+    final group = journey?.kind == JourneyKind.group;
+    if (canSync && !saved.uploaded) {
+      final uploaded = ref.watch(
+        myCheckInsProvider(saved.journeyId).select(
+          (result) => result.value?.any((c) => c.id == saved.id && c.uploaded),
+        ),
+      );
+      if (uploaded != true) {
+        final failed = ref.watch(
+          deadJourneyUploadsProvider(saved.journeyId).select(
+            (result) => result.value?.any((item) => item.checkInId == saved.id),
+          ),
+        );
+        if (failed == true) return l10n.checkin_done_uploadFailed;
+        return group
+            ? l10n.checkin_done_pendingGroup
+            : l10n.checkin_done_pending;
+      }
+    }
+
+    final audience = watchCheckinAudience(ref, journey);
+    if (canSync && group) {
+      return switch (audience) {
+        CheckinAudience.couple => l10n.checkin_done_coupleSent,
+        CheckinAudience.futureMembers => l10n.checkin_done_futureMembers,
+        _ => l10n.checkin_done_sharedSquad,
+      };
+    }
+    return switch (audience) {
+      CheckinAudience.private => l10n.checkin_done_savedPrivate,
+      CheckinAudience.shared when canSync => l10n.checkin_done_sharedLink,
+      _ => l10n.checkin_done_saved,
+    };
+  }
+
   Widget _content(BuildContext context) {
     final l10n = CheckinL10n.of(context);
     final common = AppLocalizations.of(context);
@@ -335,19 +389,19 @@ class _CheckinSuccessViewState extends ConsumerState<CheckinSuccessView>
     final milestone = outcome.milestone;
     // Figma Done screens: a per-skin hero, the streak, one calm line.
     final headline = _headline(l10n, skin, day ?? 1, outcome.streakAfter);
-    final audienceMessage = switch (watchCheckinAudience(ref, journey)) {
-      CheckinAudience.unknown => l10n.checkin_done_saved,
-      CheckinAudience.private => l10n.checkin_done_savedPrivate,
-      CheckinAudience.shared => l10n.checkin_done_sharedLink,
-      CheckinAudience.couple => l10n.checkin_done_coupleSent,
-      CheckinAudience.squad => l10n.checkin_done_sharedSquad,
-      CheckinAudience.futureMembers => l10n.checkin_done_futureMembers,
-    };
+    final canSync = !ref.watch(appConfigProvider).localOnly;
+    final deliveryMessage = _deliveryMessage(
+      l10n,
+      journey,
+      outcome.checkIn,
+      canSync: canSync,
+    );
     final message = outcome.extraPhoto
         ? l10n.checkin_photoAdded(outcome.photoOfDay)
-        : milestoneTitle != null
-        ? l10n.checkin_milestoneMessage
-        : audienceMessage;
+        : milestoneTitle == null
+        ? null
+        : l10n.checkin_milestoneMessage;
+    final showDeliveryMessage = message == null || canSync;
     final shout = skin == 'flexer' || skin == 'minimal';
 
     final shareButton = milestoneTitle == null
@@ -442,10 +496,26 @@ class _CheckinSuccessViewState extends ConsumerState<CheckinSuccessView>
           const SizedBox(height: UiSpace.sm),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: UiSpace.xl),
-            child: Text(
-              message,
-              textAlign: TextAlign.center,
-              style: UiText.muted(color: ui.inkMuted, size: 16),
+            child: Column(
+              children: [
+                if (message != null)
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: UiText.muted(color: ui.inkMuted, size: 16),
+                  ),
+                if (message != null && showDeliveryMessage)
+                  const SizedBox(height: UiSpace.xs),
+                if (showDeliveryMessage)
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      deliveryMessage,
+                      textAlign: TextAlign.center,
+                      style: UiText.muted(color: ui.inkMuted, size: 16),
+                    ),
+                  ),
+              ],
             ),
           ),
           if (skin == null) ...[

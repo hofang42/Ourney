@@ -56,14 +56,20 @@ Journey testJourney({
   hideMetricDefault: hideMetricDefault,
 );
 
-CheckIn testCheckIn(LocalDate day, {String journeyId = 'j1'}) => CheckIn(
-  id: 'c-$day',
+CheckIn testCheckIn(
+  LocalDate day, {
+  String journeyId = 'j1',
+  String? id,
+  bool uploaded = false,
+}) => CheckIn(
+  id: id ?? 'c-$day',
   journeyId: journeyId,
   userId: 'me',
   localDate: day,
   capturedAt: DateTime.utc(day.year, day.month, day.day, 3),
   photoPath: 'p/$day.jpg',
   thumbPath: 'p/${day}_t.jpg',
+  uploaded: uploaded,
 );
 
 class FakeJourneyRepository implements JourneyRepository {
@@ -101,6 +107,7 @@ class FakeCheckInRepository implements CheckInRepository {
   final List<CheckIn> existing;
   final List<CheckInDraft> submitted = [];
   Object? submitError;
+  bool submitUploaded = false;
 
   @override
   Stream<List<CheckIn>> watchForJourney(String journeyId, {String? userId}) =>
@@ -126,6 +133,7 @@ class FakeCheckInRepository implements CheckInRepository {
       caption: draft.caption,
       metricValue: draft.metricValue,
       localPhotoFile: draft.photoFile,
+      uploaded: submitUploaded,
     );
   }
 

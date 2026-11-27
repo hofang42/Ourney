@@ -224,7 +224,11 @@ void main() {
           child: testApp(
             CheckinSuccessView(
               outcome: CheckInOutcome(
-                checkIn: testCheckIn(j.startDate),
+                checkIn: testCheckIn(
+                  j.startDate,
+                  journeyId: j.id,
+                  uploaded: true,
+                ),
                 streakBefore: streakAfter - 1,
                 streakAfter: streakAfter,
               ),
@@ -259,7 +263,7 @@ void main() {
       activeMemberCount: 1,
     );
     expect(
-      find.text('Đã lưu. Người tham gia sau có thể xem ảnh này.'),
+      find.text('Đã gửi ảnh lên nhóm. Người tham gia sau có thể xem ảnh này.'),
       findsOneWidget,
     );
     await tester.pump(CheckinSuccessView.autoCloseDelay);
@@ -281,13 +285,13 @@ void main() {
       layout: PersonaSkinId.coupleRituals,
     );
     await pumpAudience(squadWithCoupleLayout, activeMemberCount: 3);
-    expect(find.text('Đã chia sẻ với cả nhóm.'), findsOneWidget);
+    expect(find.text('Đã gửi ảnh lên nhóm rồi.'), findsOneWidget);
     await tester.pump(CheckinSuccessView.autoCloseDelay);
 
     await pumpAudience(
       testJourney(kind: JourneyKind.group, visibility: JourneyVisibility.group),
     );
-    expect(find.text('Đã lưu vào hành trình của bạn.'), findsOneWidget);
+    expect(find.text('Đã gửi ảnh lên nhóm rồi.'), findsOneWidget);
     await tester.pump(CheckinSuccessView.autoCloseDelay);
 
     await pumpAudience(
@@ -298,7 +302,7 @@ void main() {
       ),
       activeMemberCount: 2,
     );
-    expect(find.text('Nửa của bạn đã được gửi.'), findsOneWidget);
+    expect(find.text('Đã gửi nửa ảnh của bạn rồi.'), findsOneWidget);
     await tester.pump(CheckinSuccessView.autoCloseDelay);
 
     await pumpAudience(testJourney(visibility: JourneyVisibility.link));

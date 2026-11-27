@@ -15,6 +15,8 @@ import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
 import '../checkin/captured_photo.dart';
 import '../checkin/checkin_controller.dart' show checkinJourneyProvider;
+import '../checkin/checkin_drafts.dart';
+import '../checkin/l10n/generated/checkin_localizations.dart';
 import '../journeys/data/journeys_providers.dart';
 import 'camera_providers.dart';
 import 'camera_session.dart';
@@ -738,23 +740,35 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
 
   Widget _dock(BuildContext context, Journey? journey, UiJourneyStyle? style) {
     final l10n = CameraL10n.of(context);
-    final ready = _phase == _Phase.ready && journey != null && !_busy;
+    final drafts = ref.watch(checkinDraftsProvider);
     return AppDock(
       currentIndex: AppDock.captureIndex,
       onSelect: _goTab,
       shutter: KeyedSubtree(
         key: const ValueKey('dock-hero-shutter'),
-        child: UiShutter(
-          key: const ValueKey('capture-shutter'),
-          label: journey == null
-              ? l10n.camera_shutter
-              : l10n.camera_shutterFor(journey.title),
-          accent: style?.accent,
-          onAccent: style?.onAccent,
-          onPressed: ready ? () => _capture(journey) : null,
-          // Dim only while the camera itself is not ready, not while a
-          // capture is in flight.
-          dimmed: _phase != _Phase.ready || journey == null,
+        child: ListenableBuilder(
+          listenable: drafts,
+          builder: (context, _) {
+            final draft = journey == null ? null : drafts.photoFor(journey.id);
+            final ready =
+                journey != null && (_phase == _Phase.ready || draft != null);
+            return UiShutter(
+              key: const ValueKey('capture-shutter'),
+              label: journey == null
+                  ? l10n.camera_shutter
+                  : draft == null
+                  ? l10n.camera_shutterFor(journey.title)
+                  : CheckinL10n.of(context).checkin_resumeDraft(journey.title),
+              accent: style?.accent,
+              onAccent: style?.onAccent,
+              onPressed: !ready || _busy
+                  ? null
+                  : draft == null
+                  ? () => _capture(journey)
+                  : () => _openCheckin(draft),
+              dimmed: !ready,
+            );
+          },
         ),
       ),
     );

@@ -11,6 +11,7 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../../app/app_routes.dart';
 import '../../../app/overlays/missed_day_overlay.dart';
 import '../../../app/providers.dart';
+import '../../../data/data_providers.dart' show deadJourneyUploadsProvider;
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../groups/groups_paths.dart';
@@ -149,6 +150,24 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
     );
     final progress = index?.progress;
     final long = index?.isLong ?? false;
+    final skin = uiSkinIdFor(skinOfJourney(journey));
+    final offline =
+        progress != null &&
+        (ref.watch(journeyHomeOfflineProvider).value ?? false);
+    var squadUploadPending = false;
+    if (skin == 'squad' &&
+        journey.kind == JourneyKind.group &&
+        perms.currentUserId != null) {
+      final failed = ref.watch(deadJourneyUploadsProvider(journey.id));
+      final failedIds =
+          failed.value?.map((item) => item.checkInId).toSet() ??
+          const <String>{};
+      squadUploadPending =
+          checkIns.value?.any(
+            (photo) => !photo.uploaded && !failedIds.contains(photo.id),
+          ) ??
+          false;
+    }
 
     final actions = [
       if (perms.isOwner && perms.isActive) _Action.edit,
@@ -172,14 +191,13 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
     final gutter = UiSpace.gutter(MediaQuery.sizeOf(context).width);
 
     return UiSkinScope(
-      skinId: uiSkinIdFor(skinOfJourney(journey)),
+      skinId: skin,
       variant: journey.color ?? 0,
       // Read tokens from inside the scope so the skin applies.
       child: Builder(
         builder: (context) {
           final ui = context.ui;
           final pal = JourneyPalette.of(context, styleOfJourney(journey));
-          final skin = uiSkinIdFor(skinOfJourney(journey));
           final missedDay = index?.lastMissedDay;
           final showMissedChip =
               perms.isActive &&
@@ -253,12 +271,13 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
             const SizedBox(height: 22),
             if (progress != null)
               JourneyHomeIntro(
-                skin: uiSkinIdFor(skinOfJourney(journey)),
+                skin: skin,
                 day: progress.dayNumber,
                 total: journey.durationDays,
                 streak: progress.summary.current,
                 today: progress.today,
-                offline: ref.watch(journeyHomeOfflineProvider).value ?? false,
+                offline: offline,
+                squadUploadPending: squadUploadPending,
                 readOnly: !perms.isActive,
                 ritual: journey.dna?['ritual'] as String?,
               ),

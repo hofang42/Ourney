@@ -51,6 +51,7 @@ class JourneyHomeIntro extends StatelessWidget {
     required this.today,
     this.total,
     this.offline = false,
+    this.squadUploadPending = false,
     this.readOnly = false,
     this.ritual,
     super.key,
@@ -65,6 +66,7 @@ class JourneyHomeIntro extends StatelessWidget {
   /// Today in the journey's time zone (not the device clock).
   final LocalDate today;
   final bool offline;
+  final bool squadUploadPending;
   final bool readOnly;
 
   /// Couple ritual code (`cook`, `save`, `ldr`, `custom`).
@@ -76,7 +78,10 @@ class JourneyHomeIntro extends StatelessWidget {
     final l10n = JourneysL10n.of(context);
     final locale = Localizations.localeOf(context).languageCode;
     final offlineText = switch (skin) {
-      'squad' => l10n.journeys_home_offlineSquad,
+      'squad' =>
+        squadUploadPending
+            ? l10n.journeys_home_offlineSquad
+            : l10n.journeys_home_offline,
       'memory' || 'couple' => l10n.journeys_home_offlineMemory,
       _ => l10n.journeys_home_offlineQuiet,
     };
@@ -111,10 +116,10 @@ class JourneyHomeIntro extends StatelessWidget {
       key: ValueKey('journey-home-intro-$skin'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (offline)
+        if (offline || squadUploadPending)
           _Chip(
             key: const ValueKey('journey-home-offline'),
-            icon: 'cloud-off',
+            icon: offline ? 'cloud-off' : 'clock',
             text: offlineText,
           ),
         if (readOnly)

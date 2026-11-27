@@ -13,6 +13,7 @@ import 'package:ourney/features/checkin/checkin_clock.dart';
 import 'package:ourney/features/checkin/checkin_success.dart';
 import 'package:ourney/features/checkin/photo_compressor.dart';
 import 'package:ourney/features/checkin/routes.dart';
+import 'package:ourney/features/journeys/ui/home/journey_home_intro.dart';
 import 'package:ourney/features/reminders/data/notification_gateway.dart';
 import 'package:ourney/features/reminders/data/reminder_settings.dart';
 import 'package:ourney/ui/ui.dart';
@@ -96,6 +97,89 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('squad post waits for its own upload after reconnecting', (
+    tester,
+  ) async {
+    final upload = StreamController<List<CheckIn>>.broadcast();
+    final connectivity = StreamController<bool>.broadcast();
+    addTearDown(upload.close);
+    addTearDown(connectivity.close);
+    checkIns = _CheckInsWithUpdates(upload.stream);
+    journeys = FakeJourneyRepository(
+      journeys: [
+        testJourney(
+          templateId: TemplateId.englishDaily,
+          kind: JourneyKind.group,
+          visibility: JourneyVisibility.group,
+        ),
+      ],
+    );
+    late ProviderContainer container;
+    await pump(
+      tester,
+      config: testBackendConfig,
+      prefsValues: {ReminderPrefs.permissionAsked: true},
+      before: (value) => container = value,
+      overrides: [
+        notificationGatewayProvider.overrideWithValue(
+          FakeNotificationGateway(),
+        ),
+        sharingRepositoryProvider.overrideWithValue(FakeSharingRepository()),
+        journeyHomeOfflineProvider.overrideWith((ref) => connectivity.stream),
+      ],
+    );
+    final offline = container.listen(journeyHomeOfflineProvider, (_, _) {});
+    addTearDown(offline.close);
+    connectivity.add(true);
+    upload.add(const []);
+    await tester.pump();
+    expect(offline.read().value, isTrue);
+
+    const pending = 'Đã lưu ảnh của bạn, có mạng sẽ gửi lên nhóm';
+    const delivered = 'Đã gửi ảnh lên nhóm rồi.';
+    await tapPost(tester);
+    expect(checkIns.submitted, hasLength(1));
+    expect(find.text(pending), findsOneWidget);
+    expect(find.text(delivered), findsNothing);
+
+    connectivity.add(false);
+    upload.add([testCheckIn(testToday, uploaded: true)]);
+    await tester.pump();
+    expect(offline.read().value, isFalse);
+    expect(find.text(pending), findsOneWidget);
+    expect(find.text(delivered), findsNothing);
+
+    upload.add([testCheckIn(testToday, id: 'new-1', uploaded: true)]);
+    await tester.pump();
+    expect(find.text(pending), findsNothing);
+    expect(find.text(delivered), findsOneWidget);
+    await finishSuccess(tester);
+  });
+
+  testWidgets('accessible navigation keeps success open until Done', (
+    tester,
+  ) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(accessibleNavigation: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    await pump(
+      tester,
+      prefsValues: {ReminderPrefs.permissionAsked: true},
+      overrides: [
+        notificationGatewayProvider.overrideWithValue(
+          FakeNotificationGateway(),
+        ),
+      ],
+    );
+    await tapPost(tester);
+    await tester.pumpAndSettle();
+    await finishSuccess(tester);
+    expect(find.byKey(const ValueKey('checkin-success')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('checkin-done')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('stub-capture')), findsOneWidget);
+  });
+
   for (final skin in PersonaSkinId.values) {
     testWidgets('${skin.name} posts only after tapping Post', (tester) async {
       journeys = FakeJourneyRepository(
@@ -128,6 +212,7 @@ void main() {
   testWidgets('UX-03: post while audience stream is loading, then resolve it', (
     tester,
   ) async {
+    checkIns.submitUploaded = true;
     final sharing = _AudienceStream(viewers: [person('friend')]);
     addTearDown(sharing.updates.close);
     await pump(
@@ -151,6 +236,7 @@ void main() {
   testWidgets('UX-03: compose and completion stay neutral when sharing fails', (
     tester,
   ) async {
+    checkIns.submitUploaded = true;
     final sharing = _AudienceStream();
     addTearDown(sharing.updates.close);
     await pump(
@@ -806,6 +892,16 @@ class _AudienceStream extends FakeSharingRepository {
 
   @override
   Stream<JourneyShareState> watchShareState(String journeyId) => updates.stream;
+}
+
+class _CheckInsWithUpdates extends FakeCheckInRepository {
+  _CheckInsWithUpdates(this.updates);
+
+  final Stream<List<CheckIn>> updates;
+
+  @override
+  Stream<List<CheckIn>> watchForJourney(String journeyId, {String? userId}) =>
+      updates;
 }
 
 class _SlowGateway extends FakeNotificationGateway {

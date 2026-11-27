@@ -14,6 +14,7 @@ import 'package:ourney/features/journeys/domain/journey_progress.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
 import 'package:ourney/features/journeys/l10n/generated/journeys_localizations.dart';
 import 'package:ourney/features/journeys/ui/day_viewer_screen.dart';
+import 'package:ourney/features/journeys/ui/home/journey_home_intro.dart';
 import 'package:ourney/features/journeys/ui/journey_photo.dart';
 import 'package:ourney/features/journeys/ui/widgets/timeline_common.dart';
 import 'package:ourney/l10n/generated/app_localizations.dart';
@@ -125,6 +126,62 @@ void main() {
       // Solo journeys have no squad row; the V1 stat grid is gone.
       expect(_key('journey-home-squad'), findsNothing);
       expect(_key('stat-current'), findsNothing);
+    });
+
+    testWidgets('squad home tracks pending uploads for the signed-in member', (
+      tester,
+    ) async {
+      final j = testJourney(
+        templateId: TemplateId.englishDaily,
+        kind: JourneyKind.group,
+        maxMembers: 5,
+      );
+      final connectivity = StreamController<bool>.broadcast();
+      addTearDown(connectivity.close);
+      final other = testCheckIn(
+        j.id,
+        testToday,
+        userId: 'u2',
+        uploaded: false,
+        hour: 4,
+      );
+      final checkIns = FakeCheckInRepository([other]);
+      await pumpJourneys(
+        tester,
+        location: AppRoutes.journey(j.id),
+        config: testBackendConfig,
+        userId: 'u1',
+        journeys: FakeJourneyRepository(
+          journeys: [j],
+          memberships: {j.id: testMembership(j)},
+        ),
+        checkIns: checkIns,
+        extraOverrides: [
+          journeyHomeOfflineProvider.overrideWith((ref) async* {
+            yield true;
+            yield* connectivity.stream;
+          }),
+        ],
+      );
+
+      const pending = 'Đã lưu ảnh của bạn, có mạng sẽ gửi lên nhóm';
+      expect(find.text('Chưa có kết nối mạng'), findsOneWidget);
+      expect(find.text(pending), findsNothing);
+
+      checkIns.replaceAll([
+        other,
+        testCheckIn(j.id, testToday, uploaded: false),
+      ]);
+      await tester.pumpAndSettle();
+      expect(find.text(pending), findsOneWidget);
+      connectivity.add(false);
+      await tester.pumpAndSettle();
+      expect(find.text(pending), findsOneWidget);
+
+      checkIns.replaceAll([other, testCheckIn(j.id, testToday)]);
+      await tester.pumpAndSettle();
+      expect(find.text(pending), findsNothing);
+      expect(_key('journey-home-offline'), findsNothing);
     });
 
     testWidgets('quiet home shows the missed-day chip from the Figma overlay', (

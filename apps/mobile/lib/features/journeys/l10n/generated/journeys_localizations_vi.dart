@@ -1136,7 +1136,11 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_home_offlineQuiet => 'Đang lưu trên máy · sẽ đồng bộ sau';
 
   @override
-  String get journeys_home_offlineSquad => 'CHỜ ĐỒNG BỘ · ĐÃ LƯU TRÊN MÁY';
+  String get journeys_home_offlineSquad =>
+      'Đã lưu ảnh của bạn, có mạng sẽ gửi lên nhóm';
+
+  @override
+  String get journeys_home_offline => 'Chưa có kết nối mạng';
 
   @override
   String get journeys_home_offlineMemory =>

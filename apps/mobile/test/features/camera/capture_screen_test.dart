@@ -8,6 +8,9 @@ import 'package:ourney/features/camera/camera_session.dart';
 import 'package:ourney/features/camera/capture_services.dart';
 import 'package:ourney/features/camera/routes.dart';
 import 'package:ourney/features/checkin/captured_photo.dart';
+import 'package:ourney/features/checkin/checkin_clock.dart';
+import 'package:ourney/features/checkin/photo_compressor.dart';
+import 'package:ourney/features/checkin/routes.dart';
 import 'package:ourney_core/ourney_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -39,11 +42,17 @@ void main() {
     WidgetTester tester, {
     Map<String, Object> prefsValues = const {CameraPrefs.permissionAsked: true},
     String location = '/capture',
+    bool compose = false,
   }) async {
     prefs = await testPrefs(prefsValues);
     final container = ProviderContainer(
       overrides: [
-        ...baseOverrides(prefs: prefs, journeys: journeys),
+        ...baseOverrides(
+          prefs: prefs,
+          journeys: journeys,
+          checkIns: compose ? FakeCheckInRepository() : null,
+        ),
+        checkinClockProvider.overrideWithValue(FakeCheckinClock()),
         cameraSessionFactoryProvider.overrideWithValue(() => camera),
         galleryPickerProvider.overrideWithValue(gallery),
         appSettingsOpenerProvider.overrideWithValue(settings),
@@ -53,7 +62,7 @@ void main() {
     await tester.pumpWidget(
       routedTestApp(
         container: container,
-        routes: cameraRoutes,
+        routes: [...cameraRoutes, if (compose) ...checkinRoutes],
         initialLocation: location,
         log: log,
       ),
@@ -104,6 +113,53 @@ void main() {
     expect(photo.fromLibrary, isFalse);
     expect(photo.path, '/tmp/shot1.jpg');
     expect(prefs.getString(CameraPrefs.lastJourneyId), 'j2');
+  });
+
+  testWidgets('system back preserves the draft for the same journey', (
+    tester,
+  ) async {
+    final container = await pump(tester, compose: true);
+    final files = container.read(draftFilesProvider) as FakeDraftFiles;
+    final shutter = find.byKey(const ValueKey('capture-shutter'));
+    final caption = find.byKey(const ValueKey('checkin-caption'));
+
+    await tester.tap(shutter);
+    await tester.pumpAndSettle();
+    await tester.enterText(caption, 'Bản nháp của mình');
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(shutter, findsOneWidget);
+    expect(files.discarded, isEmpty);
+
+    await tester.tap(find.byKey(const ValueKey('journey-chip-j2')));
+    await tester.pumpAndSettle();
+    await tester.tap(shutter);
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(caption).controller!.text, isEmpty);
+    expect(camera.pictures, 2);
+    await tester.tap(find.byKey(const ValueKey('checkin-close')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('journey-chip-j1')));
+    await tester.pumpAndSettle();
+    await tester.tap(shutter);
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextField>(caption).controller!.text,
+      'Bản nháp của mình',
+    );
+    expect(camera.pictures, 2);
+    expect(files.discarded, isEmpty);
+
+    await tester.tap(find.byKey(const ValueKey('checkin-retake')));
+    await tester.pumpAndSettle();
+    expect(files.discarded, ['/tmp/shot1.jpg']);
+    await tester.tap(shutter);
+    await tester.pumpAndSettle();
+    expect(camera.pictures, 3);
+    expect(tester.widget<TextField>(caption).controller!.text, isEmpty);
   });
 
   testWidgets('remembers the last journey across launches', (tester) async {

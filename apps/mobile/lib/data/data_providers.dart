@@ -5,7 +5,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' show Provider;
+import 'package:flutter_riverpod/flutter_riverpod.dart'
+    show Provider, StreamProvider;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -123,6 +124,13 @@ final deadUploadsProvider = Provider<DeadUploads?>((ref) {
     return null;
   }
 });
+
+/// Check-in uploads of a journey that need an explicit retry.
+final deadJourneyUploadsProvider = StreamProvider.autoDispose
+    .family<List<DeadUpload>, String>((ref, journeyId) {
+      final dead = ref.watch(deadUploadsProvider);
+      return dead?.watch(journeyId: journeyId) ?? Stream.value(const []);
+    });
 
 /// Full pull notifications, available in Supabase mode when data is wired.
 final serverPullsProvider = Provider<Stream<void>?>((ref) {

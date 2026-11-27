@@ -20,6 +20,18 @@ String paceFromDigits(String digits) {
   return '$minutes:${padded.substring(padded.length - 2)}';
 }
 
+typedef PostExtrasDraft = ({
+  String? mood,
+  int? minutes,
+  bool customMinutes,
+  int? hearts,
+  String? cook,
+  String paceDigits,
+  String place,
+  String dish,
+  String km,
+});
+
 /// Holds the per-skin Post inputs of one check-in. The screen owns it, the
 /// section below edits it, and [extras] is what is posted.
 class PostExtrasController extends ChangeNotifier {
@@ -44,6 +56,30 @@ class PostExtrasController extends ChangeNotifier {
   String _paceDigits;
 
   String get paceDigits => _paceDigits;
+
+  PostExtrasDraft get draft => (
+    mood: mood,
+    minutes: minutes,
+    customMinutes: customMinutes,
+    hearts: hearts,
+    cook: cook,
+    paceDigits: _paceDigits,
+    place: place.text,
+    dish: dish.text,
+    km: km.text,
+  );
+
+  void restoreDraft(PostExtrasDraft draft) {
+    mood = draft.mood;
+    minutes = draft.minutes;
+    customMinutes = draft.customMinutes;
+    hearts = draft.hearts;
+    cook = draft.cook;
+    _paceDigits = draft.paceDigits;
+    place.text = draft.place;
+    dish.text = draft.dish;
+    km.text = draft.km;
+  }
 
   /// `m:ss` once something is typed, otherwise empty.
   String get paceText => paceFromDigits(_paceDigits);

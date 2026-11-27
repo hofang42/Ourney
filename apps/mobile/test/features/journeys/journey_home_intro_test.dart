@@ -43,6 +43,7 @@ Widget _host(
 JourneyHomeIntro _intro(
   String skin, {
   bool offline = false,
+  bool squadUploadPending = false,
   bool readOnly = false,
   int? total = 30,
 }) => JourneyHomeIntro(
@@ -52,6 +53,7 @@ JourneyHomeIntro _intro(
   streak: 5,
   today: const LocalDate(2026, 11, 15),
   offline: offline,
+  squadUploadPending: squadUploadPending,
   readOnly: readOnly,
 );
 
@@ -84,7 +86,7 @@ void main() {
     await tester.pumpWidget(_host(_intro('quiet', offline: true)));
     expect(find.text('Đang lưu trên máy · sẽ đồng bộ sau'), findsOneWidget);
     await tester.pumpWidget(_host(_intro('squad', offline: true)));
-    expect(find.text('CHỜ ĐỒNG BỘ · ĐÃ LƯU TRÊN MÁY'), findsOneWidget);
+    expect(find.text('Chưa có kết nối mạng'), findsOneWidget);
     await tester.pumpWidget(_host(_intro('quiet', readOnly: true)));
     expect(find.text('Hành trình đã kết thúc · chỉ xem'), findsOneWidget);
     await tester.pumpWidget(_host(_intro('flexer', readOnly: true)));
@@ -94,6 +96,38 @@ void main() {
     await tester.pumpWidget(_host(_intro('quiet')));
     expect(_k('journey-home-offline'), findsNothing);
     expect(_k('journey-home-readonly'), findsNothing);
+  });
+
+  testWidgets('the squad chip shows the pending photo at 320dp and 2x text', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 690);
+    addTearDown(tester.view.reset);
+    for (final locale in JourneysL10n.supportedLocales) {
+      final pending = lookupJourneysL10n(locale).journeys_home_offlineSquad;
+      await tester.pumpWidget(
+        _host(
+          _intro('squad', offline: true, squadUploadPending: true),
+          scale: 2,
+          locale: locale,
+        ),
+      );
+      expect(find.text(pending), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(
+        _host(
+          _intro('squad', squadUploadPending: true),
+          scale: 2,
+          locale: locale,
+        ),
+      );
+      expect(find.text(pending), findsOneWidget);
+
+      await tester.pumpWidget(_host(_intro('squad'), scale: 2, locale: locale));
+      expect(_k('journey-home-offline'), findsNothing);
+    }
   });
 
   testWidgets('open-ended journeys show day without total', (tester) async {

@@ -74,9 +74,18 @@
   "checkin_shareSkinQuiet": "Tạo thiệp",
   "checkin_done_saved": "Đã lưu vào hành trình của bạn.",
   "checkin_done_savedPrivate": "Đã lưu. Chỉ mình bạn thấy.",
-  "checkin_done_futureMembers": "Đã lưu. Người tham gia sau có thể xem ảnh này.",
-  "checkin_done_sharedSquad": "Đã chia sẻ với cả nhóm.",
+  "checkin_done_futureMembers": "Đã gửi ảnh lên nhóm. Người tham gia sau có thể xem ảnh này.",
+  "checkin_done_sharedSquad": "Đã gửi ảnh lên nhóm rồi.",
   "checkin_done_sharedLink": "Đã hiển thị trên hành trình chia sẻ.",
+  "checkin_done_pendingGroup": "Đã lưu ảnh của bạn, có mạng sẽ gửi lên nhóm",
+  "checkin_done_pending": "Đã lưu ảnh trên máy. Có mạng sẽ đồng bộ.",
+  "checkin_done_uploadFailed": "Đã lưu ảnh trên máy. Bạn có thể thử gửi lại từ hành trình.",
+  "checkin_resumeDraft": "Mở lại bản nháp cho {journey}",
+  "@checkin_resumeDraft": {
+    "placeholders": {
+      "journey": { "type": "String" }
+    }
+  },
   "checkin_chooseAnother": "Chọn ảnh khác",
   "checkin_done_stampChecked": "ĐÃ ĐIỂM DANH",
   "checkin_done_stampWeek1": "TUẦN 1 XONG",
@@ -97,7 +106,7 @@
       }
     }
   },
-  "checkin_done_coupleSent": "Nửa của bạn đã được gửi.",
+  "checkin_done_coupleSent": "Đã gửi nửa ảnh của bạn rồi.",
   "checkin_done_coupleWeek": "Tuần đầu bên nhau",
   "checkin_done_coupleFull30": "Tròn 30 ngày",
   "checkin_done_flexerDay": "NGÀY {day}. {streak} NGÀY LIỀN.",

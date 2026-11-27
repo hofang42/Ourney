@@ -21,11 +21,13 @@ import '../journeys/data/journeys_providers.dart'
     show journeyStartingWeightPrefKey, recentTripPlacesProvider;
 import '../reminders/data/reminder_scheduler.dart';
 import '../reminders/ui/reminder_permission_prompt.dart';
+import '../update/data/update_providers.dart' show appUpdateWorkPausedProvider;
 import '../widgets/data/widget_sync_controller.dart' show syncWidgetsNow;
 import 'captured_photo.dart';
 import 'checkin_audience.dart';
 import 'checkin_clock.dart' show checkinClockProvider;
 import 'checkin_controller.dart';
+import 'checkin_drafts.dart';
 import 'checkin_progress.dart';
 import 'checkin_success.dart';
 import 'l10n/generated/checkin_localizations.dart';
@@ -63,6 +65,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
   /// The caption counter appears from this many code points.
   static const int _counterFrom = 120;
   late final DraftFiles _drafts;
+  late final CheckinDrafts _savedDrafts;
+  bool _discardDraftOnExit = false;
   bool _metricError = false;
   CheckInOutcome? _outcome;
   CapturedPhoto? _overridePhoto;
@@ -79,6 +83,21 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
   void initState() {
     super.initState();
     _drafts = ref.read(draftFilesProvider);
+    _savedDrafts = ref.read(checkinDraftsProvider);
+    final photo = widget.photo;
+    if (photo != null) {
+      final draft = _savedDrafts.take(photo.journeyId);
+      if (draft != null) {
+        if (draft.photo.path == photo.path) {
+          _caption.text = draft.caption;
+          _metric.text = draft.metric;
+          _extras.restoreDraft(draft.extras);
+          _limitAnnounced = draft.caption.runes.length >= captionMax;
+        } else {
+          unawaited(_drafts.discard([draft.photo.path]));
+        }
+      }
+    }
     _caption.addListener(_onCaptionChanged);
     _captionFocus.addListener(_onCaptionFocus);
     WidgetsBinding.instance.addObserver(this);
@@ -116,6 +135,19 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
 
   @override
   void dispose() {
+    final photo = _activePhoto;
+    if (photo != null && !_posting && _outcome == null) {
+      if (_discardDraftOnExit) {
+        unawaited(_drafts.discard([photo.path]));
+      } else {
+        _savedDrafts.save((
+          photo: photo,
+          caption: _caption.text,
+          metric: _metric.text,
+          extras: _extras.draft,
+        ));
+      }
+    }
     WidgetsBinding.instance.removeObserver(this);
     _captionFocus
       ..removeListener(_onCaptionFocus)
@@ -125,12 +157,6 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
       ..dispose();
     _metric.dispose();
     _extras.dispose();
-    // Left without posting (close, back gesture): the raw camera/picker
-    // file is not needed. After a post the poster already cleaned up.
-    final photo = _activePhoto;
-    if (photo != null && !_posting && _outcome == null) {
-      unawaited(_drafts.discard([photo.path]));
-    }
     super.dispose();
   }
 
@@ -176,6 +202,17 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
     }
   }
 
+  void _retake() {
+    _discardDraftOnExit = true;
+    _close();
+  }
+
+  void _closeCompose() {
+    // Closing Post explicitly during a forced update dismisses its draft.
+    _discardDraftOnExit = ref.read(appUpdateWorkPausedProvider);
+    _close();
+  }
+
   /// `72,5` (vi keyboards) and `72.5` both parse; empty means no value.
   static double? _parseMetric(String raw) {
     final t = raw.trim().replaceAll(',', '.');
@@ -207,8 +244,12 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
       }
       return;
     }
-    if (picked == null || !mounted) return;
-    final String path = picked;
+    if (picked == null || picked == current.path) return;
+    if (!mounted || _posting) {
+      unawaited(_drafts.discard([picked]));
+      return;
+    }
+    final path = picked;
     unawaited(_drafts.discard([current.path]));
     setState(() {
       _overridePhoto = CapturedPhoto(
@@ -380,7 +421,10 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
     return switch (journey) {
       AsyncData(value: final j?) => UiSkinScope(
         skinId: uiSkinIdFor(personaSkinOf(j)),
-        child: Builder(builder: (context) => _compose(context, j, photo)),
+        child: PopScope(
+          canPop: !_posting,
+          child: Builder(builder: (context) => _compose(context, j, photo)),
+        ),
       ),
       AsyncError() => _frame(
         body: UiEmptyState(
@@ -586,7 +630,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
                 key: const ValueKey('checkin-close'),
                 glyph: const OurneyIcon(name: 'close', size: 20),
                 label: AppLocalizations.of(context).common_close,
-                onPressed: _posting ? null : _close,
+                onPressed: _posting ? null : _closeCompose,
               ),
               Expanded(
                 child: Column(
@@ -670,7 +714,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
                                 ? null
                                 : photo.fromLibrary
                                 ? () => _repickFromLibrary(photo)
-                                : _close,
+                                : _retake,
                           ),
                         ),
                 );
