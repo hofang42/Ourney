@@ -155,46 +155,53 @@ void main() {
         );
       }
 
-      // Bounded overhang past the outer capsule outline on the active widest
-      // label ('Hành trình'): <= 4dp at 360, <= 1dp at 390, 0 at 412.
-      final pill = tester.getRect(
-        find.byKey(const ValueKey('dock-selection-pill')),
-      );
-      final labelRect = tester.getRect(find.text(_labels.first));
-      final activeText = tester.widget<Text>(find.text(_labels.first));
-      final tp = TextPainter(
-        text: TextSpan(text: _labels.first, style: activeText.style),
-        textDirection: TextDirection.ltr,
-        maxLines: 1,
-      )..layout();
-      final baselineFromTop = tp.computeDistanceToActualBaseline(
-        TextBaseline.alphabetic,
-      );
-      tp.dispose();
-      final baselineY = labelRect.top + baselineFromTop;
-      final r = pill.height / 2;
-      double overhangPastOutline(Offset p) {
-        final cx = p.dx.clamp(pill.left + r, pill.right - r);
-        final dist = (p - Offset(cx, pill.center.dy)).distance;
-        return dist > r ? dist - r : 0.0;
-      }
-
+      // Bounded overhang past the outer capsule outline on the two widest
+      // active labels ('Hành trình' = 0, 'Hoạt động' = 2):
+      // <= 4dp at 360, <= 1dp at 390, 0 at 412.
       final maxOverhang = switch (w) {
         360.0 => 4.0,
         390.0 => 1.0,
         _ => 0.0,
       };
-      for (final p in [
-        Offset(labelRect.left, baselineY),
-        Offset(labelRect.right, baselineY),
-        labelRect.topLeft,
-        labelRect.topRight,
-      ]) {
-        expect(
-          overhangPastOutline(p),
-          lessThanOrEqualTo(maxOverhang),
-          reason: 'point $p overhang vs $pill at ${w}dp',
+      for (final activeIdx in [0, 2]) {
+        await _pump(tester, w, 1.0, active: activeIdx);
+        await tester.pumpAndSettle();
+        final pill = tester.getRect(
+          find.byKey(const ValueKey('dock-selection-pill')),
         );
+        expect(pill.width, closeTo(geo.capsuleWidth, 0.5));
+        final labelText = _labels[activeIdx];
+        final labelRect = tester.getRect(find.text(labelText));
+        final activeText = tester.widget<Text>(find.text(labelText));
+        final tp = TextPainter(
+          text: TextSpan(text: labelText, style: activeText.style),
+          textDirection: TextDirection.ltr,
+          maxLines: 1,
+        )..layout();
+        final baselineFromTop = tp.computeDistanceToActualBaseline(
+          TextBaseline.alphabetic,
+        );
+        tp.dispose();
+        final baselineY = labelRect.top + baselineFromTop;
+        final r = pill.height / 2;
+        double overhangPastOutline(Offset p) {
+          final cx = p.dx.clamp(pill.left + r, pill.right - r);
+          final dist = (p - Offset(cx, pill.center.dy)).distance;
+          return dist > r ? dist - r : 0.0;
+        }
+
+        for (final p in [
+          Offset(labelRect.left, baselineY),
+          Offset(labelRect.right, baselineY),
+          labelRect.topLeft,
+          labelRect.topRight,
+        ]) {
+          expect(
+            overhangPastOutline(p),
+            lessThanOrEqualTo(maxOverhang),
+            reason: '$labelText point $p overhang vs $pill at ${w}dp',
+          );
+        }
       }
     });
   }

@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/ui/components/dock.dart';
 import 'package:ourney/ui/components/dock_tab.dart'
@@ -11,6 +14,21 @@ import 'package:ourney/ui/components/skin_scope.dart';
 import 'package:ourney/ui/skins.dart';
 import 'package:ourney/ui/theme.dart';
 import 'package:ourney/ui/tokens.dart';
+import 'package:ourney/ui/typography.dart';
+
+Future<void> _loadBodyFont() async {
+  final loader = FontLoader(UiFonts.body);
+  for (final file in [
+    'assets/fonts/BeVietnamPro-Regular.ttf',
+    'assets/fonts/BeVietnamPro-Medium.ttf',
+    'assets/fonts/BeVietnamPro-SemiBold.ttf',
+    'assets/fonts/BeVietnamPro-Bold.ttf',
+  ]) {
+    final bytes = File(file).readAsBytesSync();
+    loader.addFont(Future.value(ByteData.sublistView(bytes)));
+  }
+  await loader.load();
+}
 
 Widget host(
   Widget child, {
@@ -64,6 +82,8 @@ UiDock fiveTab(List<String> taps, {int active = 0, VoidCallback? onLong}) {
 }
 
 void main() {
+  setUpAll(_loadBodyFont);
+
   group('svg path parser', () {
     test('absolute and relative lines, H/V, Z', () {
       expect(
@@ -193,6 +213,9 @@ void main() {
       testWidgets(
         '360dp Vietnamese label stays inside the capsule ($activeTab)',
         (tester) async {
+          tester.view.devicePixelRatio = 1;
+          tester.view.physicalSize = const Size(360, 780);
+          addTearDown(tester.view.reset);
           await tester.pumpWidget(
             host(
               UiDock(
@@ -234,6 +257,7 @@ void main() {
           final pill = tester.getRect(
             find.byKey(const ValueKey('dock-selection-pill')),
           );
+          expect(pill.width, closeTo(60.0, 0.5));
           final labelText = activeTab == 0 ? 'Hành trình' : 'Hoạt động';
           final label = tester.getRect(find.text(labelText));
           expect(
