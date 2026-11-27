@@ -512,14 +512,37 @@ class _EditBodyState extends ConsumerState<_EditBody> {
                             key: ValueKey('edit-color-$i'),
                             label: skinColorName(l10n, uiSkin.id, i),
                             selected: _color == i,
-                            glyph: _color == i
-                                ? OurneyIcon(
+                            glyph: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  key: ValueKey('edit-color-dot-$i'),
+                                  width: 14,
+                                  height: 14,
+                                  decoration: BoxDecoration(
+                                    color: uiSkin
+                                        .resolvedVariant(i, ui.brightness)
+                                        .accent,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: _color == i
+                                          ? ui.onAccent
+                                          : ui.outline,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                ),
+                                if (_color == i) ...[
+                                  const SizedBox(width: 4),
+                                  OurneyIcon(
                                     name: 'check',
                                     size: 15,
                                     flat: true,
                                     color: ui.onAccent,
-                                  )
-                                : null,
+                                  ),
+                                ],
+                              ],
+                            ),
                             onPressed: _owner
                                 ? () => setState(() => _color = i)
                                 : null,

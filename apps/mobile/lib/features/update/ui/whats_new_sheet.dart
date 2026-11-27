@@ -113,7 +113,7 @@ class WhatsNewSheet extends ConsumerWidget {
                       name: 'check',
                       size: 18,
                       flat: true,
-                      color: ui.accent,
+                      color: ui.accentText,
                     ),
                   ),
                   const SizedBox(width: UiSpace.sm),

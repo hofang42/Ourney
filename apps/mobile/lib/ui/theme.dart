@@ -159,12 +159,12 @@ abstract final class OurneyTheme {
       ),
       switchTheme: SwitchThemeData(
         trackColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected) ? ui.ink : ui.fill,
+          (s) => s.contains(WidgetState.selected) ? ui.brand : ui.fill,
         ),
         thumbColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected) ? ui.bg : ui.inkMuted,
+          (s) => s.contains(WidgetState.selected) ? ui.switchThumb : ui.ink,
         ),
-        trackOutlineColor: WidgetStatePropertyAll(ui.border),
+        trackOutlineColor: WidgetStatePropertyAll(ui.outline),
       ),
       listTileTheme: ListTileThemeData(iconColor: ui.ink, textColor: ui.ink),
       inputDecorationTheme: InputDecorationTheme(

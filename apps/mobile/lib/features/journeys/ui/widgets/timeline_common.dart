@@ -16,6 +16,10 @@ export '../../domain/timeline_window.dart' show cumulativeSeries;
 Color timelineAccent(BuildContext context) =>
     UiSkinScope.maybeOf(context)?.variant.accent ?? context.ui.brand;
 
+/// Text- and icon-safe accent of the journey skin in scope (>= 4.5:1 on bg
+/// and surface). Fills and lines keep [timelineAccent].
+Color timelineAccentText(BuildContext context) => context.ui.accentText;
+
 /// Heading style of the skin in scope (falls back to the body font).
 TextStyle timelineHeading(BuildContext context, {double size = 15}) {
   final scope = UiSkinScope.maybeOf(context);
@@ -102,6 +106,7 @@ class TimelineTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final ui = context.ui;
     final accent = timelineAccent(context);
+    final accentText = timelineAccentText(context);
     final radius = round
         ? BorderRadius.circular(size)
         : BorderRadius.circular(UiRadius.otp);
@@ -128,8 +133,8 @@ class TimelineTile extends StatelessWidget {
             child: OurneyIcon(
               name: 'plus',
               size: size * 0.42,
-              color: accent,
-              inkColor: accent,
+              color: accentText,
+              inkColor: accentText,
             ),
           ),
         ),
@@ -560,7 +565,7 @@ class TimelineGridCell extends StatelessWidget {
     final color = hasLeftPhoto
         ? UiCamera.onPhoto
         : day.state == DayState.today
-        ? timelineAccent(context)
+        ? timelineAccentText(context)
         : day.state == DayState.missed
         ? ui.ink
         : ui.inkMuted;

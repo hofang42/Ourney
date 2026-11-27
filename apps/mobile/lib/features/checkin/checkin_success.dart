@@ -882,7 +882,7 @@ class _CheckinSuccessViewState extends ConsumerState<CheckinSuccessView>
             const SizedBox(height: UiSpace.sm),
             UiStamp(
               text,
-              color: ui.accent,
+              color: ui.accentText,
               animate: !outcome.extraPhoto,
               skinId: 'squad',
               haptics: celebrateHeroHaptics,

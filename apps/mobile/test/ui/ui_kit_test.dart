@@ -59,7 +59,7 @@ void main() {
       expect(uiSkins.every((s) => s.variants.length == 3), isTrue);
       final quiet = uiSkinById('quiet').apply(OurneyUi.light);
       expect(quiet.bg, const Color(0xFFEFF3F0));
-      expect(quiet.brand, const Color(0xFFFF4D6D));
+      expect(quiet.brand, const Color(0xFF10B981));
       // The variant accent is its own token; brand stays the button fill.
       expect(quiet.accent, const Color(0xFF10B981));
       expect(OurneyUi.light.accent, const Color(0xFFFF8A3D));

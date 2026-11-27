@@ -100,6 +100,10 @@ void main() {
       // Dead cover and HUD pickers are gone (UX-08).
       expect(_key('edit-cover-0'), findsNothing);
       expect(_key('edit-hud-bold'), findsNothing);
+      // Each colour chip carries a 14px colour dot (B6).
+      for (var i = 0; i < 3; i++) {
+        expect(_key('edit-color-dot-$i'), findsOneWidget);
+      }
       await tester.enterText(_key('edit-name'), 'Renamed run');
       await tester.tap(_key('edit-color-1'));
       await tester.pumpAndSettle();

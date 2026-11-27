@@ -443,8 +443,6 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                                         size: 20,
                                         flat: true,
                                       ),
-                                      accent: pal.accent,
-                                      onAccent: pal.onAccent,
                                       expand: false,
                                       onPressed: () =>
                                           checkInNow(context, ref, journey.id),

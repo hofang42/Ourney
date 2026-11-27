@@ -71,7 +71,7 @@ class TimelineEarlierLink extends StatelessWidget {
                   size: 13,
                   weight: FontWeight.w800,
                   height: 1.4,
-                  color: timelineAccent(context),
+                  color: timelineAccentText(context),
                 ),
               ),
               OurneyIcon(

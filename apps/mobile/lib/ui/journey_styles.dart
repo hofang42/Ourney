@@ -53,7 +53,7 @@ const List<UiJourneyStyle> uiJourneyStyles = [
   ),
   UiJourneyStyle(
     name: 'Aesthetic Flexer',
-    accent: Color(0xFFFF4D6D),
+    accent: Color(0xFF3DE88C),
     paper: Color(0xFFF3F4F6),
     ink: Color(0xFF090A0F),
     onAccent: _darkOn,

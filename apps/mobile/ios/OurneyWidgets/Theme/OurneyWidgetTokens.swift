@@ -82,7 +82,6 @@ public struct OurneySkinVariantSpec {
   public let accentDark: OurneyRGB?
   public let button: OurneyRGB
   public let buttonLabel: OurneyRGB
-  public let secondary: OurneyRGB
 }
 
 public struct OurneySkinPaletteSpec {
@@ -112,8 +111,7 @@ public struct OurneySkinSpec {
         accent: v.accentDark ?? v.accent,
         accentDark: v.accentDark,
         button: OurneyRGB(hex: 0xE4E4E7),
-        buttonLabel: OurneyRGB(hex: 0x18181A),
-        secondary: v.secondary
+        buttonLabel: OurneyRGB(hex: 0x18181A)
       )
     }
     if isDark, let darkAccent = v.accentDark {
@@ -121,8 +119,7 @@ public struct OurneySkinSpec {
         accent: darkAccent,
         accentDark: darkAccent,
         button: v.button,
-        buttonLabel: v.buttonLabel,
-        secondary: v.secondary
+        buttonLabel: v.buttonLabel
       )
     }
     return v
@@ -264,9 +261,9 @@ public struct OurneyWidgetTheme {
         muted: OurneyRGB(hex: 0xA7B2AF)
       ),
       variants: [
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x10B981), accentDark: nil, button: OurneyRGB(hex: 0xFF4D6D), buttonLabel: OurneyRGB(hex: 0x0F172A), secondary: OurneyRGB(hex: 0xB7E8D1)),
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x6B9E8A), accentDark: nil, button: OurneyRGB(hex: 0xD9694F), buttonLabel: OurneyRGB(hex: 0x0F172A), secondary: OurneyRGB(hex: 0xCADBD4)),
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x6E9AC0), accentDark: nil, button: OurneyRGB(hex: 0xE8A25C), buttonLabel: OurneyRGB(hex: 0x0F172A), secondary: OurneyRGB(hex: 0xD4E4F0)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x10B981), accentDark: nil, button: OurneyRGB(hex: 0x10B981), buttonLabel: OurneyRGB(hex: 0x0F172A)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x6B9E8A), accentDark: nil, button: OurneyRGB(hex: 0xD9694F), buttonLabel: OurneyRGB(hex: 0x0F172A)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x6E9AC0), accentDark: nil, button: OurneyRGB(hex: 0xE8A25C), buttonLabel: OurneyRGB(hex: 0x0F172A)),
       ]
     ),
     "squad": OurneySkinSpec(
@@ -285,9 +282,9 @@ public struct OurneyWidgetTheme {
         muted: OurneyRGB(hex: 0xB3B6C4)
       ),
       variants: [
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0xFF9F1C), accentDark: nil, button: OurneyRGB(hex: 0xFF9F1C), buttonLabel: OurneyRGB(hex: 0x1E1B18), secondary: OurneyRGB(hex: 0x7556F8)),
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x7556F8), accentDark: OurneyRGB(hex: 0x9B87FA), button: OurneyRGB(hex: 0xFF9F1C), buttonLabel: OurneyRGB(hex: 0x1E1B18), secondary: OurneyRGB(hex: 0x7556F8)),
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x4FA36B), accentDark: nil, button: OurneyRGB(hex: 0xE9B949), buttonLabel: OurneyRGB(hex: 0x1E1B18), secondary: OurneyRGB(hex: 0x7556F8)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0xFF9F1C), accentDark: nil, button: OurneyRGB(hex: 0xFF9F1C), buttonLabel: OurneyRGB(hex: 0x1E1B18)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0xA13CC9), accentDark: OurneyRGB(hex: 0xC77DE0), button: OurneyRGB(hex: 0xFF9F1C), buttonLabel: OurneyRGB(hex: 0x1E1B18)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x4FA36B), accentDark: nil, button: OurneyRGB(hex: 0xE9B949), buttonLabel: OurneyRGB(hex: 0x1E1B18)),
       ]
     ),
     "memory": OurneySkinSpec(
@@ -306,9 +303,9 @@ public struct OurneyWidgetTheme {
         muted: OurneyRGB(hex: 0xB6AC9F)
       ),
       variants: [
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0xCC4A2F), accentDark: OurneyRGB(hex: 0xE07A5F), button: OurneyRGB(hex: 0xCC4A2F), buttonLabel: OurneyRGB(hex: 0xFFFFFF), secondary: OurneyRGB(hex: 0x4A6B53)),
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x2F6F8F), accentDark: OurneyRGB(hex: 0x6FA8C7), button: OurneyRGB(hex: 0x2F6F8F), buttonLabel: OurneyRGB(hex: 0xFFFFFF), secondary: OurneyRGB(hex: 0xD9A441)),
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x7B5EA7), accentDark: OurneyRGB(hex: 0xA98BD6), button: OurneyRGB(hex: 0x7B5EA7), buttonLabel: OurneyRGB(hex: 0xFFFFFF), secondary: OurneyRGB(hex: 0xE0A43A)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0xCC4A2F), accentDark: OurneyRGB(hex: 0xE07A5F), button: OurneyRGB(hex: 0xCC4A2F), buttonLabel: OurneyRGB(hex: 0xFFFFFF)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x2F6F8F), accentDark: OurneyRGB(hex: 0x6FA8C7), button: OurneyRGB(hex: 0x2F6F8F), buttonLabel: OurneyRGB(hex: 0xFFFFFF)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x7B5EA7), accentDark: OurneyRGB(hex: 0xA98BD6), button: OurneyRGB(hex: 0x7B5EA7), buttonLabel: OurneyRGB(hex: 0xFFFFFF)),
       ]
     ),
     "couple": OurneySkinSpec(
@@ -327,9 +324,9 @@ public struct OurneyWidgetTheme {
         muted: OurneyRGB(hex: 0xC8B3BD)
       ),
       variants: [
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x9D174D), accentDark: OurneyRGB(hex: 0xE7739A), button: OurneyRGB(hex: 0xE15B72), buttonLabel: OurneyRGB(hex: 0x1A1316), secondary: OurneyRGB(hex: 0x9D174D)),
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0xE15B72), accentDark: nil, button: OurneyRGB(hex: 0x9D174D), buttonLabel: OurneyRGB(hex: 0xFFFFFF), secondary: OurneyRGB(hex: 0xE15B72)),
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0xB4533A), accentDark: OurneyRGB(hex: 0xE08A6E), button: OurneyRGB(hex: 0xF08A6B), buttonLabel: OurneyRGB(hex: 0x1A1316), secondary: OurneyRGB(hex: 0xB4533A)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x9D174D), accentDark: OurneyRGB(hex: 0xE7739A), button: OurneyRGB(hex: 0xE15B72), buttonLabel: OurneyRGB(hex: 0x1A1316)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0xE15B72), accentDark: nil, button: OurneyRGB(hex: 0x9D174D), buttonLabel: OurneyRGB(hex: 0xFFFFFF)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0xB4533A), accentDark: OurneyRGB(hex: 0xE08A6E), button: OurneyRGB(hex: 0xF08A6B), buttonLabel: OurneyRGB(hex: 0x1A1316)),
       ]
     ),
     "flexer": OurneySkinSpec(
@@ -348,9 +345,9 @@ public struct OurneyWidgetTheme {
         muted: OurneyRGB(hex: 0xA9AFBD)
       ),
       variants: [
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x3DE88C), accentDark: nil, button: OurneyRGB(hex: 0xFF4D6D), buttonLabel: OurneyRGB(hex: 0x090A0F), secondary: OurneyRGB(hex: 0x263D34)),
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0xFF4D6D), accentDark: nil, button: OurneyRGB(hex: 0x3DE88C), buttonLabel: OurneyRGB(hex: 0x090A0F), secondary: OurneyRGB(hex: 0x46252E)),
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x7DD3FC), accentDark: nil, button: OurneyRGB(hex: 0xC4B5FD), buttonLabel: OurneyRGB(hex: 0x090A0F), secondary: OurneyRGB(hex: 0x293848)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x3DE88C), accentDark: nil, button: OurneyRGB(hex: 0x3DE88C), buttonLabel: OurneyRGB(hex: 0x090A0F)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0xFF4D6D), accentDark: nil, button: OurneyRGB(hex: 0x3DE88C), buttonLabel: OurneyRGB(hex: 0x090A0F)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x7DD3FC), accentDark: nil, button: OurneyRGB(hex: 0xC4B5FD), buttonLabel: OurneyRGB(hex: 0x090A0F)),
       ]
     ),
     "minimal": OurneySkinSpec(
@@ -369,9 +366,9 @@ public struct OurneyWidgetTheme {
         muted: OurneyRGB(hex: 0xA1A1AA)
       ),
       variants: [
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0xEA580C), accentDark: OurneyRGB(hex: 0xF07A3A), button: OurneyRGB(hex: 0xEA580C), buttonLabel: OurneyRGB(hex: 0x1C1C1E), secondary: OurneyRGB(hex: 0x27272A)),
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x27272A), accentDark: OurneyRGB(hex: 0xD4D4D8), button: OurneyRGB(hex: 0x27272A), buttonLabel: OurneyRGB(hex: 0xFFFFFF), secondary: OurneyRGB(hex: 0x27272A)),
-        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x0EA5E9), accentDark: nil, button: OurneyRGB(hex: 0x0EA5E9), buttonLabel: OurneyRGB(hex: 0x1C1C1E), secondary: OurneyRGB(hex: 0x27272A)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0xEA580C), accentDark: OurneyRGB(hex: 0xF07A3A), button: OurneyRGB(hex: 0xEA580C), buttonLabel: OurneyRGB(hex: 0x1C1C1E)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x27272A), accentDark: OurneyRGB(hex: 0xD4D4D8), button: OurneyRGB(hex: 0x27272A), buttonLabel: OurneyRGB(hex: 0xFFFFFF)),
+        OurneySkinVariantSpec(accent: OurneyRGB(hex: 0x0EA5E9), accentDark: nil, button: OurneyRGB(hex: 0x0EA5E9), buttonLabel: OurneyRGB(hex: 0x1C1C1E)),
       ]
     ),
   ]

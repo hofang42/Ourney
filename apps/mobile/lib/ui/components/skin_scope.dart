@@ -42,7 +42,8 @@ class _SkinInherited extends InheritedWidget {
       old.data.skin.id != data.skin.id ||
       old.data.variantIndex != data.variantIndex ||
       old.data.variant.button != data.variant.button ||
-      old.data.variant.accent != data.variant.accent;
+      old.data.variant.accent != data.variant.accent ||
+      old.data.variant.accentDark != data.variant.accentDark;
 }
 
 /// Recolors everything below it with a V2 journey skin: wraps [Theme] with
