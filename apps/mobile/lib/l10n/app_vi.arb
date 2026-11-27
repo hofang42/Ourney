@@ -151,54 +151,29 @@
       }
     }
   },
-  "reminderBanner_streak_quiet": "Bạn đã lưu {streak} ngày rồi, hôm nay thêm một tấm là đủ.",
+  "reminderBanner_streak_quiet": "Hôm nay thêm một tấm là đủ rồi.",
   "@reminderBanner_streak_quiet": {
-    "description": "Streak-at-risk reminder banner copy, quiet skin.",
-    "placeholders": {
-      "streak": {
-        "type": "int"
-      }
-    }
+    "description": "Evening 21:00 photo reminder banner copy, quiet skin."
   },
-  "reminderBanner_streak_squad": "Đã đi cùng nhau {streak} ngày rồi, góp một tấm hôm nay nhé.",
+  "reminderBanner_streak_squad": "Góp một tấm cho nhóm hôm nay nhé.",
   "@reminderBanner_streak_squad": {
-    "description": "Streak-at-risk reminder banner copy, squad skin.",
-    "placeholders": {
-      "streak": {
-        "type": "int"
-      }
-    }
+    "description": "Evening 21:00 photo reminder banner copy, squad skin."
   },
   "reminderBanner_streak_memory": "Thêm một khung hình cho cuộn phim hôm nay nhé.",
   "@reminderBanner_streak_memory": {
-    "description": "Streak-at-risk reminder banner copy, memory skin."
+    "description": "Evening 21:00 photo reminder banner copy, memory skin."
   },
-  "reminderBanner_streak_couple": "Hai bạn đã đi cùng nhau {streak} ngày rồi, chụp một tấm hôm nay nhé.",
+  "reminderBanner_streak_couple": "Hôm nay hai bạn chụp một tấm nhé.",
   "@reminderBanner_streak_couple": {
-    "description": "Streak-at-risk reminder banner copy, couple skin.",
-    "placeholders": {
-      "streak": {
-        "type": "int"
-      }
-    }
+    "description": "Evening 21:00 photo reminder banner copy, couple skin."
   },
-  "reminderBanner_streak_flexer": "ĐÃ TẬP {streak} NGÀY · THÊM MỘT TẤM HÔM NAY",
+  "reminderBanner_streak_flexer": "THÊM MỘT TẤM CHO BUỔI TẬP HÔM NAY",
   "@reminderBanner_streak_flexer": {
-    "description": "Streak-at-risk reminder banner copy, flexer skin.",
-    "placeholders": {
-      "streak": {
-        "type": "int"
-      }
-    }
+    "description": "Evening 21:00 photo reminder banner copy, flexer skin."
   },
-  "reminderBanner_streak_minimal": "ĐÃ LƯU {streak} NGÀY · HÔM NAY",
+  "reminderBanner_streak_minimal": "HÔM NAY · MỘT TẤM",
   "@reminderBanner_streak_minimal": {
-    "description": "Streak-at-risk reminder banner copy, minimal skin.",
-    "placeholders": {
-      "streak": {
-        "type": "int"
-      }
-    }
+    "description": "Evening 21:00 photo reminder banner copy, minimal skin."
   },
   "missedDay_chipSquad": "NGÀY {day} · TẠM NGHỈ",
   "@missedDay_chipSquad": {

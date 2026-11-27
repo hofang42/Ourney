@@ -106,7 +106,7 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_done_saved => 'Đã lưu vào hành trình của bạn.';
 
   @override
-  String get checkin_done_savedPrivate => 'Đã lưu. Chỉ mình bạn thấy.';
+  String get checkin_done_savedPrivate => 'Chỉ mình bạn xem được ảnh này.';
 
   @override
   String get checkin_done_futureMembers =>

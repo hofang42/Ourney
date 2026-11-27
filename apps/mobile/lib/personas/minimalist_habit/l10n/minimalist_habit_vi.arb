@@ -55,10 +55,6 @@
       }
     }
   },
-  "minimalist_habit_quickSnapHint": "Chụp rồi bấm Đăng, không cần gõ chữ",
-  "@minimalist_habit_quickSnapHint": {
-    "description": "Nhãn phụ tối giản dưới khung ngắm"
-  },
   "minimalist_habit_summaryCompleted": "{done} / {total} NGÀY HOÀN THÀNH",
   "@minimalist_habit_summaryCompleted": {
     "description": "Dòng tổng kết khi hành trình có thời hạn",

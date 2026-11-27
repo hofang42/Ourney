@@ -44,10 +44,6 @@ class MinimalistHabitL10nEn extends MinimalistHabitL10n {
   }
 
   @override
-  String get minimalist_habit_quickSnapHint =>
-      'Snap and tap Post, no typing needed';
-
-  @override
   String minimalist_habit_summaryCompleted(int done, int total) {
     return '$done / $total DAYS COMPLETED';
   }

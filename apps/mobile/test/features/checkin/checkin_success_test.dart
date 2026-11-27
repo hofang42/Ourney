@@ -246,7 +246,11 @@ void main() {
     }
 
     await pumpAudience(testJourney());
-    expect(find.text('Đã lưu. Chỉ mình bạn thấy.'), findsOneWidget);
+    expect(find.text('Chỉ mình bạn xem được ảnh này.'), findsOneWidget);
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
+
+    await pumpAudience(testJourney(), locale: const Locale('en'));
+    expect(find.text('Only you can see this one.'), findsOneWidget);
     await tester.pump(CheckinSuccessView.autoCloseDelay);
 
     // Solo journey shared with friends (UX-03).

@@ -170,33 +170,25 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String reminderBanner_streak_quiet(int streak) {
-    return 'Bạn đã lưu $streak ngày rồi, hôm nay thêm một tấm là đủ.';
-  }
+  String get reminderBanner_streak_quiet => 'Hôm nay thêm một tấm là đủ rồi.';
 
   @override
-  String reminderBanner_streak_squad(int streak) {
-    return 'Đã đi cùng nhau $streak ngày rồi, góp một tấm hôm nay nhé.';
-  }
+  String get reminderBanner_streak_squad => 'Góp một tấm cho nhóm hôm nay nhé.';
 
   @override
   String get reminderBanner_streak_memory =>
       'Thêm một khung hình cho cuộn phim hôm nay nhé.';
 
   @override
-  String reminderBanner_streak_couple(int streak) {
-    return 'Hai bạn đã đi cùng nhau $streak ngày rồi, chụp một tấm hôm nay nhé.';
-  }
+  String get reminderBanner_streak_couple =>
+      'Hôm nay hai bạn chụp một tấm nhé.';
 
   @override
-  String reminderBanner_streak_flexer(int streak) {
-    return 'ĐÃ TẬP $streak NGÀY · THÊM MỘT TẤM HÔM NAY';
-  }
+  String get reminderBanner_streak_flexer =>
+      'THÊM MỘT TẤM CHO BUỔI TẬP HÔM NAY';
 
   @override
-  String reminderBanner_streak_minimal(int streak) {
-    return 'ĐÃ LƯU $streak NGÀY · HÔM NAY';
-  }
+  String get reminderBanner_streak_minimal => 'HÔM NAY · MỘT TẤM';
 
   @override
   String missedDay_chipSquad(int day) {

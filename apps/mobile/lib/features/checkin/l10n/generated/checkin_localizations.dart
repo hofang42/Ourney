@@ -275,7 +275,7 @@ abstract class CheckinL10n {
   /// No description provided for @checkin_done_savedPrivate.
   ///
   /// In vi, this message translates to:
-  /// **'Đã lưu. Chỉ mình bạn thấy.'**
+  /// **'Chỉ mình bạn xem được ảnh này.'**
   String get checkin_done_savedPrivate;
 
   /// No description provided for @checkin_done_futureMembers.

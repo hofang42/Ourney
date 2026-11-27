@@ -342,7 +342,7 @@ void main() {
   );
 
   test(
-    'B4 copy guard: VI ARBs use "check-in" (zero "điểm danh"), zero "giữ chuỗi"/"đúc"/"gãy chuỗi"/"mất chuỗi", and truthful minimalist_habit_quickSnapHint',
+    'B4 copy guard: VI ARBs use "check-in" (zero "điểm danh"), zero "giữ chuỗi"/"đúc"/"gãy chuỗi"/"mất chuỗi", streak banners have no digit, and unused minimalist_habit_quickSnapHint is removed',
     () {
       final bannedViArb = RegExp(
         r'điểm danh|giữ chuỗi|gãy chuỗi|mất chuỗi|\bđúc\b',
@@ -362,20 +362,34 @@ void main() {
         }
       }
 
+      for (final locale in ['vi', 'en']) {
+        final appArb = readArb('lib/l10n/app_$locale.arb');
+        for (final skin in [
+          'quiet',
+          'squad',
+          'memory',
+          'couple',
+          'flexer',
+          'minimal',
+        ]) {
+          final key = 'reminderBanner_streak_$skin';
+          final val = appArb[key] as String;
+          expect(
+            RegExp(r'\d|\{streak\}').hasMatch(val),
+            isFalse,
+            reason: 'app_$locale.arb.$key must not contain any count: "$val"',
+          );
+        }
+      }
+
       final minVi = readArb(
         'lib/personas/minimalist_habit/l10n/minimalist_habit_vi.arb',
       );
       final minEn = readArb(
         'lib/personas/minimalist_habit/l10n/minimalist_habit_en.arb',
       );
-      expect(
-        minVi['minimalist_habit_quickSnapHint'],
-        'Chụp rồi bấm Đăng, không cần gõ chữ',
-      );
-      expect(
-        minEn['minimalist_habit_quickSnapHint'],
-        'Snap and tap Post, no typing needed',
-      );
+      expect(minVi.containsKey('minimalist_habit_quickSnapHint'), isFalse);
+      expect(minEn.containsKey('minimalist_habit_quickSnapHint'), isFalse);
     },
   );
 }

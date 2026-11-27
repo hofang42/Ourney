@@ -832,7 +832,7 @@ void main() {
   testWidgets('F11 UiStreakHero stacks on narrow width or large text, '
       'UiPersonRow aligns avatar to top when stacked, and JourneyDetailScreen '
       'reserves padBottom 130 at bigText', (tester) async {
-    // 1) UiStreakHero stacks at 1.0x when width < 300dp.
+    // 1) UiStreakHero stacks at 1.0x when width < 300dp, with texts before number.
     _view(tester, 1.0, Brightness.light);
     await tester.pumpWidget(
       _host(
@@ -841,16 +841,23 @@ void main() {
           child: UiStreakHero(
             streak: 14,
             title: 'Còn 2 hành trình hôm nay',
-            semanticLabel: 'Chuỗi 14 ngày',
+            subtitle: '14 ngày đã ghi',
+            semanticLabel: '14 ngày đã ghi. Còn 2 hành trình hôm nay, chuỗi 14 ngày',
           ),
         ),
         Brightness.light,
       ),
     );
     expect(
-      tester.getTopLeft(find.text('14')).dy,
+      tester.getTopLeft(find.byKey(const ValueKey('streak-hero-subtitle'))).dy,
       lessThan(
         tester.getTopLeft(find.byKey(const ValueKey('streak-hero-title'))).dy,
+      ),
+    );
+    expect(
+      tester.getTopLeft(find.byKey(const ValueKey('streak-hero-title'))).dy,
+      lessThan(
+        tester.getTopLeft(find.text('14')).dy,
       ),
     );
 

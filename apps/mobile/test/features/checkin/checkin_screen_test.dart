@@ -355,7 +355,7 @@ void main() {
 
     await tapPost(tester);
     expect(find.text('Đã lưu vào hành trình của bạn.'), findsOneWidget);
-    expect(find.text('Đã lưu. Chỉ mình bạn thấy.'), findsNothing);
+    expect(find.text('Chỉ mình bạn xem được ảnh này.'), findsNothing);
 
     sharing.updates.add(sharing.state);
     await tester.pump();
@@ -381,7 +381,7 @@ void main() {
 
     await tapPost(tester);
     expect(find.text('Đã lưu vào hành trình của bạn.'), findsOneWidget);
-    expect(find.text('Đã lưu. Chỉ mình bạn thấy.'), findsNothing);
+    expect(find.text('Chỉ mình bạn xem được ảnh này.'), findsNothing);
     await finishSuccess(tester);
   });
 
@@ -408,7 +408,7 @@ void main() {
 
     expect(find.byKey(const ValueKey('checkin-success')), findsOneWidget);
     expect(find.text('Đã lưu ảnh ngày 16'), findsOneWidget);
-    expect(find.text('Đã lưu. Chỉ mình bạn thấy.'), findsOneWidget);
+    expect(find.text('Chỉ mình bạn xem được ảnh này.'), findsOneWidget);
     expect(find.byKey(const ValueKey('checkin-milestone')), findsNothing);
 
     // No milestone: closes by itself back to the camera.

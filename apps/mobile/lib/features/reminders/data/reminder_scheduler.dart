@@ -345,7 +345,6 @@ class _ReminderLifecycleHookState extends ConsumerState<ReminderLifecycleHook>
       kind: p.kind == PlannedKind.streakAlert
           ? ReminderBannerKind.streak
           : ReminderBannerKind.daily,
-      streak: p.streak,
       day: day,
       deadline: deadline ?? '00:00',
     );
@@ -379,7 +378,6 @@ class _ReminderLifecycleHookState extends ConsumerState<ReminderLifecycleHook>
       journeyName: current.journeyName,
       skinId: current.skinId,
       kind: current.kind,
-      streak: current.streak,
       day: current.day,
       deadline: deadline,
     );

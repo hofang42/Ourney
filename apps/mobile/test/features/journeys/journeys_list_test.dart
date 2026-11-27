@@ -76,6 +76,9 @@ void main() {
         checkIns: FakeCheckInRepository([
           testCheckIn('j1', const LocalDate(2026, 10, 15)),
           testCheckIn('j1', testToday),
+          // Same calendar day as j1's 2026-10-15 check-in: Hub counts distinct
+          // local dates across active journeys (2, not 3).
+          testCheckIn('j2', const LocalDate(2026, 10, 15)),
         ]),
       );
 
@@ -89,6 +92,14 @@ void main() {
       expect(find.text('Not yet'), findsOneWidget);
       expect(find.byType(UiStreakHero), findsOneWidget);
       expect(find.text('2 days logged'), findsOneWidget);
+      expect(find.text('3 days logged'), findsNothing);
+      final hero = tester.widget<UiStreakHero>(find.byType(UiStreakHero));
+      expect(
+        hero.semanticLabel,
+        "2 days logged. 1 journey still needs today's photo, 2-day streak",
+      );
+      expect(hero.semanticLabel, isNot(contains('.,')));
+      expect(hero.semanticLabel, isNot(contains('..')));
       // Profile and inbox moved to dock tabs.
       expect(find.byKey(const ValueKey('profile-entry')), findsNothing);
       // j2 has no photo today: it leads the Today card.

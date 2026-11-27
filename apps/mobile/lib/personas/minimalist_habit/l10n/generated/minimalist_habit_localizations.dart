@@ -134,12 +134,6 @@ abstract class MinimalistHabitL10n {
   /// **'{title} · NGÀY {day}'**
   String minimalist_habit_cameraPill(String title, int day);
 
-  /// Nhãn phụ tối giản dưới khung ngắm
-  ///
-  /// In vi, this message translates to:
-  /// **'Chụp rồi bấm Đăng, không cần gõ chữ'**
-  String get minimalist_habit_quickSnapHint;
-
   /// Dòng tổng kết khi hành trình có thời hạn
   ///
   /// In vi, this message translates to:

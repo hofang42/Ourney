@@ -171,52 +171,25 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String reminderBanner_streak_quiet(int streak) {
-    String _temp0 = intl.Intl.pluralLogic(
-      streak,
-      locale: localeName,
-      other: '$streak days saved so far, and one photo today is plenty.',
-      one: '1 day saved so far, and one photo today is plenty.',
-    );
-    return '$_temp0';
-  }
+  String get reminderBanner_streak_quiet => 'One photo today is plenty.';
 
   @override
-  String reminderBanner_streak_squad(int streak) {
-    String _temp0 = intl.Intl.pluralLogic(
-      streak,
-      locale: localeName,
-      other:
-          '$streak days in with your squad, add today\'s photo when you\'re ready.',
-      one: '1 day in with your squad, add today\'s photo when you\'re ready.',
-    );
-    return '$_temp0';
-  }
+  String get reminderBanner_streak_squad =>
+      'Add your photo to the squad today.';
 
   @override
   String get reminderBanner_streak_memory =>
       'Room for one more frame on today\'s film roll.';
 
   @override
-  String reminderBanner_streak_couple(int streak) {
-    String _temp0 = intl.Intl.pluralLogic(
-      streak,
-      locale: localeName,
-      other: '$streak days together so far, snap a photo for today.',
-      one: '1 day together so far, snap a photo for today.',
-    );
-    return '$_temp0';
-  }
+  String get reminderBanner_streak_couple =>
+      'Snap a photo for the two of you today.';
 
   @override
-  String reminderBanner_streak_flexer(int streak) {
-    return '$streak DAYS LOGGED · ADD TODAY\'S PHOTO';
-  }
+  String get reminderBanner_streak_flexer => 'ADD TODAY\'S WORKOUT PHOTO';
 
   @override
-  String reminderBanner_streak_minimal(int streak) {
-    return '$streak DAYS SAVED · TODAY';
-  }
+  String get reminderBanner_streak_minimal => 'TODAY · ONE PHOTO';
 
   @override
   String missedDay_chipSquad(int day) {
