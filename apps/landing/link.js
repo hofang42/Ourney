@@ -156,7 +156,7 @@
       j_headline_named_prefix: 'Join group ',
       j_headline_named_suffix: ' on Ourney',
       j_members_fmt: (count, max) =>
-        (typeof max === 'number' && max > 0 ? `${count}/${max} members` : `${count} members`),
+        (typeof max === 'number' && max > 0 ? `${count}/${max} members` : `${count} ${count === 1 ? 'member' : 'members'}`),
       j_owner_fmt: (name) => `${name}'s group`,
       j_desc: 'Easy to forget alone, easier when friends check in together. Open straight in the Ourney app or copy the code below to join the group’s Polaroid wall.',
       j_code_label: 'GROUP INVITE CODE',
@@ -176,9 +176,10 @@
       p_loading: 'Loading photo diary…',
       p_by_owner: (name) => `by ${name}`,
       p_by_anon: 'by Ourney member',
-      p_streak: (n) => `${n} days logged`,
-      p_days_moments: (days, photos) => `${days} days · ${photos} photos`,
-      p_moments_only: (photos) => `${photos} photos`,
+      p_streak: (n) => `${n} ${n === 1 ? 'day' : 'days'} logged`,
+      p_days_moments: (days, photos) =>
+        `${days} ${days === 1 ? 'day' : 'days'} · ${photos} ${photos === 1 ? 'photo' : 'photos'}`,
+      p_moments_only: (photos) => `${photos} ${photos === 1 ? 'photo' : 'photos'}`,
       p_duration: (d) => `${d}-day goal`,
       p_status_ended: 'COMPLETED',
       p_status_live: 'ACTIVE',
@@ -1347,10 +1348,15 @@
     });
   }
 
+  function getVisibleCheckIns(data) {
+    const list = data && Array.isArray(data.check_ins) ? data.check_ins : [];
+    return list.filter((c) => c && typeof c === 'object' && !c.hidden_from_share && !c.hidden && !c.is_hidden);
+  }
+
   function scheduleProactiveUrlRefresh() {
     clearTimeout(journeyTtlTimer);
     if (!loadedJourneyData || !route.valid || journeyAutoRefreshCount >= MAX_AUTO_REFRESHES) return;
-    const checkIns = Array.isArray(loadedJourneyData.check_ins) ? loadedJourneyData.check_ins : [];
+    const checkIns = getVisibleCheckIns(loadedJourneyData);
     if (checkIns.length === 0 || !hasUnloadedOrRetryableImages()) return;
     const delayMs = Math.max(15000, Math.floor(journeyTtlMs * 0.85));
     journeyTtlTimer = setTimeout(() => {
@@ -1361,7 +1367,7 @@
   }
 
   function updateRenderedPhotoUrls(data) {
-    const checkIns = data && Array.isArray(data.check_ins) ? data.check_ins : [];
+    const checkIns = getVisibleCheckIns(data);
     const gridEl = $('p-photo-grid');
     if (!gridEl || checkIns.length === 0) return;
 
@@ -1486,8 +1492,7 @@
     const dict = COPY[curLang];
     const j = data.journey || {};
     const story = data.story || {};
-    const streak = data.streak || null;
-    const checkIns = Array.isArray(data.check_ins) ? data.check_ins : [];
+    const checkIns = getVisibleCheckIns(data);
 
     const title = (typeof story.title === 'string' && story.title.trim())
       ? story.title.trim()
@@ -1537,25 +1542,22 @@
       introEl.textContent = introTxt;
     }
 
-    /* Photo & Day Count pills (never show "0 ảnh" / "0 photos", never mislabel consecutive streak as total days logged) */
+    /* Photo & Day Count pills (computed strictly from visible shared photos on the page) */
     const statsRow = $('p-stats-row');
     const streakPill = $('p-streak-pill');
     const streakText = $('p-streak-text');
 
-    const uniqueDays = new Set(
-      checkIns.map((c) => (c && typeof c.local_date === 'string' ? c.local_date : '')).filter(Boolean)
+    const visibleDays = new Set(
+      checkIns.map((c) => (c && typeof c.local_date === 'string' ? c.local_date.trim() : '')).filter(Boolean)
     ).size;
-    const completedDays = (streak && typeof streak.completed === 'number' && streak.completed > 0)
-      ? streak.completed
-      : uniqueDays;
 
     const daysPill = $('p-days-pill');
     const daysText = $('p-days-text');
     if (daysPill && daysText) {
       if (checkIns.length > 0) {
         daysPill.hidden = false;
-        daysText.textContent = completedDays > 0
-          ? dict.p_days_moments(completedDays, checkIns.length)
+        daysText.textContent = visibleDays > 0
+          ? dict.p_days_moments(visibleDays, checkIns.length)
           : dict.p_moments_only(checkIns.length);
       } else {
         daysPill.hidden = true;
@@ -1564,13 +1566,8 @@
     }
 
     if (streakPill && streakText) {
-      if (checkIns.length === 0 && completedDays > 0) {
-        streakPill.hidden = false;
-        streakText.textContent = dict.p_streak(completedDays);
-      } else {
-        streakPill.hidden = true;
-        streakText.textContent = '';
-      }
+      streakPill.hidden = true;
+      streakText.textContent = '';
     }
 
     const durationPill = $('p-duration-pill');
