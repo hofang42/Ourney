@@ -590,7 +590,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_ticketTagQuiet => 'Chỉ mình bạn thấy. Từng chút một.';
 
   @override
-  String get journeys_ticketTagSquad => 'Điểm danh mỗi ngày, cả nhóm cùng lên!';
+  String get journeys_ticketTagSquad => 'Check-in mỗi ngày, cả nhóm cùng lên!';
 
   @override
   String get journeys_ticketTagMemory => 'Mang về thật nhiều khung hình.';
@@ -1466,7 +1466,7 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String journeys_wrapped_checkIns(int n) {
-    return '$n lần điểm danh';
+    return '$n lần check-in';
   }
 
   @override

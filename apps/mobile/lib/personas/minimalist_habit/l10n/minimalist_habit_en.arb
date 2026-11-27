@@ -6,7 +6,7 @@
   "minimalist_habit_checkInsLabel": "{count, plural, =1{1 check-in} other{{count} check-ins}}",
   "minimalist_habit_monthStreakHeader": "MONTH {month} · {streak} DAY STREAK",
   "minimalist_habit_cameraPill": "{title} · DAY {day}",
-  "minimalist_habit_quickSnapHint": "1-tap · Zero text",
+  "minimalist_habit_quickSnapHint": "Snap and tap Post, no typing needed",
   "minimalist_habit_summaryCompleted": "{done} / {total} DAYS COMPLETED",
   "minimalist_habit_summaryOpen": "{done, plural, =1{1 DAY COMPLETED} other{{done} DAYS COMPLETED}}",
   "minimalist_habit_summaryConsistency": "{percent}% CONSISTENCY",

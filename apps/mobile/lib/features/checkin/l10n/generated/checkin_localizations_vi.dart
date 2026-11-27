@@ -152,7 +152,7 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_chooseAnother => 'Chọn ảnh khác';
 
   @override
-  String get checkin_done_stampChecked => 'ĐÃ ĐIỂM DANH';
+  String get checkin_done_stampChecked => 'ĐÃ CHECK-IN';
 
   @override
   String get checkin_done_stampWeek1 => 'TUẦN 1 XONG';

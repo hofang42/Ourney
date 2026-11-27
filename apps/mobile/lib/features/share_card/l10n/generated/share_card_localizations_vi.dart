@@ -212,7 +212,7 @@ class ShareCardL10nVi extends ShareCardL10n {
 
   @override
   String share_card_attended(int done, int total, int day) {
-    return '$done/$total ĐÃ ĐIỂM DANH · NGÀY $day';
+    return '$done/$total ĐÃ CHECK-IN · NGÀY $day';
   }
 
   @override

@@ -612,7 +612,7 @@
   "@journeys_ticketTagQuiet": {
     "description": "Departure ticket preview text."
   },
-  "journeys_ticketTagSquad": "Điểm danh mỗi ngày, cả nhóm cùng lên!",
+  "journeys_ticketTagSquad": "Check-in mỗi ngày, cả nhóm cùng lên!",
   "@journeys_ticketTagSquad": {
     "description": "Departure ticket preview text."
   },
@@ -1206,7 +1206,7 @@
     }
   },
   "journeys_wrapped_quietEnd": "Bạn đã về đích.",
-  "journeys_wrapped_checkIns": "{n} lần điểm danh",
+  "journeys_wrapped_checkIns": "{n} lần check-in",
   "@journeys_wrapped_checkIns": {
     "placeholders": {
       "n": {

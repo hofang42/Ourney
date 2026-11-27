@@ -44,7 +44,8 @@ class MinimalistHabitL10nEn extends MinimalistHabitL10n {
   }
 
   @override
-  String get minimalist_habit_quickSnapHint => '1-tap · Zero text';
+  String get minimalist_habit_quickSnapHint =>
+      'Snap and tap Post, no typing needed';
 
   @override
   String minimalist_habit_summaryCompleted(int done, int total) {

@@ -261,7 +261,7 @@
       }
     }
   },
-  "share_card_attended": "{done}/{total} ĐÃ ĐIỂM DANH · NGÀY {day}",
+  "share_card_attended": "{done}/{total} ĐÃ CHECK-IN · NGÀY {day}",
   "@share_card_attended": {
     "description": "Squad poster heading.",
     "placeholders": {

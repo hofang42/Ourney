@@ -340,4 +340,42 @@ void main() {
       }
     },
   );
+
+  test(
+    'B4 copy guard: VI ARBs use "check-in" (zero "điểm danh"), zero "giữ chuỗi"/"đúc"/"gãy chuỗi"/"mất chuỗi", and truthful minimalist_habit_quickSnapHint',
+    () {
+      final bannedViArb = RegExp(
+        r'điểm danh|giữ chuỗi|gãy chuỗi|mất chuỗi|\bđúc\b',
+        caseSensitive: false,
+        unicode: true,
+      );
+      for (final (name, dir, file, _) in arbSets()) {
+        final vi = readArb('$dir/${file}_vi.arb');
+        for (final key in messageKeys(vi)) {
+          final raw = vi[key];
+          if (raw is! String) continue;
+          expect(
+            bannedViArb.hasMatch(raw),
+            isFalse,
+            reason: '$name.$key (vi) contains banned B4 phrase: "$raw"',
+          );
+        }
+      }
+
+      final minVi = readArb(
+        'lib/personas/minimalist_habit/l10n/minimalist_habit_vi.arb',
+      );
+      final minEn = readArb(
+        'lib/personas/minimalist_habit/l10n/minimalist_habit_en.arb',
+      );
+      expect(
+        minVi['minimalist_habit_quickSnapHint'],
+        'Chụp rồi bấm Đăng, không cần gõ chữ',
+      );
+      expect(
+        minEn['minimalist_habit_quickSnapHint'],
+        'Snap and tap Post, no typing needed',
+      );
+    },
+  );
 }

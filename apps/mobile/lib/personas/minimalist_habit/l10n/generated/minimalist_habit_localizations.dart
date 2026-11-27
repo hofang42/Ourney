@@ -137,7 +137,7 @@ abstract class MinimalistHabitL10n {
   /// Nhãn phụ tối giản dưới khung ngắm
   ///
   /// In vi, this message translates to:
-  /// **'1 chạm · Không cần gõ chữ'**
+  /// **'Chụp rồi bấm Đăng, không cần gõ chữ'**
   String get minimalist_habit_quickSnapHint;
 
   /// Dòng tổng kết khi hành trình có thời hạn

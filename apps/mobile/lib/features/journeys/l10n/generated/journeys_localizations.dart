@@ -1103,7 +1103,7 @@ abstract class JourneysL10n {
   /// Departure ticket preview text.
   ///
   /// In vi, this message translates to:
-  /// **'Điểm danh mỗi ngày, cả nhóm cùng lên!'**
+  /// **'Check-in mỗi ngày, cả nhóm cùng lên!'**
   String get journeys_ticketTagSquad;
 
   /// Departure ticket preview text.
@@ -2699,7 +2699,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_wrapped_checkIns.
   ///
   /// In vi, this message translates to:
-  /// **'{n} lần điểm danh'**
+  /// **'{n} lần check-in'**
   String journeys_wrapped_checkIns(int n);
 
   /// No description provided for @journeys_wrapped_squadEnd.

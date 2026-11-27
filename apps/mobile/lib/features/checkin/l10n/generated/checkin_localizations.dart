@@ -353,7 +353,7 @@ abstract class CheckinL10n {
   /// No description provided for @checkin_done_stampChecked.
   ///
   /// In vi, this message translates to:
-  /// **'ĐÃ ĐIỂM DANH'**
+  /// **'ĐÃ CHECK-IN'**
   String get checkin_done_stampChecked;
 
   /// No description provided for @checkin_done_stampWeek1.
