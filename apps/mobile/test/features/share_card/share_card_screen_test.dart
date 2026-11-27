@@ -180,7 +180,7 @@ void main() {
       expect(find.text('💪'), findsNothing);
       expect(find.byType(OurneyIcon), findsWidgets);
       expect(_key('share-card-skin-flexer'), findsOneWidget);
-      expect(find.byType(UiWordmark), findsOneWidget);
+      expect(find.byType(UiCompactWordmark), findsOneWidget);
       // No photo resolvable -> illustration.
       expect(_key('share-card-illustration'), findsOneWidget);
     });

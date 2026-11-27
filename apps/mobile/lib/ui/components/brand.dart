@@ -6,24 +6,7 @@ import '../tokens.dart';
 import '../typography.dart';
 import 'flow_kit.dart';
 
-/// `.wordmark`: "ourney" in Bricolage 800 with -0.07em tracking.
-class UiWordmark extends StatelessWidget {
-  const UiWordmark({this.size = 46, this.color, super.key});
-
-  final double size;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    label: 'Ourney',
-    excludeSemantics: true,
-    child: Text(
-      'ourney',
-      maxLines: 1,
-      style: UiText.wordmark(size: size, color: color ?? context.ui.ink),
-    ),
-  );
-}
+export 'brand_logo_paths.dart';
 
 /// V2 `SplashFlow`: the cream field with the ransom-note wordmark, centered.
 ///

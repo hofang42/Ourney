@@ -893,9 +893,9 @@ class _SummaryState extends ConsumerState<_Summary> {
                                   ).copyWith(height: 1.4),
                                 ),
                               if (!hideBrand)
-                                const UiWordmark(
+                                const UiCompactWordmark(
                                   key: ValueKey('wrapped-brand'),
-                                  size: 34,
+                                  size: 84,
                                 ),
                             ],
                           ),

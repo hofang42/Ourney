@@ -98,6 +98,7 @@ flutter:
 
   assets:
     - assets/app_icons/
+    - assets/brand/
     - assets/places/CLDR-LICENSE.txt
     - assets/samples/couple_rituals/
     - assets/samples/ielts_study/

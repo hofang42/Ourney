@@ -314,7 +314,14 @@ class _HubHeader extends ConsumerWidget {
         ? null
         : name.split(RegExp(r'\s+')).last;
     final bar = UiTopBar(
-      title: l10n.journeys_hubTitle,
+      titleWidget: const Align(
+        alignment: Alignment.centerLeft,
+        child: UiCompactWordmark(
+          key: ValueKey('hub-logo'),
+          size: 84,
+          semanticsLabel: 'Ourney',
+        ),
+      ),
       actions: [
         if (onAdd != null)
           UiIconButton(

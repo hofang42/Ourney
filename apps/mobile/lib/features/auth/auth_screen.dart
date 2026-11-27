@@ -717,7 +717,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     );
   }
 
-  double get _wordmarkSize => 64;
+  double get _wordmarkSize => 120;
 
   /// `.flow-screen h1`: Space Grotesk 32 / 700 / -0.045em, lowercase copy.
   TextStyle _h1Style(Color color) => UiText.heading(

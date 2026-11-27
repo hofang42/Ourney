@@ -19,9 +19,6 @@ const double shareCardBlurSigma = 18;
 /// diacritics (ệ, ữ, ấ) need room above the cap height or they get clipped.
 const double shareCardDiacriticHeight = 1.32;
 
-/// Brand wordmark width on a card (`<Wordmark size={56}>`), in design px.
-const double _wordmarkSize = 19;
-
 /// V2 skin ids that have a share card (`quiet`, `squad`, `memory`,
 /// `couple`, `flexer`, `minimal`).
 const List<String> shareCardSkins = [
@@ -76,8 +73,6 @@ double shareCardDesignWidth(String skinId, ShareCardFormat format) {
     _ => story ? 230 : 275,
   };
 }
-
-const _ink = Color(0xFF1A1A22);
 
 /// The share card (FR-E1) of one V2 skin, laid out at
 /// [ShareCardFormat.logicalSize] and meant to be wrapped in a
@@ -222,14 +217,16 @@ class _Ctx {
     return j >= 0 && j < list.length ? list[j] : null;
   }
 
-  Widget wordmark({Color color = _ink}) => Positioned(
-    right: width * 0.05,
-    bottom: height * 0.04,
+  /// Compact A cut-out wordmark on its unified cream sticker edge.
+  /// Story (9:16): placed inside the safe band (y 16–62%, x 8–92%, lower part).
+  /// Feed (4:5): keeps current outer margin (right 5%, bottom 4%).
+  Widget wordmark() => Positioned(
+    right: width * (story ? 0.085 : 0.05),
+    bottom: height * (story ? 0.395 : 0.04),
     child: IgnorePointer(
-      child: UiWordmark(
+      child: UiCompactWordmark(
         key: const ValueKey('share-card-logo'),
-        size: _wordmarkSize,
-        color: color,
+        size: width * 0.215,
       ),
     ),
   );
@@ -965,7 +962,7 @@ class _FlexerCard extends StatelessWidget {
                 ),
               ),
             ),
-            if (!ctx.hideBrand) ctx.wordmark(color: const Color(0xFFFFFFFF)),
+            if (!ctx.hideBrand) ctx.wordmark(),
           ],
         ),
       ),
