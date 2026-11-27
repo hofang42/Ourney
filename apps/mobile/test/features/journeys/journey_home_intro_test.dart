@@ -44,6 +44,7 @@ JourneyHomeIntro _intro(
   String skin, {
   bool offline = false,
   bool squadUploadPending = false,
+  bool couple = false,
   bool readOnly = false,
   int? total = 30,
 }) => JourneyHomeIntro(
@@ -54,6 +55,7 @@ JourneyHomeIntro _intro(
   today: const LocalDate(2026, 11, 15),
   offline: offline,
   squadUploadPending: squadUploadPending,
+  couple: couple,
   readOnly: readOnly,
 );
 
@@ -105,7 +107,9 @@ void main() {
     tester.view.physicalSize = const Size(320, 690);
     addTearDown(tester.view.reset);
     for (final locale in JourneysL10n.supportedLocales) {
-      final pending = lookupJourneysL10n(locale).journeys_home_offlineSquad;
+      final l10n = lookupJourneysL10n(locale);
+      final pending = l10n.journeys_home_offlineSquad;
+      final couplePending = l10n.journeys_home_offlineCouple;
       await tester.pumpWidget(
         _host(
           _intro('squad', offline: true, squadUploadPending: true),
@@ -124,6 +128,17 @@ void main() {
         ),
       );
       expect(find.text(pending), findsOneWidget);
+
+      await tester.pumpWidget(
+        _host(
+          _intro('squad', squadUploadPending: true, couple: true),
+          scale: 2,
+          locale: locale,
+        ),
+      );
+      expect(find.text(couplePending), findsOneWidget);
+      expect(find.text(pending), findsNothing);
+      expect(tester.takeException(), isNull);
 
       await tester.pumpWidget(_host(_intro('squad'), scale: 2, locale: locale));
       expect(_k('journey-home-offline'), findsNothing);

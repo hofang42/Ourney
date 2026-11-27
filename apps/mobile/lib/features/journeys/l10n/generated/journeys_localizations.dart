@@ -2114,6 +2114,12 @@ abstract class JourneysL10n {
   /// **'Đã lưu ảnh của bạn, có mạng sẽ gửi lên nhóm'**
   String get journeys_home_offlineSquad;
 
+  /// No description provided for @journeys_home_offlineCouple.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lưu nửa ảnh của bạn, có mạng sẽ gửi cho người ấy'**
+  String get journeys_home_offlineCouple;
+
   /// No description provided for @journeys_home_offline.
   ///
   /// In vi, this message translates to:

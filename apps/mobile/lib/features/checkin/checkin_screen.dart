@@ -68,7 +68,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
   late final CheckinDrafts _savedDrafts;
   bool _discardDraftOnExit = false;
   bool _workPaused = false;
-  bool _canSaveDraft = false;
+  bool _canSaveDraft = true;
   bool _metricError = false;
   CheckInOutcome? _outcome;
   CapturedPhoto? _overridePhoto;
@@ -86,6 +86,11 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
     super.initState();
     _drafts = ref.read(draftFilesProvider);
     _savedDrafts = ref.read(checkinDraftsProvider);
+    ref.listenManual(
+      appUpdateWorkPausedProvider,
+      (_, next) => _workPaused = next,
+      fireImmediately: true,
+    );
     final photo = widget.photo;
     if (photo != null) {
       final draft = _savedDrafts.take(photo.journeyId);
@@ -431,7 +436,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
     final journey = ref.watch(checkinJourneyProvider(photo.journeyId));
     _canSaveDraft = switch (journey) {
       AsyncData(value: final j?) => j.status == JourneyStatus.active,
-      _ => false,
+      AsyncData() => false,
+      _ => true,
     };
 
     return switch (journey) {
@@ -483,7 +489,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
             child: UiIconButton(
               glyph: const OurneyIcon(name: 'close', size: 20),
               label: AppLocalizations.of(context).common_close,
-              onPressed: _close,
+              onPressed: _closeCompose,
             ),
           ),
           Expanded(child: UiFillScroll(child: body)),

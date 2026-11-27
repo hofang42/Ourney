@@ -12,6 +12,7 @@ import '../../../app/app_routes.dart';
 import '../../../app/overlays/missed_day_overlay.dart';
 import '../../../app/providers.dart';
 import '../../../data/data_providers.dart' show deadJourneyUploadsProvider;
+import '../../../data/group_daily_checkins_provider.dart' show isCoupleGroup;
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../groups/groups_paths.dart';
@@ -151,6 +152,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
     final progress = index?.progress;
     final long = index?.isLong ?? false;
     final skin = uiSkinIdFor(skinOfJourney(journey));
+    final couple = isCoupleGroup(journey);
     final offline =
         progress != null &&
         (ref.watch(journeyHomeOfflineProvider).value ?? false);
@@ -181,7 +183,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
       if (perms.canEnd &&
           (journey.coupleSelfName != null ||
               skinOfJourney(journey) == PersonaSkinId.coupleRituals ||
-              (journey.kind == JourneyKind.group && journey.maxMembers == 2)))
+              couple))
         _Action.renameCouple,
       if (perms.canEnd) _Action.end,
       if (perms.canArchive) _Action.archive,
@@ -278,6 +280,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                 today: progress.today,
                 offline: offline,
                 squadUploadPending: squadUploadPending,
+                couple: couple,
                 readOnly: !perms.isActive,
                 ritual: journey.dna?['ritual'] as String?,
               ),

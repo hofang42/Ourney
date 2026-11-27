@@ -13,6 +13,8 @@ import 'package:ourney/features/camera/capture_services.dart'
     show galleryPickerProvider;
 import 'package:ourney/features/checkin/captured_photo.dart';
 import 'package:ourney/features/checkin/checkin_clock.dart';
+import 'package:ourney/features/checkin/checkin_controller.dart'
+    show checkinJourneyProvider;
 import 'package:ourney/features/checkin/checkin_drafts.dart';
 import 'package:ourney/features/checkin/checkin_success.dart';
 import 'package:ourney/features/checkin/photo_compressor.dart';
@@ -53,6 +55,7 @@ void main() {
     WidgetTester tester, {
     CapturedPhoto? extra,
     bool noPhoto = false,
+    bool settle = true,
     Map<String, Object> prefsValues = const {},
     Brightness brightness = Brightness.light,
     AppConfig config = const AppConfig.localOnly(),
@@ -85,7 +88,11 @@ void main() {
         brightness: brightness,
       ),
     );
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump();
+    }
   }
 
   Future<void> tapPost(WidgetTester tester) async {
@@ -975,6 +982,60 @@ void main() {
       await tester.pumpAndSettle();
       expect(files.discarded, ['/tmp/shot.jpg']);
       expect(container.read(checkinDraftsProvider).photoFor('j1'), isNull);
+    });
+
+    testWidgets('Close while the journey is loading keeps the draft', (
+      tester,
+    ) async {
+      final pending = Completer<Journey?>();
+      late ProviderContainer container;
+      await pump(
+        tester,
+        settle: false,
+        before: (c) => container = c,
+        overrides: [
+          checkinJourneyProvider(
+            'j1',
+          ).overrideWith((ref) => Stream.fromFuture(pending.future)),
+        ],
+      );
+      final files = container.read(draftFilesProvider) as FakeDraftFiles;
+      expect(find.byType(UiSpinner), findsOneWidget);
+
+      await tester.tap(find.byType(UiIconButton));
+      await tester.pumpAndSettle();
+      expect(files.discarded, isEmpty);
+      expect(
+        container.read(checkinDraftsProvider).photoFor('j1')?.path,
+        '/tmp/shot.jpg',
+      );
+    });
+
+    testWidgets('Close while the journey lookup is in error keeps the draft', (
+      tester,
+    ) async {
+      late ProviderContainer container;
+      await pump(
+        tester,
+        before: (c) => container = c,
+        overrides: [
+          checkinJourneyProvider('j1').overrideWith(
+            (ref) => Stream<Journey?>.error(
+              const OurneyException(OurneyErrorCode.unknown),
+            ),
+          ),
+        ],
+      );
+      final files = container.read(draftFilesProvider) as FakeDraftFiles;
+      expect(find.byKey(const ValueKey('checkin-journey-error')), findsOne);
+
+      await tester.tap(find.byType(UiIconButton));
+      await tester.pumpAndSettle();
+      expect(files.discarded, isEmpty);
+      expect(
+        container.read(checkinDraftsProvider).photoFor('j1')?.path,
+        '/tmp/shot.jpg',
+      );
     });
 
     test(

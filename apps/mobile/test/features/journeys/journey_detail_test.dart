@@ -12,6 +12,7 @@ import 'package:ourney/data/data_providers.dart' show deadJourneyUploadsProvider
 import 'package:ourney/data/dead_uploads.dart' show DeadUpload;
 import 'package:ourney/data/group_daily_checkins_provider.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
+import 'package:ourney/features/journeys/domain/journey_layouts.dart';
 import 'package:ourney/features/journeys/domain/journey_progress.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
 import 'package:ourney/features/journeys/l10n/generated/journeys_localizations.dart';
@@ -245,6 +246,51 @@ void main() {
 
         checkIns.replaceAll([testCheckIn(j.id, testToday)]);
         await tester.pumpAndSettle();
+        expect(_key('journey-home-offline'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'couple journey with squad layout override shows couple pending copy',
+      (tester) async {
+        final j = testJourney(
+          templateId: TemplateId.custom,
+          kind: JourneyKind.group,
+          maxMembers: 2,
+        ).copyWith(layout: PersonaSkinId.accountabilitySquad);
+        expect(
+          availableLayoutsFor(j, current: PersonaSkinId.coupleRituals),
+          contains(PersonaSkinId.accountabilitySquad),
+        );
+        final checkIns = FakeCheckInRepository([
+          testCheckIn(j.id, testToday, uploaded: false),
+        ]);
+        await pumpJourneys(
+          tester,
+          location: AppRoutes.journey(j.id),
+          config: testBackendConfig,
+          userId: 'u1',
+          journeys: FakeJourneyRepository(
+            journeys: [j],
+            memberships: {j.id: testMembership(j)},
+          ),
+          checkIns: checkIns,
+          extraOverrides: [
+            journeyHomeOfflineProvider.overrideWith(
+              (ref) => Stream.value(false),
+            ),
+          ],
+        );
+
+        const couplePending =
+            'Đã lưu nửa ảnh của bạn, có mạng sẽ gửi cho người ấy';
+        const squadPending = 'Đã lưu ảnh của bạn, có mạng sẽ gửi lên nhóm';
+        expect(find.text(couplePending), findsOneWidget);
+        expect(find.text(squadPending), findsNothing);
+
+        checkIns.replaceAll([testCheckIn(j.id, testToday)]);
+        await tester.pumpAndSettle();
+        expect(find.text(couplePending), findsNothing);
         expect(_key('journey-home-offline'), findsNothing);
       },
     );

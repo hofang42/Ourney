@@ -52,6 +52,7 @@ class JourneyHomeIntro extends StatelessWidget {
     this.total,
     this.offline = false,
     this.squadUploadPending = false,
+    this.couple = false,
     this.readOnly = false,
     this.ritual,
     super.key,
@@ -67,6 +68,7 @@ class JourneyHomeIntro extends StatelessWidget {
   final LocalDate today;
   final bool offline;
   final bool squadUploadPending;
+  final bool couple;
   final bool readOnly;
 
   /// Couple ritual code (`cook`, `save`, `ldr`, `custom`).
@@ -77,13 +79,16 @@ class JourneyHomeIntro extends StatelessWidget {
     final ui = context.ui;
     final l10n = JourneysL10n.of(context);
     final locale = Localizations.localeOf(context).languageCode;
+    final pendingText = couple
+        ? l10n.journeys_home_offlineCouple
+        : l10n.journeys_home_offlineSquad;
     final offlineText = switch (skin) {
       'squad' =>
-        squadUploadPending
-            ? l10n.journeys_home_offlineSquad
-            : l10n.journeys_home_offline,
-      'memory' || 'couple' => l10n.journeys_home_offlineMemory,
-      _ => l10n.journeys_home_offlineQuiet,
+        squadUploadPending ? pendingText : l10n.journeys_home_offline,
+      'memory' || 'couple' =>
+        squadUploadPending ? pendingText : l10n.journeys_home_offlineMemory,
+      _ =>
+        squadUploadPending ? pendingText : l10n.journeys_home_offlineQuiet,
     };
     final readOnlyText = switch (skin) {
       'flexer' => l10n.journeys_home_readOnlyFlexer,

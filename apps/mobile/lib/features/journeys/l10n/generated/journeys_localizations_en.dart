@@ -1157,6 +1157,10 @@ class JourneysL10nEn extends JourneysL10n {
       'Your photo is saved on this device. We’ll send it to your squad when you’re back online.';
 
   @override
+  String get journeys_home_offlineCouple =>
+      'Your half is saved on this device. We’ll send it to your partner when you’re back online.';
+
+  @override
   String get journeys_home_offline => 'You’re offline';
 
   @override

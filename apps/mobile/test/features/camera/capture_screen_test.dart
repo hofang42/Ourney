@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/camera/camera_providers.dart';
 import 'package:ourney/features/camera/camera_session.dart';
@@ -9,6 +10,9 @@ import 'package:ourney/features/camera/capture_services.dart';
 import 'package:ourney/features/camera/routes.dart';
 import 'package:ourney/features/checkin/captured_photo.dart';
 import 'package:ourney/features/checkin/checkin_clock.dart';
+import 'package:ourney/features/checkin/checkin_controller.dart'
+    show checkinJourneyProvider;
+import 'package:ourney/features/checkin/checkin_drafts.dart';
 import 'package:ourney/features/checkin/photo_compressor.dart';
 import 'package:ourney/features/checkin/routes.dart';
 import 'package:ourney/ui/ui.dart';
@@ -44,6 +48,7 @@ void main() {
     Map<String, Object> prefsValues = const {CameraPrefs.permissionAsked: true},
     String location = '/capture',
     bool compose = false,
+    List<Override> overrides = const [],
   }) async {
     prefs = await testPrefs(prefsValues);
     final container = ProviderContainer(
@@ -57,6 +62,7 @@ void main() {
         cameraSessionFactoryProvider.overrideWithValue(() => camera),
         galleryPickerProvider.overrideWithValue(gallery),
         appSettingsOpenerProvider.overrideWithValue(settings),
+        ...overrides,
       ],
     );
     addTearDown(container.dispose);
@@ -287,6 +293,38 @@ void main() {
       expect(camera.pictures, 1);
       expect(find.byKey(const ValueKey('checkin-from-library')), findsNothing);
       expect(tester.widget<TextField>(caption).controller!.text, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'system back while the checkin journey is still loading preserves the camera draft',
+    (tester) async {
+      final pending = Completer<Journey?>();
+      final container = await pump(
+        tester,
+        compose: true,
+        overrides: [
+          checkinJourneyProvider(
+            'j1',
+          ).overrideWith((ref) => Stream.fromFuture(pending.future)),
+        ],
+      );
+      final files = container.read(draftFilesProvider) as FakeDraftFiles;
+      final shutter = find.byKey(const ValueKey('capture-shutter'));
+
+      await tester.tap(shutter);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+      expect(find.byType(UiSpinner), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(files.discarded, isEmpty);
+      expect(
+        container.read(checkinDraftsProvider).photoFor('j1')?.path,
+        '/tmp/shot1.jpg',
+      );
+      expect(find.byKey(const ValueKey('capture-draft-cue')), findsOneWidget);
     },
   );
 

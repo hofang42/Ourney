@@ -518,6 +518,7 @@
   "journeys_home_introCoupleCustom": "What moment did you two share today?",
   "journeys_home_offlineQuiet": "Saved on this phone · will sync later",
   "journeys_home_offlineSquad": "Your photo is saved on this device. We’ll send it to your squad when you’re back online.",
+  "journeys_home_offlineCouple": "Your half is saved on this device. We’ll send it to your partner when you’re back online.",
   "journeys_home_offline": "You’re offline",
   "journeys_home_offlineMemory": "Saved on this phone. It sends itself once you are online.",
   "journeys_home_readOnlyQuiet": "Journey ended · view only",
