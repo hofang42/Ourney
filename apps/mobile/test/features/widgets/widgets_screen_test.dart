@@ -11,6 +11,8 @@ import 'package:ourney/features/groups/data/groups_providers.dart'
 import 'package:ourney/features/widgets/data/widget_bridge_gateway.dart';
 import 'package:ourney/features/widgets/data/widget_sync_controller.dart';
 import 'package:ourney/features/widgets/domain/widget_privacy.dart';
+import 'package:ourney/features/widgets/ui/widgets_screen.dart'
+    show widgetDiagnosticsDebugModeProvider;
 import 'package:ourney/ui/components/ourney_icons.dart' show OurneyIcon;
 import 'package:ourney_core/ourney_core.dart';
 
@@ -119,6 +121,68 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Sao chép nhật ký'), findsNothing);
+    },
+    variant: const TargetPlatformVariant({TargetPlatform.iOS}),
+  );
+
+  testWidgets(
+    'release default hides widget diagnostics; 7 taps on screen title within '
+    '3s toggles it on with snackbar and off again',
+    (tester) async {
+      const log = '2026-11-27T01:00:00Z OurneyTodayWidget timeline ready';
+      final bridge = FakeWidgetBridgeGateway()..widgetDiagnostics = [log];
+      final c = await pumpOurneyApp(
+        tester,
+        overrides: [
+          widgetBridgeGatewayProvider.overrideWithValue(bridge),
+          widgetDiagnosticsDebugModeProvider.overrideWithValue(false),
+        ],
+      );
+      await c.read(localeOverrideProvider.notifier).set(const Locale('vi'));
+      await goTo(tester, c, AppRoutes.widgets);
+
+      // 1. Hidden by default in release mode.
+      expect(find.text('Chẩn đoán tiện ích'), findsNothing);
+
+      // 2. 6 taps + waiting > 3s + 1 tap does not unlock.
+      for (var i = 0; i < 6; i++) {
+        await tester.tap(find.text('tiện ích.'));
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text('Chẩn đoán tiện ích'), findsNothing);
+      await tester.pump(const Duration(seconds: 4));
+      await tester.tap(find.text('tiện ích.'));
+      await tester.pump();
+      expect(find.text('Chẩn đoán tiện ích'), findsNothing);
+
+      // 3. 6 more taps within 3s (7 taps total in window) unlocks & shows toast.
+      for (var i = 0; i < 6; i++) {
+        await tester.tap(find.text('tiện ích.'));
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('Đã bật chế độ chẩn đoán'), findsOneWidget);
+      expect(find.text('Chẩn đoán tiện ích'), findsOneWidget);
+
+      // 4. 7 more taps within 3s toggles it off again.
+      for (var i = 0; i < 7; i++) {
+        await tester.tap(find.text('tiện ích.'));
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('Chẩn đoán tiện ích'), findsNothing);
+
+      // 5. Switch to English and unlock with 7 taps -> "Diagnostics on".
+      await c.read(localeOverrideProvider.notifier).set(const Locale('en'));
+      await tester.pumpAndSettle();
+      expect(find.text('Widget diagnostics'), findsNothing);
+      for (var i = 0; i < 7; i++) {
+        await tester.tap(find.text('widgets.'));
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('Diagnostics on'), findsOneWidget);
+      expect(find.text('Widget diagnostics'), findsOneWidget);
     },
     variant: const TargetPlatformVariant({TargetPlatform.iOS}),
   );

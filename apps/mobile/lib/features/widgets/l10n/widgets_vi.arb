@@ -32,6 +32,10 @@
   "@widgets_diagnosticsCopied": {
     "description": "Confirmation after copying the widget diagnostics log."
   },
+  "widgets_diagnosticsUnlocked": "Đã bật chế độ chẩn đoán",
+  "@widgets_diagnosticsUnlocked": {
+    "description": "Toast shown when hidden widget diagnostics mode is unlocked."
+  },
   "widgets_secPreview": "xem trước tiện ích",
   "@widgets_secPreview": {
     "description": "Section heading for the interactive widget preview gallery."

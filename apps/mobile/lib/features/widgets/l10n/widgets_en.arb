@@ -9,6 +9,7 @@
   "widgets_diagnosticsEmpty": "No widget events recorded yet.",
   "widgets_diagnosticsCopy": "Copy log",
   "widgets_diagnosticsCopied": "Widget log copied",
+  "widgets_diagnosticsUnlocked": "Diagnostics on",
   "widgets_tabToday": "Today",
   "widgets_tabStreak": "Streak",
   "widgets_tabSquad": "Squad",
