@@ -190,5 +190,57 @@ class WidgetsL10nVi extends WidgetsL10n {
 
   @override
   String get widgets_setupStep3Body =>
-      'Mỗi tiện ích mở thẳng khung ngắm của đúng hành trình đó trong chưa đầy 1 giây.';
+      'Mỗi tiện ích mở thẳng máy ảnh của đúng hành trình đó. Muốn đổi hành trình, chạm nút Đổi ở góc trên tiện ích hoặc chọn ngay tại màn hình này.';
+
+  @override
+  String get widgets_secPlacedWidgets => 'tiện ích đang đặt';
+
+  @override
+  String get widgets_secJourneyPicker => 'đổi hành trình trên tiện ích';
+
+  @override
+  String get widgets_placedEmptyNote =>
+      'Sau khi đặt tiện ích ra Màn hình chính, bạn có thể đổi hành trình cho từng ô ngay tại đây hoặc chạm nút Đổi ở góc trên phải tiện ích.';
+
+  @override
+  String get widgets_placedTodayTitle => 'Ourney · Hôm nay';
+
+  @override
+  String get widgets_placedStreakTitle => 'Ourney · Chuỗi ngày';
+
+  @override
+  String get widgets_placedSquadTitle => 'Ourney · Đồng đội';
+
+  @override
+  String get widgets_iosTodayStreakRowTitle => 'Hôm nay & Chuỗi';
+
+  @override
+  String get widgets_iosSquadRowTitle => 'Đồng đội & Cặp đôi';
+
+  @override
+  String get widgets_pickerSheetTodayTitle => 'Đổi hành trình';
+
+  @override
+  String get widgets_pickerSheetSquadTitle => 'Đổi nhóm đồng đội';
+
+  @override
+  String get widgets_pickerSheetSubtitle =>
+      'Chọn hành trình hiển thị trên tiện ích này hoặc để Tự động.';
+
+  @override
+  String get widgets_autoOptionTitle => 'Tự động';
+
+  @override
+  String get widgets_autoTodaySubtitle => 'Ưu tiên hành trình cần chụp hôm nay';
+
+  @override
+  String get widgets_autoStreakSubtitle =>
+      'Hiện hành trình có chuỗi ngày nổi bật nhất';
+
+  @override
+  String get widgets_autoSquadSubtitle =>
+      'Hiện nhóm hoặc cặp đôi đang hoạt động';
+
+  @override
+  String get widgets_changeAction => 'Đổi';
 }

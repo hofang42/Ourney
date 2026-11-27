@@ -50,6 +50,8 @@
     <string name="widget_config_auto_squad_sub">Hiện nhóm hoặc cặp đôi đang hoạt động</string>
     <string name="widget_config_close">Đóng</string>
     <string name="widget_config_open_app_sync">Mở Ourney để tải hành trình</string>
+    <string name="widget_change_journey">Đổi hành trình</string>
+    <string name="widget_change_short">Đổi</string>
     <string name="widget_live_channel_name">Khung giờ check-in trực tiếp</string>
     <string name="widget_live_channel_desc">Hiển thị nhẹ nhàng khung giờ check-in buổi tối của bạn.</string>
     <string name="widget_live_public_title">Ourney · Khung giờ check-in</string>

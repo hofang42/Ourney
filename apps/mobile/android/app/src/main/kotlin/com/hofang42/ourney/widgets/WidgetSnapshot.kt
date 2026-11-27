@@ -25,6 +25,7 @@ data class WidgetSnapshot(
     val themeMode: String,
     val privacy: WidgetPrivacyConfig,
     val defaultJourneyId: String?,
+    val defaultSquadId: String? = null,
     val totals: WidgetTotals,
     val journeys: List<WidgetJourneyItem>,
     val squads: List<WidgetSquadItem>,
@@ -80,10 +81,34 @@ data class WidgetSnapshot(
     }
 
     /**
+     * Ordered cycle pool for unpinned (`"auto"`) `OurneyTodayWidget` instances:
+     * cycles pending journeys when 2+ journeys are unchecked; when fewer than 2
+     * journeys are pending and `journeys.size >= 2`, cycles across all active
+     * [journeys] so the `1/N ›` button remains available after check-in.
+     */
+    fun todayCyclePool(): List<WidgetJourneyItem> {
+        if (journeys.isEmpty()) return emptyList()
+        val pending = journeys.filter { !it.checkedInToday }
+        if (pending.size >= 2) return pending
+        val ordered = mutableListOf<WidgetJourneyItem>()
+        if (pending.size == 1) {
+            ordered.add(pending.first())
+        } else if (!defaultJourneyId.isNullOrBlank()) {
+            journeys.firstOrNull { it.id == defaultJourneyId }?.let(ordered::add)
+        }
+        for (j in journeys) {
+            if (ordered.none { it.id == j.id }) {
+                ordered.add(j)
+            }
+        }
+        return ordered
+    }
+
+    /**
      * Selects the primary journey to display in `OurneyTodayWidget`, supporting
      * per-widget pinned [selectedId] (falling back to `"auto"` when the pinned
      * journey ends, archives, or is deleted) and interactive cycling across
-     * pending journeys via [cycleIndex].
+     * journeys via [cycleIndex].
      */
     fun selectTodayJourney(
         selectedId: String? = AUTO_SELECTION_ID,
@@ -94,18 +119,12 @@ data class WidgetSnapshot(
         if (normalizedId != AUTO_SELECTION_ID) {
             journeys.firstOrNull { it.id == normalizedId }?.let { return it }
         }
-        val pending = journeys.filter { !it.checkedInToday }
-        if (pending.size >= 2) {
-            val idx = cycleIndex.coerceAtLeast(0).mod(pending.size)
-            return pending[idx]
+        val pool = todayCyclePool()
+        if (pool.size >= 2) {
+            val idx = cycleIndex.coerceAtLeast(0).mod(pool.size)
+            return pool[idx]
         }
-        if (pending.size == 1) {
-            return pending.first()
-        }
-        if (!defaultJourneyId.isNullOrBlank()) {
-            journeys.firstOrNull { it.id == defaultJourneyId }?.let { return it }
-        }
-        return journeys.first()
+        return pool.firstOrNull()
     }
 
     fun selectTodayJourney(state: WidgetMutableState): WidgetJourneyItem? =
@@ -151,13 +170,17 @@ data class WidgetSnapshot(
 
     /**
      * Selects the primary squad/couple journey for `OurneySquadWidget` (prefers
-     * per-widget pinned [selectedId], falling back to `defaultJourneyId` or first squad).
+     * per-widget pinned [selectedId], falling back to `defaultSquadId`,
+     * `defaultJourneyId`, or first squad).
      */
     fun selectSquad(selectedId: String? = AUTO_SELECTION_ID): WidgetSquadItem? {
         if (squads.isEmpty()) return null
         val normalizedId = selectedId?.trim()?.takeIf { it.isNotEmpty() } ?: AUTO_SELECTION_ID
         if (normalizedId != AUTO_SELECTION_ID) {
             squads.firstOrNull { it.journeyId == normalizedId }?.let { return it }
+        }
+        if (!defaultSquadId.isNullOrBlank()) {
+            squads.firstOrNull { it.journeyId == defaultSquadId }?.let { return it }
         }
         if (!defaultJourneyId.isNullOrBlank()) {
             squads.firstOrNull { it.journeyId == defaultJourneyId }?.let { return it }
@@ -217,13 +240,13 @@ data class WidgetSnapshot(
             val journey = snapshot.selectTodayJourney(selectedId, cycleIndex)
                 ?: return JourneyWidgetCardState.NoJourneys
             val isPinned = snapshot.isPinnedJourneyActive(selectedId)
-            val pending = snapshot.journeys.filter { !it.checkedInToday }
-            val pendingIndex = if (!isPinned && pending.size >= 2) {
-                (pending.indexOfFirst { it.id == journey.id }.takeIf { it >= 0 } ?: 0) + 1
+            val pool = snapshot.todayCyclePool()
+            val pendingIndex = if (!isPinned && pool.size >= 2) {
+                (pool.indexOfFirst { it.id == journey.id }.takeIf { it >= 0 } ?: 0) + 1
             } else {
                 1
             }
-            val pendingCount = if (isPinned) 1 else pending.size
+            val pendingCount = if (isPinned) 1 else pool.size
             return JourneyWidgetCardState.Ready(
                 journey = journey,
                 isPinned = isPinned,
@@ -299,6 +322,7 @@ data class WidgetSnapshot(
                 liveActivityEnabled = privacyObj?.optBooleanCompat("liveActivityEnabled", true) ?: true,
             )
             val defaultJourneyId = root.optNullableString("defaultJourneyId")
+            val defaultSquadId = root.optNullableString("defaultSquadId")
 
             val totalsObj = root.optObjectOrNull("totals")
             val journeysArr = root.optArrayOrNull("journeys") ?: JSONArray()
@@ -345,6 +369,7 @@ data class WidgetSnapshot(
                 themeMode = themeMode,
                 privacy = privacy,
                 defaultJourneyId = defaultJourneyId,
+                defaultSquadId = defaultSquadId,
                 totals = totals,
                 journeys = journeys,
                 squads = squads,

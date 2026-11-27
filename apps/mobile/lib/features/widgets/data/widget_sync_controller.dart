@@ -269,6 +269,8 @@ class WidgetSyncController {
       final explicitRedact = _ref.read(redactLockScreenTitlesPrefProvider);
       final liveEnabled = _ref.read(liveActivityEnabledProvider);
       final dismissedWindowKey = _ref.read(dismissedLiveWindowKeyProvider);
+      final defaultJourneyId = _ref.read(defaultWidgetJourneyIdProvider);
+      final defaultSquadId = _ref.read(defaultWidgetSquadIdProvider);
       final reminderSettings = _ref.read(reminderSettingsProvider);
       final streakAlerts = _ref.read(streakAlertsEnabledProvider);
       final blurPhotosOnShare = _ref.read(blurPhotosOnShareProvider);
@@ -317,6 +319,8 @@ class WidgetSyncController {
         hiddenCheckInIds: hiddenCheckInIds,
         currentUserId: currentUserId,
         dismissedWindowKey: dismissedWindowKey,
+        defaultJourneyId: defaultJourneyId,
+        defaultSquadId: defaultSquadId,
       );
 
       final preparedThumbs = await _thumbPreparer.prepare(
@@ -712,7 +716,9 @@ class _WidgetLifecycleHookState extends ConsumerState<WidgetLifecycleHook>
       ..listen(widgetPhotoModeProvider, trigger, onError: ignoreError)
       ..listen(redactLockScreenTitlesPrefProvider, trigger, onError: ignoreError)
       ..listen(liveActivityEnabledProvider, trigger, onError: ignoreError)
-      ..listen(dismissedLiveWindowKeyProvider, trigger, onError: ignoreError);
+      ..listen(dismissedLiveWindowKeyProvider, trigger, onError: ignoreError)
+      ..listen(defaultWidgetJourneyIdProvider, trigger, onError: ignoreError)
+      ..listen(defaultWidgetSquadIdProvider, trigger, onError: ignoreError);
 
     if (authStatus != AuthStatus.signedOut) {
       ref

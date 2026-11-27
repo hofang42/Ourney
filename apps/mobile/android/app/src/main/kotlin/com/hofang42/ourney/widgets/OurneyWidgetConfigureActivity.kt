@@ -20,8 +20,6 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.annotation.DrawableRes
 import androidx.annotation.Keep
-import androidx.glance.appwidget.GlanceAppWidgetManager
-import androidx.glance.appwidget.state.updateAppWidgetState
 import com.hofang42.ourney.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -653,32 +651,20 @@ class OurneyWidgetConfigureActivity : Activity() {
         saving = true
         val appCtx = applicationContext
         val id = appWidgetId
-        val kind = widgetKind
-        store.setWidgetSelection(id, chosenId)
+        val kindName = when (widgetKind) {
+            WidgetConfigKind.TODAY -> "today"
+            WidgetConfigKind.STREAK -> "streak"
+            WidgetConfigKind.SQUAD -> "squad"
+        }
 
         CoroutineScope(Dispatchers.Default).launch {
-            try {
-                val manager = GlanceAppWidgetManager(appCtx)
-                val glanceId = manager.getGlanceIdBy(id)
-                updateAppWidgetState(appCtx, glanceId) { prefs ->
-                    if (chosenId == WidgetSnapshot.AUTO_SELECTION_ID) {
-                        prefs.remove(WidgetPrefsKeys.SELECTED_ID)
-                    } else {
-                        prefs[WidgetPrefsKeys.SELECTED_ID] = chosenId
-                    }
-                    val prevSeq = prefs[WidgetPrefsKeys.SNAPSHOT_SEQ] ?: 0L
-                    prefs[WidgetPrefsKeys.SNAPSHOT_SEQ] =
-                        maxOf(System.currentTimeMillis(), prevSeq + 1L)
-                    prefs[WidgetPrefsKeys.CYCLE_INDEX] = 0
-                }
-                when (kind) {
-                    WidgetConfigKind.TODAY -> TodayGlanceWidget().update(appCtx, glanceId)
-                    WidgetConfigKind.STREAK -> StreakGlanceWidget().update(appCtx, glanceId)
-                    WidgetConfigKind.SQUAD -> SquadGlanceWidget().update(appCtx, glanceId)
-                }
-            } catch (_: Throwable) {
-                WidgetActions.refreshAllWidgets(appCtx)
-            }
+            WidgetActions.applyWidgetSelection(
+                context = appCtx,
+                appWidgetId = id,
+                selectedId = chosenId,
+                store = store,
+                widgetKind = kindName,
+            )
             runOnUiThread {
                 val resultValue = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
                 setResult(RESULT_OK, resultValue)

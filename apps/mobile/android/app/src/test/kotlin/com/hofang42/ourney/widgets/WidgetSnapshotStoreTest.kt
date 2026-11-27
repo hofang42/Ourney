@@ -1,7 +1,9 @@
 package com.hofang42.ourney.widgets
 
+import androidx.datastore.preferences.core.mutablePreferencesOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -890,5 +892,229 @@ class WidgetSnapshotStoreTest {
         assertEquals("TD", strip[6].label)
         assertEquals("today", strip[6].state)
         assertEquals(listOf("T", "F", "S", "S", "M", "T", "TD"), strip.map { it.label })
+    }
+
+    @Test
+    fun `applyWidgetSelectionToStores synchronizes state json and Glance preferences and generates unique per-widget URIs`() {
+        val store = WidgetSnapshotStore(tempFolder.newFolder("ourney_widgets_dual_store"))
+        val glancePrefs11 = mutablePreferencesOf(
+            WidgetPrefsKeys.SNAPSHOT_SEQ to 1000L,
+            WidgetPrefsKeys.CYCLE_INDEX to 2,
+        )
+        val glancePrefs12 = mutablePreferencesOf(
+            WidgetPrefsKeys.SNAPSHOT_SEQ to 1000L,
+        )
+
+        // Guardrail 1: per-widget configure URI must be unique per appWidgetId so PendingIntents never collide
+        val uri11 = WidgetActions.configureWidgetUriString(11)
+        val uri12 = WidgetActions.configureWidgetUriString(12)
+        assertEquals("ourney://widget-config/11", uri11)
+        assertEquals("ourney://widget-config/12", uri12)
+        assertNotEquals(uri11, uri12)
+
+        // Guardrail 5: selecting a journey writes BOTH state.json and Glance preferences + resets CYCLE_INDEX
+        assertTrue(
+            WidgetActions.applyWidgetSelectionToStores(
+                store = store,
+                appWidgetId = 11,
+                selectedId = "6f8c9a10-0002",
+                glancePrefs = glancePrefs11,
+                nowEpochMs = 2000L,
+            ),
+        )
+        assertEquals("6f8c9a10-0002", store.getWidgetSelection(11))
+        assertEquals("6f8c9a10-0002", glancePrefs11[WidgetPrefsKeys.SELECTED_ID])
+        assertEquals(2000L, glancePrefs11[WidgetPrefsKeys.SNAPSHOT_SEQ])
+        assertEquals(0, glancePrefs11[WidgetPrefsKeys.CYCLE_INDEX])
+
+        // Widget #12 remains independent
+        assertTrue(
+            WidgetActions.applyWidgetSelectionToStores(
+                store = store,
+                appWidgetId = 12,
+                selectedId = "6f8c9a10-0001",
+                glancePrefs = glancePrefs12,
+                nowEpochMs = 2005L,
+            ),
+        )
+        assertEquals("6f8c9a10-0002", store.getWidgetSelection(11))
+        assertEquals("6f8c9a10-0001", store.getWidgetSelection(12))
+        assertEquals("6f8c9a10-0001", glancePrefs12[WidgetPrefsKeys.SELECTED_ID])
+
+        // Switching widget #11 back to "auto" clears SELECTED_ID from both stores and increments SNAPSHOT_SEQ monotonically
+        assertTrue(
+            WidgetActions.applyWidgetSelectionToStores(
+                store = store,
+                appWidgetId = 11,
+                selectedId = WidgetSnapshot.AUTO_SELECTION_ID,
+                glancePrefs = glancePrefs11,
+                nowEpochMs = 1500L, // even if clock is < prevSeq, seq advances monotonically
+            ),
+        )
+        assertEquals(WidgetSnapshot.AUTO_SELECTION_ID, store.getWidgetSelection(11))
+        assertNull(glancePrefs11[WidgetPrefsKeys.SELECTED_ID])
+        assertEquals(2001L, glancePrefs11[WidgetPrefsKeys.SNAPSHOT_SEQ])
+        assertEquals(0, glancePrefs11[WidgetPrefsKeys.CYCLE_INDEX])
+    }
+
+    @Test
+    fun `Automatic Streak picks highest streak after check-in and Today cycles across all journeys when fewer than 2 are pending`() {
+        val autoSnapshotJson = """
+            {
+              "schemaVersion": 1,
+              "authState": "ready",
+              "locale": "vi",
+              "journeys": [
+                {
+                  "id": "j-unchecked-0",
+                  "title": "Học từ vựng mới",
+                  "kind": "solo",
+                  "skinId": "squad",
+                  "dayNumber": 1,
+                  "totalDays": 30,
+                  "currentStreak": 0,
+                  "bestStreak": 0,
+                  "checkedInToday": false,
+                  "atRisk": false
+                },
+                {
+                  "id": "j-checkedin-25",
+                  "title": "Chạy bộ 25 ngày",
+                  "kind": "solo",
+                  "skinId": "flexer",
+                  "dayNumber": 25,
+                  "totalDays": 30,
+                  "currentStreak": 25,
+                  "bestStreak": 25,
+                  "checkedInToday": true,
+                  "atRisk": false
+                }
+              ],
+              "squads": [
+                {
+                  "journeyId": "s-group-1",
+                  "title": "Nhóm IELTS",
+                  "skinId": "squad",
+                  "isCouple": false,
+                  "dayNumber": 10,
+                  "doneCount": 2,
+                  "memberCount": 4,
+                  "meCheckedInToday": false,
+                  "members": []
+                },
+                {
+                  "journeyId": "s-couple-2",
+                  "title": "Đôi mình",
+                  "skinId": "couple",
+                  "isCouple": true,
+                  "dayNumber": 18,
+                  "doneCount": 2,
+                  "memberCount": 2,
+                  "meCheckedInToday": true,
+                  "members": []
+                }
+              ]
+            }
+        """.trimIndent()
+
+        val snap = WidgetSnapshot.fromJson(autoSnapshotJson)
+        assertNull(snap.defaultJourneyId)
+        assertNull(snap.defaultSquadId)
+
+        // 1. Streak widget in Automatic mode selects the 25-day streak even though it is checked in today!
+        val autoStreak = WidgetSnapshot.resolveStreakCardState(snap) as JourneyWidgetCardState.Ready
+        assertEquals("j-checkedin-25", autoStreak.journey.id)
+        assertEquals(25, autoStreak.journey.currentStreak)
+
+        // 2. Today widget in Automatic mode starts on the unchecked journey (1/2) AND keeps pendingCount = 2
+        //    so the 1/2 › cycle button remains visible and cycles to the checked-in 25-day journey (2/2)!
+        val today0 = WidgetSnapshot.resolveTodayCardState(
+            snap,
+            selectedId = WidgetSnapshot.AUTO_SELECTION_ID,
+            cycleIndex = 0,
+        ) as JourneyWidgetCardState.Ready
+        assertEquals("j-unchecked-0", today0.journey.id)
+        assertEquals(1, today0.pendingIndex)
+        assertEquals(2, today0.pendingCount)
+
+        val today1 = WidgetSnapshot.resolveTodayCardState(
+            snap,
+            selectedId = WidgetSnapshot.AUTO_SELECTION_ID,
+            cycleIndex = 1,
+        ) as JourneyWidgetCardState.Ready
+        assertEquals("j-checkedin-25", today1.journey.id)
+        assertEquals(2, today1.pendingIndex)
+        assertEquals(2, today1.pendingCount)
+
+        // 3. Even when ALL journeys are checked in today (0 pending), unpinned Today widget still cycles across all 2 journeys!
+        val allDoneSnap = snap.copy(
+            journeys = snap.journeys.map { it.copy(checkedInToday = true) },
+        )
+        val allDone0 = WidgetSnapshot.resolveTodayCardState(
+            allDoneSnap,
+            selectedId = WidgetSnapshot.AUTO_SELECTION_ID,
+            cycleIndex = 0,
+        ) as JourneyWidgetCardState.Ready
+        val allDone1 = WidgetSnapshot.resolveTodayCardState(
+            allDoneSnap,
+            selectedId = WidgetSnapshot.AUTO_SELECTION_ID,
+            cycleIndex = 1,
+        ) as JourneyWidgetCardState.Ready
+        assertEquals("j-unchecked-0", allDone0.journey.id)
+        assertEquals(2, allDone0.pendingCount)
+        assertEquals("j-checkedin-25", allDone1.journey.id)
+        assertEquals(2, allDone1.pendingCount)
+
+        // 4. Explicit defaultSquadId selects the second squad in Automatic mode
+        val squadWithDefault = snap.copy(defaultSquadId = "s-couple-2")
+        val resolvedSquad = WidgetSnapshot.resolveSquadCardState(squadWithDefault) as SquadWidgetCardState.Ready
+        assertEquals("s-couple-2", resolvedSquad.squad.journeyId)
+    }
+
+    @Test
+    fun `collectPlacedWidgetsAndPruneOrphans removes unplaced or invalid widget selections from state json`() {
+        val store = WidgetSnapshotStore(tempFolder.newFolder("ourney_widgets_prune_orphans"))
+        store.setWidgetSelection(11, "j-active-today")
+        store.setWidgetSelection(22, "j-orphan-deleted")
+        store.setWidgetSelection(33, "j-active-squad")
+        store.setWidgetSelection(44, "j-null-provider-info")
+
+        val placed = OurneyWidgetBridge.collectPlacedWidgetsAndPruneOrphans(
+            store = store,
+            rawPlacedByKind = listOf(
+                "today" to intArrayOf(11, 44),
+                "streak" to intArrayOf(),
+                "squad" to intArrayOf(33),
+            ),
+            hasValidInfo = { id -> id != 44 },
+        )
+
+        assertEquals(2, placed.size)
+        assertEquals(
+            mapOf(
+                "appWidgetId" to 11,
+                "kind" to "today",
+                "selectedId" to "j-active-today",
+            ),
+            placed[0],
+        )
+        assertEquals(
+            mapOf(
+                "appWidgetId" to 33,
+                "kind" to "squad",
+                "selectedId" to "j-active-squad",
+            ),
+            placed[1],
+        )
+
+        // Active placed widgets retain their pinned selections in state.json
+        assertEquals("j-active-today", store.getWidgetSelection(11))
+        assertEquals("j-active-squad", store.getWidgetSelection(33))
+
+        // Orphaned IDs (22 not returned by AppWidgetManager, 44 had null AppWidgetProviderInfo)
+        // are pruned from state.json so they fall back to "auto"
+        assertEquals(WidgetSnapshot.AUTO_SELECTION_ID, store.getWidgetSelection(22))
+        assertEquals(WidgetSnapshot.AUTO_SELECTION_ID, store.getWidgetSelection(44))
+        assertEquals(mapOf(11 to "j-active-today", 33 to "j-active-squad"), store.readState().widgetSelections)
     }
 }

@@ -321,11 +321,77 @@ void main() {
             'j-done-pinned',
           ],
         );
-        expect(snapshot.defaultJourneyId, 'j-unchecked-pinned');
+        expect(
+          snapshot.defaultJourneyId,
+          isNull,
+          reason:
+              'Automatic mode must leave defaultJourneyId null so Streak widget '
+              'can select the highest active streak (§4.4)',
+        );
+        expect(snapshot.defaultSquadId, isNull);
         expect(snapshot.totals.activeCount, 4);
         expect(snapshot.totals.completedTodayCount, 1);
         expect(snapshot.totals.pendingTodayCount, 3);
         expect(snapshot.totals.atRiskCount, 1);
+      },
+    );
+
+    test(
+      'emits defaultJourneyId and defaultSquadId only when explicitly chosen and active (§4.4)',
+      () {
+        final jSolo = _makeJourney(id: 'j-solo-1', title: 'Solo Run');
+        final jSquad = _makeJourney(
+          id: 'j-squad-1',
+          title: 'IELTS Squad',
+          kind: JourneyKind.group,
+        );
+
+        final autoSnap = WidgetSnapshotBuilder.build(
+          now: nowUtc,
+          authStatus: AuthStatus.signedIn,
+          defaultJourneyId: 'auto',
+          defaultSquadId: 'auto',
+          journeyInputs: [
+            WidgetJourneyBuildInput(journey: jSolo),
+            WidgetJourneyBuildInput(journey: jSquad),
+          ],
+        );
+        expect(autoSnap.defaultJourneyId, isNull);
+        expect(autoSnap.defaultSquadId, isNull);
+        final autoMap =
+            jsonDecode(autoSnap.toJsonString()) as Map<String, Object?>;
+        expect(autoMap.containsKey('defaultJourneyId'), isFalse);
+        expect(autoMap.containsKey('defaultSquadId'), isFalse);
+
+        final staleSnap = WidgetSnapshotBuilder.build(
+          now: nowUtc,
+          authStatus: AuthStatus.signedIn,
+          defaultJourneyId: 'archived-journey-99',
+          defaultSquadId: 'j-solo-1', // solo journey is not in squads
+          journeyInputs: [
+            WidgetJourneyBuildInput(journey: jSolo),
+            WidgetJourneyBuildInput(journey: jSquad),
+          ],
+        );
+        expect(staleSnap.defaultJourneyId, isNull);
+        expect(staleSnap.defaultSquadId, isNull);
+
+        final explicitSnap = WidgetSnapshotBuilder.build(
+          now: nowUtc,
+          authStatus: AuthStatus.signedIn,
+          defaultJourneyId: 'j-solo-1',
+          defaultSquadId: 'j-squad-1',
+          journeyInputs: [
+            WidgetJourneyBuildInput(journey: jSolo),
+            WidgetJourneyBuildInput(journey: jSquad),
+          ],
+        );
+        expect(explicitSnap.defaultJourneyId, 'j-solo-1');
+        expect(explicitSnap.defaultSquadId, 'j-squad-1');
+        final explicitMap =
+            jsonDecode(explicitSnap.toJsonString()) as Map<String, Object?>;
+        expect(explicitMap['defaultJourneyId'], 'j-solo-1');
+        expect(explicitMap['defaultSquadId'], 'j-squad-1');
       },
     );
 

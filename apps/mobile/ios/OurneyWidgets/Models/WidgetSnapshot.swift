@@ -103,6 +103,7 @@ public struct WidgetSnapshot: Codable, Equatable {
   public var themeMode: String
   public var privacy: WidgetPrivacySettings
   public var defaultJourneyId: String?
+  public var defaultSquadId: String?
   public var totals: WidgetTotals
   public var journeys: [WidgetJourneyItem]
   public var squads: [WidgetSquadItem]
@@ -116,6 +117,7 @@ public struct WidgetSnapshot: Codable, Equatable {
     themeMode: String = "system",
     privacy: WidgetPrivacySettings = WidgetPrivacySettings(),
     defaultJourneyId: String? = nil,
+    defaultSquadId: String? = nil,
     totals: WidgetTotals = WidgetTotals(),
     journeys: [WidgetJourneyItem] = [],
     squads: [WidgetSquadItem] = [],
@@ -128,6 +130,7 @@ public struct WidgetSnapshot: Codable, Equatable {
     self.themeMode = themeMode
     self.privacy = privacy
     self.defaultJourneyId = defaultJourneyId
+    self.defaultSquadId = defaultSquadId
     self.totals = totals
     self.journeys = journeys
     self.squads = squads
@@ -142,6 +145,7 @@ public struct WidgetSnapshot: Codable, Equatable {
     case themeMode
     case privacy
     case defaultJourneyId
+    case defaultSquadId
     case totals
     case journeys
     case squads
@@ -157,6 +161,7 @@ public struct WidgetSnapshot: Codable, Equatable {
     self.themeMode = try c.decodeIfPresent(String.self, forKey: .themeMode) ?? "system"
     self.privacy = try c.decodeIfPresent(WidgetPrivacySettings.self, forKey: .privacy) ?? WidgetPrivacySettings()
     self.defaultJourneyId = try c.decodeIfPresent(String.self, forKey: .defaultJourneyId)
+    self.defaultSquadId = try c.decodeIfPresent(String.self, forKey: .defaultSquadId)
     self.totals = try c.decodeIfPresent(WidgetTotals.self, forKey: .totals) ?? WidgetTotals()
     self.journeys = try c.decodeIfPresent([WidgetJourneyItem].self, forKey: .journeys) ?? []
     self.squads = try c.decodeIfPresent([WidgetSquadItem].self, forKey: .squads) ?? []
@@ -255,26 +260,37 @@ public struct WidgetSnapshot: Codable, Equatable {
     return dates
   }
 
-  /// Prioritizes pending check-ins, honoring the Today cycle action's shared state.
-  /// When everything is checked in, use the snapshot's featured journey.
+  /// Ordered cycle pool for `OurneyTodayWidget`: cycles pending journeys when 2+ are
+  /// unchecked and no explicit `defaultJourneyId` override is pinned; otherwise cycles
+  /// across all active journeys so the `1/N ›` button keeps working after check-in.
+  public func todayCyclePool() -> [WidgetJourneyItem] {
+    guard !journeys.isEmpty else { return [] }
+    let pending = journeys.filter { !$0.checkedInToday }
+    if pending.count >= 2 && (defaultJourneyId?.isEmpty ?? true) {
+      return pending
+    }
+    var ordered: [WidgetJourneyItem] = []
+    if let defaultId = defaultJourneyId,
+       let preferred = journeys.first(where: { $0.id == defaultId }) {
+      ordered.append(preferred)
+    } else if let firstPending = pending.first {
+      ordered.append(firstPending)
+    }
+    for j in journeys where !ordered.contains(where: { $0.id == j.id }) {
+      ordered.append(j)
+    }
+    return ordered
+  }
+
+  /// Prioritizes the explicit `defaultJourneyId` or pending check-ins, honoring the
+  /// Today cycle action's shared index-based state across all active journeys.
   public func selectedTodayJourney(
     state: WidgetInteractiveState = WidgetInteractiveState()
   ) -> WidgetJourneyItem? {
-    guard !journeys.isEmpty else { return nil }
-    let pending = journeys.filter { !$0.checkedInToday }
-    if !pending.isEmpty {
-      if let preferredId = state.selectedTodayJourneyId,
-         let match = pending.first(where: { $0.id == preferredId }) {
-        return match
-      }
-      let idx = ((state.selectedTodayIndex % pending.count) + pending.count) % pending.count
-      return pending[idx]
-    }
-    if let defaultId = defaultJourneyId,
-       let match = journeys.first(where: { $0.id == defaultId }) {
-      return match
-    }
-    return journeys.first
+    let pool = todayCyclePool()
+    guard !pool.isEmpty else { return nil }
+    let idx = ((state.selectedTodayIndex % pool.count) + pool.count) % pool.count
+    return pool[idx]
   }
 
   /// Uses the snapshot's featured journey, with highest active streak as a fallback.
@@ -292,9 +308,13 @@ public struct WidgetSnapshot: Codable, Equatable {
     }) ?? journeys.first
   }
 
-  /// Uses the snapshot's featured journey if it is a squad, then the first pending squad.
+  /// Uses the snapshot's selected squad (`defaultSquadId` or `defaultJourneyId`), then the first pending squad.
   public func selectedSquad() -> WidgetSquadItem? {
     guard !squads.isEmpty else { return nil }
+    if let squadId = defaultSquadId,
+       let match = squads.first(where: { $0.journeyId == squadId }) {
+      return match
+    }
     if let defaultId = defaultJourneyId,
        let match = squads.first(where: { $0.journeyId == defaultId }) {
       return match
@@ -1306,7 +1326,7 @@ public enum WidgetSnapshotStore {
     }
   }
 
-  /// Advances `selectedTodayIndex` across pending journeys in `state.json`.
+  /// Advances `selectedTodayIndex` across the active Today cycle pool in `state.json`.
   @discardableResult
   public static func cycleSelectedTodayJourney(
     at referenceDate: Date = Date(),
@@ -1314,22 +1334,15 @@ public enum WidgetSnapshotStore {
   ) -> WidgetInteractiveState {
     let snapshot = loadSnapshot(at: referenceDate, rootDirectory: rootDirectory)
     var state = loadState(rootDirectory: rootDirectory)
-    let pending = snapshot?.journeys.filter { !$0.checkedInToday } ?? []
-    guard pending.count >= 2 else {
+    let pool = snapshot?.todayCyclePool() ?? []
+    guard pool.count >= 2 else {
       return state
     }
 
-    let currentIdx: Int
-    if let currentId = state.selectedTodayJourneyId,
-       let idx = pending.firstIndex(where: { $0.id == currentId }) {
-      currentIdx = idx
-    } else {
-      currentIdx = ((state.selectedTodayIndex % pending.count) + pending.count) % pending.count
-    }
-
-    let nextIdx = (currentIdx + 1) % pending.count
+    let currentIdx = ((state.selectedTodayIndex % pool.count) + pool.count) % pool.count
+    let nextIdx = (currentIdx + 1) % pool.count
     state.selectedTodayIndex = nextIdx
-    state.selectedTodayJourneyId = pending[nextIdx].id
+    state.selectedTodayJourneyId = pool[nextIdx].id
     state.updatedAtUtc = WidgetDateParser.formatISO8601(referenceDate)
     _ = saveState(state, rootDirectory: rootDirectory)
     return state

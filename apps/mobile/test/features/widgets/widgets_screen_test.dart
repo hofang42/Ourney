@@ -294,6 +294,183 @@ void main() {
   );
 
   testWidgets(
+    'Android WidgetsScreen lists placed widgets and updates selection via picker sheet',
+    (tester) async {
+      final fakeBridge = FakeWidgetBridgeGateway(
+        placedWidgets: const [
+          PlacedWidgetInfo(
+            appWidgetId: 101,
+            kind: PlacedWidgetKind.today,
+            selectedId: 'auto',
+          ),
+          PlacedWidgetInfo(
+            appWidgetId: 102,
+            kind: PlacedWidgetKind.squad,
+            selectedId: 'auto',
+          ),
+        ],
+      );
+      final journeys = FakeJourneyRepository(
+        journeys: [
+          testJourney(
+            id: 'j-1',
+            title: 'Tự học IELTS 30 ngày',
+            durationDays: null,
+          ),
+          testJourney(
+            id: 'j-2',
+            title: 'Chạy bộ buổi sáng',
+            durationDays: null,
+          ),
+          testJourney(
+            id: 'j-squad-1',
+            title: 'Nhóm chạy Hồ Tây',
+            kind: JourneyKind.group,
+            durationDays: null,
+          ),
+        ],
+      );
+
+      final c = await pumpOurneyApp(
+        tester,
+        overrides: [
+          journeyRepositoryProvider.overrideWithValue(journeys),
+          widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
+        ],
+      );
+
+      await c.read(localeOverrideProvider.notifier).set(const Locale('vi'));
+      await goTo(tester, c, AppRoutes.widgets);
+
+      expect(find.text('tiện ích đang đặt'), findsOneWidget);
+      expect(byKey('widgets-placed-row-101'), findsOneWidget);
+      expect(byKey('widgets-placed-row-102'), findsOneWidget);
+      expect(find.text('Ourney · Hôm nay'), findsOneWidget);
+      expect(find.text('Ourney · Đồng đội'), findsOneWidget);
+
+      await tester.ensureVisible(byKey('widgets-placed-row-101'));
+      await tester.pumpAndSettle();
+      await tester.tap(byKey('widgets-placed-row-101'));
+      await tester.pumpAndSettle();
+
+      expect(byKey('widget-journey-picker-sheet'), findsOneWidget);
+      expect(find.text('Đổi hành trình'), findsOneWidget);
+      expect(byKey('widget-picker-option-auto'), findsOneWidget);
+      expect(byKey('widget-picker-option-j-2'), findsOneWidget);
+
+      await tester.tap(byKey('widget-picker-option-j-2'));
+      await tester.pumpAndSettle();
+
+      expect(fakeBridge.selectionUpdates, [
+        (appWidgetId: 101, selectedId: 'j-2'),
+      ]);
+      expect(
+        find.descendant(
+          of: byKey('widgets-placed-row-101'),
+          matching: find.text('Chạy bộ buổi sáng'),
+        ),
+        findsOneWidget,
+      );
+      _expectNoRenderOverflowsOrTruncations(tester);
+    },
+  );
+
+  testWidgets(
+    'iOS WidgetsScreen renders Hôm nay & Chuỗi and Đồng đội & Cặp đôi picker rows and syncs snapshot',
+    (tester) async {
+      final fakeBridge = FakeWidgetBridgeGateway();
+      final journeys = FakeJourneyRepository(
+        journeys: [
+          testJourney(
+            id: 'j-1',
+            title: 'Tự học IELTS 30 ngày',
+            durationDays: null,
+          ),
+          testJourney(
+            id: 'j-2',
+            title: 'Chạy bộ buổi sáng',
+            durationDays: null,
+          ),
+          testJourney(
+            id: 'j-couple-1',
+            title: 'Đôi mình 365',
+            kind: JourneyKind.group,
+            maxMembers: 2,
+            durationDays: null,
+          ),
+        ],
+      );
+
+      final c = await pumpOurneyApp(
+        tester,
+        overrides: [
+          journeyRepositoryProvider.overrideWithValue(journeys),
+          widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
+        ],
+      );
+
+      await c.read(localeOverrideProvider.notifier).set(const Locale('vi'));
+      await goTo(tester, c, AppRoutes.widgets);
+
+      expect(find.text('đổi hành trình trên tiện ích'), findsOneWidget);
+      expect(byKey('widgets-ios-today-journey-row'), findsOneWidget);
+      expect(byKey('widgets-ios-squad-journey-row'), findsOneWidget);
+      expect(find.text('Hôm nay & Chuỗi'), findsOneWidget);
+      expect(find.text('Đồng đội & Cặp đôi'), findsOneWidget);
+
+      // 1. Pick j-2 for Today & Streak
+      await tester.ensureVisible(byKey('widgets-ios-today-journey-row'));
+      await tester.pumpAndSettle();
+      await tester.tap(byKey('widgets-ios-today-journey-row'));
+      await tester.pumpAndSettle();
+
+      expect(byKey('widget-journey-picker-sheet'), findsOneWidget);
+      await tester.tap(byKey('widget-picker-option-j-2'));
+      await tester.pumpAndSettle();
+
+      expect(c.read(defaultWidgetJourneyIdProvider), 'j-2');
+      expect(
+        c
+            .read(sharedPreferencesProvider)
+            .getString(WidgetPrefs.defaultJourneyId),
+        'j-2',
+      );
+      expect(
+        find.descendant(
+          of: byKey('widgets-ios-today-journey-row'),
+          matching: find.text('Chạy bộ buổi sáng'),
+        ),
+        findsOneWidget,
+      );
+
+      // 2. Pick j-couple-1 for Squad & Couple
+      await tester.ensureVisible(byKey('widgets-ios-squad-journey-row'));
+      await tester.pumpAndSettle();
+      await tester.tap(byKey('widgets-ios-squad-journey-row'));
+      await tester.pumpAndSettle();
+
+      expect(byKey('widget-journey-picker-sheet'), findsOneWidget);
+      await tester.tap(byKey('widget-picker-option-j-couple-1'));
+      await tester.pumpAndSettle();
+
+      expect(c.read(defaultWidgetSquadIdProvider), 'j-couple-1');
+      expect(
+        c.read(sharedPreferencesProvider).getString(WidgetPrefs.defaultSquadId),
+        'j-couple-1',
+      );
+      expect(
+        find.descendant(
+          of: byKey('widgets-ios-squad-journey-row'),
+          matching: find.text('Đôi mình 365'),
+        ),
+        findsOneWidget,
+      );
+      _expectNoRenderOverflowsOrTruncations(tester);
+    },
+    variant: const TargetPlatformVariant({TargetPlatform.iOS}),
+  );
+
+  testWidgets(
     'UX-26: Day 1 solo journey shows real 0-day streak (no fake 6-day green '
     'strip), and Squad preview shows localized sample when no group journey exists '
     'or real members when a group journey exists',

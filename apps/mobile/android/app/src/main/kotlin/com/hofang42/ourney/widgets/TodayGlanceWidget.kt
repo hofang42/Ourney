@@ -189,44 +189,59 @@ class TodayGlanceWidget : GlanceAppWidget() {
                     )
                 }
                 is JourneyWidgetCardState.Ready -> {
-                    when {
-                        size.width < 200.dp -> {
-                            SmallTodayCard(
-                                context = context,
-                                l10n = l10n,
-                                journey = state.journey,
-                                palette = palette,
-                                nowMs = bundle.nowMs,
-                                pendingIndex = state.pendingIndex,
-                                pendingCount = state.pendingCount,
-                                streakBitmap = bundle.streakHeroBitmap,
-                            )
+                    val isCompactWidth = size.width < 200.dp
+                    Box(
+                        modifier = GlanceModifier.fillMaxSize(),
+                        contentAlignment = Alignment.TopEnd,
+                    ) {
+                        when {
+                            isCompactWidth -> {
+                                SmallTodayCard(
+                                    context = context,
+                                    l10n = l10n,
+                                    journey = state.journey,
+                                    palette = palette,
+                                    nowMs = bundle.nowMs,
+                                    pendingIndex = state.pendingIndex,
+                                    pendingCount = state.pendingCount,
+                                    streakBitmap = bundle.streakHeroBitmap,
+                                )
+                            }
+                            size.height < 200.dp -> {
+                                MediumTodayCard(
+                                    context = context,
+                                    l10n = l10n,
+                                    journey = state.journey,
+                                    palette = palette,
+                                    nowMs = bundle.nowMs,
+                                    pendingIndex = state.pendingIndex,
+                                    pendingCount = state.pendingCount,
+                                    streakBitmap = bundle.streakHeroBitmap,
+                                    framedPhoto = bundle.framedHeroPhoto,
+                                )
+                            }
+                            else -> {
+                                LargeTodayCard(
+                                    context = context,
+                                    l10n = l10n,
+                                    journey = state.journey,
+                                    palette = palette,
+                                    nowMs = bundle.nowMs,
+                                    pendingIndex = state.pendingIndex,
+                                    pendingCount = state.pendingCount,
+                                    streakBitmap = bundle.streakHeroBitmap,
+                                    weekStripBitmap = bundle.weekStripBitmap,
+                                    framedPhoto = bundle.framedHeroPhoto,
+                                )
+                            }
                         }
-                        size.height < 200.dp -> {
-                            MediumTodayCard(
+                        if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+                            ConfigureWidgetOverlayButton(
                                 context = context,
                                 l10n = l10n,
-                                journey = state.journey,
                                 palette = palette,
-                                nowMs = bundle.nowMs,
-                                pendingIndex = state.pendingIndex,
-                                pendingCount = state.pendingCount,
-                                streakBitmap = bundle.streakHeroBitmap,
-                                framedPhoto = bundle.framedHeroPhoto,
-                            )
-                        }
-                        else -> {
-                            LargeTodayCard(
-                                context = context,
-                                l10n = l10n,
-                                journey = state.journey,
-                                palette = palette,
-                                nowMs = bundle.nowMs,
-                                pendingIndex = state.pendingIndex,
-                                pendingCount = state.pendingCount,
-                                streakBitmap = bundle.streakHeroBitmap,
-                                weekStripBitmap = bundle.weekStripBitmap,
-                                framedPhoto = bundle.framedHeroPhoto,
+                                appWidgetId = appWidgetId,
+                                showLabel = !isCompactWidth,
                             )
                         }
                     }
@@ -261,7 +276,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
                 .padding(12.dp),
         ) {
             Row(
-                modifier = GlanceModifier.fillMaxWidth(),
+                modifier = GlanceModifier.fillMaxWidth().padding(end = 30.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Image(
@@ -285,7 +300,43 @@ class TodayGlanceWidget : GlanceAppWidget() {
                     maxLines = 1,
                     modifier = GlanceModifier.defaultWeight(),
                 )
+            }
+
+            Text(
+                text = journey.title,
+                style = TextStyle(
+                    color = palette.inkProvider,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+                maxLines = 1,
+            )
+
+            Spacer(modifier = GlanceModifier.defaultWeight())
+
+            val cellWidth = LocalSize.current.width
+            val streakWidth = when {
+                pendingCount >= 2 && cellWidth < 125.dp -> 38.dp
+                pendingCount >= 2 && cellWidth < 150.dp -> 54.dp
+                cellWidth < 125.dp -> 64.dp
+                else -> 78.dp
+            }
+            val streakHeight = if (pendingCount >= 2 && cellWidth < 125.dp) 28.dp else 34.dp
+
+            Row(
+                modifier = GlanceModifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (streakBitmap != null) {
+                    Image(
+                        provider = ImageProvider(streakBitmap),
+                        contentDescription = null,
+                        modifier = GlanceModifier.height(streakHeight).width(streakWidth),
+                        contentScale = ContentScale.Fit,
+                    )
+                }
                 if (pendingCount >= 2) {
+                    Spacer(modifier = GlanceModifier.defaultWeight())
                     Box(
                         modifier = GlanceModifier
                             .size(48.dp)
@@ -303,27 +354,6 @@ class TodayGlanceWidget : GlanceAppWidget() {
                         )
                     }
                 }
-            }
-
-            Text(
-                text = journey.title,
-                style = TextStyle(
-                    color = palette.inkProvider,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                ),
-                maxLines = 1,
-            )
-
-            Spacer(modifier = GlanceModifier.defaultWeight())
-
-            if (streakBitmap != null) {
-                Image(
-                    provider = ImageProvider(streakBitmap),
-                    contentDescription = null,
-                    modifier = GlanceModifier.height(34.dp).width(78.dp),
-                    contentScale = ContentScale.Fit,
-                )
             }
 
             Spacer(modifier = GlanceModifier.height(6.dp))
@@ -453,26 +483,28 @@ class TodayGlanceWidget : GlanceAppWidget() {
 
             Spacer(modifier = GlanceModifier.width(10.dp))
 
-            if (!journey.checkedInToday) {
-                SnapCtaPill(
-                    context = context,
-                    journeyId = journey.id,
-                    label = l10n.getString(R.string.widget_snap_cta),
-                    fullWidth = false,
-                )
-            } else if (framedPhoto != null) {
-                Image(
-                    provider = ImageProvider(framedPhoto),
-                    contentDescription = l10n.getString(R.string.widget_checked_in),
-                    modifier = GlanceModifier.size(76.dp),
-                    contentScale = ContentScale.Fit,
-                )
-            } else {
-                DoneStatusRow(
-                    l10n = l10n,
-                    palette = palette,
-                    shortLabel = false,
-                )
+            Box(modifier = GlanceModifier.padding(top = 18.dp)) {
+                if (!journey.checkedInToday) {
+                    SnapCtaPill(
+                        context = context,
+                        journeyId = journey.id,
+                        label = l10n.getString(R.string.widget_snap_cta),
+                        fullWidth = false,
+                    )
+                } else if (framedPhoto != null) {
+                    Image(
+                        provider = ImageProvider(framedPhoto),
+                        contentDescription = l10n.getString(R.string.widget_checked_in),
+                        modifier = GlanceModifier.size(64.dp),
+                        contentScale = ContentScale.Fit,
+                    )
+                } else {
+                    DoneStatusRow(
+                        l10n = l10n,
+                        palette = palette,
+                        shortLabel = false,
+                    )
+                }
             }
         }
     }
@@ -505,7 +537,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
                 .padding(16.dp),
         ) {
             Row(
-                modifier = GlanceModifier.fillMaxWidth(),
+                modifier = GlanceModifier.fillMaxWidth().padding(end = 64.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Image(
@@ -831,5 +863,78 @@ class TodayGlanceWidget : GlanceAppWidget() {
         val SMALL_BOX = DpSize(110.dp, 110.dp)
         val MEDIUM_BOX = DpSize(250.dp, 110.dp)
         val LARGE_BOX = DpSize(250.dp, 250.dp)
+    }
+}
+
+/**
+ * Shared `48×48dp`-minimum top-end overlay action (`§4.2`, `§5 Guardrails 1–3`)
+ * that launches [OurneyWidgetConfigureActivity] directly via `actionStartActivity`
+ * with a unique per-[appWidgetId] URI.
+ *
+ * Visual footprint is a compact `26×26dp` Soft Neo-Brutalist surface badge on
+ * `2×2` widgets (`showLabel = false`) or a `24dp`-tall `"Đổi"` + edit icon pill
+ * on `4×2` / `4×4` widgets (`showLabel = true`), keeping the root overlay `Box`
+ * at `<= 2` direct children and `0dp` vertical height inflation.
+ */
+@Composable
+internal fun ConfigureWidgetOverlayButton(
+    context: Context,
+    l10n: Context,
+    palette: OurneyWidgetPalette,
+    appWidgetId: Int,
+    showLabel: Boolean,
+) {
+    val changeDesc = l10n.getString(R.string.widget_change_journey)
+    val action = WidgetActions.configureWidgetAction(context, appWidgetId)
+    val hitModifier = if (showLabel) {
+        GlanceModifier.height(48.dp)
+    } else {
+        GlanceModifier.size(48.dp)
+    }
+    Box(
+        modifier = hitModifier
+            .clickable(action)
+            .semantics { contentDescription = changeDesc }
+            .padding(top = 8.dp, end = 8.dp),
+        contentAlignment = Alignment.TopEnd,
+    ) {
+        if (showLabel) {
+            Row(
+                modifier = GlanceModifier
+                    .height(24.dp)
+                    .background(ImageProvider(palette.surfaceBackgroundRes()))
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Image(
+                    provider = ImageProvider(R.drawable.ic_ourney_sticker_edit),
+                    contentDescription = null,
+                    modifier = GlanceModifier.size(13.dp),
+                )
+                Spacer(modifier = GlanceModifier.width(4.dp))
+                Text(
+                    text = l10n.getString(R.string.widget_change_short),
+                    style = TextStyle(
+                        color = palette.inkProvider,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                    maxLines = 1,
+                )
+            }
+        } else {
+            Box(
+                modifier = GlanceModifier
+                    .size(26.dp)
+                    .background(ImageProvider(palette.surfaceBackgroundRes())),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    provider = ImageProvider(R.drawable.ic_ourney_sticker_edit),
+                    contentDescription = null,
+                    modifier = GlanceModifier.size(14.dp),
+                )
+            }
+        }
     }
 }
