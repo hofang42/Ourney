@@ -11,7 +11,6 @@ class UiSkinVariant {
     required this.accent,
     required this.button,
     required this.buttonLabel,
-    required this.secondary,
     this.accentDark,
   });
 
@@ -27,7 +26,6 @@ class UiSkinVariant {
 
   /// Label color on [button].
   final Color buttonLabel;
-  final Color secondary;
 }
 
 /// The four neutral colors of a skin in one brightness.
@@ -95,7 +93,6 @@ class UiSkin {
         accent: v.accentDark ?? v.accent,
         button: const Color(0xFFE4E4E7),
         buttonLabel: const Color(0xFF18181A),
-        secondary: v.secondary,
       );
     }
     if (brightness == Brightness.dark && v.accentDark != null) {
@@ -104,7 +101,6 @@ class UiSkin {
         accent: v.accentDark!,
         button: v.button,
         buttonLabel: v.buttonLabel,
-        secondary: v.secondary,
       );
     }
     return v;
@@ -163,6 +159,18 @@ class UiSkin {
       dockBorder: outline,
       permissionIconBg: tint(p.ink, p.bg, 0.06),
       accent: v.accent,
+      accentText: OurneyUi.accentTextFor(
+        v.accent,
+        bg: p.bg,
+        surface: p.surface,
+        brightness: base.brightness,
+      ),
+      switchThumb: OurneyUi.switchThumbFor(
+        brightness: base.brightness,
+        brand: v.button,
+        ink: p.ink,
+        onBrand: v.buttonLabel,
+      ),
     );
   }
 }
@@ -202,23 +210,20 @@ const List<UiSkin> uiSkins = [
       UiSkinVariant(
         name: 'Lục ngọc',
         accent: Color(0xFF10B981),
-        button: Color(0xFFFF4D6D),
+        button: Color(0xFF10B981),
         buttonLabel: Color(0xFF0F172A),
-        secondary: Color(0xFFB7E8D1),
       ),
       UiSkinVariant(
         name: 'Xanh sage',
         accent: Color(0xFF6B9E8A),
         button: Color(0xFFD9694F),
         buttonLabel: Color(0xFF0F172A),
-        secondary: Color(0xFFCADBD4),
       ),
       UiSkinVariant(
         name: 'Sương mù',
         accent: Color(0xFF6E9AC0),
         button: Color(0xFFE8A25C),
         buttonLabel: Color(0xFF0F172A),
-        secondary: Color(0xFFD4E4F0),
       ),
     ],
   ),
@@ -245,22 +250,19 @@ const List<UiSkin> uiSkins = [
         accent: Color(0xFFFF9F1C),
         button: Color(0xFFFF9F1C),
         buttonLabel: Color(0xFF1E1B18),
-        secondary: Color(0xFF7556F8),
       ),
       UiSkinVariant(
         name: 'Tím',
-        accent: Color(0xFF7556F8),
-        accentDark: Color(0xFF9B87FA),
+        accent: Color(0xFFA13CC9),
+        accentDark: Color(0xFFC77DE0),
         button: Color(0xFFFF9F1C),
         buttonLabel: Color(0xFF1E1B18),
-        secondary: Color(0xFF7556F8),
       ),
       UiSkinVariant(
         name: 'Phấn',
         accent: Color(0xFF4FA36B),
         button: Color(0xFFE9B949),
         buttonLabel: Color(0xFF1E1B18),
-        secondary: Color(0xFF7556F8),
       ),
     ],
   ),
@@ -288,7 +290,6 @@ const List<UiSkin> uiSkins = [
         accentDark: Color(0xFFE07A5F),
         button: Color(0xFFCC4A2F),
         buttonLabel: Color(0xFFFFFFFF),
-        secondary: Color(0xFF4A6B53),
       ),
       UiSkinVariant(
         name: 'Biển muối',
@@ -296,7 +297,6 @@ const List<UiSkin> uiSkins = [
         accentDark: Color(0xFF6FA8C7),
         button: Color(0xFF2F6F8F),
         buttonLabel: Color(0xFFFFFFFF),
-        secondary: Color(0xFFD9A441),
       ),
       UiSkinVariant(
         name: 'Phố đêm',
@@ -304,7 +304,6 @@ const List<UiSkin> uiSkins = [
         accentDark: Color(0xFFA98BD6),
         button: Color(0xFF7B5EA7),
         buttonLabel: Color(0xFFFFFFFF),
-        secondary: Color(0xFFE0A43A),
       ),
     ],
   ),
@@ -332,14 +331,12 @@ const List<UiSkin> uiSkins = [
         accentDark: Color(0xFFE7739A),
         button: Color(0xFFE15B72),
         buttonLabel: Color(0xFF1A1316),
-        secondary: Color(0xFF9D174D),
       ),
       UiSkinVariant(
         name: 'Mâm xôi',
         accent: Color(0xFFE15B72),
         button: Color(0xFF9D174D),
         buttonLabel: Color(0xFFFFFFFF),
-        secondary: Color(0xFFE15B72),
       ),
       UiSkinVariant(
         name: 'Đào',
@@ -347,7 +344,6 @@ const List<UiSkin> uiSkins = [
         accentDark: Color(0xFFE08A6E),
         button: Color(0xFFF08A6B),
         buttonLabel: Color(0xFF1A1316),
-        secondary: Color(0xFFB4533A),
       ),
     ],
   ),
@@ -372,23 +368,20 @@ const List<UiSkin> uiSkins = [
       UiSkinVariant(
         name: 'Lime neon',
         accent: Color(0xFF3DE88C),
-        button: Color(0xFFFF4D6D),
+        button: Color(0xFF3DE88C),
         buttonLabel: Color(0xFF090A0F),
-        secondary: Color(0xFF263D34),
       ),
       UiSkinVariant(
         name: 'San hô điện',
         accent: Color(0xFFFF4D6D),
         button: Color(0xFF3DE88C),
         buttonLabel: Color(0xFF090A0F),
-        secondary: Color(0xFF46252E),
       ),
       UiSkinVariant(
         name: 'Băng',
         accent: Color(0xFF7DD3FC),
         button: Color(0xFFC4B5FD),
         buttonLabel: Color(0xFF090A0F),
-        secondary: Color(0xFF293848),
       ),
     ],
   ),
@@ -416,7 +409,6 @@ const List<UiSkin> uiSkins = [
         accentDark: Color(0xFFF07A3A),
         button: Color(0xFFEA580C),
         buttonLabel: Color(0xFF1C1C1E),
-        secondary: Color(0xFF27272A),
       ),
       UiSkinVariant(
         name: 'Than',
@@ -424,14 +416,12 @@ const List<UiSkin> uiSkins = [
         accentDark: Color(0xFFD4D4D8),
         button: Color(0xFF27272A),
         buttonLabel: Color(0xFFFFFFFF),
-        secondary: Color(0xFF27272A),
       ),
       UiSkinVariant(
         name: 'Trời',
         accent: Color(0xFF0EA5E9),
         button: Color(0xFF0EA5E9),
         buttonLabel: Color(0xFF1C1C1E),
-        secondary: Color(0xFF27272A),
       ),
     ],
   ),

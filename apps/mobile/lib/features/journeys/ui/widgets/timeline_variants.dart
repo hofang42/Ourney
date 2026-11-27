@@ -576,7 +576,7 @@ class _Stone extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final accent = timelineAccent(context);
+    final accentText = timelineAccentText(context);
     if (day.state == DayState.checkedIn || day.state == DayState.today) {
       return wrapTimelineDayHero(
         day,
@@ -597,7 +597,7 @@ class _Stone extends StatelessWidget {
       ),
       child: TimelineNumber(
         '${day.dayNumber}',
-        color: day.state == DayState.missed ? ui.ink : accent.withAlpha(150),
+        color: day.state == DayState.missed ? ui.ink : accentText,
         size: 14,
       ),
     );
@@ -626,6 +626,7 @@ class MemoryTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = timelineAccent(context);
+    final accentText = timelineAccentText(context);
     final frames =
         summary?.frames ??
         days
@@ -645,9 +646,9 @@ class MemoryTimeline extends StatelessWidget {
             name: 'camera',
             size: 12,
             flat: true,
-            color: accent,
+            color: accentText,
           ),
-          foreground: accent,
+          foreground: accentText,
         ),
       ),
     );
@@ -1273,7 +1274,7 @@ class FlexerTimeline extends StatelessWidget {
                       '$done/${sum.totalDays}',
                       mono: true,
                       size: 13,
-                      color: accent,
+                      color: timelineAccentText(context),
                     ),
                   ),
                 ],

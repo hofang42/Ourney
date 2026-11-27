@@ -126,7 +126,7 @@ class _ReportFeatureRequestFormState
             trailing: OurneyIcon(
               name: _reason == r ? 'radio-on' : 'radio-off',
               flat: true,
-              color: _reason == r ? ui.brand : ui.inkMuted,
+              color: _reason == r ? ui.brandText : ui.inkMuted,
             ),
             onPressed: () => setState(() {
               _reason = r;

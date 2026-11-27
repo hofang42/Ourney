@@ -512,12 +512,28 @@ class _EditBodyState extends ConsumerState<_EditBody> {
                             key: ValueKey('edit-color-$i'),
                             label: skinColorName(l10n, uiSkin.id, i),
                             selected: _color == i,
-                            glyph: _color == i
+                            fillWhenSelected: false,
+                            glyph: Container(
+                              key: ValueKey('edit-color-dot-$i'),
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: uiSkin
+                                    .resolvedVariant(i, ui.brightness)
+                                    .accent,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: ui.outline,
+                                  width: 1.5,
+                                ),
+                              ),
+                            ),
+                            trailing: _color == i
                                 ? OurneyIcon(
                                     name: 'check',
                                     size: 15,
                                     flat: true,
-                                    color: ui.onAccent,
+                                    color: ui.ink,
                                   )
                                 : null,
                             onPressed: _owner

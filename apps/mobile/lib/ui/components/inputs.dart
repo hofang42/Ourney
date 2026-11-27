@@ -520,7 +520,10 @@ class _StickerSwitch extends StatelessWidget {
           key: const ValueKey('ui-switch-thumb'),
           width: 18,
           height: 18,
-          decoration: BoxDecoration(color: ui.ink, shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            color: value ? ui.switchThumb : ui.ink,
+            shape: BoxShape.circle,
+          ),
         ),
       ),
     );

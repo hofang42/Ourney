@@ -438,13 +438,12 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                                       label: progress?.checkedInToday ?? false
                                           ? l10n.journeys_addMore
                                           : l10n.journeys_checkInNow,
-                                      glyph: const OurneyIcon(
+                                      glyph: OurneyIcon(
                                         name: 'camera',
                                         size: 20,
                                         flat: true,
+                                        color: ui.onBrand,
                                       ),
-                                      accent: pal.accent,
-                                      onAccent: pal.onAccent,
                                       expand: false,
                                       onPressed: () =>
                                           checkInNow(context, ref, journey.id),

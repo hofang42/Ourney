@@ -739,7 +739,7 @@ class _RunnerWall extends ConsumerWidget {
                       size: 12,
                       weight: FontWeight.w800,
                       height: 1.4,
-                      color: ui.accent,
+                      color: ui.accentText,
                     ),
                   ),
                 if (done && photo != null && e.photoIsToday)

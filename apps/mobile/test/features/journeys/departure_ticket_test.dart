@@ -127,10 +127,15 @@ void main() {
     expect(find.text('HỒ SƠ RIÊNG TƯ'), findsOneWidget);
   });
 
-  testWidgets('change variant action fires', (tester) async {
+  testWidgets('change variant action fires and shows 3 colour dots (B6)', (
+    tester,
+  ) async {
     var n = 0;
     await tester.pumpWidget(_host(_ticket('squad', onChange: () => n++)));
     await tester.pumpAndSettle();
+    for (var i = 0; i < 3; i++) {
+      expect(find.byKey(ValueKey('ticket-color-dot-$i')), findsOneWidget);
+    }
     await tester.tap(find.text('Đổi màu'));
     expect(n, 1);
   });

@@ -533,7 +533,7 @@ class _PinnedBottomVoteBar extends StatelessWidget {
               glyph: OurneyIcon(
                 name: 'check',
                 flat: true,
-                color: ui.brand,
+                color: ui.brandText,
               ),
               onPressed: onVote,
             )

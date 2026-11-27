@@ -200,9 +200,64 @@ class _DepartureTicketState extends State<DepartureTicket>
             rotatedTicket,
             if (widget.onChangeVariant != null)
               Align(
-                child: UiTextAction(
-                  label: widget.changeVariantLabel,
+                child: UiPressable(
+                  key: const ValueKey('ticket-change-variant'),
                   onPressed: widget.onChangeVariant,
+                  semanticLabel: widget.changeVariantLabel,
+                  excludeChildSemantics: true,
+                  minSize: const Size(UiSize.tap, UiSize.tap),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: UiSize.tap),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: UiSpace.sm,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          for (
+                            var i = 0;
+                            i < scope.skin.variants.length;
+                            i++
+                          ) ...[
+                            if (i > 0) const SizedBox(width: 5),
+                            Container(
+                              key: ValueKey('ticket-color-dot-$i'),
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: scope.skin
+                                    .resolvedVariant(i, ui.brightness)
+                                    .accent,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: i == scope.variantIndex
+                                      ? ui.outline
+                                      : ui.border,
+                                  width: i == scope.variantIndex ? 2 : 1.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              widget.changeVariantLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: UiText.body(
+                                size: 15,
+                                weight: FontWeight.w700,
+                                height: 1.35,
+                                color: ui.inkSoft,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
           ],
@@ -226,7 +281,7 @@ class _DepartureTicketState extends State<DepartureTicket>
         name: DepartureTicket._icon('lock', 'profile'),
         size: 28,
         flat: true,
-        color: s.accent,
+        color: s.ui.accentText,
       ),
     );
     return _Tear(
@@ -668,10 +723,7 @@ class _Style {
   final bool isDark;
 
   Color get ink => ui.ink;
-  Color get onAccent =>
-      ThemeData.estimateBrightnessForColor(accent) == Brightness.dark
-      ? (isDark ? ui.ink : const Color(0xFFFFFFFF))
-      : (isDark ? ui.bg : const Color(0xFF1C1C1E));
+  Color get onAccent => ui.onAccent;
 
   TextStyle h(double size, {int w = 700}) => UiText.heading(
     font: font,

@@ -28,8 +28,11 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     required this.chevron,
     required this.brand,
     required this.onBrand,
+    this.brandText = const Color(0xFFB4470F),
     required this.onAccent,
     required this.accent,
+    this.accentText = const Color(0xFFB4470F),
+    this.switchThumb = const Color(0xFF1A1A1A),
     required this.onDanger,
     required this.focus,
     required this.success,
@@ -85,6 +88,10 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
   final Color brand;
   final Color onBrand;
 
+  /// Text-safe orange (`#B4470F` light / `#FFC39B` dark, >= 4.5:1 on paper and
+  /// card surfaces) when the brand orange is used for small text or flat icons.
+  final Color brandText;
+
   /// Label / glyph color on an [accent] fill (selected chips, badges). Picked
   /// per accent so it reaches 4.5:1 in both modes (see [onAccentFor]).
   final Color onAccent;
@@ -93,6 +100,15 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
   /// The neutral shell uses the brand orange; `UiSkin.apply` swaps in the
   /// skin variant's accent while `brand` stays the button fill.
   final Color accent;
+
+  /// Text- and icon-safe counterpart of [accent] that auto-darkens (light) or
+  /// auto-lightens (dark) to >= 4.5:1 against both [bg] and [surface] (WCAG
+  /// 1.4.3). Fills keep the bright [accent].
+  final Color accentText;
+
+  /// Active switch thumb color on a [brand] track (`#1B1916` in dark mode or
+  /// [ink] in light mode when >= 3:1 on [brand], else [onBrand]).
+  final Color switchThumb;
 
   /// Label/icon color on a [danger] fill (destructive buttons).
   final Color onDanger;
@@ -156,8 +172,11 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     chevron: Color(0xFF8A8378),
     brand: Color(0xFFFF8A3D),
     onBrand: Color(0xFF1A1A1A),
+    brandText: Color(0xFFB4470F),
     onAccent: Color(0xFF1A1A1A),
     accent: Color(0xFFFF8A3D),
+    accentText: Color(0xFFB4470F),
+    switchThumb: Color(0xFF1A1A1A),
     onDanger: Color(0xFFFFFFFF),
     focus: Color(0xFF0284C7),
     success: Color(0xFF287747),
@@ -193,8 +212,11 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     chevron: Color(0xFF8A8378),
     brand: Color(0xFFFF8A3D),
     onBrand: Color(0xFF1A1A1A),
+    brandText: Color(0xFFFFC39B),
     onAccent: Color(0xFF1A1A1A),
     accent: Color(0xFFFF8A3D),
+    accentText: Color(0xFFFFC39B),
+    switchThumb: Color(0xFF1B1916),
     onDanger: Color(0xFF1A1A1A),
     focus: Color(0xFF5EC4F0),
     success: Color(0xFF6FCF8E),
@@ -227,6 +249,54 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     return const Color(0xFF000000);
   }
 
+  /// Text- and icon-safe counterpart of [accent] that reaches >= 4.5:1 against
+  /// both [bg] and [surface] (WCAG 1.4.3). Fills keep the bright [accent].
+  static Color accentTextFor(
+    Color accent, {
+    required Color bg,
+    required Color surface,
+    required Brightness brightness,
+  }) {
+    final dark = brightness == Brightness.dark;
+    var seed = accent;
+    if (accent == const Color(0xFFFF8A3D) ||
+        accent == const Color(0xFFEA580C) ||
+        accent == const Color(0xFFF07A3A) ||
+        (!dark && accent == const Color(0xFFFF9F1C))) {
+      seed = dark ? const Color(0xFFFFC39B) : const Color(0xFFB4470F);
+    } else if (!dark && accent == const Color(0xFF3DE88C)) {
+      seed = const Color(0xFF047857);
+    }
+    bool passes(Color c) =>
+        uiContrast(c, bg) >= 4.5 && uiContrast(c, surface) >= 4.5;
+    if (passes(seed)) return seed;
+    final hsl = HSLColor.fromColor(seed);
+    for (var step = 1; step <= 100; step++) {
+      final delta = step * 0.01;
+      final nextL = dark
+          ? (hsl.lightness + delta).clamp(0.0, 1.0)
+          : (hsl.lightness - delta).clamp(0.0, 1.0);
+      final candidate = hsl.withLightness(nextL).toColor();
+      if (passes(candidate)) return candidate;
+    }
+    return dark ? const Color(0xFFFFFFFF) : const Color(0xFF000000);
+  }
+
+  /// Active switch thumb color on a [brand] track: `#1B1916` in dark mode (or
+  /// [ink] in light mode) when it reaches 3:1 on [brand], falling back to
+  /// [onBrand] on dark button fills (WCAG 1.4.11).
+  static Color switchThumbFor({
+    required Brightness brightness,
+    required Color brand,
+    required Color ink,
+    required Color onBrand,
+  }) {
+    final preferred = brightness == Brightness.dark
+        ? const Color(0xFF1B1916)
+        : ink;
+    return uiContrast(preferred, brand) >= 3.0 ? preferred : onBrand;
+  }
+
   static OurneyUi of(BuildContext context) =>
       Theme.of(context).extension<OurneyUi>() ??
       (Theme.of(context).brightness == Brightness.dark ? dark : light);
@@ -246,12 +316,15 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     Color? divider,
     Color? brand,
     Color? onBrand,
+    Color? brandText,
     Color? onAccent,
     Color? grabber,
     Color? dockBg,
     Color? dockBorder,
     Color? permissionIconBg,
     Color? accent,
+    Color? accentText,
+    Color? switchThumb,
     Color? outline,
     Color? hardShadowColor,
     Color? sheet,
@@ -271,8 +344,11 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     chevron: chevron,
     brand: brand ?? this.brand,
     onBrand: onBrand ?? this.onBrand,
+    brandText: brandText ?? this.brandText,
     onAccent: onAccent ?? this.onAccent,
     accent: accent ?? this.accent,
+    accentText: accentText ?? this.accentText,
+    switchThumb: switchThumb ?? this.switchThumb,
     onDanger: onDanger,
     focus: focus,
     success: success,
@@ -312,8 +388,11 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
       chevron: l(chevron, other.chevron),
       brand: l(brand, other.brand),
       onBrand: l(onBrand, other.onBrand),
+      brandText: l(brandText, other.brandText),
       onAccent: l(onAccent, other.onAccent),
       accent: l(accent, other.accent),
+      accentText: l(accentText, other.accentText),
+      switchThumb: l(switchThumb, other.switchThumb),
       onDanger: l(onDanger, other.onDanger),
       focus: l(focus, other.focus),
       success: l(success, other.success),

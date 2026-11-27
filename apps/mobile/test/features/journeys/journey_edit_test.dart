@@ -13,7 +13,7 @@ import 'package:ourney/features/reminders/data/notification_gateway.dart';
 import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
 import 'package:ourney/features/reminders/data/reminder_settings.dart';
 import 'package:ourney/features/reminders/domain/reminder_plan.dart';
-import 'package:ourney/ui/ui.dart' show UiSwitchRow;
+import 'package:ourney/ui/ui.dart' show OurneyIcon, UiSwitchRow;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../reminders/reminders_fakes.dart' show FakeNotificationGateway;
@@ -100,9 +100,68 @@ void main() {
       // Dead cover and HUD pickers are gone (UX-08).
       expect(_key('edit-cover-0'), findsNothing);
       expect(_key('edit-hud-bold'), findsNothing);
+      // Each colour chip carries a 14px colour dot on a surface pill, and only
+      // the selected chip carries the single check selection marker (B6).
+      for (var i = 0; i < 3; i++) {
+        expect(_key('edit-color-dot-$i'), findsOneWidget);
+      }
+      expect(
+        find.descendant(
+          of: _key('edit-color-0'),
+          matching: find.byWidgetPredicate(
+            (w) => w is OurneyIcon && w.name == 'check',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: _key('edit-color-1'),
+          matching: find.byWidgetPredicate(
+            (w) => w is OurneyIcon && w.name == 'check',
+          ),
+        ),
+        findsNothing,
+      );
       await tester.enterText(_key('edit-name'), 'Renamed run');
       await tester.tap(_key('edit-color-1'));
       await tester.pumpAndSettle();
+      for (var i = 0; i < 3; i++) {
+        final dot = tester.widget<Container>(_key('edit-color-dot-$i'));
+        final dotColor = (dot.decoration! as BoxDecoration).color!;
+        final chipContainer = tester
+            .widgetList<Container>(
+              find.descendant(
+                of: _key('edit-color-$i'),
+                matching: find.byType(Container),
+              ),
+            )
+            .firstWhere(
+              (c) =>
+                  c.decoration is BoxDecoration &&
+                  (c.decoration! as BoxDecoration).shape != BoxShape.circle,
+            );
+        final chipBg = (chipContainer.decoration! as BoxDecoration).color!;
+        expect(dotColor, isNot(equals(chipBg)));
+      }
+      expect(
+        find.descendant(
+          of: _key('edit-color-0'),
+          matching: find.byWidgetPredicate(
+            (w) => w is OurneyIcon && w.name == 'check',
+          ),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: _key('edit-color-1'),
+          matching: find.byWidgetPredicate(
+            (w) => w is OurneyIcon && w.name == 'check',
+          ),
+        ),
+        findsOneWidget,
+      );
       await tester.ensureVisible(_key('edit-save-bottom'));
       await tester.tap(_key('edit-save-bottom'));
       await tester.pumpAndSettle();

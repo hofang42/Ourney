@@ -8,7 +8,7 @@ import '../l10n/generated/share_card_localizations.dart';
 /// share buttons, `PosterShareSheet`, `SquadShareSheet`, `QuietPrivacySheet`).
 /// Everything reads the nearest [UiSkinScope].
 
-const Color _squadViolet = Color(0xFF7556F8);
+const Color _squadViolet = Color(0xFFA13CC9);
 const Color _memoryOlive = Color(0xFF4A6B53);
 const Color _coupleBerry = Color(0xFF9D174D);
 
