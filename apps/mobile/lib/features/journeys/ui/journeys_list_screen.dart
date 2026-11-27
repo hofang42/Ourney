@@ -314,7 +314,14 @@ class _HubHeader extends ConsumerWidget {
         ? null
         : name.split(RegExp(r'\s+')).last;
     final bar = UiTopBar(
-      title: l10n.journeys_hubTitle,
+      titleWidget: const Align(
+        alignment: Alignment.centerLeft,
+        child: UiCompactWordmark(
+          key: ValueKey('hub-logo'),
+          size: 84,
+          semanticsLabel: 'Ourney',
+        ),
+      ),
       actions: [
         if (onAdd != null)
           UiIconButton(
@@ -623,9 +630,7 @@ class _DayZeroPolaroid extends StatelessWidget {
               ),
             ),
             if (ui.isDark)
-              const IgnorePointer(
-                child: ColoredBox(color: Color(0x22000000)),
-              ),
+              const IgnorePointer(child: ColoredBox(color: Color(0x22000000))),
           ],
         ),
       ),
@@ -757,8 +762,7 @@ class _HubBody extends ConsumerWidget {
                   : heroLoading
                   ? l10n.journeys_hubLoading
                   : l10n.journeys_remainingToday(pending.length);
-              final cumulativeLabel =
-                  heroLoading || buckets.active.isEmpty
+              final cumulativeLabel = heroLoading || buckets.active.isEmpty
                   ? null
                   : l10n.journeys_hubDaysLogged(cumulativeDays);
               final cleanHeroSubtitle = heroSubtitle.replaceAll(

@@ -123,6 +123,7 @@ class _BarFrame extends StatelessWidget {
 class UiTopBar extends StatelessWidget {
   const UiTopBar({
     this.title,
+    this.titleWidget,
     this.eyebrow,
     this.leading,
     this.actions = const [],
@@ -134,6 +135,7 @@ class UiTopBar extends StatelessWidget {
   });
 
   final String? title;
+  final Widget? titleWidget;
   final String? eyebrow;
   final Widget? leading;
   final List<Widget> actions;
@@ -167,7 +169,9 @@ class UiTopBar extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: UiText.eyebrow(color: ui.inkMuted),
                   ),
-                if (title != null)
+                if (titleWidget != null)
+                  Semantics(header: true, child: titleWidget!)
+                else if (title != null)
                   Semantics(
                     header: true,
                     child: Text(

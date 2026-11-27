@@ -111,13 +111,4 @@ abstract final class UiText {
   /// `.field-label`: 12 / 700.
   static TextStyle fieldLabel({Color? color}) =>
       body(size: 12, weight: FontWeight.w700, height: 1.4, color: color);
-
-  /// `.wordmark`: Bricolage 800 / -0.07em.
-  static TextStyle wordmark({double size = 46, Color? color}) => display(
-    size: size,
-    weight: 800,
-    height: 1.2,
-    tracking: -0.07,
-    color: color,
-  );
 }

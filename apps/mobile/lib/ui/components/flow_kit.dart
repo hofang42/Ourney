@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../tokens.dart';
 import '../typography.dart';
+import 'brand_logo_paths.dart';
 import 'buttons.dart';
 import 'ourney_icons.dart';
 import 'pressable.dart';
@@ -136,208 +137,39 @@ class UiStickerTile extends StatelessWidget {
   }
 }
 
-class _Letter {
-  const _Letter(
-    this.char,
-    this.family,
-    this.weight,
-    this.factor,
-    this.degrees,
-    this.color, {
-    this.italic = false,
-    this.tile,
-    this.tileRadius = BorderRadius.zero,
-  });
-
-  final String char;
-  final String family;
-  final int weight;
-  final double factor;
-  final double degrees;
-  final Color color;
-  final bool italic;
-
-  /// Background of a ransom-note paper tile (r, e); null for a cut-out glyph.
-  final Color? tile;
-  final BorderRadius tileRadius;
-}
-
-const _letters = <_Letter>[
-  _Letter('o', UiFonts.fraunces, 900, .25, -7, Color(0xFF10B981)),
-  _Letter('u', UiFonts.display, 800, .24, 5, Color(0xFFFF9F1C)),
-  _Letter(
-    'r',
-    UiFonts.mono,
-    700,
-    .19,
-    -4,
-    Color(0xFFC2452B),
-    tile: Color(0xFFF3E3C3),
-    tileRadius: BorderRadius.all(Radius.circular(4)),
-  ),
-  // V2 uses Baloo 2 here; it is not bundled, Bricolage 800 stands in.
-  _Letter('n', UiFonts.display, 800, .23, 7, Color(0xFF2AA7E0)),
-  _Letter(
-    'e',
-    UiFonts.barlowCondensed,
-    800,
-    .25,
-    -3,
-    Color(0xFFFF4D6D),
-    tile: Color(0xFF111111),
-    tileRadius: BorderRadius.only(
-      topLeft: Radius.circular(3),
-      topRight: Radius.circular(11),
-      bottomRight: Radius.circular(3),
-      bottomLeft: Radius.circular(9),
-    ),
-  ),
-  _Letter('y', UiFonts.fraunces, 900, .24, 8, Color(0xFFA13CC9), italic: true),
-];
-
 /// The ransom-note "ourney" wordmark (V2 `Wordmark`, `.ourney-wordmark`):
 /// six mismatched cut-out letters, each tilted, with a white die-cut edge and
-/// a soft ink drop shadow; `r` and `e` sit on paper tiles. It is a logo, so it
-/// ignores the system text scale and is announced as "ourney".
+/// a soft ink drop shadow; `r` and `e` sit on paper tiles. Rendered from the
+/// cleaned vector master (`full.svg`) so it has zero font dependencies, ignores
+/// the system text scale, and is announced as [semanticsLabel].
 class UiRansomWordmark extends StatelessWidget {
-  const UiRansomWordmark({this.size = 174, super.key});
+  const UiRansomWordmark({
+    this.size = 174,
+    this.semanticsLabel = 'Ourney',
+    super.key,
+  });
 
   /// Width of the whole word (V2 `--wordmark-size`).
   final double size;
-
-  static const _shadow = Color(0x57111111);
+  final String semanticsLabel;
 
   @override
   Widget build(BuildContext context) {
-    final cellW = size / 6.25;
-    final cellH = size * .3;
-    final step = cellW - size * .015;
-    final start = (size - (step * 5 + cellW)) / 2;
-    final edge = math.max(1.0, size * .0172);
+    final height = size * FullWordmarkPainter.aspectRatio;
     return Semantics(
-      label: 'ourney',
+      container: true,
+      label: semanticsLabel,
+      image: true,
       excludeSemantics: true,
       child: MediaQuery.withNoTextScaling(
         child: SizedBox(
           width: size,
-          height: cellH,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              for (var i = 0; i < _letters.length; i++)
-                Positioned(
-                  left: start + step * i,
-                  top: 0,
-                  width: cellW,
-                  height: cellH,
-                  child: Transform.rotate(
-                    angle: _letters[i].degrees * math.pi / 180,
-                    child: _letters[i].tile == null
-                        ? _glyph(_letters[i], cellW, cellH, edge)
-                        : _tile(_letters[i], edge),
-                  ),
-                ),
-            ],
-          ),
+          height: height,
+          child: const CustomPaint(painter: FullWordmarkPainter()),
         ),
       ),
     );
   }
-
-  TextStyle _style(_Letter l, {Color? color, Paint? foreground}) => TextStyle(
-    fontFamily: l.family,
-    fontSize: size * l.factor,
-    fontWeight: FontWeight.values[(l.weight ~/ 100) - 1],
-    fontVariations: [FontVariation('wght', l.weight.toDouble())],
-    fontStyle: l.italic ? FontStyle.italic : FontStyle.normal,
-    height: 1,
-    color: foreground == null ? color : null,
-    foreground: foreground,
-  );
-
-  Widget _tile(_Letter l, double edge) => Container(
-    alignment: Alignment.center,
-    decoration: BoxDecoration(
-      color: l.tile,
-      borderRadius: l.tileRadius,
-      border: Border.all(color: Colors.white, width: edge),
-      boxShadow: const [BoxShadow(color: _shadow, offset: Offset(2, 3))],
-    ),
-    child: Text(
-      l.char,
-      maxLines: 1,
-      softWrap: false,
-      style: _style(l, color: l.color),
-    ),
-  );
-
-  Widget _glyph(_Letter l, double cellW, double cellH, double edge) {
-    final outline = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = edge
-      ..strokeJoin = StrokeJoin.round
-      ..color = Colors.white;
-    return Stack(
-      alignment: Alignment.center,
-      clipBehavior: Clip.none,
-      children: [
-        Text(
-          l.char,
-          maxLines: 1,
-          softWrap: false,
-          style: _style(l, foreground: outline).copyWith(
-            shadows: const [Shadow(color: _shadow, offset: Offset(2, 3))],
-          ),
-        ),
-        Text(
-          l.char,
-          maxLines: 1,
-          softWrap: false,
-          style: _style(l, color: l.color),
-        ),
-        if (l.char == 'o')
-          // `.wordmark-o::after`: the white counter.
-          Positioned(
-            left: cellW * .39,
-            top: cellH * .37,
-            width: cellW * .24,
-            height: cellH * .30,
-            child: const DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-        if (l.char == 'n') ...[
-          // `.wordmark-n::before/::after`: two yellow dots.
-          Positioned(
-            left: cellW * .13,
-            top: cellH * .20,
-            width: cellW * .10,
-            height: cellW * .10,
-            child: const _Dot(),
-          ),
-          Positioned(
-            right: cellW * .08,
-            bottom: cellH * .18,
-            width: cellW * .10,
-            height: cellW * .10,
-            child: const _Dot(),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _Dot extends StatelessWidget {
-  const _Dot();
-
-  @override
-  Widget build(BuildContext context) => const DecoratedBox(
-    decoration: BoxDecoration(color: Color(0xFFFFD84D), shape: BoxShape.circle),
-  );
 }
 
 /// `.step-segments`: one pill per question. Done pills are brand-filled, the

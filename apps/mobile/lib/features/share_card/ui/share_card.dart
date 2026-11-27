@@ -19,9 +19,6 @@ const double shareCardBlurSigma = 18;
 /// diacritics (ệ, ữ, ấ) need room above the cap height or they get clipped.
 const double shareCardDiacriticHeight = 1.32;
 
-/// Brand wordmark width on a card (`<Wordmark size={56}>`), in design px.
-const double _wordmarkSize = 19;
-
 /// V2 skin ids that have a share card (`quiet`, `squad`, `memory`,
 /// `couple`, `flexer`, `minimal`).
 const List<String> shareCardSkins = [
@@ -76,8 +73,6 @@ double shareCardDesignWidth(String skinId, ShareCardFormat format) {
     _ => story ? 230 : 275,
   };
 }
-
-const _ink = Color(0xFF1A1A22);
 
 /// The share card (FR-E1) of one V2 skin, laid out at
 /// [ShareCardFormat.logicalSize] and meant to be wrapped in a
@@ -134,6 +129,7 @@ class ShareCard extends StatelessWidget {
       photo: photo,
       gallery: gallery,
       couplePhotos: couplePhotos,
+      skinId: skinId,
       hideBrand: hideBrand,
       width: width,
       height: height,
@@ -177,6 +173,7 @@ class _Ctx {
     required this.photo,
     required this.gallery,
     required this.couplePhotos,
+    required this.skinId,
     required this.hideBrand,
     required this.width,
     required this.height,
@@ -190,6 +187,7 @@ class _Ctx {
   final ImageProvider? photo;
   final List<ImageProvider> gallery;
   final List<ImageProvider?>? couplePhotos;
+  final String skinId;
   final bool hideBrand;
   final double width;
   final double height;
@@ -222,17 +220,31 @@ class _Ctx {
     return j >= 0 && j < list.length ? list[j] : null;
   }
 
-  Widget wordmark({Color color = _ink}) => Positioned(
-    right: width * 0.05,
-    bottom: height * 0.04,
-    child: IgnorePointer(
-      child: UiWordmark(
-        key: const ValueKey('share-card-logo'),
-        size: _wordmarkSize,
-        color: color,
+  /// Compact A cut-out wordmark on its unified cream sticker edge.
+  /// Story (9:16): placed on clean paper/margin inside the Story safe zone
+  /// (y 16–62%, x 8–92%) per skin — lower-right safe band on full-bleed
+  /// `flexer` and open-right `quiet`, top-right paper margin above the
+  /// poster content on `squad`, `memory`, `couple`, and `minimal`.
+  /// Feed (4:5): outer paper margin (right 5%, bottom 4%).
+  Widget wordmark() {
+    final topStory =
+        story &&
+        switch (skinId) {
+          'squad' || 'memory' || 'couple' || 'minimal' => true,
+          _ => false,
+        };
+    return Positioned(
+      right: width * (story ? 0.085 : 0.05),
+      top: topStory ? height * 0.168 : null,
+      bottom: topStory ? null : height * (story ? 0.395 : 0.04),
+      child: IgnorePointer(
+        child: UiCompactWordmark(
+          key: const ValueKey('share-card-logo'),
+          size: width * 0.215,
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// Fits [child] (laid out at [width]) inside the available box, centered,
@@ -461,7 +473,8 @@ class _SquadCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = ctx.content;
     const ink = Color(0xFF1E1B18);
-    final padBlock = ctx.story ? ctx.width * 0.13 : 17.0;
+    final padTop = ctx.story ? ctx.height * 0.225 : 14.0;
+    final padBottom = ctx.story ? 17.0 : 34.0;
     final heading = _heading(
       'Space Grotesk',
       size: 13,
@@ -505,7 +518,7 @@ class _SquadCard extends StatelessWidget {
       child: Stack(
         children: [
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 17, vertical: padBlock),
+            padding: EdgeInsets.fromLTRB(17, padTop, 17, padBottom),
             child: _centered(
               ctx.width - 34 - 4,
               Column(
@@ -633,7 +646,12 @@ class _MemoryCard extends StatelessWidget {
       child: Stack(
         children: [
           Padding(
-            padding: const EdgeInsets.all(14),
+            padding: EdgeInsets.fromLTRB(
+              14,
+              ctx.story ? ctx.height * 0.225 : 14,
+              14,
+              ctx.story ? 14 : 36,
+            ),
             child: _centered(
               ctx.width - 28 - 4,
               Column(
@@ -783,7 +801,12 @@ class _CoupleCard extends StatelessWidget {
       child: Stack(
         children: [
           Padding(
-            padding: const EdgeInsets.all(17),
+            padding: EdgeInsets.fromLTRB(
+              17,
+              ctx.story ? ctx.height * 0.225 : 14,
+              17,
+              ctx.story ? 14 : 36,
+            ),
             child: _centered(
               ctx.width - 34,
               Column(
@@ -965,7 +988,7 @@ class _FlexerCard extends StatelessWidget {
                 ),
               ),
             ),
-            if (!ctx.hideBrand) ctx.wordmark(color: const Color(0xFFFFFFFF)),
+            if (!ctx.hideBrand) ctx.wordmark(),
           ],
         ),
       ),
@@ -986,8 +1009,8 @@ class _MinimalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = ctx.content;
     const ink = Color(0xFF1C1C1E);
-    final padBottom = ctx.story ? ctx.width * 0.18 : 24.0;
-    final padTop = ctx.story ? ctx.width * 0.13 : 24.0;
+    final padBottom = ctx.story ? 24.0 : 36.0;
+    final padTop = ctx.story ? ctx.height * 0.225 : 18.0;
     final line1 = c.totalDays == null
         ? ctx.l10n.share_card_minimalDaysOpen(c.completedDays)
         : ctx.l10n.share_card_minimalDays(c.completedDays, c.totalDays!);

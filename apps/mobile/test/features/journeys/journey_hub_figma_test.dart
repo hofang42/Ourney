@@ -57,7 +57,8 @@ void main() {
       tester,
     ) async {
       await _pump(tester);
-      expect(find.text('Ourney'), findsOneWidget);
+      expect(find.bySemanticsLabel('Ourney'), findsOneWidget);
+      expect(find.byType(UiCompactWordmark), findsOneWidget);
       expect(_key('hub-greeting'), findsOneWidget);
       expect(find.text('your journeys.'), findsOneWidget);
       expect(find.text('1 running'), findsOneWidget);
@@ -117,7 +118,11 @@ void main() {
       expect(images, hasLength(3));
       for (var i = 0; i < images.length; i++) {
         expect(images[i].errorBuilder, isNotNull);
-        final fallback = images[i].errorBuilder!(ctx, StateError('missing'), null);
+        final fallback = images[i].errorBuilder!(
+          ctx,
+          StateError('missing'),
+          null,
+        );
         expect(fallback, isA<Center>());
         final icon = (fallback as Center).child! as OurneyIcon;
         expect(icon.name, expectedFallbacks[i]);
@@ -154,19 +159,14 @@ void main() {
           locale: const Locale('en'),
           journeys: FakeJourneyRepository(
             journeys: [j1, j2],
-            memberships: {
-              j1.id: testMembership(j1),
-              j2.id: testMembership(j2),
-            },
+            memberships: {j1.id: testMembership(j1), j2.id: testMembership(j2)},
           ),
           extraOverrides: [
             // j1 has emitted (not checked in today), while j2 is still loading.
-            myCheckInsProvider('j1').overrideWith(
-              (ref) => Stream.value(const <CheckIn>[]),
-            ),
-            myCheckInsProvider('j2').overrideWith(
-              (ref) => pendingCheckIns.stream,
-            ),
+            myCheckInsProvider('j1')
+                .overrideWith((ref) => Stream.value(const <CheckIn>[])),
+            myCheckInsProvider('j2')
+                .overrideWith((ref) => pendingCheckIns.stream),
           ],
         );
         await tester.pump();
@@ -175,11 +175,17 @@ void main() {
         expect(hero.title, 'Loading');
         expect(hero.semanticLabel, 'Loading');
         expect(
-          find.descendant(of: _key('journeys-hub-hero'), matching: find.text('—')),
+          find.descendant(
+            of: _key('journeys-hub-hero'),
+            matching: find.text('—'),
+          ),
           findsOneWidget,
         );
         expect(
-          find.descendant(of: _key('journeys-hub-hero'), matching: find.text('0')),
+          find.descendant(
+            of: _key('journeys-hub-hero'),
+            matching: find.text('0'),
+          ),
           findsNothing,
         );
       },
