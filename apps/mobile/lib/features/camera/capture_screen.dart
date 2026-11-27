@@ -15,6 +15,8 @@ import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
 import '../checkin/captured_photo.dart';
 import '../checkin/checkin_controller.dart' show checkinJourneyProvider;
+import '../checkin/checkin_drafts.dart';
+import '../checkin/l10n/generated/checkin_localizations.dart';
 import '../journeys/data/journeys_providers.dart';
 import 'camera_providers.dart';
 import 'camera_session.dart';
@@ -738,23 +740,35 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
 
   Widget _dock(BuildContext context, Journey? journey, UiJourneyStyle? style) {
     final l10n = CameraL10n.of(context);
-    final ready = _phase == _Phase.ready && journey != null && !_busy;
+    final drafts = ref.watch(checkinDraftsProvider);
     return AppDock(
       currentIndex: AppDock.captureIndex,
       onSelect: _goTab,
       shutter: KeyedSubtree(
         key: const ValueKey('dock-hero-shutter'),
-        child: UiShutter(
-          key: const ValueKey('capture-shutter'),
-          label: journey == null
-              ? l10n.camera_shutter
-              : l10n.camera_shutterFor(journey.title),
-          accent: style?.accent,
-          onAccent: style?.onAccent,
-          onPressed: ready ? () => _capture(journey) : null,
-          // Dim only while the camera itself is not ready, not while a
-          // capture is in flight.
-          dimmed: _phase != _Phase.ready || journey == null,
+        child: ListenableBuilder(
+          listenable: drafts,
+          builder: (context, _) {
+            final draft = journey == null ? null : drafts.photoFor(journey.id);
+            final ready =
+                journey != null && (_phase == _Phase.ready || draft != null);
+            return UiShutter(
+              key: const ValueKey('capture-shutter'),
+              label: journey == null
+                  ? l10n.camera_shutter
+                  : draft == null
+                  ? l10n.camera_shutterFor(journey.title)
+                  : CheckinL10n.of(context).checkin_resumeDraft(journey.title),
+              accent: style?.accent,
+              onAccent: style?.onAccent,
+              onPressed: !ready || _busy
+                  ? null
+                  : draft == null
+                  ? () => _capture(journey)
+                  : () => _openCheckin(draft),
+              dimmed: !ready,
+            );
+          },
         ),
       ),
     );
@@ -1055,6 +1069,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     final heroTag = UiHeroTags.capturePhoto(
       _lastCaptureHeroKey ?? journey?.id ?? 'capture',
     );
+    final drafts = ref.watch(checkinDraftsProvider);
 
     return Center(
       child: AspectRatio(
@@ -1076,6 +1091,33 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                 borderRadiusEnd: BorderRadius.circular(UiRadius.card),
                 child: viewfinder,
               ),
+              if (journey != null)
+                ListenableBuilder(
+                  listenable: drafts,
+                  builder: (context, _) {
+                    final draft = drafts.photoFor(journey.id);
+                    if (draft == null) return const SizedBox.shrink();
+                    final checkinL10n = CheckinL10n.of(context);
+                    return Positioned(
+                      left: 12,
+                      right: 12,
+                      bottom: 12,
+                      child: Center(
+                        child: _DraftCue(
+                          label: checkinL10n.checkin_draftCue,
+                          resumeSemantics: checkinL10n.checkin_resumeDraft(
+                            journey.title,
+                          ),
+                          discardLabel: checkinL10n.checkin_discardDraft,
+                          onResume: _busy ? null : () => _openCheckin(draft),
+                          onDiscard: _busy
+                              ? null
+                              : () => drafts.discard(journey.id),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               IgnorePointer(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(UiRadius.viewfinder),
@@ -1089,6 +1131,119 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _DraftCue extends StatelessWidget {
+  const _DraftCue({
+    required this.label,
+    required this.resumeSemantics,
+    required this.discardLabel,
+    required this.onResume,
+    required this.onDiscard,
+  });
+
+  final String label;
+  final String resumeSemantics;
+  final String discardLabel;
+  final VoidCallback? onResume;
+  final VoidCallback? onDiscard;
+
+  @override
+  Widget build(BuildContext context) {
+    final dir = Directionality.of(context);
+    return Container(
+      key: const ValueKey('capture-draft-banner'),
+      decoration: BoxDecoration(
+        color: const Color(0xD9111114),
+        borderRadius: BorderRadius.circular(UiRadius.capsule),
+        border: Border.all(
+          color: UiCamera.outline,
+          width: UiBorder.standard,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: UiCamera.shadow,
+            offset: Offset(UiShadow.tiny, UiShadow.tiny),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: UiPressable(
+              key: const ValueKey('capture-draft-cue'),
+              onPressed: onResume,
+              semanticLabel: resumeSemantics,
+              excludeChildSemantics: true,
+              borderRadius: const BorderRadiusDirectional.horizontal(
+                start: Radius.circular(UiRadius.capsule),
+              ).resolve(dir),
+              minSize: const Size(UiSize.tap, UiSize.tap),
+              child: Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(14, 6, 8, 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const OurneyIcon(
+                      name: 'image',
+                      size: 18,
+                      flat: true,
+                      color: UiCamera.ink,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: UiText.body(
+                          size: 13,
+                          weight: FontWeight.w700,
+                          height: 1.3,
+                          color: UiCamera.ink,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 24,
+            color: UiCamera.dockBorder,
+          ),
+          Tooltip(
+            message: discardLabel,
+            child: UiPressable(
+              key: const ValueKey('capture-draft-discard'),
+              onPressed: onDiscard,
+              semanticLabel: discardLabel,
+              excludeChildSemantics: true,
+              centerChild: true,
+              borderRadius: const BorderRadiusDirectional.horizontal(
+                end: Radius.circular(UiRadius.capsule),
+              ).resolve(dir),
+              minSize: const Size(UiSize.tap, UiSize.tap),
+              child: const SizedBox.square(
+                dimension: UiSize.tap,
+                child: Center(
+                  child: OurneyIcon(
+                    name: 'close',
+                    size: 18,
+                    flat: true,
+                    color: UiCamera.ink,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

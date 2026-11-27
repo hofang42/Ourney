@@ -4,18 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/data_providers.dart';
-import '../../../data/dead_uploads.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../l10n/generated/journeys_localizations.dart';
-
-/// Dead check-in uploads of one journey (the outbox gave up on them). Empty
-/// without a backend or while none failed.
-final deadJourneyUploadsProvider = StreamProvider.autoDispose
-    .family<List<DeadUpload>, String>((ref, journeyId) {
-      final dead = ref.watch(deadUploadsProvider);
-      return dead?.watch(journeyId: journeyId) ?? Stream.value(const []);
-    });
 
 /// "N photos couldn't be sent" with Retry and Discard, shown on the journey
 /// detail while the outbox has given up on some check-ins.

@@ -110,13 +110,43 @@ class CheckinL10nVi extends CheckinL10n {
 
   @override
   String get checkin_done_futureMembers =>
-      'Đã lưu. Người tham gia sau có thể xem ảnh này.';
+      'Đã gửi ảnh lên nhóm. Người tham gia sau có thể xem ảnh này.';
 
   @override
-  String get checkin_done_sharedSquad => 'Đã chia sẻ với cả nhóm.';
+  String get checkin_done_coupleFutureMembers =>
+      'Đã lưu nửa ảnh của bạn. Người ấy tham gia sau có thể xem ảnh này.';
+
+  @override
+  String get checkin_done_sharedSquad => 'Đã gửi ảnh lên nhóm rồi.';
 
   @override
   String get checkin_done_sharedLink => 'Đã hiển thị trên hành trình chia sẻ.';
+
+  @override
+  String get checkin_done_pendingGroup =>
+      'Đã lưu ảnh của bạn, có mạng sẽ gửi lên nhóm';
+
+  @override
+  String get checkin_done_pendingCouple =>
+      'Đã lưu nửa ảnh của bạn, có mạng sẽ gửi cho người ấy';
+
+  @override
+  String get checkin_done_pending => 'Đã lưu ảnh trên máy. Có mạng sẽ đồng bộ.';
+
+  @override
+  String get checkin_done_uploadFailed =>
+      'Đã lưu ảnh trên máy. Bạn có thể thử gửi lại từ hành trình.';
+
+  @override
+  String checkin_resumeDraft(String journey) {
+    return 'Mở lại bản nháp cho $journey';
+  }
+
+  @override
+  String get checkin_draftCue => 'Bản nháp · chạm để mở lại';
+
+  @override
+  String get checkin_discardDraft => 'Bỏ bản nháp';
 
   @override
   String get checkin_chooseAnother => 'Chọn ảnh khác';
@@ -141,7 +171,7 @@ class CheckinL10nVi extends CheckinL10n {
   }
 
   @override
-  String get checkin_done_coupleSent => 'Nửa của bạn đã được gửi.';
+  String get checkin_done_coupleSent => 'Đã gửi nửa ảnh của bạn rồi.';
 
   @override
   String get checkin_done_coupleWeek => 'Tuần đầu bên nhau';

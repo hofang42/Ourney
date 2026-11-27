@@ -8,12 +8,16 @@ import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/app_shell.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/data/data_providers.dart' show deadJourneyUploadsProvider;
+import 'package:ourney/data/dead_uploads.dart' show DeadUpload;
 import 'package:ourney/data/group_daily_checkins_provider.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
+import 'package:ourney/features/journeys/domain/journey_layouts.dart';
 import 'package:ourney/features/journeys/domain/journey_progress.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
 import 'package:ourney/features/journeys/l10n/generated/journeys_localizations.dart';
 import 'package:ourney/features/journeys/ui/day_viewer_screen.dart';
+import 'package:ourney/features/journeys/ui/home/journey_home_intro.dart';
 import 'package:ourney/features/journeys/ui/journey_photo.dart';
 import 'package:ourney/features/journeys/ui/widgets/timeline_common.dart';
 import 'package:ourney/l10n/generated/app_localizations.dart';
@@ -126,6 +130,170 @@ void main() {
       expect(_key('journey-home-squad'), findsNothing);
       expect(_key('stat-current'), findsNothing);
     });
+
+    testWidgets('squad home tracks pending uploads for the signed-in member', (
+      tester,
+    ) async {
+      final j = testJourney(
+        templateId: TemplateId.englishDaily,
+        kind: JourneyKind.group,
+        maxMembers: 5,
+      );
+      final connectivity = StreamController<bool>.broadcast();
+      addTearDown(connectivity.close);
+      final other = testCheckIn(
+        j.id,
+        testToday,
+        userId: 'u2',
+        uploaded: false,
+        hour: 4,
+      );
+      final checkIns = FakeCheckInRepository([other]);
+      await pumpJourneys(
+        tester,
+        location: AppRoutes.journey(j.id),
+        config: testBackendConfig,
+        userId: 'u1',
+        journeys: FakeJourneyRepository(
+          journeys: [j],
+          memberships: {j.id: testMembership(j)},
+        ),
+        checkIns: checkIns,
+        extraOverrides: [
+          journeyHomeOfflineProvider.overrideWith((ref) async* {
+            yield true;
+            yield* connectivity.stream;
+          }),
+        ],
+      );
+
+      const pending = 'Đã lưu ảnh của bạn, có mạng sẽ gửi lên nhóm';
+      expect(find.text('Chưa có kết nối mạng'), findsOneWidget);
+      expect(find.text(pending), findsNothing);
+
+      checkIns.replaceAll([
+        other,
+        testCheckIn(j.id, testToday, uploaded: false),
+      ]);
+      await tester.pumpAndSettle();
+      expect(find.text(pending), findsOneWidget);
+      connectivity.add(false);
+      await tester.pumpAndSettle();
+      expect(find.text(pending), findsOneWidget);
+
+      checkIns.replaceAll([other, testCheckIn(j.id, testToday)]);
+      await tester.pumpAndSettle();
+      expect(find.text(pending), findsNothing);
+      expect(_key('journey-home-offline'), findsNothing);
+    });
+
+    testWidgets(
+      'squad home hides pending chip while DeadUploadsBanner owns a failed upload',
+      (tester) async {
+        final j = testJourney(
+          templateId: TemplateId.englishDaily,
+          kind: JourneyKind.group,
+          maxMembers: 5,
+        );
+        final dead = StreamController<List<DeadUpload>>.broadcast();
+        addTearDown(dead.close);
+        final unuploaded = testCheckIn(j.id, testToday, uploaded: false);
+        final checkIns = FakeCheckInRepository([unuploaded]);
+        await pumpJourneys(
+          tester,
+          location: AppRoutes.journey(j.id),
+          config: testBackendConfig,
+          userId: 'u1',
+          journeys: FakeJourneyRepository(
+            journeys: [j],
+            memberships: {j.id: testMembership(j)},
+          ),
+          checkIns: checkIns,
+          extraOverrides: [
+            journeyHomeOfflineProvider.overrideWith(
+              (ref) => Stream.value(false),
+            ),
+            deadJourneyUploadsProvider(j.id).overrideWith((ref) async* {
+              yield const [];
+              yield* dead.stream;
+            }),
+          ],
+        );
+
+        const pending = 'Đã lưu ảnh của bạn, có mạng sẽ gửi lên nhóm';
+        expect(find.text(pending), findsOneWidget);
+        expect(_key('dead-uploads-banner'), findsNothing);
+
+        // When the upload enters deadUploads, DeadUploadsBanner appears and
+        // the pending chip hides so the screen does not claim both states.
+        dead.add([
+          DeadUpload(
+            queueId: 1,
+            checkInId: unuploaded.id,
+            journeyId: j.id,
+          ),
+        ]);
+        await tester.pumpAndSettle();
+        expect(_key('dead-uploads-banner'), findsOneWidget);
+        expect(_key('journey-home-offline'), findsNothing);
+        expect(find.text(pending), findsNothing);
+
+        // Retrying clears deadUploads -> pending chip returns until synced.
+        dead.add(const []);
+        await tester.pumpAndSettle();
+        expect(_key('dead-uploads-banner'), findsNothing);
+        expect(find.text(pending), findsOneWidget);
+
+        checkIns.replaceAll([testCheckIn(j.id, testToday)]);
+        await tester.pumpAndSettle();
+        expect(_key('journey-home-offline'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'couple journey with squad layout override shows couple pending copy',
+      (tester) async {
+        final j = testJourney(
+          templateId: TemplateId.custom,
+          kind: JourneyKind.group,
+          maxMembers: 2,
+        ).copyWith(layout: PersonaSkinId.accountabilitySquad);
+        expect(
+          availableLayoutsFor(j, current: PersonaSkinId.coupleRituals),
+          contains(PersonaSkinId.accountabilitySquad),
+        );
+        final checkIns = FakeCheckInRepository([
+          testCheckIn(j.id, testToday, uploaded: false),
+        ]);
+        await pumpJourneys(
+          tester,
+          location: AppRoutes.journey(j.id),
+          config: testBackendConfig,
+          userId: 'u1',
+          journeys: FakeJourneyRepository(
+            journeys: [j],
+            memberships: {j.id: testMembership(j)},
+          ),
+          checkIns: checkIns,
+          extraOverrides: [
+            journeyHomeOfflineProvider.overrideWith(
+              (ref) => Stream.value(false),
+            ),
+          ],
+        );
+
+        const couplePending =
+            'Đã lưu nửa ảnh của bạn, có mạng sẽ gửi cho người ấy';
+        const squadPending = 'Đã lưu ảnh của bạn, có mạng sẽ gửi lên nhóm';
+        expect(find.text(couplePending), findsOneWidget);
+        expect(find.text(squadPending), findsNothing);
+
+        checkIns.replaceAll([testCheckIn(j.id, testToday)]);
+        await tester.pumpAndSettle();
+        expect(find.text(couplePending), findsNothing);
+        expect(_key('journey-home-offline'), findsNothing);
+      },
+    );
 
     testWidgets('quiet home shows the missed-day chip from the Figma overlay', (
       tester,

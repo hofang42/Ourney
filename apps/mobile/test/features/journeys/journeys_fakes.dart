@@ -376,6 +376,8 @@ class FakeCheckInRepository implements CheckInRepository {
   final _Live<List<CheckIn>> _all;
   final List<String?> requestedUserIds = [];
 
+  void replaceAll(List<CheckIn> checkIns) => _all.set(List.of(checkIns));
+
   @override
   Stream<List<CheckIn>> watchForJourney(String journeyId, {String? userId}) {
     requestedUserIds.add(userId);

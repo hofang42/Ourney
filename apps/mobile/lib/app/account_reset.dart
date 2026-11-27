@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/auth/auth_providers.dart';
+import '../features/checkin/checkin_drafts.dart';
 import '../features/feedback/data/feedback_providers.dart';
 import '../features/groups/data/groups_providers.dart'
     show groupJourneysProvider;
@@ -84,7 +85,9 @@ Future<void> resetAccountLocalState(
   }
   // Invalidate synchronously before awaiting platform disk flushes so no
   // microtask after sign-in reads the previous account's cached provider state.
+  ref.read(checkinDraftsProvider).clear();
   ref
+    ..invalidate(checkinDraftsProvider)
     ..invalidate(onboardingQuizProvider)
     ..invalidate(eulaAcceptedProvider)
     ..invalidate(hiddenCheckInIdsProvider)

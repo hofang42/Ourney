@@ -16,6 +16,7 @@ import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/camera/camera_session.dart';
 import 'package:ourney/features/checkin/checkin_clock.dart';
+import 'package:ourney/features/checkin/checkin_drafts.dart';
 import 'package:ourney/features/checkin/photo_compressor.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney/features/update/data/update_manifest_source.dart';
@@ -856,11 +857,77 @@ void main() {
           await tester.pumpAndSettle();
 
           expect(drafts.discarded, contains('/tmp/shot1.jpg'));
+          expect(c.read(checkinDraftsProvider).photoFor('j1'), isNull);
           expect(find.byType(UpdateGateScreen), findsOneWidget);
           c.invalidate(appUpdateControllerProvider);
         },
       );
     }
+
+    testWidgets(
+      'system back on Post during a forced update discards the draft and opens UpdateGateScreen',
+      (tester) async {
+        final source = FakeManifestSource(
+          (_) async => buildTestManifest(latest: '1.0.0', latestBuild: 1),
+        );
+        final camera = checkin.FakeCameraSession();
+        final drafts = checkin.FakeDraftFiles();
+        final c = await pumpUpdateApp(
+          tester,
+          source: source,
+          journeys: checkin.FakeJourneyRepository(
+            journeys: [
+              checkin.testJourney(
+                durationDays: null,
+                templateId: TemplateId.weightLoss,
+              ),
+            ],
+          ),
+          checkIns: checkin.FakeCheckInRepository(),
+          overrides: [
+            cameraSessionFactoryProvider.overrideWithValue(() => camera),
+            checkinClockProvider.overrideWithValue(
+              checkin.FakeCheckinClock(fixedNow),
+            ),
+            draftFilesProvider.overrideWithValue(drafts),
+            photoCompressorProvider.overrideWithValue(
+              checkin.FakePhotoCompressor(),
+            ),
+          ],
+        );
+
+        final allowCamera = find.text('Cho phép camera');
+        await tester.ensureVisible(allowCamera);
+        await tester.tap(allowCamera);
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const ValueKey('capture-shutter')));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const ValueKey('checkin-caption')),
+          'Draft before gate',
+        );
+        await tester.testTextInput.receiveAction(TextInputAction.done);
+        await tester.pumpAndSettle();
+
+        source.onFetch = (_) async =>
+            buildTestManifest(latest: '2.0.0', minSupported: '2.0.0');
+        await c
+            .read(appUpdateControllerProvider.notifier)
+            .refresh(manual: true);
+        await tester.pumpAndSettle();
+        expect(c.read(appUpdateWorkPausedProvider), isTrue);
+        expect(find.byType(UpdateGateScreen), findsNothing);
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+
+        expect(drafts.discarded, contains('/tmp/shot1.jpg'));
+        expect(c.read(checkinDraftsProvider).photoFor('j1'), isNull);
+        expect(find.byType(UpdateGateScreen), findsOneWidget);
+        c.invalidate(appUpdateControllerProvider);
+      },
+    );
 
     testWidgets(
       'blocks Android system back, hides AppDock and ReminderBanner, expands release notes, and unmounts when policy clears',
