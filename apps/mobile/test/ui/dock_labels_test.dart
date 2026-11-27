@@ -5,15 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/ui/components/dock.dart';
 import 'package:ourney/ui/components/dock_tab.dart'
-    show
-        DockTab,
-        dockBaselineDescenderRatio,
-        dockLabelChordWidth,
-        dockLabelFit,
-        dockLabelMaxScale,
-        dockLabelSize;
+    show DockTab, dockE4CapsuleLabelSidePad, dockLabelMaxScale;
 import 'package:ourney/ui/theme.dart';
-import 'package:ourney/ui/tokens.dart';
 import 'package:ourney/ui/typography.dart';
 
 const _labels = ['Hành trình', 'Nhóm', 'Hoạt động', 'Hồ sơ'];
@@ -124,55 +117,86 @@ void main() {
   }
 
   for (final w in [360.0, 390.0, 412.0]) {
-    testWidgets(
-      'Vietnamese dock labels are sized from the E4 baseline capsule chord '
-      '(1x, ${w}dp)',
-      (tester) async {
-        tester.view.devicePixelRatio = 1;
-        tester.view.physicalSize = Size(w, 700);
-        addTearDown(tester.view.reset);
-        await _pump(tester, w, 1);
-        final geo = UiDockGeometry.compute(width: w, cam: 60, islandH: 64);
-        final chord = dockLabelChordWidth(geo.slotWidth, geo.capsuleWidth);
-        final context = tester.element(find.byType(UiDock));
-        final expectedFit = dockLabelFit(
-          context,
-          _labels,
-          chord,
-          slotW: geo.slotWidth,
-          pillW: geo.capsuleWidth,
+    testWidgets('Vietnamese dock labels stay >= 10dp at 360dp and 10.5dp from '
+        '390dp up, with bounded capsule overhang (1x, ${w}dp)', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = Size(w, 700);
+      addTearDown(tester.view.reset);
+      await _pump(tester, w, 1);
+      final geo = UiDockGeometry.compute(width: w, cam: 60, islandH: 64);
+      final maxLabelW = geo.capsuleWidth - dockE4CapsuleLabelSidePad;
+      for (final l in _labels) {
+        final text = tester.widget<Text>(find.text(l));
+        expect(
+          text.style!.fontSize!,
+          w >= 390 ? 10.5 : greaterThanOrEqualTo(10),
+          reason: '$l at ${w}dp',
         );
-        for (final l in _labels) {
-          final text = tester.widget<Text>(find.text(l));
-          expect(
-            text.style!.fontSize!,
-            closeTo(dockLabelSize * expectedFit, 0.05),
-            reason: '$l fontSize at ${w}dp',
-          );
-          expect(
-            tester.getSize(find.text(l)).width,
-            lessThanOrEqualTo(chord + 0.5),
-            reason: '$l width <= chord at ${w}dp',
-          );
-        }
-        final dockTabs = tester
-            .widgetList<DockTab>(find.byType(DockTab))
-            .toList();
-        expect(dockTabs, hasLength(4));
-        for (var i = 0; i < 4; i++) {
-          expect(
-            dockTabs[i].labelMaxWidth,
-            closeTo(chord, 0.05),
-            reason: 'tab $i labelMaxWidth',
-          );
-          expect(
-            tester.getSize(find.byKey(ValueKey('t$i'))).width,
-            closeTo(geo.slotWidth, 0.5),
-            reason: 'tab $i slot width',
-          );
-        }
-      },
-    );
+        expect(
+          tester.getSize(find.text(l)).width,
+          lessThanOrEqualTo(maxLabelW + 0.5),
+          reason: '$l width <= capW - 6 at ${w}dp',
+        );
+      }
+      final dockTabs = tester
+          .widgetList<DockTab>(find.byType(DockTab))
+          .toList();
+      expect(dockTabs, hasLength(4));
+      for (var i = 0; i < 4; i++) {
+        expect(
+          dockTabs[i].labelMaxWidth,
+          closeTo(maxLabelW, 0.05),
+          reason: 'tab $i labelMaxWidth',
+        );
+        expect(
+          tester.getSize(find.byKey(ValueKey('t$i'))).width,
+          closeTo(geo.slotWidth, 0.5),
+          reason: 'tab $i slot width',
+        );
+      }
+
+      // Bounded overhang past the outer capsule outline on the active widest
+      // label ('Hành trình'): <= 4dp at 360, <= 1dp at 390, 0 at 412.
+      final pill = tester.getRect(
+        find.byKey(const ValueKey('dock-selection-pill')),
+      );
+      final labelRect = tester.getRect(find.text(_labels.first));
+      final activeText = tester.widget<Text>(find.text(_labels.first));
+      final tp = TextPainter(
+        text: TextSpan(text: _labels.first, style: activeText.style),
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+      )..layout();
+      final baselineFromTop = tp.computeDistanceToActualBaseline(
+        TextBaseline.alphabetic,
+      );
+      tp.dispose();
+      final baselineY = labelRect.top + baselineFromTop;
+      final r = pill.height / 2;
+      double overhangPastOutline(Offset p) {
+        final cx = p.dx.clamp(pill.left + r, pill.right - r);
+        final dist = (p - Offset(cx, pill.center.dy)).distance;
+        return dist > r ? dist - r : 0.0;
+      }
+
+      final maxOverhang = switch (w) {
+        360.0 => 4.0,
+        390.0 => 1.0,
+        _ => 0.0,
+      };
+      for (final p in [
+        Offset(labelRect.left, baselineY),
+        Offset(labelRect.right, baselineY),
+        labelRect.topLeft,
+        labelRect.topRight,
+      ]) {
+        expect(
+          overhangPastOutline(p),
+          lessThanOrEqualTo(maxOverhang),
+          reason: 'point $p overhang vs $pill at ${w}dp',
+        );
+      }
+    });
   }
 
   for (final (locale, labels) in [('vi', _labels), ('en', _enLabels)]) {
@@ -253,39 +277,31 @@ void main() {
               find.byKey(const ValueKey('dock-selection-pill')),
             );
             final labelRect = tester.getRect(find.text(labels.first));
-            final geo = UiDockGeometry.compute(width: w, cam: 60, islandH: 64);
-            final chord = dockLabelChordWidth(
-              geo.slotWidth,
-              geo.capsuleWidth,
-              effectiveScale: sizeScaled / dockLabelSize,
-            );
             expect(
               labelRect.width,
-              lessThanOrEqualTo(chord + 0.5),
-              reason: '${w}dp active label stays inside capsule chord',
+              lessThanOrEqualTo(pill.width - dockE4CapsuleLabelSidePad + 0.5),
+              reason: '${w}dp active label width <= capW - 6',
             );
-            final r = (pill.width < pill.height ? pill.width : pill.height) / 2;
-            bool inside(Offset p) {
-              final cx = p.dx.clamp(pill.left + r, pill.right - r);
-              final cy = p.dy.clamp(pill.top + r, pill.bottom - r);
-              return (p - Offset(cx, cy)).distance <= r - UiBorder.thin + 0.5;
-            }
-
-            final baselineY =
-                labelRect.bottom -
-                dockBaselineDescenderRatio * labelRect.height;
-            for (final p in [
-              Offset(labelRect.left, baselineY),
-              Offset(labelRect.right, baselineY),
-              labelRect.topLeft,
-              labelRect.topRight,
-            ]) {
-              expect(
-                inside(p),
-                isTrue,
-                reason: '${w}dp x$s label point $p inside capsule $pill',
-              );
-            }
+            expect(
+              labelRect.left,
+              greaterThanOrEqualTo(pill.left - 0.5),
+              reason: '${w}dp active label left inside capsule',
+            );
+            expect(
+              labelRect.right,
+              lessThanOrEqualTo(pill.right + 0.5),
+              reason: '${w}dp active label right inside capsule',
+            );
+            expect(
+              labelRect.top,
+              greaterThanOrEqualTo(pill.top - 0.5),
+              reason: '${w}dp active label top inside capsule',
+            );
+            expect(
+              labelRect.bottom,
+              lessThanOrEqualTo(pill.bottom + 0.5),
+              reason: '${w}dp active label bottom inside capsule',
+            );
           }
         },
       );

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -26,10 +25,9 @@ Color dockSelectionFill(Color accent, Color surface) =>
     Color.alphaBlend(accent.withValues(alpha: 0.30), surface);
 
 /// Corner radius of the selection pill: a full capsule, as in V2 `app.css`
-/// (`.dock-selection-capsule`, `border-radius: 999px`). On a 52dp-tall E4
-/// capsule (`r = 26dp`), the semicolon-shaped ends curve inward at the label
-/// row, so [dockLabelChordWidth] and [dockLabelFit] size the label from the
-/// horizontal chord at the label's baseline (U17).
+/// (`.dock-selection-capsule`, `border-radius: 999px`). In E4 the expanded
+/// capsule is 52dp tall (`r = 26dp`) and labels are constrained to
+/// `capW - 6dp` (`dockE4CapsuleLabelSidePad`) per the approved E4 mockup.
 const double dockSelectionRadius = UiRadius.capsule;
 
 /// The non-liquid selection capsule.
@@ -64,68 +62,37 @@ const double dockLabelHeightRatio = 1.35;
 /// Label line height at 1x (`10.5 * 1.35`).
 const double dockLabelLineHeight = dockLabelSize * dockLabelHeightRatio;
 
-/// Fraction of the `1.35` label line box sitting below the alphabetic baseline.
-const double dockBaselineDescenderRatio = 0.22;
-
 /// Default E4 capsule height at 1x text scale (dp).
-const double _kDefaultCapsuleHeight = 52.0;
+const double dockE4CapsuleHeight = 52.0;
+
+/// Horizontal padding deducted from `capsuleWidth` for the label (`capW - 6`).
+const double dockE4CapsuleLabelSidePad = 6.0;
 
 /// Default E4 glyph size (dp).
-const double _kDefaultGlyphSize = 24.0;
+const double dockE4GlyphSize = 24.0;
+
+/// Default E4 active glyph scale factor.
+const double dockE4GlyphActiveScale = 1.08;
 
 /// Default E4 glyph-to-label gap (dp).
-const double _kDefaultLabelGap = 3.0;
+const double dockE4LabelGap = 3.0;
 
 /// Default E4 vertical padding inside the capsule (`2 * 5.2dp`).
-const double _kDefaultCapsuleVertPad = 10.4;
+const double dockE4CapsuleVertPad = 10.4;
 
 /// Default E4 optical capsule lift (`24 * (1.08 - 1) / 4 = 0.48dp`).
-const double _kDefaultCapsuleOpticalLift = 0.48;
-
-/// Usable horizontal chord at the label's baseline inside an E4 selection
-/// capsule of width [pillW] and base height [pillH] (within a tab slot of
-/// width [slotW]) when the label renders at [effectiveScale]x of its 1x size.
-double dockLabelChordWidth(
-  double slotW,
-  double pillW, {
-  double effectiveScale = 1.0,
-  double pillH = _kDefaultCapsuleHeight,
-  double labelGap = _kDefaultLabelGap,
-  double lift = 0.0,
-  double capsuleOpticalLift = _kDefaultCapsuleOpticalLift,
-}) {
-  final clampedScale = math.max(1.0, effectiveScale);
-  final lineH = dockLabelLineHeight * clampedScale;
-  final resolvedPillH = math.max(
-    pillH,
-    _kDefaultGlyphSize + labelGap + lineH + _kDefaultCapsuleVertPad,
-  );
-  final r = math.min(pillW, resolvedPillH) / 2;
-  final rInner = math.max(1.0, r - UiBorder.thin);
-  final labelBottom =
-      (_kDefaultGlyphSize + labelGap + lineH) / 2 - lift + capsuleOpticalLift;
-  final baselineFromCenter = labelBottom - dockBaselineDescenderRatio * lineH;
-  final capCenterY = resolvedPillH / 2 - r;
-  final dy = math
-      .max(0.0, baselineFromCenter - capCenterY)
-      .clamp(0.0, rInner - 0.5);
-  final inset = r - math.sqrt(rInner * rInner - dy * dy);
-  return math.min(slotW, math.max(0.0, pillW - 2 * inset));
-}
+const double dockE4CapsuleOpticalLift =
+    dockE4GlyphSize * (dockE4GlyphActiveScale - 1) / 4;
 
 /// One shrink factor for all tab labels: the largest `f <= 1` at which the
-/// widest label still fits [maxWidth] (or the baseline capsule chord of
-/// [pillW] within [slotW] at the actual fitted label height).
+/// widest label fits within [maxWidth] (`capW - 6` in E4).
 double dockLabelFit(
   BuildContext context,
   Iterable<String> labels,
-  double maxWidth, {
-  double? slotW,
-  double? pillW,
-}) {
+  double maxWidth,
+) {
   final scaler = MediaQuery.textScalerOf(context)
       .clamp(maxScaleFactor: dockLabelMaxScale);
-  final s = scaler.scale(1);
   double widestAt(double fit) {
     var widest = 0.0;
     for (final label in labels) {
@@ -151,16 +118,12 @@ double dockLabelFit(
     return widest;
   }
 
-  // Width and capsule chord height depend on the fitted font size, so converge.
   var fit = 1.0;
   for (var i = 0; i < 6; i++) {
-    final avail = (slotW != null && pillW != null)
-        ? dockLabelChordWidth(slotW, pillW, effectiveScale: fit * s)
-        : maxWidth;
     final w = widestAt(fit);
     if (w <= 0) break;
-    if (fit >= 1.0 && w <= avail) break;
-    fit = (fit * (avail / w) * 0.998).clamp(0.1, 1.0);
+    if (fit >= 1.0 && w <= maxWidth) break;
+    fit = (fit * (maxWidth / w) * 0.998).clamp(0.1, 1.0);
   }
   return fit;
 }
@@ -238,11 +201,6 @@ class DockTab extends StatelessWidget {
     final t = compactT.clamp(0.0, 1.0);
     final clampedScaler = MediaQuery.textScalerOf(context)
         .clamp(maxScaleFactor: dockLabelMaxScale);
-    final textScale = clampedScaler.scale(1);
-    final strutFontSize = math.max(
-      dockLabelSize / textScale,
-      dockLabelSize * labelFit,
-    );
     final Widget labelBox = ConstrainedBox(
       constraints: BoxConstraints(maxWidth: labelMaxWidth ?? double.infinity),
       child: FittedBox(
@@ -254,11 +212,6 @@ class DockTab extends StatelessWidget {
             maxLines: 1,
             softWrap: false,
             textAlign: TextAlign.center,
-            strutStyle: StrutStyle(
-              fontSize: strutFontSize,
-              height: dockLabelHeightRatio,
-              forceStrutHeight: true,
-            ),
             style: UiText.body(
               size: dockLabelSize * labelFit,
               weight: active ? FontWeight.w700 : FontWeight.w600,

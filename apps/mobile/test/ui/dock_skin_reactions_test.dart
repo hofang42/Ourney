@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/ui/components/dock.dart';
 import 'package:ourney/ui/components/dock_tab.dart'
-    show dockBaselineDescenderRatio;
+    show dockE4CapsuleLabelSidePad;
 import 'package:ourney/ui/components/glass.dart';
 import 'package:ourney/ui/components/ourney_icons.dart';
 import 'package:ourney/ui/components/pressable.dart';
@@ -234,25 +234,40 @@ void main() {
           final pill = tester.getRect(
             find.byKey(const ValueKey('dock-selection-pill')),
           );
-          final label = tester.getRect(
-            find.text(activeTab == 0 ? 'Hành trình' : 'Hoạt động'),
+          final labelText = activeTab == 0 ? 'Hành trình' : 'Hoạt động';
+          final label = tester.getRect(find.text(labelText));
+          expect(
+            label.width,
+            lessThanOrEqualTo(pill.width - dockE4CapsuleLabelSidePad + 0.5),
           );
-          final r = (pill.width < pill.height ? pill.width : pill.height) / 2;
-          bool inside(Offset p) {
+          final activeWidget = tester.widget<Text>(find.text(labelText));
+          final tp = TextPainter(
+            text: TextSpan(text: labelText, style: activeWidget.style),
+            textDirection: TextDirection.ltr,
+            maxLines: 1,
+          )..layout();
+          final baselineY =
+              label.top +
+              tp.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+          tp.dispose();
+          final r = pill.height / 2;
+          double overhangPastOutline(Offset p) {
             final cx = p.dx.clamp(pill.left + r, pill.right - r);
-            final cy = p.dy.clamp(pill.top + r, pill.bottom - r);
-            return (p - Offset(cx, cy)).distance <= r - UiBorder.thin + 0.5;
+            final dist = (p - Offset(cx, pill.center.dy)).distance;
+            return dist > r ? dist - r : 0.0;
           }
 
-          final baselineY =
-              label.bottom - dockBaselineDescenderRatio * label.height;
           for (final p in [
             Offset(label.left, baselineY),
             Offset(label.right, baselineY),
             label.topLeft,
             label.topRight,
           ]) {
-            expect(inside(p), isTrue, reason: 'label point $p vs $pill');
+            expect(
+              overhangPastOutline(p),
+              lessThanOrEqualTo(4.0),
+              reason: 'label point $p overhang vs $pill',
+            );
           }
           expect(label.top, greaterThanOrEqualTo(pill.top));
           expect(label.bottom, lessThanOrEqualTo(pill.bottom));
