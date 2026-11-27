@@ -1116,7 +1116,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_dna_reason_hint => 'to sleep better';
 
   @override
-  String get journeys_dna_forge_title => 'forging your DNA…';
+  String get journeys_dna_forge_title => 'Creating your journey…';
 
   @override
   String get journeys_dna_forge_a11y => 'Creating your journey';
@@ -1886,7 +1886,18 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String journeys_heroSemantics(int streak, String title) {
-    return '$streak-day streak. $title';
+    return '$title, $streak-day streak';
+  }
+
+  @override
+  String journeys_hubDaysLogged(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days logged',
+      one: '1 day logged',
+    );
+    return '$_temp0';
   }
 
   @override

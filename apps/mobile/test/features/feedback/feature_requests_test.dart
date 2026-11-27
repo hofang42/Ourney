@@ -648,7 +648,7 @@ void main() {
         // Shows action rate-limit copy (P3-1), not creation 5/24h copy.
         expect(
           find.text(
-            'Bạn đang thao tác quá nhanh. Vui lòng thử lại sau ít phút nhé.',
+            'Bạn bấm hơi nhanh, đợi một lát rồi thử lại nhé.',
           ),
           findsOneWidget,
         );

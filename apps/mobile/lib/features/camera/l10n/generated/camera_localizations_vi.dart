@@ -49,7 +49,7 @@ class CameraL10nVi extends CameraL10n {
 
   @override
   String get camera_noJourneyMessage =>
-      'Tạo một hành trình, rồi mỗi ngày chụp một tấm để giữ chuỗi.';
+      'Chọn một việc muốn làm đều, rồi chụp tấm đầu tiên nhé.';
 
   @override
   String get camera_noJourneyAction => 'Tạo hành trình';

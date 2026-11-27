@@ -375,7 +375,7 @@
   "@feedback_errorRateLimited": {
     "description": "Error when daily creation limit (5/24h) is reached."
   },
-  "feedback_errorRateLimitedAction": "Bạn đang thao tác quá nhanh. Vui lòng thử lại sau ít phút nhé.",
+  "feedback_errorRateLimitedAction": "Bạn bấm hơi nhanh, đợi một lát rồi thử lại nhé.",
   "@feedback_errorRateLimitedAction": {
     "description": "Error when vote or edit rate limit is reached."
   },

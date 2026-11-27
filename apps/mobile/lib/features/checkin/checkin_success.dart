@@ -650,7 +650,7 @@ class _CheckinSuccessViewState extends ConsumerState<CheckinSuccessView>
             ? l10n.checkin_done_minimalWeek
             : l10n.checkin_done_minimalFull;
       default:
-        return title ?? l10n.checkin_chainKept;
+        return title ?? l10n.checkin_chainKept(day);
     }
   }
 

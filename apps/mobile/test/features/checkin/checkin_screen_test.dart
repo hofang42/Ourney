@@ -407,7 +407,7 @@ void main() {
     expect(draft.metricValue, isNull);
 
     expect(find.byKey(const ValueKey('checkin-success')), findsOneWidget);
-    expect(find.text('Giữ được chuỗi.'), findsOneWidget);
+    expect(find.text('Đã lưu ảnh ngày 16'), findsOneWidget);
     expect(find.text('Đã lưu. Chỉ mình bạn thấy.'), findsOneWidget);
     expect(find.byKey(const ValueKey('checkin-milestone')), findsNothing);
 

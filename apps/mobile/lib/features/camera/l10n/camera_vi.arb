@@ -44,7 +44,7 @@
   "@camera_noJourneyTitle": {
     "description": "Empty state on the camera when the user has no active journey."
   },
-  "camera_noJourneyMessage": "Tạo một hành trình, rồi mỗi ngày chụp một tấm để giữ chuỗi.",
+  "camera_noJourneyMessage": "Chọn một việc muốn làm đều, rồi chụp tấm đầu tiên nhé.",
   "camera_noJourneyAction": "Tạo hành trình",
   "camera_prePromptTitle": "Mỗi ngày một tấm ảnh",
   "@camera_prePromptTitle": {

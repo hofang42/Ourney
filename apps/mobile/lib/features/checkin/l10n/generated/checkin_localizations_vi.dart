@@ -203,7 +203,9 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_done => 'Xong';
 
   @override
-  String get checkin_chainKept => 'Giữ được chuỗi.';
+  String checkin_chainKept(int day) {
+    return 'Đã lưu ảnh ngày $day';
+  }
 
   @override
   String checkin_daysUnit(int count) {

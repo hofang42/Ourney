@@ -297,7 +297,7 @@ class FeedbackL10nVi extends FeedbackL10n {
 
   @override
   String get feedback_errorRateLimitedAction =>
-      'Bạn đang thao tác quá nhanh. Vui lòng thử lại sau ít phút nhé.';
+      'Bạn bấm hơi nhanh, đợi một lát rồi thử lại nhé.';
 
   @override
   String get feedback_errorOfflineDraftSaved =>

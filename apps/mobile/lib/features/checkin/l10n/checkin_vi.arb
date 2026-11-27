@@ -130,9 +130,14 @@
   "checkin_done_minimalWeek": "7 NGÀY LIỀN",
   "checkin_done_minimalFull": "ĐỦ 30 NGÀY",
   "checkin_done": "Xong",
-  "checkin_chainKept": "Giữ được chuỗi.",
+  "checkin_chainKept": "Đã lưu ảnh ngày {day}",
   "@checkin_chainKept": {
-    "description": "Headline of the success screen without a milestone."
+    "description": "Headline of the success screen without a milestone.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
   },
   "checkin_daysUnit": "{count, plural, other{ngày}}",
   "@checkin_daysUnit": {

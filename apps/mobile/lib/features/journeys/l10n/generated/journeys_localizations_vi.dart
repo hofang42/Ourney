@@ -1101,7 +1101,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_dna_reason_hint => 'để ngủ ngon hơn';
 
   @override
-  String get journeys_dna_forge_title => 'đang đúc DNA…';
+  String get journeys_dna_forge_title => 'Đang tạo hành trình…';
 
   @override
   String get journeys_dna_forge_a11y => 'Đang tạo hành trình của bạn';
@@ -1796,7 +1796,17 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String journeys_heroSemantics(int streak, String title) {
-    return 'Chuỗi $streak ngày. $title';
+    return '$title, chuỗi $streak ngày';
+  }
+
+  @override
+  String journeys_hubDaysLogged(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ngày đã ghi',
+    );
+    return '$_temp0';
   }
 
   @override

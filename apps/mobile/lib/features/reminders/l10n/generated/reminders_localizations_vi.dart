@@ -41,11 +41,11 @@ class RemindersL10nVi extends RemindersL10n {
   String get reminders_pickTimeHelp => 'Giờ nhắc check-in';
 
   @override
-  String get reminders_streakAlertTitle => 'Nhắc giữ chuỗi lúc 21:00';
+  String get reminders_streakAlertTitle => 'Nhắc chụp ảnh lúc 21:00';
 
   @override
   String get reminders_streakAlertSubtitle =>
-      'Nhắc nhẹ lúc 21:00 nếu bạn đang có chuỗi mà chưa chụp hôm nay.';
+      'Nhắc lúc 21:00 nếu hôm nay bạn chưa chụp ảnh.';
 
   @override
   String get reminders_emptyTitle => 'Chưa có hành trình nào';
@@ -93,16 +93,16 @@ class RemindersL10nVi extends RemindersL10n {
   }
 
   @override
-  String get reminders_alertTitle => 'Hôm nay vẫn còn kịp';
+  String get reminders_alertTitle => 'Hôm nay bạn muốn lưu tấm nào?';
 
   @override
-  String reminders_alertBody(String journey, int count) {
-    return '$journey: chuỗi $count ngày — một tấm ảnh hôm nay là đủ rồi.';
+  String reminders_alertBody(String journey) {
+    return '$journey: một tấm hôm nay là đủ rồi.';
   }
 
   @override
-  String reminders_alertBodyAt(String journey, int count, String time) {
-    return '$journey: chuỗi $count ngày — một tấm ảnh hôm nay là đủ rồi (ngày mới của hành trình bắt đầu lúc $time).';
+  String reminders_alertBodyAt(String journey, String time) {
+    return '$journey: một tấm hôm nay là đủ rồi (ngày mới của hành trình bắt đầu lúc $time).';
   }
 
   @override

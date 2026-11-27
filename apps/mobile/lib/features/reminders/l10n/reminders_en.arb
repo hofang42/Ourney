@@ -8,8 +8,8 @@
   "reminders_timeOff": "Off",
   "reminders_changeTime": "Change reminder time ({time})",
   "reminders_pickTimeHelp": "Check-in reminder time",
-  "reminders_streakAlertTitle": "Evening streak reminder at 21:00",
-  "reminders_streakAlertSubtitle": "A calm reminder at 21:00 if you have a streak going and haven't checked in yet.",
+  "reminders_streakAlertTitle": "Photo reminder at 9 PM",
+  "reminders_streakAlertSubtitle": "Reminds you at 9 PM if you haven't taken a photo today.",
   "reminders_emptyTitle": "No journeys yet",
   "reminders_emptyMessage": "Create a journey, then come back here to set a reminder.",
   "reminders_loadError": "Couldn't load your journeys. Please try again later.",
@@ -23,16 +23,13 @@
   "reminders_permissionNotNow": "Not now",
   "reminders_notifTitle": "Time to check in",
   "reminders_notifBody": "{journey}: snap today's photo.",
-  "reminders_alertTitle": "A moment for today",
-  "reminders_alertBody": "{journey}: {count}-day streak — one photo today is plenty.",
-  "reminders_alertBodyAt": "{journey}: {count}-day streak — one photo today is plenty (new journey day starts at {time}).",
+  "reminders_alertTitle": "What photo do you want to save today?",
+  "reminders_alertBody": "{journey}: one photo today is plenty.",
+  "reminders_alertBodyAt": "{journey}: one photo today is plenty (new journey day starts at {time}).",
   "@reminders_alertBodyAt": {
     "placeholders": {
       "journey": {
         "type": "String"
-      },
-      "count": {
-        "type": "int"
       },
       "time": {
         "type": "String"

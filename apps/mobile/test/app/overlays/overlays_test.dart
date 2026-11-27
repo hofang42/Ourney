@@ -50,7 +50,7 @@ void main() {
         ),
       );
       await t.pumpAndSettle();
-      expect(find.text('CHUỖI 21 NGÀY. MỘT TẤM CHO HÔM NAY.'), findsOneWidget);
+      expect(find.text('ĐÃ TẬP 21 NGÀY · THÊM MỘT TẤM HÔM NAY'), findsOneWidget);
       expect(find.text('Chạy sáng'), findsOneWidget);
       expect(t.takeException(), isNull);
     }

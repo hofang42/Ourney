@@ -151,7 +151,7 @@
       }
     }
   },
-  "reminderBanner_streak_quiet": "Chuỗi {streak} ngày rồi. Một tấm ảnh hôm nay là đủ.",
+  "reminderBanner_streak_quiet": "Bạn đã lưu {streak} ngày rồi, hôm nay thêm một tấm là đủ.",
   "@reminderBanner_streak_quiet": {
     "description": "Streak-at-risk reminder banner copy, quiet skin.",
     "placeholders": {
@@ -160,7 +160,7 @@
       }
     }
   },
-  "reminderBanner_streak_squad": "Chuỗi {streak} ngày cùng nhau. Góp một tấm hôm nay nhé.",
+  "reminderBanner_streak_squad": "Đã đi cùng nhau {streak} ngày rồi, góp một tấm hôm nay nhé.",
   "@reminderBanner_streak_squad": {
     "description": "Streak-at-risk reminder banner copy, squad skin.",
     "placeholders": {
@@ -173,7 +173,7 @@
   "@reminderBanner_streak_memory": {
     "description": "Streak-at-risk reminder banner copy, memory skin."
   },
-  "reminderBanner_streak_couple": "Chuỗi {streak} ngày của hai đứa. Lưu một khoảnh khắc hôm nay nhé.",
+  "reminderBanner_streak_couple": "Hai bạn đã đi cùng nhau {streak} ngày rồi, chụp một tấm hôm nay nhé.",
   "@reminderBanner_streak_couple": {
     "description": "Streak-at-risk reminder banner copy, couple skin.",
     "placeholders": {
@@ -182,7 +182,7 @@
       }
     }
   },
-  "reminderBanner_streak_flexer": "CHUỖI {streak} NGÀY. MỘT TẤM CHO HÔM NAY.",
+  "reminderBanner_streak_flexer": "ĐÃ TẬP {streak} NGÀY · THÊM MỘT TẤM HÔM NAY",
   "@reminderBanner_streak_flexer": {
     "description": "Streak-at-risk reminder banner copy, flexer skin.",
     "placeholders": {
@@ -191,7 +191,7 @@
       }
     }
   },
-  "reminderBanner_streak_minimal": "CHUỖI {streak} NGÀY · HÔM NAY.",
+  "reminderBanner_streak_minimal": "ĐÃ LƯU {streak} NGÀY · HÔM NAY",
   "@reminderBanner_streak_minimal": {
     "description": "Streak-at-risk reminder banner copy, minimal skin.",
     "placeholders": {

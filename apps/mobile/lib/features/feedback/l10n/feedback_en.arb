@@ -86,7 +86,7 @@
   "feedback_errorContentPolicy": "This text contains language that goes against Ourney's community guidelines.",
   "feedback_errorLinksNotAllowed": "Please don't include web links in feature ideas.",
   "feedback_errorRateLimited": "You've reached the limit of 5 ideas in 24 hours. Upvote existing ones in the meantime!",
-  "feedback_errorRateLimitedAction": "You're doing that too fast. Please wait a moment and try again.",
+  "feedback_errorRateLimitedAction": "You're tapping a bit fast, wait a moment and try again.",
   "feedback_errorOfflineDraftSaved": "You're offline. Your draft is saved right here.",
   "feedback_errorVoteLocked": "Voting is closed for this idea.",
   "feedback_errorNotFound": "This idea no longer exists or is hidden."

@@ -81,7 +81,14 @@
   "checkin_done_minimalWeek": "7 DAYS STRAIGHT",
   "checkin_done_minimalFull": "ALL 30 DAYS",
   "checkin_done": "Done",
-  "checkin_chainKept": "Chain kept.",
+  "checkin_chainKept": "Day {day} photo saved",
+  "@checkin_chainKept": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
   "checkin_daysUnit": "{count, plural, one{day} other{days}}",
   "checkin_retake": "Retake",
   "checkin_privacyPrivate": "Only you",

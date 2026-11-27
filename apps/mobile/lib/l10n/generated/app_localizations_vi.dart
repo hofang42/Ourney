@@ -171,12 +171,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String reminderBanner_streak_quiet(int streak) {
-    return 'Chuỗi $streak ngày rồi. Một tấm ảnh hôm nay là đủ.';
+    return 'Bạn đã lưu $streak ngày rồi, hôm nay thêm một tấm là đủ.';
   }
 
   @override
   String reminderBanner_streak_squad(int streak) {
-    return 'Chuỗi $streak ngày cùng nhau. Góp một tấm hôm nay nhé.';
+    return 'Đã đi cùng nhau $streak ngày rồi, góp một tấm hôm nay nhé.';
   }
 
   @override
@@ -185,17 +185,17 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String reminderBanner_streak_couple(int streak) {
-    return 'Chuỗi $streak ngày của hai đứa. Lưu một khoảnh khắc hôm nay nhé.';
+    return 'Hai bạn đã đi cùng nhau $streak ngày rồi, chụp một tấm hôm nay nhé.';
   }
 
   @override
   String reminderBanner_streak_flexer(int streak) {
-    return 'CHUỖI $streak NGÀY. MỘT TẤM CHO HÔM NAY.';
+    return 'ĐÃ TẬP $streak NGÀY · THÊM MỘT TẤM HÔM NAY';
   }
 
   @override
   String reminderBanner_streak_minimal(int streak) {
-    return 'CHUỖI $streak NGÀY · HÔM NAY.';
+    return 'ĐÃ LƯU $streak NGÀY · HÔM NAY';
   }
 
   @override

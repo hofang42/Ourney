@@ -985,7 +985,7 @@
   "journeys_dna_habit_hint": "Đọc 10 trang",
   "journeys_dna_reason_label": "vì sao.",
   "journeys_dna_reason_hint": "để ngủ ngon hơn",
-  "journeys_dna_forge_title": "đang đúc DNA…",
+  "journeys_dna_forge_title": "Đang tạo hành trình…",
   "journeys_dna_forge_a11y": "Đang tạo hành trình của bạn",
   "journeys_dna_import_link": "Kể lại hành trình đã qua",
   "journeys_home_introQuiet": "Nhìn lại từng chút một.",
@@ -1592,7 +1592,7 @@
       }
     }
   },
-  "journeys_heroSemantics": "Chuỗi {streak} ngày. {title}",
+  "journeys_heroSemantics": "{title}, chuỗi {streak} ngày",
   "@journeys_heroSemantics": {
     "description": "Screen reader label of the Hub streak hero.",
     "placeholders": {
@@ -1601,6 +1601,15 @@
       },
       "title": {
         "type": "String"
+      }
+    }
+  },
+  "journeys_hubDaysLogged": "{count, plural, other{{count} ngày đã ghi}}",
+  "@journeys_hubDaysLogged": {
+    "description": "Cumulative days logged across running journeys on the Hub hero.",
+    "placeholders": {
+      "count": {
+        "type": "int"
       }
     }
   },

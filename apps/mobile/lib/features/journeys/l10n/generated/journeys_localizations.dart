@@ -2045,7 +2045,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_dna_forge_title.
   ///
   /// In vi, this message translates to:
-  /// **'đang đúc DNA…'**
+  /// **'Đang tạo hành trình…'**
   String get journeys_dna_forge_title;
 
   /// No description provided for @journeys_dna_forge_a11y.
@@ -3221,8 +3221,14 @@ abstract class JourneysL10n {
   /// Screen reader label of the Hub streak hero.
   ///
   /// In vi, this message translates to:
-  /// **'Chuỗi {streak} ngày. {title}'**
+  /// **'{title}, chuỗi {streak} ngày'**
   String journeys_heroSemantics(int streak, String title);
+
+  /// Cumulative days logged across running journeys on the Hub hero.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count, plural, other{{count} ngày đã ghi}}'**
+  String journeys_hubDaysLogged(int count);
 
   /// Banner when check-in uploads were given up on.
   ///

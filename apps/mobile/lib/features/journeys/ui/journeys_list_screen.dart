@@ -694,6 +694,10 @@ class _HubBody extends ConsumerWidget {
       0,
       (m, p) => p.summary.current > m ? p.summary.current : m,
     );
+    final cumulativeDays = progress.values.fold<int>(
+      0,
+      (m, p) => m + p.summary.completed,
+    );
     final heroState = allDone && _milestones.contains(bestStreak)
         ? UiStreakHeroState.milestone
         : allDone
@@ -752,14 +756,22 @@ class _HubBody extends ConsumerWidget {
                   : heroLoading
                   ? l10n.journeys_hubLoading
                   : l10n.journeys_remainingToday(pending.length);
+              final cumulativeLabel =
+                  heroLoading || buckets.active.isEmpty
+                  ? null
+                  : l10n.journeys_hubDaysLogged(cumulativeDays);
               return UiStreakHero(
                 key: const ValueKey('journeys-hub-hero'),
                 streak: bestStreak,
                 loading: heroLoading,
                 semanticLabel: heroLoading
                     ? heroSubtitle
-                    : l10n.journeys_heroSemantics(bestStreak, heroSubtitle),
+                    : cumulativeLabel == null
+                    ? l10n.journeys_heroSemantics(bestStreak, heroSubtitle)
+                    : '$cumulativeLabel, '
+                          '${l10n.journeys_heroSemantics(bestStreak, heroSubtitle)}',
                 title: heroSubtitle,
+                subtitle: cumulativeLabel,
                 state: heroState,
               );
             },

@@ -172,10 +172,9 @@ class ReminderScheduler {
       if (isAlert) {
         final deadline = p.deadlineLocalTime(deviceTimezone);
         body = deadline == const ReminderTime(0, 0)
-            ? l10n.reminders_alertBody(p.journeyTitle, p.streak)
+            ? l10n.reminders_alertBody(p.journeyTitle)
             : l10n.reminders_alertBodyAt(
                 p.journeyTitle,
-                p.streak,
                 deadline.toString(),
               );
       } else {

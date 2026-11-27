@@ -443,8 +443,8 @@ abstract class CheckinL10n {
   /// Headline of the success screen without a milestone.
   ///
   /// In vi, this message translates to:
-  /// **'Giữ được chuỗi.'**
-  String get checkin_chainKept;
+  /// **'Đã lưu ảnh ngày {day}'**
+  String checkin_chainKept(int day);
 
   /// Unit after the big streak number.
   ///

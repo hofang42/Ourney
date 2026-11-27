@@ -175,7 +175,8 @@ void main() {
           find.byWidgetPredicate(
             (w) =>
                 w is Text &&
-                (w.data == 'Chain kept.' || w.data == 'Giữ được chuỗi.'),
+                (w.data == 'Day 12 photo saved' ||
+                    w.data == 'Đã lưu ảnh ngày 12'),
           ),
         );
         final streak = rotated(find.byKey(const ValueKey('checkin-streak')));

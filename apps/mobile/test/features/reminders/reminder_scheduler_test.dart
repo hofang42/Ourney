@@ -187,8 +187,8 @@ void main() {
         ..sort((a, b) => a.fireAt.compareTo(b.fireAt));
       expect(before.first.fireAt, DateTime.utc(2026, 10, 16, 13));
       final alert = before[1];
-      expect(alert.title, 'Hôm nay vẫn còn kịp');
-      expect(alert.body, contains('1 ngày'));
+      expect(alert.title, 'Hôm nay bạn muốn lưu tấm nào?');
+      expect(alert.body, 'Tập mỗi ngày: một tấm hôm nay là đủ rồi.');
       expect(alert.fireAt, DateTime.utc(2026, 10, 16, 14)); // 21:00 local
 
       h.checkIns.byJourney['j1'] = [
@@ -200,7 +200,7 @@ void main() {
         ..sort((a, b) => a.fireAt.compareTo(b.fireAt));
       expect(after, hasLength(14)); // 13 reminders + tomorrow's alert
       expect(after.first.fireAt, DateTime.utc(2026, 10, 17, 13));
-      expect(after[1].body, contains('2 ngày'));
+      expect(after[1].body, 'Tập mỗi ngày: một tấm hôm nay là đủ rồi.');
     });
 
     test('only the user\'s own check-ins count when signed in', () async {
@@ -340,7 +340,7 @@ void main() {
 
         await h.container.read(reminderSchedulerProvider).reschedule();
         final alerts = gateway.scheduled.values
-            .where((n) => n.title == 'A moment for today')
+            .where((n) => n.title == 'What photo do you want to save today?')
             .toList();
         expect(alerts, hasLength(1));
         expect(
@@ -354,19 +354,20 @@ void main() {
       'gentle streak-alert copy (vi + en) contains no loss, midnight, or deadline wording',
       () {
         final forbidden = RegExp(
-          r'mất|midnight|nửa đêm|\bends\b|\buntil\b|keeps it going',
+          r'mất|midnight|nửa đêm|\bends\b|\buntil\b|keeps it going|chuỗi|streak|còn kịp',
           caseSensitive: false,
         );
         for (final locale in [const Locale('vi'), const Locale('en')]) {
           final l10n = lookupRemindersL10n(locale);
           final samples = {
             'reminders_alertTitle': l10n.reminders_alertTitle,
-            'reminders_alertBody': l10n.reminders_alertBody('Weight loss', 3),
+            'reminders_alertBody': l10n.reminders_alertBody('Weight loss'),
             'reminders_alertBodyAt': l10n.reminders_alertBodyAt(
               'Weight loss',
-              3,
               '02:00',
             ),
+            'reminders_streakAlertTitle': l10n.reminders_streakAlertTitle,
+            'reminders_streakAlertSubtitle': l10n.reminders_streakAlertSubtitle,
             'reminders_permissionMessage': l10n.reminders_permissionMessage,
             'reminders_channelDescription': l10n.reminders_channelDescription,
           };
@@ -468,7 +469,7 @@ void main() {
         await tester.pumpAndSettle();
 
         NotificationRequest alert() => gateway.scheduled.values.singleWhere(
-          (n) => n.title == 'A moment for today',
+          (n) => n.title == 'What photo do you want to save today?',
         );
         final fireAt = alert().fireAt;
         expect(alert().body, contains('(new journey day starts at 02:00)'));

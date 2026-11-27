@@ -88,6 +88,7 @@ void main() {
       expect(find.textContaining('· Day 7'), findsOneWidget); // open j2
       expect(find.text('Not yet'), findsOneWidget);
       expect(find.byType(UiStreakHero), findsOneWidget);
+      expect(find.text('2 days logged'), findsOneWidget);
       // Profile and inbox moved to dock tabs.
       expect(find.byKey(const ValueKey('profile-entry')), findsNothing);
       // j2 has no photo today: it leads the Today card.

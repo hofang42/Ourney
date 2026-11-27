@@ -371,13 +371,13 @@ abstract class AppLocalizations {
   /// Streak-at-risk reminder banner copy, quiet skin.
   ///
   /// In vi, this message translates to:
-  /// **'Chuỗi {streak} ngày rồi. Một tấm ảnh hôm nay là đủ.'**
+  /// **'Bạn đã lưu {streak} ngày rồi, hôm nay thêm một tấm là đủ.'**
   String reminderBanner_streak_quiet(int streak);
 
   /// Streak-at-risk reminder banner copy, squad skin.
   ///
   /// In vi, this message translates to:
-  /// **'Chuỗi {streak} ngày cùng nhau. Góp một tấm hôm nay nhé.'**
+  /// **'Đã đi cùng nhau {streak} ngày rồi, góp một tấm hôm nay nhé.'**
   String reminderBanner_streak_squad(int streak);
 
   /// Streak-at-risk reminder banner copy, memory skin.
@@ -389,19 +389,19 @@ abstract class AppLocalizations {
   /// Streak-at-risk reminder banner copy, couple skin.
   ///
   /// In vi, this message translates to:
-  /// **'Chuỗi {streak} ngày của hai đứa. Lưu một khoảnh khắc hôm nay nhé.'**
+  /// **'Hai bạn đã đi cùng nhau {streak} ngày rồi, chụp một tấm hôm nay nhé.'**
   String reminderBanner_streak_couple(int streak);
 
   /// Streak-at-risk reminder banner copy, flexer skin.
   ///
   /// In vi, this message translates to:
-  /// **'CHUỖI {streak} NGÀY. MỘT TẤM CHO HÔM NAY.'**
+  /// **'ĐÃ TẬP {streak} NGÀY · THÊM MỘT TẤM HÔM NAY'**
   String reminderBanner_streak_flexer(int streak);
 
   /// Streak-at-risk reminder banner copy, minimal skin.
   ///
   /// In vi, this message translates to:
-  /// **'CHUỖI {streak} NGÀY · HÔM NAY.'**
+  /// **'ĐÃ LƯU {streak} NGÀY · HÔM NAY'**
   String reminderBanner_streak_minimal(int streak);
 
   /// Missed-day chip, squad skin.
