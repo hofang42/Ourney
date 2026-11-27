@@ -136,10 +136,13 @@ class JourneyHomeIntro extends StatelessWidget {
         if (headline != null)
           Semantics(
             header: true,
-            child: Text(
-              headline,
-              key: const ValueKey('journey-home-headline'),
-              style: UiText.h1(color: ui.ink).copyWith(height: 1.2),
+            child: MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 1.2,
+              child: Text(
+                headline,
+                key: const ValueKey('journey-home-headline'),
+                style: UiText.h1(color: ui.ink).copyWith(height: 1.2),
+              ),
             ),
           ),
         const SizedBox(height: UiSpace.xs),

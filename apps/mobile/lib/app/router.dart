@@ -50,7 +50,8 @@ GoRouter createRouter({
             : null,
     routes: [
       StatefulShellRoute(
-        builder: (context, state, shell) => AppShell(navigationShell: shell),
+        builder: (context, state, shell) =>
+            AppShell(navigationShell: shell, routePath: state.uri.path),
         navigatorContainerBuilder: (context, navigationShell, children) =>
             UiShellBranchContainer(
               currentIndex: navigationShell.currentIndex,

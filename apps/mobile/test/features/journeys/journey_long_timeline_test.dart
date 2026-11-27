@@ -242,7 +242,9 @@ void main() {
     expect(_dayTaps.evaluate().length, 31);
   });
 
-  testWidgets('32 days passed: the switch and a bounded window', (tester) async {
+  testWidgets('32 days passed: the switch and a bounded window', (
+    tester,
+  ) async {
     await _pump(
       tester,
       _journey(PersonaSkinId.accountabilitySquad, elapsed: 32),
@@ -255,7 +257,11 @@ void main() {
   testWidgets('fixed 365-day journey on day 5 builds about 10 days', (
     tester,
   ) async {
-    final j = _journey(PersonaSkinId.accountabilitySquad, elapsed: 5, duration: 365);
+    final j = _journey(
+      PersonaSkinId.accountabilitySquad,
+      elapsed: 5,
+      duration: 365,
+    );
     await _pump(tester, j);
     expect(_key('timeline-mode-recent'), findsNothing);
     expect(_dayTaps.evaluate().length, lessThanOrEqualTo(10));
@@ -266,7 +272,11 @@ void main() {
   testWidgets('a 30-day journey that ended keeps the short layout', (
     tester,
   ) async {
-    final j = _journey(PersonaSkinId.minimalistHabit, elapsed: 40, duration: 30);
+    final j = _journey(
+      PersonaSkinId.minimalistHabit,
+      elapsed: 40,
+      duration: 30,
+    );
     await _pump(tester, j);
     expect(_key('timeline-mode-recent'), findsNothing);
     expect(_dayTaps.evaluate().length, 30);
@@ -275,7 +285,11 @@ void main() {
   testWidgets('a 365-day journey that ended lists no month after its end', (
     tester,
   ) async {
-    final j = _journey(PersonaSkinId.minimalistHabit, elapsed: 400, duration: 365);
+    final j = _journey(
+      PersonaSkinId.minimalistHabit,
+      elapsed: 400,
+      duration: 365,
+    );
     await _pump(tester, j);
     await _byMonth(tester);
     // The end was 2026-09-11: September is the open month, October absent.
@@ -332,7 +346,9 @@ void main() {
     );
     await _pump(tester, j, until: j.startDate.addDays(59));
     expect(_key('timeline-end-cap'), findsNothing);
-    final taps = _dayTaps.evaluate().map((e) => (e.widget as TimelineDayTap).day);
+    final taps = _dayTaps.evaluate().map(
+      (e) => (e.widget as TimelineDayTap).day,
+    );
     expect(taps.last.date, j.startDate.addDays(59));
     expect(taps.any((d) => d.state == DayState.future), isFalse);
     expect(tester.takeException(), isNull);
@@ -443,7 +459,11 @@ void main() {
   testWidgets('choices are kept per journey and Recent goes to the top', (
     tester,
   ) async {
-    final j = _journey(PersonaSkinId.minimalistHabit, elapsed: 200, duration: 365);
+    final j = _journey(
+      PersonaSkinId.minimalistHabit,
+      elapsed: 200,
+      duration: 365,
+    );
     final h = await _pump(tester, j);
     await _byMonth(tester);
     await _toggle(tester, RegExp(r'^tháng 9 2026, '));
@@ -464,17 +484,18 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(_key('timeline-mode-recent'));
     await tester.pumpAndSettle();
-    expect(
-      tester.getRect(_key('timeline-mode-recent')).top,
-      lessThan(120),
-    );
+    expect(tester.getRect(_key('timeline-mode-recent')).top, lessThan(120));
   });
 
   testWidgets('collapsed month is one node, the current month is open', (
     tester,
   ) async {
     final handle = tester.ensureSemantics();
-    final j = _journey(PersonaSkinId.minimalistHabit, elapsed: 365, duration: 365);
+    final j = _journey(
+      PersonaSkinId.minimalistHabit,
+      elapsed: 365,
+      duration: 365,
+    );
     await _pump(tester, j);
     await _byMonth(tester);
     SemanticsNode node(RegExp label) =>
@@ -514,9 +535,58 @@ void main() {
         ) async {
           final handle = tester.ensureSemantics();
           final j = _journey(skin, elapsed: 365, duration: 365);
-          await _pump(tester, j, scale: 1.35, brightness: brightness);
+          await _pump(tester, j, scale: 1.0, brightness: brightness);
+          final title1x = tester.getSize(find.text(j.title).last).height;
+          final headline1x = tester
+              .getSize(_key('journey-home-headline'))
+              .height;
+
+          tester.platformDispatcher.textScaleFactorTestValue = 1.35;
+          await tester.pumpAndSettle();
+          final title135x = tester.getSize(find.text(j.title).last).height;
+          final headline135x = tester
+              .getSize(_key('journey-home-headline'))
+              .height;
+          expect(
+            title135x,
+            greaterThan(title1x),
+            reason: 'h1 title at 1.35x must be monotonically larger than 1.0x',
+          );
+          expect(
+            headline135x,
+            greaterThan(headline1x),
+            reason: 'h1 intro headline at 1.35x must be monotonically larger than 1.0x',
+          );
+
           await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
           await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+
+          final checkInRect = tester.getRect(_key('journey-checkin'));
+          var recentRect = tester.getRect(_key('timeline-mode-recent'));
+          var monthRect = tester.getRect(_key('timeline-mode-month'));
+          if (skin == PersonaSkinId.quietTransformer) {
+            expect(monthRect.bottom, lessThanOrEqualTo(checkInRect.top));
+          } else if (monthRect.bottom > checkInRect.top - 8) {
+            // Tall skin headers (e.g. accountabilitySquad trophy + chip) place
+            // the 6th section near the fold at 1.35x; scroll it clear of the
+            // floating Check-in CTA before measuring non-overlap and contrast.
+            final dy = monthRect.bottom - (checkInRect.top - 16);
+            await tester.drag(find.byType(Scrollable).first, Offset(0, -dy));
+            await tester.pumpAndSettle();
+            recentRect = tester.getRect(_key('timeline-mode-recent'));
+            monthRect = tester.getRect(_key('timeline-mode-month'));
+          }
+          expect(
+            recentRect.overlaps(checkInRect),
+            isFalse,
+            reason: 'recent tab $recentRect must not overlap $checkInRect',
+          );
+          expect(
+            monthRect.overlaps(checkInRect),
+            isFalse,
+            reason: 'month tab $monthRect must not overlap $checkInRect',
+          );
+          expect(monthRect.bottom, lessThanOrEqualTo(checkInRect.top));
           await expectLater(tester, meetsGuideline(textContrastGuideline));
           await _byMonth(tester);
           await expectLater(tester, meetsGuideline(androidTapTargetGuideline));

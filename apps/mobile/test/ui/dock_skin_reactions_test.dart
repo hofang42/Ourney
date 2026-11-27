@@ -1,7 +1,12 @@
+import 'dart:io';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/ui/components/dock.dart';
-import 'package:ourney/ui/components/dock_tab.dart' show dockSelectionRadius;
+import 'package:ourney/ui/components/dock_tab.dart'
+    show dockE4CapsuleLabelSidePad;
 import 'package:ourney/ui/components/glass.dart';
 import 'package:ourney/ui/components/ourney_icons.dart';
 import 'package:ourney/ui/components/pressable.dart';
@@ -10,6 +15,21 @@ import 'package:ourney/ui/components/skin_scope.dart';
 import 'package:ourney/ui/skins.dart';
 import 'package:ourney/ui/theme.dart';
 import 'package:ourney/ui/tokens.dart';
+import 'package:ourney/ui/typography.dart';
+
+Future<void> _loadBodyFont() async {
+  final loader = FontLoader(UiFonts.body);
+  for (final file in [
+    'assets/fonts/BeVietnamPro-Regular.ttf',
+    'assets/fonts/BeVietnamPro-Medium.ttf',
+    'assets/fonts/BeVietnamPro-SemiBold.ttf',
+    'assets/fonts/BeVietnamPro-Bold.ttf',
+  ]) {
+    final bytes = File(file).readAsBytesSync();
+    loader.addFont(Future.value(ByteData.sublistView(bytes)));
+  }
+  await loader.load();
+}
 
 Widget host(
   Widget child, {
@@ -63,6 +83,8 @@ UiDock fiveTab(List<String> taps, {int active = 0, VoidCallback? onLong}) {
 }
 
 void main() {
+  setUpAll(_loadBodyFont);
+
   group('svg path parser', () {
     test('absolute and relative lines, H/V, Z', () {
       expect(
@@ -188,14 +210,18 @@ void main() {
   });
 
   group('UiDock', () {
-    for (final activeTab in [0, 3]) {
+    for (final activeTab in [0, 1, 3, 4]) {
       testWidgets(
-        '360dp Vietnamese label stays inside the capsule ($activeTab)',
+        '360dp Vietnamese label stays inside the C1 r=16 capsule with >= 4.0dp inner clearance (tab=$activeTab)',
         (tester) async {
+          tester.view.devicePixelRatio = 1;
+          tester.view.physicalSize = const Size(360, 780);
+          addTearDown(tester.view.reset);
           await tester.pumpWidget(
             host(
               UiDock(
                 left: UiDockItem(
+                  itemKey: const ValueKey('skin-tab-0'),
                   glyph: 'journeys',
                   label: 'Hành trình',
                   active: activeTab == 0,
@@ -203,6 +229,7 @@ void main() {
                 ),
                 extraLeft: [
                   UiDockItem(
+                    itemKey: const ValueKey('skin-tab-1'),
                     glyph: 'squad',
                     label: 'Nhóm',
                     active: activeTab == 1,
@@ -211,6 +238,7 @@ void main() {
                 ],
                 extraRight: [
                   UiDockItem(
+                    itemKey: const ValueKey('skin-tab-3'),
                     glyph: 'activity',
                     label: 'Hoạt động',
                     active: activeTab == 3,
@@ -218,6 +246,7 @@ void main() {
                   ),
                 ],
                 right: UiDockItem(
+                  itemKey: const ValueKey('skin-tab-4'),
                   glyph: 'profile',
                   label: 'Hồ sơ',
                   active: activeTab == 4,
@@ -230,26 +259,71 @@ void main() {
             ),
           );
           await tester.pump();
+          final isLong = activeTab == 0 || activeTab == 3;
           final pill = tester.getRect(
             find.byKey(const ValueKey('dock-selection-pill')),
           );
-          final label = tester.getRect(
-            find.text(activeTab == 0 ? 'Hành trình' : 'Hoạt động'),
+          expect(pill.width, closeTo(isLong ? 70.0 : 59.0, 0.5));
+          final pillDeco =
+              tester
+                      .widget<DecoratedBox>(
+                        find.byKey(const ValueKey('dock-selection-pill')),
+                      )
+                      .decoration
+                  as BoxDecoration;
+          expect(pillDeco.borderRadius, BorderRadius.circular(16));
+          for (final k in [0, 1, 3, 4]) {
+            final slotRect = tester.getRect(
+              find.byKey(ValueKey('skin-tab-$k')),
+            );
+            expect(slotRect.width, greaterThanOrEqualTo(48.0));
+          }
+          final labelText = switch (activeTab) {
+            0 => 'Hành trình',
+            1 => 'Nhóm',
+            3 => 'Hoạt động',
+            _ => 'Hồ sơ',
+          };
+          final label = tester.getRect(find.text(labelText));
+          expect(
+            label.width,
+            lessThanOrEqualTo(pill.width - dockE4CapsuleLabelSidePad + 0.5),
           );
-          final r = pill.height / 2;
-          bool inside(Offset p) {
-            final cx = p.dx.clamp(pill.left + r, pill.right - r);
-            return (p - Offset(cx, pill.center.dy)).distance <= r - 2;
-          }
+          final activeWidget = tester.widget<Text>(find.text(labelText));
+          expect(activeWidget.style!.fontSize, closeTo(10.0, 0.01));
+          final tp = TextPainter(
+            text: TextSpan(text: labelText, style: activeWidget.style),
+            textDirection: TextDirection.ltr,
+            maxLines: 1,
+          )..layout();
+          final baselineY =
+              label.top +
+              tp.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+          tp.dispose();
 
-          for (final p in [
-            label.bottomLeft,
-            label.bottomRight,
-            label.topLeft,
-            label.topRight,
-          ]) {
-            expect(inside(p), isTrue, reason: 'label corner $p vs $pill');
-          }
+          // Inner boundary of the r=16 (r_inner = 14.5) capsule at baselineY:
+          const rOuter = 16.0;
+          const rInner = rOuter - UiBorder.thin; // 14.5
+          final dy = (baselineY - (pill.bottom - rOuter)).clamp(0.0, rInner);
+          final dxArc = (rInner * rInner - dy * dy) > 0
+              ? (rInner * rInner - dy * dy)
+              : 0.0;
+          final innerHalfChord = (pill.width / 2 - rOuter) + math.sqrt(dxArc);
+          final leftClearance = label.left - (pill.center.dx - innerHalfChord);
+          final rightClearance =
+              (pill.center.dx + innerHalfChord) - label.right;
+          expect(
+            leftClearance,
+            greaterThanOrEqualTo(4.5),
+            reason: '$labelText left inner clearance at 360dp',
+          );
+          expect(
+            rightClearance,
+            greaterThanOrEqualTo(4.5),
+            reason: '$labelText right inner clearance at 360dp',
+          );
+          expect(label.top, greaterThanOrEqualTo(pill.top));
+          expect(label.bottom, lessThanOrEqualTo(pill.bottom));
         },
       );
     }
@@ -307,12 +381,11 @@ void main() {
       expect(taps, ['j', 'h', 'a', 'p', 'snap']);
 
       final pill = find.byKey(const ValueKey('dock-selection-pill'));
-      expect(tester.getSize(pill).height, 56);
-      expect(tester.getSize(pill).width, inInclusiveRange(60, 78));
-      // V2 capsule shape (U17).
+      expect(tester.getSize(pill).height, 52);
+      expect(tester.getSize(pill).width, inInclusiveRange(59, 74));
       final deco =
           tester.widget<DecoratedBox>(pill).decoration as BoxDecoration;
-      expect(deco.borderRadius, BorderRadius.circular(dockSelectionRadius));
+      expect(deco.borderRadius, BorderRadius.circular(16));
       // Even the outermost tab keeps clear padding inside the dock border.
       expect(
         tester.getTopLeft(pill).dx - tester.getTopLeft(find.byType(UiDock)).dx,
@@ -341,21 +414,23 @@ void main() {
               host(fiveTab([], active: active), brightness: b),
             );
             await tester.pumpAndSettle();
-            final glass = tester.getRect(find.byType(UiGlass));
+            final islands = find.byType(UiGlass);
+            final glass = tester.getRect(
+              active == 0 ? islands.first : islands.last,
+            );
             final pill = tester.getRect(
               find.byKey(const ValueKey('dock-selection-pill')),
             );
-            // 2dp border + >= 8dp gap, also past the pill's 2dp hard shadow.
             const shadow = UiShadow.tiny;
-            expect(pill.top - glass.top, greaterThanOrEqualTo(10));
+            expect(pill.top - glass.top, greaterThanOrEqualTo(5));
             expect(
               glass.bottom - (pill.bottom + shadow),
-              greaterThanOrEqualTo(8),
+              greaterThanOrEqualTo(4),
             );
-            expect(pill.left - glass.left, greaterThanOrEqualTo(10));
+            expect(pill.left - glass.left, greaterThanOrEqualTo(4));
             expect(
               glass.right - (pill.right + shadow),
-              greaterThanOrEqualTo(8),
+              greaterThanOrEqualTo(3),
             );
           }
         },
@@ -392,12 +467,15 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(host(fiveTab([])));
-      final glass = tester.widget<UiGlass>(find.byType(UiGlass));
-      expect(glass.blur, 20);
-      expect(glass.borderWidth, UiBorder.standard);
-      expect(glass.hardShadow, greaterThan(0));
-      expect(glass.tint!.a, lessThan(0.9));
-      expect(find.byType(BackdropFilter), findsOneWidget);
+      final glasses = tester.widgetList<UiGlass>(find.byType(UiGlass)).toList();
+      expect(glasses, hasLength(2));
+      for (final glass in glasses) {
+        expect(glass.blur, 20);
+        expect(glass.borderWidth, UiBorder.standard);
+        expect(glass.hardShadow, greaterThan(0));
+        expect(glass.tint!.a, lessThan(0.9));
+      }
+      expect(find.byType(BackdropFilter), findsNWidgets(2));
     });
 
     testWidgets('selection pill jumps at once under reduce-motion', (
@@ -494,8 +572,8 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(host(fiveTab([])));
-      expect(find.byType(UiGlass), findsOneWidget);
-      expect(find.byType(BackdropFilter), findsOneWidget);
+      expect(find.byType(UiGlass), findsNWidgets(2));
+      expect(find.byType(BackdropFilter), findsNWidgets(2));
 
       await tester.pumpWidget(
         host(
@@ -520,7 +598,7 @@ void main() {
           host(UiSkinScope(skinId: skin, child: fiveTab([]))),
         );
         await tester.pumpAndSettle();
-        return tester.widget<UiGlass>(find.byType(UiGlass)).borderWidth;
+        return tester.widget<UiGlass>(find.byType(UiGlass).first).borderWidth;
       }
 
       expect(await outline('quiet'), UiBorder.thin);
@@ -795,8 +873,8 @@ void main() {
         // A Center without a height once made the glass fill the screen and
         // swallow every tap above it.
         final height = tester.getSize(find.byType(UiDock)).height;
-        expect(height, lessThan(120));
-        expect(tester.getSize(find.byType(UiGlass)).height, camera ? 92 : 76);
+        expect(height, camera ? 90 : 84);
+        expect(tester.getSize(find.byType(UiGlass).first).height, 64);
       });
     }
   });

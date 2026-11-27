@@ -11,7 +11,7 @@ import '../ui/ui.dart';
 import 'providers.dart';
 
 /// The 5-tab dock of every primary screen (V2 `Dock`, CLAUDE.md §2):
-/// Journeys · Squad ("Nhóm") · the quick-snap pill (filled with the active
+/// Journeys · Squad ("Nhóm") · the camera circle (filled with the active
 /// journey's accent) · Activity · Profile. On the camera it becomes the dark `.camera-dock` with the
 /// hero shutter passed as [shutter].
 ///
@@ -23,6 +23,7 @@ class AppDock extends ConsumerStatefulWidget {
     required this.currentIndex,
     required this.onSelect,
     this.shutter,
+    this.compact = false,
     super.key,
   });
 
@@ -38,12 +39,15 @@ class AppDock extends ConsumerStatefulWidget {
   /// The hero shutter; when set the dock is drawn in camera mode.
   final Widget? shutter;
 
+  /// E4 scroll-driven compact state (ignored when [shutter] is set).
+  final bool compact;
+
   @override
   ConsumerState<AppDock> createState() => _AppDockState();
 }
 
 class _AppDockState extends ConsumerState<AppDock> {
-  final GlobalKey _dockKey = GlobalKey();
+  final GlobalKey _centerKey = GlobalKey(debugLabel: 'dock-center');
 
   /// [UiTypeBadge] id of a persona skin.
   static String _badgeType(PersonaSkinId skin) => switch (skin) {
@@ -56,7 +60,7 @@ class _AppDockState extends ConsumerState<AppDock> {
   };
 
   void _openWheel() {
-    final box = _dockKey.currentContext?.findRenderObject();
+    final box = _centerKey.currentContext?.findRenderObject();
     if (box is! RenderBox || !box.attached) return;
     final journeys = ref.read(journeysListProvider).value ?? const <Journey>[];
     final active = [
@@ -108,40 +112,39 @@ class _AppDockState extends ConsumerState<AppDock> {
           active: widget.currentIndex == index,
           onPressed: () => widget.onSelect(index),
         );
-    return KeyedSubtree(
-      key: _dockKey,
-      child: UiDock(
-        camera: widget.shutter != null,
-        center: widget.shutter,
-        accent: style?.accent,
-        onAccent: style?.onAccent,
-        snapLabel: l10n.nav_capture,
-        snapKey: const ValueKey('dock-snap-pill'),
-        onSnap: () => widget.onSelect(AppDock.captureIndex),
-        onShutterLongPress: _openWheel,
-        left: item(
-          'dock-journeys',
-          'journeys',
-          l10n.nav_journeys,
-          AppDock.journeysIndex,
+    return UiDock(
+      camera: widget.shutter != null,
+      compact: widget.compact,
+      center: widget.shutter,
+      centerAnchorKey: _centerKey,
+      accent: style?.accent,
+      onAccent: style?.onAccent,
+      snapLabel: l10n.nav_capture,
+      snapKey: const ValueKey('dock-snap-pill'),
+      onSnap: () => widget.onSelect(AppDock.captureIndex),
+      onShutterLongPress: _openWheel,
+      left: item(
+        'dock-journeys',
+        'journeys',
+        l10n.nav_journeys,
+        AppDock.journeysIndex,
+      ),
+      extraLeft: [
+        item('dock-groups', 'squad', l10n.nav_groups, AppDock.groupsIndex),
+      ],
+      extraRight: [
+        item(
+          'dock-activity',
+          'activity',
+          l10n.nav_activity,
+          AppDock.activityIndex,
         ),
-        extraLeft: [
-          item('dock-groups', 'squad', l10n.nav_groups, AppDock.groupsIndex),
-        ],
-        extraRight: [
-          item(
-            'dock-activity',
-            'activity',
-            l10n.nav_activity,
-            AppDock.activityIndex,
-          ),
-        ],
-        right: item(
-          'dock-profile',
-          'profile',
-          l10n.nav_profileTab,
-          AppDock.profileIndex,
-        ),
+      ],
+      right: item(
+        'dock-profile',
+        'profile',
+        l10n.nav_profileTab,
+        AppDock.profileIndex,
       ),
     );
   }

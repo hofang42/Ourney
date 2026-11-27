@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/app_dock.dart';
 import 'package:ourney/ui/components/dock.dart';
 
 import 'journeys_fakes.dart';
@@ -71,10 +72,14 @@ void main() {
             matching: find.byType(Scrollable),
           )
           .first;
+      final dockTopBefore = tester.getTopLeft(find.byType(UiDock)).dy;
       await tester.drag(scrollable, const Offset(0, -20000));
       await tester.pumpAndSettle();
 
+      // Dragging down compacts the dock without changing UiDock's top dy.
+      expect(tester.widget<AppDock>(find.byType(AppDock)).compact, isTrue);
       final dockTop = tester.getTopLeft(find.byType(UiDock)).dy;
+      expect(dockTop, closeTo(dockTopBefore, 0.01));
       final last = tester.getRect(
         find.byKey(const ValueKey('journey-card-j8')),
       );
