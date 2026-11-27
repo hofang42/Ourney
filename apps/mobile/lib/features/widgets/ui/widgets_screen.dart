@@ -1,7 +1,8 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart'
-    show TargetPlatform, defaultTargetPlatform, kIsWeb;
+    show TargetPlatform, defaultTargetPlatform, kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,11 +31,23 @@ import '../l10n/generated/widgets_localizations.dart';
 /// Which widget surface is currently previewed in the `/widgets` gallery.
 enum WidgetPreviewKind { today, streak, squad }
 
+/// Whether widget diagnostics are visible by default without the 7-tap
+/// developer unlock (`kDebugMode`: true in debug builds, false in release).
+/// Overridable in tests to simulate release-mode default behavior.
+final widgetDiagnosticsDebugModeProvider = Provider<bool>((ref) => kDebugMode);
+
 /// `/widgets`: Soft Neo-Brutalist preview gallery of Today / Streak / Squad
 /// widgets, 3-step OS setup guide, and explicit privacy & Live Activity
 /// controls (§3.1 #6, §7.2).
 class WidgetsScreen extends ConsumerStatefulWidget {
-  const WidgetsScreen({super.key});
+  const WidgetsScreen({
+    super.key,
+    this.debugShowDiagnostics = kDebugMode,
+  });
+
+  /// Defaults to [kDebugMode]; tests may pass `false` or override
+  /// [widgetDiagnosticsDebugModeProvider] to verify release-mode hiding.
+  final bool debugShowDiagnostics;
 
   @override
   ConsumerState<WidgetsScreen> createState() => _WidgetsScreenState();
@@ -42,9 +55,30 @@ class WidgetsScreen extends ConsumerStatefulWidget {
 
 class _WidgetsScreenState extends ConsumerState<WidgetsScreen>
     with WidgetsBindingObserver {
+  static const int _kDiagnosticsUnlockTaps = 7;
+  static const Duration _kDiagnosticsUnlockWindow = Duration(seconds: 3);
+
   WidgetPreviewKind _previewKind = WidgetPreviewKind.today;
   List<PlacedWidgetInfo> _placedWidgets = const [];
   TargetPlatform? _lastPlatform;
+  final List<DateTime> _titleTapTimes = <DateTime>[];
+  bool _diagnosticsUnlocked = false;
+
+  void _onTitleTap(String unlockedMessage) {
+    final now = clock.now();
+    _titleTapTimes
+      ..removeWhere((t) => now.difference(t) > _kDiagnosticsUnlockWindow)
+      ..add(now);
+    if (_titleTapTimes.length < _kDiagnosticsUnlockTaps) return;
+    _titleTapTimes.clear();
+    final unlocked = !_diagnosticsUnlocked;
+    setState(() => _diagnosticsUnlocked = unlocked);
+    if (unlocked) {
+      showUiToast(context, unlockedMessage);
+    } else {
+      ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
+    }
+  }
 
   @override
   void initState() {
@@ -259,6 +293,11 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen>
     final showAppGroupNotice =
         isIOS &&
         ref.watch(widgetCapabilitiesProvider).asData?.value.appGroup == false;
+    final showDebugDiagnostics =
+        widget.debugShowDiagnostics &&
+        ref.watch(widgetDiagnosticsDebugModeProvider);
+    final showDiagnosticsCard =
+        isIOS && (showDebugDiagnostics || _diagnosticsUnlocked);
 
     final photoModeNote = switch (photoMode) {
       WidgetPhotoMode.smart => l10n.widgets_photoModeSmartNote,
@@ -273,10 +312,16 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          UiBackHeader(
-            onBack: _close,
-            backLabel: l10n.widgets_back,
-            title: l10n.widgets_title,
+          GestureDetector(
+            key: const ValueKey('widgets-header-unlock'),
+            behavior: HitTestBehavior.translucent,
+            excludeFromSemantics: true,
+            onTap: () => _onTitleTap(l10n.widgets_diagnosticsUnlocked),
+            child: UiBackHeader(
+              onBack: _close,
+              backLabel: l10n.widgets_back,
+              title: l10n.widgets_title,
+            ),
           ),
           const SizedBox(height: UiSpace.sm),
           Text(
@@ -293,7 +338,7 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen>
               ),
             ),
           ],
-          if (isIOS) ...[
+          if (showDiagnosticsCard) ...[
             const SizedBox(height: UiSpace.md),
             const _WidgetDiagnosticsCard(),
           ],

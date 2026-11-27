@@ -36,6 +36,9 @@ class WidgetsL10nEn extends WidgetsL10n {
   String get widgets_diagnosticsCopied => 'Widget log copied';
 
   @override
+  String get widgets_diagnosticsUnlocked => 'Diagnostics on';
+
+  @override
   String get widgets_secPreview => 'widget preview';
 
   @override
