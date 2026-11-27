@@ -132,13 +132,13 @@ private struct TodaySmallView: View {
   var body: some View {
     let locale = snapshot.locale
     let phase = journey.phase(at: entryDate)
-    let pendingList = snapshot.journeys.filter { !$0.checkedInToday }
-    let pendingIndex = (pendingList.firstIndex(where: { $0.id == journey.id }) ?? 0) + 1
-    let showCycleControl = pendingList.count >= 2 && !journey.checkedInToday
+    let cyclePool = snapshot.todayCyclePool()
+    let cycleIndex = (cyclePool.firstIndex(where: { $0.id == journey.id }) ?? 0) + 1
+    let showCycleControl = cyclePool.count >= 2
     let destination = journey.captureURL
 
     VStack(alignment: .leading, spacing: 6) {
-      // Top header: type icon + day pill + interactive cycle button if 2+ pending
+      // Top header: type icon + day pill + interactive cycle button if 2+ journeys
       HStack(spacing: 5) {
         OurneyIconView(name: journey.typeIcon, size: 18, ink: theme.ink)
 
@@ -152,8 +152,8 @@ private struct TodaySmallView: View {
 
         if showCycleControl {
           TodayCycleJourneyButton(
-            currentIndex: pendingIndex,
-            totalPending: pendingList.count,
+            currentIndex: cycleIndex,
+            totalPending: cyclePool.count,
             locale: locale,
             theme: theme
           )
@@ -293,8 +293,8 @@ private struct TodayMediumView: View {
   var body: some View {
     let locale = snapshot.locale
     let phase = journey.phase(at: entryDate)
-    let pendingList = snapshot.journeys.filter { !$0.checkedInToday }
-    let pendingIndex = (pendingList.firstIndex(where: { $0.id == journey.id }) ?? 0) + 1
+    let cyclePool = snapshot.todayCyclePool()
+    let cycleIndex = (cyclePool.firstIndex(where: { $0.id == journey.id }) ?? 0) + 1
     let destination = journey.captureURL
 
     HStack(spacing: 10) {
@@ -310,10 +310,10 @@ private struct TodayMediumView: View {
 
           Spacer(minLength: 2)
 
-          if pendingList.count >= 2 && !journey.checkedInToday {
+          if cyclePool.count >= 2 {
             TodayCycleJourneyButton(
-              currentIndex: pendingIndex,
-              totalPending: pendingList.count,
+              currentIndex: cycleIndex,
+              totalPending: cyclePool.count,
               locale: locale,
               theme: theme
             )
@@ -446,8 +446,8 @@ private struct TodayLargeView: View {
   var body: some View {
     let locale = snapshot.locale
     let phase = journey.phase(at: entryDate)
-    let pendingList = snapshot.journeys.filter { !$0.checkedInToday }
-    let pendingIndex = (pendingList.firstIndex(where: { $0.id == journey.id }) ?? 0) + 1
+    let cyclePool = snapshot.todayCyclePool()
+    let cycleIndex = (cyclePool.firstIndex(where: { $0.id == journey.id }) ?? 0) + 1
     let otherJourneys = snapshot.journeys.filter { $0.id != journey.id }.prefix(2)
     let destination = journey.captureURL
 
@@ -467,10 +467,10 @@ private struct TodayLargeView: View {
 
         Spacer()
 
-        if pendingList.count >= 2 && !journey.checkedInToday {
+        if cyclePool.count >= 2 {
           TodayCycleJourneyButton(
-            currentIndex: pendingIndex,
-            totalPending: pendingList.count,
+            currentIndex: cycleIndex,
+            totalPending: cyclePool.count,
             locale: locale,
             theme: theme
           )

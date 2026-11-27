@@ -634,6 +634,32 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
     XCTAssertEqual(snapshot.selectedStreakJourney()?.id, "8a10b220-run")
     XCTAssertEqual(snapshot.selectedSquad()?.journeyId, "6f8c9a10-ielts")
 
+    // When only 1 journey is pending and 1 is checked in, todayCyclePool still includes both
+    // journeys so the Today widget's 1/N › cycle button keeps working after check-in.
+    XCTAssertEqual(snapshot.todayCyclePool().map(\.id), ["6f8c9a10-ielts", "8a10b220-run"])
+    XCTAssertEqual(
+      snapshot.selectedTodayJourney(state: WidgetInteractiveState(selectedTodayIndex: 1))?.id,
+      "8a10b220-run"
+    )
+
+    // Explicit defaultSquadId selects the matching squad independent of defaultJourneyId.
+    let secondSquad = WidgetSquadItem(
+      journeyId: "couple-ritual-2",
+      title: "Đôi mình",
+      skinId: "couple",
+      colorVariant: 0,
+      typeIcon: "type-couple",
+      isCouple: true,
+      dayNumber: 18,
+      totalDays: 30,
+      doneCount: 2,
+      memberCount: 2,
+      meCheckedInToday: true
+    )
+    snapshot.squads.append(secondSquad)
+    snapshot.defaultSquadId = "couple-ritual-2"
+    XCTAssertEqual(snapshot.selectedSquad()?.journeyId, "couple-ritual-2")
+
     // Older snapshots can omit both lists.
     let legacyJsonWithoutLists = """
     {

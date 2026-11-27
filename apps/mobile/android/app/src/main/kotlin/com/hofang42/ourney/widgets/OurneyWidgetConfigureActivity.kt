@@ -653,32 +653,14 @@ class OurneyWidgetConfigureActivity : Activity() {
         saving = true
         val appCtx = applicationContext
         val id = appWidgetId
-        val kind = widgetKind
-        store.setWidgetSelection(id, chosenId)
 
         CoroutineScope(Dispatchers.Default).launch {
-            try {
-                val manager = GlanceAppWidgetManager(appCtx)
-                val glanceId = manager.getGlanceIdBy(id)
-                updateAppWidgetState(appCtx, glanceId) { prefs ->
-                    if (chosenId == WidgetSnapshot.AUTO_SELECTION_ID) {
-                        prefs.remove(WidgetPrefsKeys.SELECTED_ID)
-                    } else {
-                        prefs[WidgetPrefsKeys.SELECTED_ID] = chosenId
-                    }
-                    val prevSeq = prefs[WidgetPrefsKeys.SNAPSHOT_SEQ] ?: 0L
-                    prefs[WidgetPrefsKeys.SNAPSHOT_SEQ] =
-                        maxOf(System.currentTimeMillis(), prevSeq + 1L)
-                    prefs[WidgetPrefsKeys.CYCLE_INDEX] = 0
-                }
-                when (kind) {
-                    WidgetConfigKind.TODAY -> TodayGlanceWidget().update(appCtx, glanceId)
-                    WidgetConfigKind.STREAK -> StreakGlanceWidget().update(appCtx, glanceId)
-                    WidgetConfigKind.SQUAD -> SquadGlanceWidget().update(appCtx, glanceId)
-                }
-            } catch (_: Throwable) {
-                WidgetActions.refreshAllWidgets(appCtx)
-            }
+            WidgetActions.applyWidgetSelection(
+                context = appCtx,
+                appWidgetId = id,
+                selectedId = chosenId,
+                store = store,
+            )
             runOnUiThread {
                 val resultValue = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
                 setResult(RESULT_OK, resultValue)

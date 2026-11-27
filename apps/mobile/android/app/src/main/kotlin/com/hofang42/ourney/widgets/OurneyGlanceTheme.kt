@@ -131,6 +131,7 @@ object OurneyGlanceTheme {
         "squad" -> R.drawable.ic_ourney_sticker_squad
         "chevron-right" -> R.drawable.ic_ourney_sticker_chevron_right
         "close" -> R.drawable.ic_ourney_sticker_close
+        "edit" -> R.drawable.ic_ourney_sticker_edit
         "lock" -> R.drawable.ic_ourney_sticker_lock
         "sparkle" -> R.drawable.ic_ourney_sticker_sparkle
         "type-weight", "scales", "weight" -> R.drawable.ic_ourney_sticker_type_weight
@@ -158,6 +159,7 @@ object OurneyGlanceTheme {
         "squad" -> R.drawable.ic_ourney_mono_squad
         "chevron-right" -> R.drawable.ic_ourney_mono_chevron_right
         "close" -> R.drawable.ic_ourney_mono_close
+        "edit" -> R.drawable.ic_ourney_mono_edit
         "lock" -> R.drawable.ic_ourney_mono_lock
         "sparkle" -> R.drawable.ic_ourney_mono_sparkle
         "type-weight", "scales", "weight" -> R.drawable.ic_ourney_mono_type_weight

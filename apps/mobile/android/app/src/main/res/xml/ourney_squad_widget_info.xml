@@ -13,5 +13,5 @@
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_initial_loading"
     android:configure="com.hofang42.ourney.widgets.OurneyWidgetConfigureActivity"
-    android:widgetFeatures="reconfigurable|configuration_optional"
+    android:widgetFeatures="reconfigurable"
     android:description="@string/widget_squad_desc" />

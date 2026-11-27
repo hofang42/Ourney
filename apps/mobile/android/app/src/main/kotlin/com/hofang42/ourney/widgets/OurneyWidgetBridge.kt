@@ -1,11 +1,14 @@
 package com.hofang42.ourney.widgets
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import kotlinx.coroutines.runBlocking
 import java.util.concurrent.Executors
 
 /**
@@ -28,6 +31,8 @@ class OurneyWidgetBridge(context: Context) : MethodChannel.MethodCallHandler {
             "clearAll" -> handleClearAll(result)
             "consumeWidgetState" -> handleConsumeWidgetState(result)
             "getCapabilities" -> handleGetCapabilities(result)
+            "getPlacedWidgets" -> handleGetPlacedWidgets(result)
+            "setWidgetSelection" -> handleSetWidgetSelection(call, result)
             else -> result.notImplemented()
         }
     }
@@ -106,6 +111,82 @@ class OurneyWidgetBridge(context: Context) : MethodChannel.MethodCallHandler {
             "appGroup" to true,
         )
         result.success(capabilities)
+    }
+
+    private fun handleGetPlacedWidgets(result: MethodChannel.Result) {
+        ioExecutor.execute {
+            val placed = queryPlacedWidgets()
+            mainHandler.post {
+                result.success(placed)
+            }
+        }
+    }
+
+    private fun handleSetWidgetSelection(call: MethodCall, result: MethodChannel.Result) {
+        val args = call.arguments as? Map<*, *>
+        val appWidgetId = (args?.get("appWidgetId") as? Number)?.toInt()
+            ?: AppWidgetManager.INVALID_APPWIDGET_ID
+        val selectedId = args?.get("selectedId") as? String
+        if (appWidgetId <= 0) {
+            result.success(false)
+            return
+        }
+        ioExecutor.execute {
+            val ok = try {
+                runBlocking {
+                    WidgetActions.applyWidgetSelection(
+                        context = appContext,
+                        appWidgetId = appWidgetId,
+                        selectedId = selectedId,
+                        store = store,
+                    )
+                }
+            } catch (_: Throwable) {
+                false
+            }
+            mainHandler.post {
+                result.success(ok)
+            }
+        }
+    }
+
+    private fun queryPlacedWidgets(): List<Map<String, Any>> {
+        val manager = try {
+            AppWidgetManager.getInstance(appContext)
+        } catch (_: Throwable) {
+            return emptyList()
+        }
+        val receivers = listOf(
+            OurneyTodayWidgetReceiver::class.java to "today",
+            OurneyStreakWidgetReceiver::class.java to "streak",
+            OurneySquadWidgetReceiver::class.java to "squad",
+        )
+        val state = store.readState()
+        val entries = mutableListOf<Pair<Int, Map<String, Any>>>()
+        for ((receiverClass, kind) in receivers) {
+            val ids = try {
+                manager.getAppWidgetIds(ComponentName(appContext, receiverClass))
+            } catch (_: Throwable) {
+                IntArray(0)
+            }
+            for (id in ids) {
+                if (id <= 0) continue
+                val info = try {
+                    manager.getAppWidgetInfo(id)
+                } catch (_: Throwable) {
+                    null
+                }
+                if (info == null) continue
+                entries.add(
+                    id to mapOf(
+                        "appWidgetId" to id,
+                        "kind" to kind,
+                        "selectedId" to state.selectionFor(id),
+                    ),
+                )
+            }
+        }
+        return entries.sortedBy { it.first }.map { it.second }
     }
 
     companion object {

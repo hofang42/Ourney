@@ -90,6 +90,78 @@ class WidgetCapabilities {
       Object.hash(widgets, liveActivity, promotedLiveUpdates, appGroup);
 }
 
+/// Which Android Home Screen widget receiver owns a placed [PlacedWidgetInfo].
+enum PlacedWidgetKind {
+  today('today'),
+  streak('streak'),
+  squad('squad');
+
+  const PlacedWidgetKind(this.wireName);
+
+  final String wireName;
+
+  static PlacedWidgetKind fromWire(String? raw) => switch (raw) {
+    'streak' => PlacedWidgetKind.streak,
+    'squad' => PlacedWidgetKind.squad,
+    _ => PlacedWidgetKind.today,
+  };
+}
+
+/// One active Android Home Screen widget instance returned by
+/// `getPlacedWidgets` on `MethodChannel('ourney/widgets')`.
+@immutable
+class PlacedWidgetInfo {
+  const PlacedWidgetInfo({
+    required this.appWidgetId,
+    required this.kind,
+    this.selectedId = 'auto',
+  });
+
+  factory PlacedWidgetInfo.fromMap(Map<Object?, Object?> raw) {
+    final rawId = raw['appWidgetId'];
+    final id = rawId is int
+        ? rawId
+        : (rawId is num ? rawId.toInt() : int.tryParse('$rawId') ?? 0);
+    final kind = PlacedWidgetKind.fromWire(raw['kind'] as String?);
+    final rawSelected = (raw['selectedId'] as String?)?.trim();
+    return PlacedWidgetInfo(
+      appWidgetId: id,
+      kind: kind,
+      selectedId: (rawSelected == null || rawSelected.isEmpty)
+          ? 'auto'
+          : rawSelected,
+    );
+  }
+
+  final int appWidgetId;
+  final PlacedWidgetKind kind;
+
+  /// `'auto'` or the pinned `<journeyId>` / `<squadJourneyId>`.
+  final String selectedId;
+
+  bool get isAuto => selectedId.isEmpty || selectedId == 'auto';
+
+  PlacedWidgetInfo copyWith({
+    int? appWidgetId,
+    PlacedWidgetKind? kind,
+    String? selectedId,
+  }) => PlacedWidgetInfo(
+    appWidgetId: appWidgetId ?? this.appWidgetId,
+    kind: kind ?? this.kind,
+    selectedId: selectedId ?? this.selectedId,
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      other is PlacedWidgetInfo &&
+      other.appWidgetId == appWidgetId &&
+      other.kind == kind &&
+      other.selectedId == selectedId;
+
+  @override
+  int get hashCode => Object.hash(appWidgetId, kind, selectedId);
+}
+
 /// Injectable port for the native `MethodChannel('ourney/widgets')` bridge (§4.4).
 abstract interface class WidgetBridgeGateway {
   /// Atomically writes `snapshot_v1.json`, syncs missing content-addressed
@@ -117,6 +189,16 @@ abstract interface class WidgetBridgeGateway {
 
   /// Reads recent extension diagnostics from the iOS App Group.
   Future<List<String>> getWidgetDiagnostics();
+
+  /// Queries active placed Home Screen widget instances on Android.
+  Future<List<PlacedWidgetInfo>> getPlacedWidgets();
+
+  /// Updates the pinned journey/squad selection (`'auto'` or `<journeyId>`) for
+  /// a placed Android widget [appWidgetId] in both `state.json` and Glance state.
+  Future<bool> setWidgetSelection({
+    required int appWidgetId,
+    required String selectedId,
+  });
 }
 
 /// Production [WidgetBridgeGateway] backed by `MethodChannel('ourney/widgets')`.
@@ -220,6 +302,51 @@ class MethodChannelWidgetBridgeGateway implements WidgetBridgeGateway {
       return const [];
     }
   }
+
+  @override
+  Future<List<PlacedWidgetInfo>> getPlacedWidgets() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return const [];
+    }
+    try {
+      final raw = await channel.invokeMethod<List<Object?>>('getPlacedWidgets');
+      if (raw == null) return const [];
+      return [
+        for (final item in raw)
+          if (item is Map<Object?, Object?>)
+            PlacedWidgetInfo.fromMap(item)
+          else if (item is Map)
+            PlacedWidgetInfo.fromMap(item.cast<Object?, Object?>()),
+      ].where((w) => w.appWidgetId > 0).toList(growable: false);
+    } on Object {
+      return const [];
+    }
+  }
+
+  @override
+  Future<bool> setWidgetSelection({
+    required int appWidgetId,
+    required String selectedId,
+  }) async {
+    if (kIsWeb ||
+        defaultTargetPlatform != TargetPlatform.android ||
+        appWidgetId <= 0) {
+      return false;
+    }
+    try {
+      final normalized = selectedId.trim().isEmpty ? 'auto' : selectedId.trim();
+      final result = await channel.invokeMethod<bool>(
+        'setWidgetSelection',
+        <String, Object?>{
+          'appWidgetId': appWidgetId,
+          'selectedId': normalized,
+        },
+      );
+      return result ?? false;
+    } on Object {
+      return false;
+    }
+  }
 }
 
 /// Recorded `syncSnapshot` call on [FakeWidgetBridgeGateway].
@@ -243,16 +370,20 @@ class FakeWidgetBridgeGateway implements WidgetBridgeGateway {
       appGroup: true,
     ),
     this.pendingWidgetState,
-  });
+    List<PlacedWidgetInfo> placedWidgets = const [],
+  }) : placedWidgets = List<PlacedWidgetInfo>.of(placedWidgets);
 
   WidgetCapabilities capabilities;
   List<String> widgetDiagnostics = const [];
   Map<String, Object?>? pendingWidgetState;
+  List<PlacedWidgetInfo> placedWidgets;
   bool nextSyncSnapshotResult = true;
   bool nextSyncLiveActivityResult = true;
+  bool nextSetWidgetSelectionResult = true;
 
   final List<RecordedSnapshotSync> snapshotSyncs = [];
   final List<Map<String, Object?>?> liveActivitySyncs = [];
+  final List<({int appWidgetId, String selectedId})> selectionUpdates = [];
   int clearAllCount = 0;
   int consumeStateCount = 0;
 
@@ -297,6 +428,28 @@ class FakeWidgetBridgeGateway implements WidgetBridgeGateway {
 
   @override
   Future<List<String>> getWidgetDiagnostics() async => widgetDiagnostics;
+
+  @override
+  Future<List<PlacedWidgetInfo>> getPlacedWidgets() async =>
+      List<PlacedWidgetInfo>.unmodifiable(placedWidgets);
+
+  @override
+  Future<bool> setWidgetSelection({
+    required int appWidgetId,
+    required String selectedId,
+  }) async {
+    final normalized = selectedId.trim().isEmpty ? 'auto' : selectedId.trim();
+    selectionUpdates.add((appWidgetId: appWidgetId, selectedId: normalized));
+    if (!nextSetWidgetSelectionResult) return false;
+    placedWidgets = [
+      for (final w in placedWidgets)
+        if (w.appWidgetId == appWidgetId)
+          w.copyWith(selectedId: normalized)
+        else
+          w,
+    ];
+    return true;
+  }
 }
 
 final widgetBridgeGatewayProvider = Provider<WidgetBridgeGateway>(

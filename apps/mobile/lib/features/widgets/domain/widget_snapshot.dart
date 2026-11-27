@@ -440,6 +440,7 @@ class WidgetSnapshot {
     required this.themeMode,
     required this.privacy,
     required this.defaultJourneyId,
+    this.defaultSquadId,
     required this.totals,
     required this.journeys,
     required this.squads,
@@ -454,6 +455,7 @@ class WidgetSnapshot {
   final String themeMode;
   final WidgetPrivacySnapshot privacy;
   final String? defaultJourneyId;
+  final String? defaultSquadId;
   final WidgetTotalsSnapshot totals;
   final List<WidgetJourneyItem> journeys;
   final List<WidgetSquadItem> squads;
@@ -468,6 +470,7 @@ class WidgetSnapshot {
     'themeMode': themeMode,
     'privacy': privacy.toJson(),
     if (defaultJourneyId != null) 'defaultJourneyId': defaultJourneyId,
+    if (defaultSquadId != null) 'defaultSquadId': defaultSquadId,
     'totals': totals.toJson(),
     'journeys': [for (final j in journeys) j.toJson()],
     'squads': [for (final s in squads) s.toJson()],
@@ -571,6 +574,8 @@ abstract final class WidgetSnapshotBuilder {
     Set<String> hiddenCheckInIds = const {},
     String? currentUserId,
     String? dismissedWindowKey,
+    String? defaultJourneyId,
+    String? defaultSquadId,
   }) {
     ensureTimeZonesLoaded();
     final nowUtc = now.toUtc();
@@ -1033,6 +1038,24 @@ abstract final class WidgetSnapshotBuilder {
       dismissedWindowKey: dismissedWindowKey,
     );
 
+    final trimmedDefaultJourneyId = defaultJourneyId?.trim();
+    final resolvedDefaultJourneyId =
+        (trimmedDefaultJourneyId != null &&
+            trimmedDefaultJourneyId.isNotEmpty &&
+            trimmedDefaultJourneyId != 'auto' &&
+            journeyItems.any((j) => j.id == trimmedDefaultJourneyId))
+        ? trimmedDefaultJourneyId
+        : null;
+
+    final trimmedDefaultSquadId = defaultSquadId?.trim();
+    final resolvedDefaultSquadId =
+        (trimmedDefaultSquadId != null &&
+            trimmedDefaultSquadId.isNotEmpty &&
+            trimmedDefaultSquadId != 'auto' &&
+            squadItems.any((s) => s.journeyId == trimmedDefaultSquadId))
+        ? trimmedDefaultSquadId
+        : null;
+
     return WidgetSnapshot(
       schemaVersion: kWidgetSnapshotSchemaVersion,
       generatedAtUtc: nowUtc.toIso8601String(),
@@ -1045,7 +1068,8 @@ abstract final class WidgetSnapshotBuilder {
         explicitRedactLockScreenTitles: explicitRedactLockScreenTitles,
         liveActivityEnabled: liveActivityEnabled,
       ),
-      defaultJourneyId: journeyItems.firstOrNull?.id,
+      defaultJourneyId: resolvedDefaultJourneyId,
+      defaultSquadId: resolvedDefaultSquadId,
       totals: WidgetTotalsSnapshot(
         activeCount: activeCount,
         completedTodayCount: completedTodayCount,

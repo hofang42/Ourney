@@ -1,10 +1,12 @@
 package com.hofang42.ourney.widgets
 
 import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.annotation.Keep
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -82,6 +84,37 @@ object WidgetActions {
     fun groupsHubAction(context: Context): Action =
         actionStartActivity(groupsHubIntent(context))
 
+    /**
+     * Unique per-[appWidgetId] URI string so `Intent.filterEquals` never
+     * collides across multiple placed widgets (`§5 Guardrail 1`).
+     */
+    fun configureWidgetUriString(appWidgetId: Int): String =
+        "ourney://widget-config/$appWidgetId"
+
+    /**
+     * Explicit configuration `Intent` targeting [OurneyWidgetConfigureActivity]
+     * with a unique [Intent.setData] URI per [appWidgetId] (`§5 Guardrail 1`).
+     */
+    fun configureWidgetIntent(context: Context, appWidgetId: Int): Intent =
+        Intent(
+            AppWidgetManager.ACTION_APPWIDGET_CONFIGURE,
+            Uri.parse(configureWidgetUriString(appWidgetId)),
+            context,
+            OurneyWidgetConfigureActivity::class.java,
+        ).apply {
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+
+    /**
+     * Direct `actionStartActivity` action (never `actionRunCallback` trampoline)
+     * so Android 14–16 BAL and OEM launchers (HyperOS/MIUI, ColorOS, OriginOS)
+     * launch [OurneyWidgetConfigureActivity] with the launcher host's foreground
+     * token (`§5 Guardrail 2`).
+     */
+    fun configureWidgetAction(context: Context, appWidgetId: Int): Action =
+        actionStartActivity(configureWidgetIntent(context, appWidgetId))
+
     fun cycleTodayJourneyAction(): Action =
         actionRunCallback<CycleTodayJourneyAction>()
 
@@ -110,6 +143,98 @@ object WidgetActions {
         Intent(Intent.ACTION_VIEW, uri, context, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
+
+    /**
+     * Mutates a Glance [MutablePreferences] instance with [selectedId], a
+     * monotonic [WidgetPrefsKeys.SNAPSHOT_SEQ], and resets [WidgetPrefsKeys.CYCLE_INDEX]
+     * to `0` (`§5 Guardrail 5`).
+     */
+    fun applySelectionToGlancePrefs(
+        prefs: MutablePreferences,
+        selectedId: String?,
+        nowEpochMs: Long = System.currentTimeMillis(),
+    ) {
+        val normalized = selectedId?.trim()?.takeIf { it.isNotEmpty() }
+            ?: WidgetSnapshot.AUTO_SELECTION_ID
+        if (normalized == WidgetSnapshot.AUTO_SELECTION_ID) {
+            prefs.remove(WidgetPrefsKeys.SELECTED_ID)
+        } else {
+            prefs[WidgetPrefsKeys.SELECTED_ID] = normalized
+        }
+        val prevSeq = prefs[WidgetPrefsKeys.SNAPSHOT_SEQ] ?: 0L
+        prefs[WidgetPrefsKeys.SNAPSHOT_SEQ] = maxOf(nowEpochMs, prevSeq + 1L)
+        prefs[WidgetPrefsKeys.CYCLE_INDEX] = 0
+    }
+
+    /**
+     * Synchronizes both `state.json` ([WidgetSnapshotStore.setWidgetSelection])
+     * and an in-memory Glance [MutablePreferences] store in lockstep (`§5 Guardrail 5`).
+     */
+    fun applyWidgetSelectionToStores(
+        store: WidgetSnapshotStore,
+        appWidgetId: Int,
+        selectedId: String?,
+        glancePrefs: MutablePreferences,
+        nowEpochMs: Long = System.currentTimeMillis(),
+    ): Boolean {
+        if (appWidgetId <= 0) return false
+        val normalized = selectedId?.trim()?.takeIf { it.isNotEmpty() }
+            ?: WidgetSnapshot.AUTO_SELECTION_ID
+        store.setWidgetSelection(appWidgetId, normalized)
+        applySelectionToGlancePrefs(glancePrefs, normalized, nowEpochMs)
+        return true
+    }
+
+    /**
+     * Shared selection writer used by both [OurneyWidgetConfigureActivity] and
+     * [OurneyWidgetBridge] (`setWidgetSelection`) so `state.json` AND Glance
+     * `PreferencesGlanceStateDefinition` never drift (`§5 Guardrail 5`).
+     */
+    suspend fun applyWidgetSelection(
+        context: Context,
+        appWidgetId: Int,
+        selectedId: String?,
+        store: WidgetSnapshotStore = WidgetSnapshotStore.fromContext(context.applicationContext),
+    ): Boolean {
+        if (appWidgetId <= 0) return false
+        val appCtx = context.applicationContext
+        val normalized = selectedId?.trim()?.takeIf { it.isNotEmpty() }
+            ?: WidgetSnapshot.AUTO_SELECTION_ID
+        store.setWidgetSelection(appWidgetId, normalized)
+
+        try {
+            val manager = GlanceAppWidgetManager(appCtx)
+            val glanceId = manager.getGlanceIdBy(appWidgetId)
+            updateAppWidgetState(appCtx, glanceId) { prefs ->
+                applySelectionToGlancePrefs(prefs, normalized)
+            }
+            val providerClass = try {
+                AppWidgetManager.getInstance(appCtx)
+                    .getAppWidgetInfo(appWidgetId)
+                    ?.provider
+                    ?.className
+                    .orEmpty()
+            } catch (_: Throwable) {
+                ""
+            }
+            when {
+                providerClass.endsWith("OurneySquadWidgetReceiver") ->
+                    SquadGlanceWidget().update(appCtx, glanceId)
+                providerClass.endsWith("OurneyStreakWidgetReceiver") ->
+                    StreakGlanceWidget().update(appCtx, glanceId)
+                providerClass.endsWith("OurneyTodayWidgetReceiver") ->
+                    TodayGlanceWidget().update(appCtx, glanceId)
+                else -> {
+                    TodayGlanceWidget().update(appCtx, glanceId)
+                    StreakGlanceWidget().update(appCtx, glanceId)
+                    SquadGlanceWidget().update(appCtx, glanceId)
+                }
+            }
+        } catch (_: Throwable) {
+            refreshAllWidgets(appCtx)
+        }
+        return true
+    }
 
     suspend fun refreshAllWidgets(
         context: Context,

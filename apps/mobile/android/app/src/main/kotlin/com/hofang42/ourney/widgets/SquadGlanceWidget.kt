@@ -23,6 +23,7 @@ import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.currentState
 import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Row
@@ -202,17 +203,31 @@ class SquadGlanceWidget : GlanceAppWidget() {
                     )
                 }
                 is SquadWidgetCardState.Ready -> {
-                    SquadCardContent(
-                        context = context,
-                        l10n = l10n,
-                        squad = state.squad,
-                        palette = palette,
-                        avatarStripBitmap = bundle.avatarStripBitmap,
-                        coupleAvatars = bundle.coupleAvatars,
-                        memberPolaroids = bundle.memberPolaroids,
-                        allowsPhotos = bundle.allowsPhotos,
-                        isLarge = size.height >= 200.dp,
-                    )
+                    Box(
+                        modifier = GlanceModifier.fillMaxSize(),
+                        contentAlignment = Alignment.TopEnd,
+                    ) {
+                        SquadCardContent(
+                            context = context,
+                            l10n = l10n,
+                            squad = state.squad,
+                            palette = palette,
+                            avatarStripBitmap = bundle.avatarStripBitmap,
+                            coupleAvatars = bundle.coupleAvatars,
+                            memberPolaroids = bundle.memberPolaroids,
+                            allowsPhotos = bundle.allowsPhotos,
+                            isLarge = size.height >= 200.dp,
+                        )
+                        if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+                            ConfigureWidgetOverlayButton(
+                                context = context,
+                                l10n = l10n,
+                                palette = palette,
+                                appWidgetId = appWidgetId,
+                                showLabel = true,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -235,7 +250,20 @@ class SquadGlanceWidget : GlanceAppWidget() {
             squad.doneCount,
             squad.memberCount,
         )
-        val a11yDescription = "${squad.title}, $progressText"
+        val totalDays = squad.totalDays
+        val dayText = if (squad.isCouple) {
+            l10n.getString(R.string.widget_squad_couple_badge, squad.dayNumber)
+        } else if (totalDays != null && totalDays > 0) {
+            l10n.getString(
+                R.string.widget_day_progress,
+                squad.dayNumber,
+                totalDays,
+            )
+        } else {
+            l10n.getString(R.string.widget_day_only, squad.dayNumber)
+        }
+        val subtitleLine = "$dayText · $progressText"
+        val a11yDescription = "${squad.title}, $subtitleLine"
 
         Column(
             modifier = GlanceModifier
@@ -246,7 +274,7 @@ class SquadGlanceWidget : GlanceAppWidget() {
                 .padding(14.dp),
         ) {
             Row(
-                modifier = GlanceModifier.fillMaxWidth(),
+                modifier = GlanceModifier.fillMaxWidth().padding(end = 56.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Image(
@@ -269,33 +297,12 @@ class SquadGlanceWidget : GlanceAppWidget() {
                     maxLines = 1,
                     modifier = GlanceModifier.defaultWeight(),
                 )
-                Spacer(modifier = GlanceModifier.width(6.dp))
-                val totalDays = squad.totalDays
-                Text(
-                    text = if (squad.isCouple) {
-                        l10n.getString(R.string.widget_squad_couple_badge, squad.dayNumber)
-                    } else if (totalDays != null && totalDays > 0) {
-                        l10n.getString(
-                            R.string.widget_day_progress,
-                            squad.dayNumber,
-                            totalDays,
-                        )
-                    } else {
-                        l10n.getString(R.string.widget_day_only, squad.dayNumber)
-                    },
-                    style = TextStyle(
-                        color = palette.inkMutedProvider,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                    ),
-                    maxLines = 1,
-                )
             }
 
             Spacer(modifier = GlanceModifier.height(4.dp))
 
             Text(
-                text = progressText,
+                text = subtitleLine,
                 style = TextStyle(
                     color = if (squad.doneCount >= squad.memberCount && squad.memberCount > 0) {
                         palette.successProvider

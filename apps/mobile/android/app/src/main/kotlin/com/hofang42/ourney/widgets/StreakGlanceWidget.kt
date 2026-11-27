@@ -21,6 +21,7 @@ import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.currentState
 import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Row
@@ -156,15 +157,29 @@ class StreakGlanceWidget : GlanceAppWidget() {
                     )
                 }
                 is JourneyWidgetCardState.Ready -> {
-                    StreakStickerCard(
-                        context = context,
-                        l10n = l10n,
-                        journey = state.journey,
-                        palette = palette,
-                        nowMs = bundle.nowMs,
-                        heroBitmap = bundle.heroBitmap,
-                        weekBitmap = bundle.weekBitmap,
-                    )
+                    Box(
+                        modifier = GlanceModifier.fillMaxSize(),
+                        contentAlignment = Alignment.TopEnd,
+                    ) {
+                        StreakStickerCard(
+                            context = context,
+                            l10n = l10n,
+                            journey = state.journey,
+                            palette = palette,
+                            nowMs = bundle.nowMs,
+                            heroBitmap = bundle.heroBitmap,
+                            weekBitmap = bundle.weekBitmap,
+                        )
+                        if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+                            ConfigureWidgetOverlayButton(
+                                context = context,
+                                l10n = l10n,
+                                palette = palette,
+                                appWidgetId = appWidgetId,
+                                showLabel = false,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -200,7 +215,7 @@ class StreakGlanceWidget : GlanceAppWidget() {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Row(
-                modifier = GlanceModifier.fillMaxWidth(),
+                modifier = GlanceModifier.fillMaxWidth().padding(end = 30.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Image(

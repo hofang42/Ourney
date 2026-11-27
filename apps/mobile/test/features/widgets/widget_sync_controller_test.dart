@@ -576,6 +576,14 @@ void main() {
           await gateway.getCapabilities(),
           WidgetCapabilities.unsupported,
         );
+        expect(await gateway.getPlacedWidgets(), isEmpty);
+        expect(
+          await gateway.setWidgetSelection(
+            appWidgetId: 101,
+            selectedId: 'j-1',
+          ),
+          isFalse,
+        );
       },
     );
 
@@ -601,6 +609,19 @@ void main() {
                   'promotedLiveUpdates': false,
                   'appGroup': false,
                 },
+                'getPlacedWidgets' => <Object?>[
+                  <Object?, Object?>{
+                    'appWidgetId': 11,
+                    'kind': 'today',
+                    'selectedId': 'auto',
+                  },
+                  <Object?, Object?>{
+                    'appWidgetId': 12,
+                    'kind': 'squad',
+                    'selectedId': 'j-squad-1',
+                  },
+                ],
+                'setWidgetSelection' => true,
                 _ => null,
               };
             },
@@ -630,12 +651,40 @@ void main() {
           appGroup: false,
         ),
       );
+      // On iOS, getPlacedWidgets and setWidgetSelection short-circuit locally.
+      expect(await gateway.getPlacedWidgets(), isEmpty);
+      expect(
+        await gateway.setWidgetSelection(appWidgetId: 11, selectedId: 'j-1'),
+        isFalse,
+      );
+
+      // On Android, getPlacedWidgets and setWidgetSelection invoke the native channel.
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      final placed = await gateway.getPlacedWidgets();
+      expect(placed, const [
+        PlacedWidgetInfo(
+          appWidgetId: 11,
+          kind: PlacedWidgetKind.today,
+          selectedId: 'auto',
+        ),
+        PlacedWidgetInfo(
+          appWidgetId: 12,
+          kind: PlacedWidgetKind.squad,
+          selectedId: 'j-squad-1',
+        ),
+      ]);
+      expect(
+        await gateway.setWidgetSelection(appWidgetId: 11, selectedId: 'j-2'),
+        isTrue,
+      );
       expect(calls.map((c) => c.method).toList(), [
         'syncSnapshot',
         'syncLiveActivity',
         'clearAll',
         'consumeWidgetState',
         'getCapabilities',
+        'getPlacedWidgets',
+        'setWidgetSelection',
       ]);
     });
 

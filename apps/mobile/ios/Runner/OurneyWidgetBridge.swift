@@ -237,6 +237,7 @@ public final class OurneyWidgetBridge {
 
     let snapshotURL = rootDir.appendingPathComponent(OurneyWidgetConstants.snapshotFileName, isDirectory: false)
     let existingData = try? Data(contentsOf: snapshotURL)
+    let existingSnapshot = existingData.flatMap { try? JSONDecoder().decode(WidgetSnapshot.self, from: $0) }
     let snapshotChanged = (existingData != snapshotData)
 
     if snapshotChanged {
@@ -251,6 +252,18 @@ public final class OurneyWidgetBridge {
         try? mutableURL.setResourceValues(values)
       } catch {
         return SnapshotWriteOutcome(succeeded: false, didChange: false)
+      }
+
+      if decodedSnapshot?.defaultJourneyId != existingSnapshot?.defaultJourneyId {
+        let stateURL = rootDir.appendingPathComponent(OurneyWidgetConstants.stateFileName, isDirectory: false)
+        if fm.fileExists(atPath: stateURL.path) {
+          var state = WidgetSnapshotStore.loadState(rootDirectory: rootDir)
+          if state.selectedTodayJourneyId != nil || state.selectedTodayIndex != 0 {
+            state.selectedTodayJourneyId = nil
+            state.selectedTodayIndex = 0
+            _ = WidgetSnapshotStore.saveState(state, rootDirectory: rootDir)
+          }
+        }
       }
     }
 
