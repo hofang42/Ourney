@@ -284,6 +284,12 @@ abstract class CheckinL10n {
   /// **'Đã gửi ảnh lên nhóm. Người tham gia sau có thể xem ảnh này.'**
   String get checkin_done_futureMembers;
 
+  /// No description provided for @checkin_done_coupleFutureMembers.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lưu nửa ảnh của bạn. Người ấy tham gia sau có thể xem ảnh này.'**
+  String get checkin_done_coupleFutureMembers;
+
   /// No description provided for @checkin_done_sharedSquad.
   ///
   /// In vi, this message translates to:
@@ -302,6 +308,12 @@ abstract class CheckinL10n {
   /// **'Đã lưu ảnh của bạn, có mạng sẽ gửi lên nhóm'**
   String get checkin_done_pendingGroup;
 
+  /// No description provided for @checkin_done_pendingCouple.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lưu nửa ảnh của bạn, có mạng sẽ gửi cho người ấy'**
+  String get checkin_done_pendingCouple;
+
   /// No description provided for @checkin_done_pending.
   ///
   /// In vi, this message translates to:
@@ -319,6 +331,18 @@ abstract class CheckinL10n {
   /// In vi, this message translates to:
   /// **'Mở lại bản nháp cho {journey}'**
   String checkin_resumeDraft(String journey);
+
+  /// No description provided for @checkin_draftCue.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bản nháp · chạm để mở lại'**
+  String get checkin_draftCue;
+
+  /// No description provided for @checkin_discardDraft.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ bản nháp'**
+  String get checkin_discardDraft;
 
   /// No description provided for @checkin_chooseAnother.
   ///

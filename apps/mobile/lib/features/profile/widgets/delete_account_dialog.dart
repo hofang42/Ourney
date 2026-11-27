@@ -8,6 +8,7 @@ import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../auth/auth_providers.dart';
+import '../../checkin/checkin_drafts.dart';
 import '../../feedback/data/feedback_providers.dart';
 import '../../onboarding/onboarding_providers.dart';
 import '../../safety/data/safety_providers.dart';
@@ -213,7 +214,9 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
       // Best-effort cleanup if storage fails.
     }
     try {
+      container.read(checkinDraftsProvider).clear();
       container
+        ..invalidate(checkinDraftsProvider)
         ..invalidate(onboardingCompleteProvider)
         ..invalidate(eulaAcceptedProvider)
         ..invalidate(onboardingQuizProvider)

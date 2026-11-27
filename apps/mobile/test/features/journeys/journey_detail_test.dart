@@ -8,6 +8,8 @@ import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/app_shell.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/data/data_providers.dart' show deadJourneyUploadsProvider;
+import 'package:ourney/data/dead_uploads.dart' show DeadUpload;
 import 'package:ourney/data/group_daily_checkins_provider.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney/features/journeys/domain/journey_progress.dart';
@@ -183,6 +185,69 @@ void main() {
       expect(find.text(pending), findsNothing);
       expect(_key('journey-home-offline'), findsNothing);
     });
+
+    testWidgets(
+      'squad home hides pending chip while DeadUploadsBanner owns a failed upload',
+      (tester) async {
+        final j = testJourney(
+          templateId: TemplateId.englishDaily,
+          kind: JourneyKind.group,
+          maxMembers: 5,
+        );
+        final dead = StreamController<List<DeadUpload>>.broadcast();
+        addTearDown(dead.close);
+        final unuploaded = testCheckIn(j.id, testToday, uploaded: false);
+        final checkIns = FakeCheckInRepository([unuploaded]);
+        await pumpJourneys(
+          tester,
+          location: AppRoutes.journey(j.id),
+          config: testBackendConfig,
+          userId: 'u1',
+          journeys: FakeJourneyRepository(
+            journeys: [j],
+            memberships: {j.id: testMembership(j)},
+          ),
+          checkIns: checkIns,
+          extraOverrides: [
+            journeyHomeOfflineProvider.overrideWith(
+              (ref) => Stream.value(false),
+            ),
+            deadJourneyUploadsProvider(j.id).overrideWith((ref) async* {
+              yield const [];
+              yield* dead.stream;
+            }),
+          ],
+        );
+
+        const pending = 'Đã lưu ảnh của bạn, có mạng sẽ gửi lên nhóm';
+        expect(find.text(pending), findsOneWidget);
+        expect(_key('dead-uploads-banner'), findsNothing);
+
+        // When the upload enters deadUploads, DeadUploadsBanner appears and
+        // the pending chip hides so the screen does not claim both states.
+        dead.add([
+          DeadUpload(
+            queueId: 1,
+            checkInId: unuploaded.id,
+            journeyId: j.id,
+          ),
+        ]);
+        await tester.pumpAndSettle();
+        expect(_key('dead-uploads-banner'), findsOneWidget);
+        expect(_key('journey-home-offline'), findsNothing);
+        expect(find.text(pending), findsNothing);
+
+        // Retrying clears deadUploads -> pending chip returns until synced.
+        dead.add(const []);
+        await tester.pumpAndSettle();
+        expect(_key('dead-uploads-banner'), findsNothing);
+        expect(find.text(pending), findsOneWidget);
+
+        checkIns.replaceAll([testCheckIn(j.id, testToday)]);
+        await tester.pumpAndSettle();
+        expect(_key('journey-home-offline'), findsNothing);
+      },
+    );
 
     testWidgets('quiet home shows the missed-day chip from the Figma overlay', (
       tester,

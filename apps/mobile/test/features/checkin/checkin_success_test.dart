@@ -253,11 +253,57 @@ void main() {
     expect(find.text('Đã hiển thị trên hành trình chia sẻ.'), findsOneWidget);
     await tester.pump(CheckinSuccessView.autoCloseDelay);
 
-    // 1-member group / couple before partner or friends join (UX-03).
+    // 1-member couple before partner joins (UX-03): never mentions squad/nhóm.
+    final coupleJourney = testJourney(
+      kind: JourneyKind.group,
+      maxMembers: 2,
+      visibility: JourneyVisibility.group,
+    );
+    await pumpAudience(coupleJourney, activeMemberCount: 1);
+    expect(
+      find.text(
+        'Đã lưu nửa ảnh của bạn. Người ấy tham gia sau có thể xem ảnh này.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('nhóm'), findsNothing);
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
+
+    await pumpAudience(
+      coupleJourney,
+      activeMemberCount: 1,
+      locale: const Locale('en'),
+    );
+    expect(
+      find.text(
+        'Your half of the photo is saved. Your partner can see it once they join.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('squad'), findsNothing);
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
+
+    // Couple in unknown (0 members loaded) or shared state still uses couple copy.
+    await pumpAudience(coupleJourney, activeMemberCount: 0);
+    expect(find.text('Đã gửi nửa ảnh của bạn rồi.'), findsOneWidget);
+    expect(find.textContaining('nhóm'), findsNothing);
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
+
+    await pumpAudience(
+      coupleJourney,
+      activeMemberCount: 2,
+      hasSharedViewers: true,
+      locale: const Locale('en'),
+    );
+    expect(find.text('Your half of the photo was sent.'), findsOneWidget);
+    expect(find.textContaining('squad'), findsNothing);
+    await tester.pump(CheckinSuccessView.autoCloseDelay);
+
+    // 1-member squad before friends join (UX-03).
     await pumpAudience(
       testJourney(
         kind: JourneyKind.group,
-        maxMembers: 2,
+        maxMembers: 5,
         visibility: JourneyVisibility.group,
       ),
       activeMemberCount: 1,

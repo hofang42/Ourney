@@ -4,12 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/account_reset.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/data/data_providers.dart' show deadJourneyUploadsProvider;
+import 'package:ourney/data/dead_uploads.dart' show DeadUpload;
 import 'package:ourney/features/camera/capture_services.dart'
     show galleryPickerProvider;
 import 'package:ourney/features/checkin/captured_photo.dart';
 import 'package:ourney/features/checkin/checkin_clock.dart';
+import 'package:ourney/features/checkin/checkin_drafts.dart';
 import 'package:ourney/features/checkin/checkin_success.dart';
 import 'package:ourney/features/checkin/photo_compressor.dart';
 import 'package:ourney/features/checkin/routes.dart';
@@ -155,6 +159,125 @@ void main() {
     expect(find.text(delivered), findsOneWidget);
     await finishSuccess(tester);
   });
+
+  testWidgets('couple post uses couple pending and delivered copy, never squad', (
+    tester,
+  ) async {
+    final upload = StreamController<List<CheckIn>>.broadcast();
+    final connectivity = StreamController<bool>.broadcast();
+    addTearDown(upload.close);
+    addTearDown(connectivity.close);
+    checkIns = _CheckInsWithUpdates(upload.stream);
+    journeys = FakeJourneyRepository(
+      journeys: [
+        testJourney(
+          kind: JourneyKind.group,
+          maxMembers: 2,
+          visibility: JourneyVisibility.group,
+        ),
+      ],
+    );
+    await pump(
+      tester,
+      config: testBackendConfig,
+      prefsValues: {ReminderPrefs.permissionAsked: true},
+      overrides: [
+        notificationGatewayProvider.overrideWithValue(
+          FakeNotificationGateway(),
+        ),
+        sharingRepositoryProvider.overrideWithValue(FakeSharingRepository()),
+        journeyHomeOfflineProvider.overrideWith((ref) => connectivity.stream),
+      ],
+    );
+    connectivity.add(true);
+    upload.add(const []);
+    await tester.pump();
+
+    const pending = 'Đã lưu nửa ảnh của bạn, có mạng sẽ gửi cho người ấy';
+    const delivered = 'Đã gửi nửa ảnh của bạn rồi.';
+    await tapPost(tester);
+    expect(checkIns.submitted, hasLength(1));
+    expect(find.text(pending), findsOneWidget);
+    expect(find.textContaining('nhóm'), findsNothing);
+
+    connectivity.add(false);
+    upload.add([testCheckIn(testToday, uploaded: true)]);
+    await tester.pump();
+    expect(find.text(pending), findsOneWidget);
+    expect(find.text(delivered), findsNothing);
+
+    upload.add([testCheckIn(testToday, id: 'new-1', uploaded: true)]);
+    await tester.pump();
+    expect(find.text(pending), findsNothing);
+    expect(find.text(delivered), findsOneWidget);
+    expect(find.textContaining('nhóm'), findsNothing);
+    await finishSuccess(tester);
+  });
+
+  testWidgets(
+    'dead upload switches success view to failed copy until retried and uploaded',
+    (tester) async {
+      final upload = StreamController<List<CheckIn>>.broadcast();
+      final dead = StreamController<List<DeadUpload>>.broadcast();
+      addTearDown(upload.close);
+      addTearDown(dead.close);
+      checkIns = _CheckInsWithUpdates(upload.stream);
+      journeys = FakeJourneyRepository(
+        journeys: [
+          testJourney(
+            templateId: TemplateId.englishDaily,
+            kind: JourneyKind.group,
+            visibility: JourneyVisibility.group,
+          ),
+        ],
+      );
+      await pump(
+        tester,
+        config: testBackendConfig,
+        prefsValues: {ReminderPrefs.permissionAsked: true},
+        overrides: [
+          notificationGatewayProvider.overrideWithValue(
+            FakeNotificationGateway(),
+          ),
+          sharingRepositoryProvider.overrideWithValue(FakeSharingRepository()),
+          deadJourneyUploadsProvider(
+            'j1',
+          ).overrideWith((ref) => dead.stream),
+        ],
+      );
+      upload.add(const []);
+      dead.add(const []);
+      await tester.pump();
+
+      const pending = 'Đã lưu ảnh của bạn, có mạng sẽ gửi lên nhóm';
+      const failed =
+          'Đã lưu ảnh trên máy. Bạn có thể thử gửi lại từ hành trình.';
+      const delivered = 'Đã gửi ảnh lên nhóm rồi.';
+
+      await tapPost(tester);
+      expect(find.text(pending), findsOneWidget);
+      expect(find.text(failed), findsNothing);
+
+      // Outbox gives up on this check-in ('new-1').
+      dead.add(const [
+        DeadUpload(queueId: 1, checkInId: 'new-1', journeyId: 'j1'),
+      ]);
+      await tester.pump();
+      expect(find.text(pending), findsNothing);
+      expect(find.text(failed), findsOneWidget);
+
+      // Re-queued for retry, then synced.
+      dead.add(const []);
+      await tester.pump();
+      expect(find.text(pending), findsOneWidget);
+      expect(find.text(failed), findsNothing);
+
+      upload.add([testCheckIn(testToday, id: 'new-1', uploaded: true)]);
+      await tester.pump();
+      expect(find.text(delivered), findsOneWidget);
+      await finishSuccess(tester);
+    },
+  );
 
   testWidgets('accessible navigation keeps success open until Done', (
     tester,
@@ -799,11 +922,13 @@ void main() {
   });
 
   group('errors', () {
-    testWidgets('ended journey shows a message and keeps the form', (
+    testWidgets('ended journey shows a message and discards the draft on exit', (
       tester,
     ) async {
       checkIns.submitError = const OurneyException(OurneyErrorCode.ended);
-      await pump(tester);
+      late ProviderContainer container;
+      await pump(tester, before: (c) => container = c);
+      final files = container.read(draftFilesProvider) as FakeDraftFiles;
       await tapPost(tester);
       await tester.pump();
       expect(
@@ -811,6 +936,13 @@ void main() {
         findsOneWidget,
       );
       expect(find.byKey(const ValueKey('checkin-post')), findsOneWidget);
+
+      await tester.ensureVisible(find.byKey(const ValueKey('checkin-close')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('checkin-close')));
+      await tester.pumpAndSettle();
+      expect(files.discarded, contains('/tmp/shot.jpg'));
+      expect(container.read(checkinDraftsProvider).photoFor('j1'), isNull);
     });
 
     testWidgets('compression failure shows a photo error', (tester) async {
@@ -830,11 +962,109 @@ void main() {
       expect(find.byKey(const ValueKey('checkin-missing-photo')), findsOne);
     });
 
-    testWidgets('unknown journey shows a way back', (tester) async {
+    testWidgets('unknown journey shows a way back and discards the draft', (
+      tester,
+    ) async {
       journeys.journeys.clear();
-      await pump(tester);
+      late ProviderContainer container;
+      await pump(tester, before: (c) => container = c);
+      final files = container.read(draftFilesProvider) as FakeDraftFiles;
       expect(find.byKey(const ValueKey('checkin-missing-journey')), findsOne);
+
+      await tester.tap(find.text('Đóng'));
+      await tester.pumpAndSettle();
+      expect(files.discarded, ['/tmp/shot.jpg']);
+      expect(container.read(checkinDraftsProvider).photoFor('j1'), isNull);
     });
+
+    test(
+      'account switch, sign-out, and resetAccountLocalState discard draft files',
+      () async {
+        final prefs = await testPrefs();
+        final auth = FakeAuthRepository(userId: 'u1');
+        final container = ProviderContainer(
+          overrides: [
+            ...baseOverrides(prefs: prefs, config: testBackendConfig),
+            authRepositoryProvider.overrideWithValue(auth),
+          ],
+        );
+        addTearDown(container.dispose);
+        final files = container.read(draftFilesProvider) as FakeDraftFiles;
+        final sub = container.listen(currentUserIdProvider, (_, _) {});
+        addTearDown(sub.close);
+
+        const emptyExtras = (
+          mood: null,
+          minutes: null,
+          customMinutes: false,
+          hearts: null,
+          cook: null,
+          paceDigits: '',
+          place: '',
+          dish: '',
+          km: '',
+        );
+
+        container.read(checkinDraftsProvider).save((
+          photo: CapturedPhoto(
+            journeyId: 'j1',
+            path: '/tmp/u1-draft.jpg',
+            capturedAt: testNowUtc,
+          ),
+          caption: 'u1',
+          metric: '',
+          extras: emptyExtras,
+        ));
+        expect(
+          container.read(checkinDraftsProvider).photoFor('j1')?.path,
+          '/tmp/u1-draft.jpg',
+        );
+
+        // Switching from u1 to u2 disposes u1's drafts and deletes its file.
+        auth.emit('u2');
+        await Future<void>.delayed(Duration.zero);
+        expect(container.read(checkinDraftsProvider).photoFor('j1'), isNull);
+        expect(files.discarded, ['/tmp/u1-draft.jpg']);
+
+        // Signing out (u2 -> null) also discards u2's draft file.
+        container.read(checkinDraftsProvider).save((
+          photo: CapturedPhoto(
+            journeyId: 'j1',
+            path: '/tmp/u2-draft.jpg',
+            capturedAt: testNowUtc,
+          ),
+          caption: 'u2',
+          metric: '',
+          extras: emptyExtras,
+        ));
+        auth.emit(null);
+        await Future<void>.delayed(Duration.zero);
+        expect(container.read(checkinDraftsProvider).photoFor('j1'), isNull);
+        expect(files.discarded, ['/tmp/u1-draft.jpg', '/tmp/u2-draft.jpg']);
+
+        // Local-only wipe (userId stays null) clears and invalidates drafts.
+        container.read(checkinDraftsProvider).save((
+          photo: CapturedPhoto(
+            journeyId: 'j1',
+            path: '/tmp/local-draft.jpg',
+            capturedAt: testNowUtc,
+          ),
+          caption: 'local',
+          metric: '',
+          extras: emptyExtras,
+        ));
+        final resetRunner = Provider<Future<void>>(
+          (ref) => resetAccountLocalState(ref),
+        );
+        await container.read(resetRunner);
+        expect(container.read(checkinDraftsProvider).photoFor('j1'), isNull);
+        expect(files.discarded, [
+          '/tmp/u1-draft.jpg',
+          '/tmp/u2-draft.jpg',
+          '/tmp/local-draft.jpg',
+        ]);
+      },
+    );
   });
 
   group('compose + posted (kit UI)', () {

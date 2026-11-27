@@ -12,6 +12,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/providers.dart' show appConfigProvider;
 import '../../data/data_providers.dart' show deadJourneyUploadsProvider;
+import '../../data/group_daily_checkins_provider.dart' show isCoupleGroup;
 import '../../l10n/generated/app_localizations.dart';
 import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
@@ -339,6 +340,7 @@ class _CheckinSuccessViewState extends ConsumerState<CheckinSuccessView>
     required bool canSync,
   }) {
     final group = journey?.kind == JourneyKind.group;
+    final couple = journey != null && isCoupleGroup(journey);
     if (canSync && !saved.uploaded) {
       final uploaded = ref.watch(
         myCheckInsProvider(saved.journeyId).select(
@@ -352,6 +354,7 @@ class _CheckinSuccessViewState extends ConsumerState<CheckinSuccessView>
           ),
         );
         if (failed == true) return l10n.checkin_done_uploadFailed;
+        if (couple) return l10n.checkin_done_pendingCouple;
         return group
             ? l10n.checkin_done_pendingGroup
             : l10n.checkin_done_pending;
@@ -360,6 +363,13 @@ class _CheckinSuccessViewState extends ConsumerState<CheckinSuccessView>
 
     final audience = watchCheckinAudience(ref, journey);
     if (canSync && group) {
+      if (couple) {
+        return switch (audience) {
+          CheckinAudience.futureMembers =>
+            l10n.checkin_done_coupleFutureMembers,
+          _ => l10n.checkin_done_coupleSent,
+        };
+      }
       return switch (audience) {
         CheckinAudience.couple => l10n.checkin_done_coupleSent,
         CheckinAudience.futureMembers => l10n.checkin_done_futureMembers,

@@ -67,6 +67,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
   late final DraftFiles _drafts;
   late final CheckinDrafts _savedDrafts;
   bool _discardDraftOnExit = false;
+  bool _workPaused = false;
+  bool _canSaveDraft = false;
   bool _metricError = false;
   CheckInOutcome? _outcome;
   CapturedPhoto? _overridePhoto;
@@ -137,7 +139,10 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
   void dispose() {
     final photo = _activePhoto;
     if (photo != null && !_posting && _outcome == null) {
-      if (_discardDraftOnExit) {
+      if (_discardDraftOnExit ||
+          _workPaused ||
+          !_canSaveDraft ||
+          photo.fromLibrary) {
         unawaited(_drafts.discard([photo.path]));
       } else {
         _savedDrafts.save((
@@ -209,7 +214,9 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
 
   void _closeCompose() {
     // Closing Post explicitly during a forced update dismisses its draft.
-    _discardDraftOnExit = ref.read(appUpdateWorkPausedProvider);
+    if (ref.read(appUpdateWorkPausedProvider)) {
+      _discardDraftOnExit = true;
+    }
     _close();
   }
 
@@ -363,6 +370,9 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
       });
     } on CheckInPostException catch (e) {
       if (!mounted) return;
+      if (e.failure == CheckInFailure.ended) {
+        _discardDraftOnExit = true;
+      }
       setState(() => _posting = false);
       final message = switch (e.failure) {
         CheckInFailure.photo => l10n.checkin_errorPhoto,
@@ -384,10 +394,12 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
   Widget build(BuildContext context) {
     // Keeps OurneyHaptics.enabled in sync with the user's toggle.
     final haptics = ref.watch(hapticsEnabledProvider);
+    _workPaused = ref.watch(appUpdateWorkPausedProvider);
     final l10n = CheckinL10n.of(context);
     final photo = _activePhoto;
 
     if (photo == null) {
+      _canSaveDraft = false;
       return _frame(
         body: UiEmptyState(
           key: const ValueKey('checkin-missing-photo'),
@@ -417,6 +429,10 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
       ..watch(myCheckInsProvider(photo.journeyId))
       ..watch(myMembershipProvider(photo.journeyId));
     final journey = ref.watch(checkinJourneyProvider(photo.journeyId));
+    _canSaveDraft = switch (journey) {
+      AsyncData(value: final j?) => j.status == JourneyStatus.active,
+      _ => false,
+    };
 
     return switch (journey) {
       AsyncData(value: final j?) => UiSkinScope(

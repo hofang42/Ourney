@@ -11,6 +11,7 @@ import 'package:ourney/features/checkin/captured_photo.dart';
 import 'package:ourney/features/checkin/checkin_clock.dart';
 import 'package:ourney/features/checkin/photo_compressor.dart';
 import 'package:ourney/features/checkin/routes.dart';
+import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -131,10 +132,14 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(shutter, findsOneWidget);
+    expect(find.byKey(const ValueKey('capture-draft-cue')), findsOneWidget);
+    expect(find.text('Bản nháp · chạm để mở lại'), findsOneWidget);
+    expect(find.byKey(const ValueKey('capture-draft-discard')), findsOneWidget);
     expect(files.discarded, isEmpty);
 
     await tester.tap(find.byKey(const ValueKey('journey-chip-j2')));
     await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('capture-draft-cue')), findsNothing);
     await tester.tap(shutter);
     await tester.pumpAndSettle();
     expect(tester.widget<TextField>(caption).controller!.text, isEmpty);
@@ -144,6 +149,7 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('journey-chip-j1')));
     await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('capture-draft-cue')), findsOneWidget);
     await tester.tap(shutter);
     await tester.pumpAndSettle();
     expect(
@@ -156,11 +162,133 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('checkin-retake')));
     await tester.pumpAndSettle();
     expect(files.discarded, ['/tmp/shot1.jpg']);
+    expect(find.byKey(const ValueKey('capture-draft-cue')), findsNothing);
     await tester.tap(shutter);
     await tester.pumpAndSettle();
     expect(camera.pictures, 3);
     expect(tester.widget<TextField>(caption).controller!.text, isEmpty);
   });
+
+  testWidgets(
+    'close button preserves caption, metric, and persona extras, and draft cue discard clears it',
+    (tester) async {
+      journeys = FakeJourneyRepository(
+        journeys: [
+          testJourney(
+            templateId: TemplateId.weightLoss,
+            metricName: 'Cân nặng',
+            metricUnit: 'kg',
+          ),
+        ],
+      );
+      final container = await pump(tester, compose: true);
+      final files = container.read(draftFilesProvider) as FakeDraftFiles;
+      final shutter = find.byKey(const ValueKey('capture-shutter'));
+      final caption = find.byKey(const ValueKey('checkin-caption'));
+      final metric = find.byKey(const ValueKey('checkin-metric'));
+      final moodLight = find.byKey(const ValueKey('checkin-mood-light'));
+
+      await tester.tap(shutter);
+      await tester.pumpAndSettle();
+      await tester.enterText(caption, 'Nháp giảm cân');
+      await tester.enterText(metric, '64,5');
+      await tester.ensureVisible(moodLight);
+      await tester.tap(moodLight);
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.byKey(const ValueKey('checkin-close')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('checkin-close')));
+      await tester.pumpAndSettle();
+      expect(files.discarded, isEmpty);
+      expect(find.byKey(const ValueKey('capture-draft-cue')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('capture-draft-discard')),
+        findsOneWidget,
+      );
+
+      // Reopen via the visible draft cue: caption, metric, and mood restore.
+      await tester.tap(find.byKey(const ValueKey('capture-draft-cue')));
+      await tester.pumpAndSettle();
+      expect(camera.pictures, 1);
+      expect(
+        tester.widget<TextField>(caption).controller!.text,
+        'Nháp giảm cân',
+      );
+      final metricField = tester.widget<EditableText>(
+        find.descendant(
+          of: metric,
+          matching: find.byType(EditableText),
+          matchRoot: true,
+        ),
+      );
+      expect(metricField.controller.text, '64,5');
+      expect(tester.widget<UiChip>(moodLight).selected, isTrue);
+
+      // Close again, then discard the draft from the camera cue.
+      await tester.ensureVisible(find.byKey(const ValueKey('checkin-close')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('checkin-close')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('capture-draft-discard')));
+      await tester.pumpAndSettle();
+      expect(files.discarded, ['/tmp/shot1.jpg']);
+      expect(find.byKey(const ValueKey('capture-draft-cue')), findsNothing);
+
+      // Tapping shutter now takes a fresh camera photo with empty fields.
+      await tester.tap(shutter);
+      await tester.pumpAndSettle();
+      expect(camera.pictures, 2);
+      expect(tester.widget<TextField>(caption).controller!.text, isEmpty);
+      final freshMetric = tester.widget<EditableText>(
+        find.descendant(
+          of: metric,
+          matching: find.byType(EditableText),
+          matchRoot: true,
+        ),
+      );
+      expect(freshMetric.controller.text, isEmpty);
+      expect(tester.widget<UiChip>(moodLight).selected, isFalse);
+    },
+  );
+
+  testWidgets(
+    'library pick is discarded on back or close and never hijacks the camera shutter',
+    (tester) async {
+      final container = await pump(tester, compose: true);
+      final files = container.read(draftFilesProvider) as FakeDraftFiles;
+      final shutter = find.byKey(const ValueKey('capture-shutter'));
+      final caption = find.byKey(const ValueKey('checkin-caption'));
+
+      await tester.tap(find.byKey(const ValueKey('capture-gallery')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('checkin-from-library')), findsOneWidget);
+      await tester.enterText(caption, 'Ảnh thư viện');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(files.discarded, ['/tmp/library.jpg']);
+      expect(find.byKey(const ValueKey('capture-draft-cue')), findsNothing);
+
+      // Pick from library again and close via ✕: also discarded.
+      await tester.tap(find.byKey(const ValueKey('capture-gallery')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('checkin-close')));
+      await tester.pumpAndSettle();
+      expect(files.discarded, ['/tmp/library.jpg', '/tmp/library.jpg']);
+      expect(find.byKey(const ValueKey('capture-draft-cue')), findsNothing);
+
+      // Shutter takes a fresh live camera shot immediately.
+      await tester.tap(shutter);
+      await tester.pumpAndSettle();
+      expect(camera.pictures, 1);
+      expect(find.byKey(const ValueKey('checkin-from-library')), findsNothing);
+      expect(tester.widget<TextField>(caption).controller!.text, isEmpty);
+    },
+  );
 
   testWidgets('remembers the last journey across launches', (tester) async {
     await pump(

@@ -38,6 +38,20 @@ class CheckinDrafts extends ChangeNotifier {
     return draft;
   }
 
+  void discard(String journeyId) {
+    final draft = _drafts.remove(journeyId);
+    if (draft == null) return;
+    unawaited(_files.discard([draft.photo.path]));
+    _notifyAfterLifecycle();
+  }
+
+  void clear() {
+    final paths = [for (final draft in _drafts.values) draft.photo.path];
+    _drafts.clear();
+    if (paths.isNotEmpty) unawaited(_files.discard(paths));
+    if (!_disposed) _notifyAfterLifecycle();
+  }
+
   void save(CheckinDraft draft) {
     final photo = draft.photo;
     if (_disposed) {
