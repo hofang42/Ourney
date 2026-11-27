@@ -159,6 +159,26 @@ void main() {
       expect(_text(tester, 'share-card-title'), expected);
     });
   }
+  for (final (days, columns) in [(7, 3), (20, 4)]) {
+    testWidgets('memory Story $days days uses $columns columns', (
+      tester,
+    ) async {
+      final j = testJourney(templateId: TemplateId.travel, durationDays: days);
+      await pumpShare(tester, journey: j);
+      final grid = tester.widget<GridView>(
+        find.descendant(
+          of: _key('share-card-skin-memory'),
+          matching: find.byType(GridView),
+        ),
+      );
+      expect(
+        (grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount)
+            .crossAxisCount,
+        columns,
+      );
+    });
+  }
+
   group('layout (FR-E1)', () {
     testWidgets('story by default at 360x640 (x3 = 1080x1920), toggles to '
         'feed 360x450 (x3 = 1080x1350)', (tester) async {

@@ -627,6 +627,7 @@ class _MemoryCard extends StatelessWidget {
     final c = ctx.content;
     final total = math.min(ctx.story ? 24 : 20, math.max(ctx.total, 1));
     final shot = math.min(c.photoCount, total);
+    final cols = total <= 4 ? 2 : (total <= 9 ? 3 : 4);
     final title = keepNumberWithUnit(
       titleStatesLength(c.title)
           ? c.title.toUpperCase()
@@ -684,7 +685,7 @@ class _MemoryCard extends StatelessWidget {
                       color: const Color(0xFF111111),
                       padding: const EdgeInsets.fromLTRB(4, 11, 4, 11),
                       child: GridView.count(
-                        crossAxisCount: 4,
+                        crossAxisCount: cols,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 3,
@@ -838,7 +839,7 @@ class _CoupleCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   GridView.count(
-                    crossAxisCount: 4,
+                    crossAxisCount: cols,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     mainAxisSpacing: 4,
