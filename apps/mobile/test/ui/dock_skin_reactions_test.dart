@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -209,9 +210,9 @@ void main() {
   });
 
   group('UiDock', () {
-    for (final activeTab in [0, 3]) {
+    for (final activeTab in [0, 1, 3, 4]) {
       testWidgets(
-        '360dp Vietnamese label stays inside the capsule ($activeTab)',
+        '360dp Vietnamese label stays inside the C1 r=16 capsule with >= 4.0dp inner clearance (tab=$activeTab)',
         (tester) async {
           tester.view.devicePixelRatio = 1;
           tester.view.physicalSize = const Size(360, 780);
@@ -220,6 +221,7 @@ void main() {
             host(
               UiDock(
                 left: UiDockItem(
+                  itemKey: const ValueKey('skin-tab-0'),
                   glyph: 'journeys',
                   label: 'Hành trình',
                   active: activeTab == 0,
@@ -227,6 +229,7 @@ void main() {
                 ),
                 extraLeft: [
                   UiDockItem(
+                    itemKey: const ValueKey('skin-tab-1'),
                     glyph: 'squad',
                     label: 'Nhóm',
                     active: activeTab == 1,
@@ -235,6 +238,7 @@ void main() {
                 ],
                 extraRight: [
                   UiDockItem(
+                    itemKey: const ValueKey('skin-tab-3'),
                     glyph: 'activity',
                     label: 'Hoạt động',
                     active: activeTab == 3,
@@ -242,6 +246,7 @@ void main() {
                   ),
                 ],
                 right: UiDockItem(
+                  itemKey: const ValueKey('skin-tab-4'),
                   glyph: 'profile',
                   label: 'Hồ sơ',
                   active: activeTab == 4,
@@ -254,17 +259,38 @@ void main() {
             ),
           );
           await tester.pump();
+          final isLong = activeTab == 0 || activeTab == 3;
           final pill = tester.getRect(
             find.byKey(const ValueKey('dock-selection-pill')),
           );
-          expect(pill.width, closeTo(60.0, 0.5));
-          final labelText = activeTab == 0 ? 'Hành trình' : 'Hoạt động';
+          expect(pill.width, closeTo(isLong ? 70.0 : 59.0, 0.5));
+          final pillDeco =
+              tester
+                      .widget<DecoratedBox>(
+                        find.byKey(const ValueKey('dock-selection-pill')),
+                      )
+                      .decoration
+                  as BoxDecoration;
+          expect(pillDeco.borderRadius, BorderRadius.circular(16));
+          for (final k in [0, 1, 3, 4]) {
+            final slotRect = tester.getRect(
+              find.byKey(ValueKey('skin-tab-$k')),
+            );
+            expect(slotRect.width, greaterThanOrEqualTo(48.0));
+          }
+          final labelText = switch (activeTab) {
+            0 => 'Hành trình',
+            1 => 'Nhóm',
+            3 => 'Hoạt động',
+            _ => 'Hồ sơ',
+          };
           final label = tester.getRect(find.text(labelText));
           expect(
             label.width,
             lessThanOrEqualTo(pill.width - dockE4CapsuleLabelSidePad + 0.5),
           );
           final activeWidget = tester.widget<Text>(find.text(labelText));
+          expect(activeWidget.style!.fontSize, closeTo(10.0, 0.01));
           final tp = TextPainter(
             text: TextSpan(text: labelText, style: activeWidget.style),
             textDirection: TextDirection.ltr,
@@ -274,25 +300,28 @@ void main() {
               label.top +
               tp.computeDistanceToActualBaseline(TextBaseline.alphabetic);
           tp.dispose();
-          final r = pill.height / 2;
-          double overhangPastOutline(Offset p) {
-            final cx = p.dx.clamp(pill.left + r, pill.right - r);
-            final dist = (p - Offset(cx, pill.center.dy)).distance;
-            return dist > r ? dist - r : 0.0;
-          }
 
-          for (final p in [
-            Offset(label.left, baselineY),
-            Offset(label.right, baselineY),
-            label.topLeft,
-            label.topRight,
-          ]) {
-            expect(
-              overhangPastOutline(p),
-              lessThanOrEqualTo(4.0),
-              reason: 'label point $p overhang vs $pill',
-            );
-          }
+          // Inner boundary of the r=16 (r_inner = 14.5) capsule at baselineY:
+          const rOuter = 16.0;
+          const rInner = rOuter - UiBorder.thin; // 14.5
+          final dy = (baselineY - (pill.bottom - rOuter)).clamp(0.0, rInner);
+          final dxArc = (rInner * rInner - dy * dy) > 0
+              ? (rInner * rInner - dy * dy)
+              : 0.0;
+          final innerHalfChord = (pill.width / 2 - rOuter) + math.sqrt(dxArc);
+          final leftClearance = label.left - (pill.center.dx - innerHalfChord);
+          final rightClearance =
+              (pill.center.dx + innerHalfChord) - label.right;
+          expect(
+            leftClearance,
+            greaterThanOrEqualTo(4.5),
+            reason: '$labelText left inner clearance at 360dp',
+          );
+          expect(
+            rightClearance,
+            greaterThanOrEqualTo(4.5),
+            reason: '$labelText right inner clearance at 360dp',
+          );
           expect(label.top, greaterThanOrEqualTo(pill.top));
           expect(label.bottom, lessThanOrEqualTo(pill.bottom));
         },
@@ -353,10 +382,10 @@ void main() {
 
       final pill = find.byKey(const ValueKey('dock-selection-pill'));
       expect(tester.getSize(pill).height, 52);
-      expect(tester.getSize(pill).width, inInclusiveRange(60, 74));
+      expect(tester.getSize(pill).width, inInclusiveRange(59, 74));
       final deco =
           tester.widget<DecoratedBox>(pill).decoration as BoxDecoration;
-      expect(deco.borderRadius, BorderRadius.circular(26));
+      expect(deco.borderRadius, BorderRadius.circular(16));
       // Even the outermost tab keeps clear padding inside the dock border.
       expect(
         tester.getTopLeft(pill).dx - tester.getTopLeft(find.byType(UiDock)).dx,

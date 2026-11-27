@@ -96,11 +96,11 @@ void main() {
     'monotonically during the 220ms morph while keeping y invariant',
     (tester) async {
       for (final (w, expectedShellX, expectedCamX) in const [
-        (360.0, [47.0, 109.0, 251.0, 313.0], [45.0, 103.0, 257.0, 315.0]),
+        (360.0, [47.5, 108.5, 251.5, 312.5], [45.5, 102.5, 257.5, 314.5]),
         (
           390.0,
-          [50.75, 120.25, 269.75, 339.25],
-          [48.75, 114.25, 275.75, 341.25],
+          [51.25, 119.75, 270.25, 338.75],
+          [49.25, 113.75, 276.25, 340.75],
         ),
       ]) {
         tester.view.devicePixelRatio = 1;

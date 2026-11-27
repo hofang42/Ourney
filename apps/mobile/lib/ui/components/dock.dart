@@ -16,20 +16,27 @@ import 'skin_scope.dart';
 
 const Duration _longPress = Duration(milliseconds: 400);
 
-/// Constants for the E4 two-island dock layout.
+/// Constants for the E4 (C1) two-island dock layout.
 abstract final class _E4 {
   static const double margin = 12;
   static const double gap = 6;
-  static const double pad = 4;
-  static const double slotMax = 76;
+  static const double pad = 5;
+  static const double slotMax = 75;
+  static const double slotMaxCompactWidth = 72;
   static const double islandH = 64;
   static const double islandHCompact = 52;
+  static const double islandRadius = dockE4IslandRadius;
+  static const double islandRadiusCompact = dockE4IslandRadiusCompact;
+  static const double pillRadius = dockE4CapsuleRadius;
+  static const double pillRadiusCompact = dockE4CapsuleRadiusCompact;
   static const double camD = 60;
   static const double camDCompact = 52;
   static const double camDRoute = UiSize.shutter;
   static const double capH = dockE4CapsuleHeight;
   static const double capsuleSlotInset = 2;
   static const double capsuleLabelSidePad = dockE4CapsuleLabelSidePad;
+  static const double capsuleDescenderClearanceMargin =
+      dockE4DescenderClearanceMargin;
   static const double capsuleVertPad = dockE4CapsuleVertPad;
   static const double islandOverCapsule = 12;
   static const double ring = 40;
@@ -44,7 +51,7 @@ abstract final class _E4 {
   static const double capsuleOpticalLift = dockE4CapsuleOpticalLift;
 }
 
-/// Pure E4 dock layout geometry for a given screen [width] and state.
+/// Pure E4 (C1) dock layout geometry for a given screen [width] and state.
 @visibleForTesting
 @immutable
 class UiDockGeometry {
@@ -87,7 +94,22 @@ class UiDockGeometry {
   /// right tabs.
   final List<double> allCentersX;
 
-  /// Computes the E4 geometry.
+  /// Concentric island corner radius (`22 -> 26`, always `6dp` larger than
+  /// [pillRadiusAt] at every morph progress [compactT] in `[0, 1]`).
+  static double islandRadiusAt(double compactT) =>
+      lerpDouble(_E4.islandRadius, _E4.islandRadiusCompact, compactT)!;
+
+  /// Concentric selection pill corner radius (`16 -> 20`).
+  static double pillRadiusAt(double compactT) =>
+      lerpDouble(_E4.pillRadius, _E4.pillRadiusCompact, compactT)!;
+
+  /// Desired expanded slot width when a long-label tab (`Hành trình` /
+  /// `Hoạt động`) is active at [width]: `72.0dp` (`capW = 70.0dp`) below
+  /// `390dp`, `75.0dp` (`capW = 73.0dp`) at `>= 390dp`.
+  static double activeLongSlotTargetAt(double width) =>
+      width < dockLabelWidthBreakpoint ? _E4.slotMaxCompactWidth : _E4.slotMax;
+
+  /// Computes the E4 (C1) geometry.
   ///
   /// [cam] is the centre-slot diameter in the current state (`60` labels shown,
   /// `52` compact, `76` on the camera route, or lerped while animating).
@@ -95,6 +117,11 @@ class UiDockGeometry {
   /// lerped).
   /// [baseIslandH] is the expanded island height (`64` at 1x, larger at >1x
   /// text scale) used to anchor the constant island bottom edge inside [bandH].
+  ///
+  /// When [activeTabIndex] (or [targetSlotWidths] + [slotWeights]) is supplied,
+  /// the island containing the active tab adaptively widens its active slot if
+  /// needed (while short-label tabs keep 50/50 equal slots and partner slots
+  /// never drop below `48dp`), lerping back to equal slots via [compactT].
   static UiDockGeometry compute({
     required double width,
     required double cam,
@@ -105,15 +132,24 @@ class UiDockGeometry {
     double? baseIslandH,
     double capH = _E4.capH,
     int tabsPerSide = 2,
+    int? activeTabIndex,
+    List<bool>? longTabMask,
+    List<double>? targetSlotWidths,
+    List<double>? slotWeights,
+    double compactT = 0,
   }) {
     final resolvedBaseIslandH = baseIslandH ?? math.max(_E4.islandH, islandH);
     final resolvedBandH = bandH ?? resolvedBaseIslandH;
-    final slot = math.min(
-      _E4.slotMax,
-      (width - 2 * _E4.margin - cam - 2 * _E4.gap - 4 * _E4.pad) /
-          (2 * tabsPerSide),
+    final maxIslandW = tabsPerSide * _E4.slotMax + 2 * _E4.pad;
+    final islandW = math.min(
+      maxIslandW,
+      (width - 2 * _E4.margin - cam - 2 * _E4.gap) / 2,
     );
-    final islandW = tabsPerSide * slot + 2 * _E4.pad;
+    final pad = math.min(
+      _E4.pad,
+      math.max(0.0, (islandW - tabsPerSide * UiSize.tap) / 2),
+    );
+    final slot = (islandW - 2 * pad) / tabsPerSide;
     final total = 2 * islandW + 2 * _E4.gap + cam;
     final x0 = (width - total) / 2;
     final rightX0 = x0 + islandW + _E4.gap + cam + _E4.gap;
@@ -137,12 +173,65 @@ class UiDockGeometry {
       height: cam,
     );
 
-    final tabSlots = <Rect>[
-      for (var i = 0; i < tabsPerSide; i++)
-        Rect.fromLTWH(x0 + _E4.pad + i * slot, islandTop, slot, islandH),
-      for (var i = 0; i < tabsPerSide; i++)
-        Rect.fromLTWH(rightX0 + _E4.pad + i * slot, islandTop, slot, islandH),
-    ];
+    final totalTabs = 2 * tabsPerSide;
+    List<double>? resolvedTargets = targetSlotWidths;
+    List<double>? resolvedWeights = slotWeights;
+    if (activeTabIndex != null && activeTabIndex >= 0) {
+      final mask = longTabMask ?? const <bool>[true, false, true, false];
+      final longTarget = math.max(slot, activeLongSlotTargetAt(width));
+      resolvedTargets ??= <double>[
+        for (var i = 0; i < totalTabs; i++)
+          (i < mask.length && mask[i]) ? longTarget : slot,
+      ];
+      resolvedWeights ??= <double>[
+        for (var i = 0; i < totalTabs; i++) i == activeTabIndex ? 1.0 : 0.0,
+      ];
+    }
+
+    final flexFactor = 1.0 - compactT.clamp(0.0, 1.0);
+    final slotWidths = List<double>.filled(totalTabs, slot);
+    if (tabsPerSide == 2 &&
+        resolvedTargets != null &&
+        resolvedTargets.length == 4 &&
+        resolvedWeights != null &&
+        resolvedWeights.length == 4 &&
+        flexFactor > 0) {
+      final innerW = 2 * slot;
+      final maxActiveSlot = math.max(slot, innerW - UiSize.tap);
+      for (var side = 0; side < 2; side++) {
+        final a = 2 * side;
+        final b = a + 1;
+        final wA = resolvedWeights[a].clamp(0.0, 1.0);
+        final wB = resolvedWeights[b].clamp(0.0, 1.0);
+        final targetA = lerpDouble(
+          slot,
+          resolvedTargets[a].clamp(slot, maxActiveSlot),
+          flexFactor,
+        )!;
+        final targetB = lerpDouble(
+          slot,
+          resolvedTargets[b].clamp(slot, maxActiveSlot),
+          flexFactor,
+        )!;
+        final delta = wA * (targetA - slot) - wB * (targetB - slot);
+        slotWidths[a] = slot + delta;
+        slotWidths[b] = slot - delta;
+      }
+    }
+
+    final tabSlots = <Rect>[];
+    var leftCursor = x0 + pad;
+    for (var i = 0; i < tabsPerSide; i++) {
+      final w = slotWidths[i];
+      tabSlots.add(Rect.fromLTWH(leftCursor, islandTop, w, islandH));
+      leftCursor += w;
+    }
+    var rightCursor = rightX0 + pad;
+    for (var i = 0; i < tabsPerSide; i++) {
+      final w = slotWidths[tabsPerSide + i];
+      tabSlots.add(Rect.fromLTWH(rightCursor, islandTop, w, islandH));
+      rightCursor += w;
+    }
     final tabCentersX = <double>[for (final r in tabSlots) r.center.dx];
     final allCentersX = <double>[
       for (var i = 0; i < tabsPerSide; i++) tabCentersX[i],
@@ -168,6 +257,10 @@ class UiDockGeometry {
       allCentersX: List.unmodifiable(allCentersX),
     );
   }
+
+  /// Expanded selection capsule width for [tabIndex] (`tabSlots[tabIndex].width - 2`).
+  double capsuleWidthForTab(int tabIndex) =>
+      tabSlots[tabIndex].width - _E4.capsuleSlotInset;
 
   /// Expanded selection capsule rect centred horizontally on [centerX].
   Rect capsuleRectAt(double centerX, {double? width}) {
@@ -207,7 +300,7 @@ class UiDockGeometry {
   }) => selectionRectAt(
     tabCentersX[tabIndex],
     compactT,
-    expandedWidth: expandedWidth,
+    expandedWidth: expandedWidth ?? capsuleWidthForTab(tabIndex),
   );
 }
 
@@ -368,6 +461,7 @@ class UiDock extends StatelessWidget {
         final width = constraints.maxWidth.isFinite && constraints.maxWidth > 0
             ? constraints.maxWidth
             : media.size.width;
+        final baseFontSize = dockBaseLabelSize(width);
         final shownBaseGeo = UiDockGeometry.compute(
           width: width,
           cam: _E4.camD,
@@ -379,16 +473,53 @@ class UiDock extends StatelessWidget {
           shownBaseGeo.capsuleWidth - _E4.capsuleLabelSidePad,
         );
         final labels = [for (final e in items) e.label];
-        final labelFit = dockLabelFit(context, labels, labelMaxW);
+        final labelFit = dockLabelFit(
+          context,
+          labels,
+          labelMaxW,
+          baseFontSize: baseFontSize,
+        );
+        final renderedFontSize = baseFontSize * labelFit;
         final textScale = MediaQuery.textScalerOf(context)
             .clamp(maxScaleFactor: dockLabelMaxScale)
             .scale(1);
-        final lineH = dockLabelLineHeight * labelFit * textScale;
+        final lineH = renderedFontSize * dockLabelHeightRatio * textScale;
         final capH = math.max(
           _E4.capH,
           _E4.glyph + _E4.labelGap + lineH + _E4.capsuleVertPad,
         );
         final baseIslandH = math.max(_E4.islandH, capH + _E4.islandOverCapsule);
+
+        final slotLabels = <String?>[
+          for (var i = 0; i < tabsPerSide; i++)
+            i < leftItems.length ? leftItems[i].label : null,
+          for (var i = 0; i < tabsPerSide; i++)
+            i < rightItems.length ? rightItems[i].label : null,
+        ];
+        final slotLabelWidths = <double>[
+          for (final label in slotLabels)
+            label == null
+                ? 0.0
+                : dockMeasureLabelWidth(
+                    context,
+                    label,
+                    fontSize: renderedFontSize,
+                  ),
+        ];
+        final widestLabelW = slotLabelWidths.fold<double>(0.0, math.max);
+        final maxActiveSlotCap = UiDockGeometry.activeLongSlotTargetAt(width);
+        final neededFlexSlotW = math.min(
+          maxActiveSlotCap,
+          (widestLabelW + _E4.capsuleDescenderClearanceMargin).roundToDouble() +
+              _E4.capsuleSlotInset,
+        );
+        final targetSlotWidths = <double>[
+          for (final lw in slotLabelWidths)
+            (lw + _E4.capsuleDescenderClearanceMargin >
+                    shownBaseGeo.capsuleWidth)
+                ? math.max(shownBaseGeo.slotWidth, neededFlexSlotW)
+                : shownBaseGeo.slotWidth,
+        ];
 
         final effectiveCompact = !camera && compact;
         final targetT = effectiveCompact ? 1.0 : 0.0;
@@ -483,109 +614,145 @@ class UiDock extends StatelessWidget {
                   _E4.camDRoute,
                   cameraT,
                 )!;
-                final geo = UiDockGeometry.compute(
-                  width: width,
-                  cam: currentCam,
-                  islandH: currentIslandH,
-                  topPad: _E4.topPad,
-                  bandH: currentBandH,
-                  bottomGap: bottomGap,
-                  baseIslandH: currentBaseIslandH,
-                  capH: capH,
-                  tabsPerSide: tabsPerSide,
-                );
-                final centerBoxSize = math.max(
-                  geo.cameraRect.width,
-                  _E4.camDRoute,
-                );
+                final effectiveFlexCompactT =
+                    1.0 - (1.0 - effCompactT) * (1.0 - cameraT);
+                final islandRadius = UiDockGeometry.islandRadiusAt(effCompactT);
+                final pillRadius = UiDockGeometry.pillRadiusAt(effCompactT);
 
-                return SizedBox(
-                  width: width,
-                  height: geo.dockHeight,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      _DockIsland(
-                        rect: geo.leftIsland,
-                        camera: camera,
-                        useLiquid: useLiquid,
-                        dark: dark,
-                        tintAlpha: tintAlpha,
-                        outline: outline,
-                        stroke: stroke,
-                        shadowOffset: shadowOffset,
-                        shadowColor: shadowColor,
-                        reduceTransparency: reduceTransparency,
-                      ),
-                      _DockIsland(
-                        rect: geo.rightIsland,
-                        camera: camera,
-                        useLiquid: useLiquid,
-                        dark: dark,
-                        tintAlpha: tintAlpha,
-                        outline: outline,
-                        stroke: stroke,
-                        shadowOffset: shadowOffset,
-                        shadowColor: shadowColor,
-                        reduceTransparency: reduceTransparency,
-                      ),
-                      if (!camera && activeSlotIndex >= 0)
-                        _DockSelectionSlide(
-                          activeIndex: activeSlotIndex,
-                          geometry: geo,
-                          expandedCapsuleWidth: shownBaseGeo.capsuleWidth,
-                          compactT: effCompactT,
-                          accent: pillFill,
-                          surface: ui.surface,
-                          outline: outline,
-                          shadow: shadowColor,
-                          useLiquid: useLiquid,
-                          dark: dark,
-                        ),
-                      for (var i = 0; i < leftItems.length; i++)
-                        Positioned.fromRect(
-                          rect: geo.tabSlots[i],
-                          child: DockTab(
-                            item: leftItems[i],
+                return _DockSelectionSlide(
+                  activeIndex: activeSlotIndex,
+                  slotCount: 2 * tabsPerSide,
+                  compactT: effCompactT,
+                  builder: (context, slotWeights, selectionRectBuilder) {
+                    final geo = UiDockGeometry.compute(
+                      width: width,
+                      cam: currentCam,
+                      islandH: currentIslandH,
+                      topPad: _E4.topPad,
+                      bandH: currentBandH,
+                      bottomGap: bottomGap,
+                      baseIslandH: currentBaseIslandH,
+                      capH: capH,
+                      tabsPerSide: tabsPerSide,
+                      targetSlotWidths: targetSlotWidths,
+                      slotWeights: camera ? null : slotWeights,
+                      compactT: effectiveFlexCompactT,
+                    );
+                    final maxActiveSlot = math.max(
+                      geo.slotWidth,
+                      2 * geo.slotWidth - UiSize.tap,
+                    );
+                    final settledCapsuleWidths = <double>[
+                      for (var i = 0; i < targetSlotWidths.length; i++)
+                        lerpDouble(
+                              geo.slotWidth,
+                              targetSlotWidths[i].clamp(
+                                geo.slotWidth,
+                                maxActiveSlot,
+                              ),
+                              1.0 - effectiveFlexCompactT.clamp(0.0, 1.0),
+                            )! -
+                            _E4.capsuleSlotInset,
+                    ];
+                    final pillRect = (!camera && activeSlotIndex >= 0)
+                        ? selectionRectBuilder(geo, settledCapsuleWidths)
+                        : null;
+                    final centerBoxSize = math.max(
+                      geo.cameraRect.width,
+                      _E4.camDRoute,
+                    );
+
+                    return SizedBox(
+                      width: width,
+                      height: geo.dockHeight,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          _DockIsland(
+                            rect: geo.leftIsland,
+                            borderRadius: islandRadius,
                             camera: camera,
-                            onAccent: onAccent,
-                            labelFit: labelFit,
-                            labelMaxWidth: labelMaxW,
-                            lift: 0,
-                            labelGap: _E4.labelGap,
-                            compactT: effCompactT,
+                            useLiquid: useLiquid,
+                            dark: dark,
+                            tintAlpha: tintAlpha,
+                            outline: outline,
+                            stroke: stroke,
+                            shadowOffset: shadowOffset,
+                            shadowColor: shadowColor,
+                            reduceTransparency: reduceTransparency,
                           ),
-                        ),
-                      for (var i = 0; i < rightItems.length; i++)
-                        Positioned.fromRect(
-                          rect: geo.tabSlots[tabsPerSide + i],
-                          child: DockTab(
-                            item: rightItems[i],
+                          _DockIsland(
+                            rect: geo.rightIsland,
+                            borderRadius: islandRadius,
                             camera: camera,
-                            onAccent: onAccent,
-                            labelFit: labelFit,
-                            labelMaxWidth: labelMaxW,
-                            lift: 0,
-                            labelGap: _E4.labelGap,
-                            compactT: effCompactT,
+                            useLiquid: useLiquid,
+                            dark: dark,
+                            tintAlpha: tintAlpha,
+                            outline: outline,
+                            stroke: stroke,
+                            shadowOffset: shadowOffset,
+                            shadowColor: shadowColor,
+                            reduceTransparency: reduceTransparency,
                           ),
-                        ),
-                      Positioned(
-                        left: (width - centerBoxSize) / 2,
-                        top: geo.centerY - centerBoxSize / 2,
-                        width: centerBoxSize,
-                        height: centerBoxSize,
-                        child: Center(
-                          child: centerAnchorKey != null
-                              ? KeyedSubtree(
-                                  key: centerAnchorKey,
-                                  child: morphingCenter,
-                                )
-                              : morphingCenter,
-                        ),
+                          if (pillRect != null)
+                            _DockSelection(
+                              rect: pillRect,
+                              borderRadius: pillRadius,
+                              accent: pillFill,
+                              surface: ui.surface,
+                              outline: outline,
+                              shadow: shadowColor,
+                              useLiquid: useLiquid,
+                              dark: dark,
+                            ),
+                          for (var i = 0; i < leftItems.length; i++)
+                            Positioned.fromRect(
+                              rect: geo.tabSlots[i],
+                              child: DockTab(
+                                item: leftItems[i],
+                                camera: camera,
+                                onAccent: onAccent,
+                                baseFontSize: baseFontSize,
+                                labelFit: labelFit,
+                                labelMaxWidth: labelMaxW,
+                                lift: 0,
+                                labelGap: _E4.labelGap,
+                                compactT: effCompactT,
+                              ),
+                            ),
+                          for (var i = 0; i < rightItems.length; i++)
+                            Positioned.fromRect(
+                              rect: geo.tabSlots[tabsPerSide + i],
+                              child: DockTab(
+                                item: rightItems[i],
+                                camera: camera,
+                                onAccent: onAccent,
+                                baseFontSize: baseFontSize,
+                                labelFit: labelFit,
+                                labelMaxWidth: labelMaxW,
+                                lift: 0,
+                                labelGap: _E4.labelGap,
+                                compactT: effCompactT,
+                              ),
+                            ),
+                          Positioned(
+                            left: (width - centerBoxSize) / 2,
+                            top: geo.centerY - centerBoxSize / 2,
+                            width: centerBoxSize,
+                            height: centerBoxSize,
+                            child: Center(
+                              child: centerAnchorKey != null
+                                  ? KeyedSubtree(
+                                      key: centerAnchorKey,
+                                      child: morphingCenter,
+                                    )
+                                  : morphingCenter,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 );
               },
             );
@@ -599,6 +766,7 @@ class UiDock extends StatelessWidget {
 class _DockIsland extends StatelessWidget {
   const _DockIsland({
     required this.rect,
+    required this.borderRadius,
     required this.camera,
     required this.useLiquid,
     required this.dark,
@@ -611,6 +779,7 @@ class _DockIsland extends StatelessWidget {
   });
 
   final Rect rect;
+  final double borderRadius;
   final bool camera;
   final bool useLiquid;
   final bool dark;
@@ -624,12 +793,11 @@ class _DockIsland extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final r = rect.height / 2;
-    final radius = BorderRadius.circular(r);
+    final radius = BorderRadius.circular(borderRadius);
     final Widget island = useLiquid
         ? GlassContainer(
             useOwnLayer: true,
-            shape: LiquidRoundedSuperellipse(borderRadius: r),
+            shape: LiquidRoundedSuperellipse(borderRadius: borderRadius),
             settings: _liquidSettings(camera: camera, dark: dark),
             child: const SizedBox.expand(),
           )
@@ -655,6 +823,7 @@ class _DockIsland extends StatelessWidget {
 class _DockSelection extends StatelessWidget {
   const _DockSelection({
     required this.rect,
+    required this.borderRadius,
     required this.accent,
     required this.surface,
     required this.outline,
@@ -664,6 +833,7 @@ class _DockSelection extends StatelessWidget {
   });
 
   final Rect rect;
+  final double borderRadius;
   final Color accent;
   final Color surface;
   final Color outline;
@@ -673,23 +843,20 @@ class _DockSelection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderRadius = BorderRadius.circular(rect.height / 2);
+    final radius = BorderRadius.circular(borderRadius);
     return Positioned.fromRect(
       rect: rect,
       child: IgnorePointer(
         child: DecoratedBox(
           key: const ValueKey('dock-selection-pill'),
           decoration: useLiquid
-              ? _lensDecoration(
-                  accent,
-                  dark,
-                ).copyWith(borderRadius: borderRadius)
+              ? _lensDecoration(accent, dark).copyWith(borderRadius: radius)
               : dockSelectionDecoration(
                   accent: accent,
                   surface: surface,
                   outline: outline,
                   shadow: shadow,
-                  borderRadius: borderRadius,
+                  borderRadius: radius,
                 ),
         ),
       ),
@@ -700,27 +867,21 @@ class _DockSelection extends StatelessWidget {
 class _DockSelectionSlide extends StatefulWidget {
   const _DockSelectionSlide({
     required this.activeIndex,
-    required this.geometry,
-    required this.expandedCapsuleWidth,
+    required this.slotCount,
     required this.compactT,
-    required this.accent,
-    required this.surface,
-    required this.outline,
-    required this.shadow,
-    required this.useLiquid,
-    required this.dark,
+    required this.builder,
   });
 
   final int activeIndex;
-  final UiDockGeometry geometry;
-  final double expandedCapsuleWidth;
+  final int slotCount;
   final double compactT;
-  final Color accent;
-  final Color surface;
-  final Color outline;
-  final Color shadow;
-  final bool useLiquid;
-  final bool dark;
+  final Widget Function(
+    BuildContext context,
+    List<double> slotWeights,
+    Rect Function(UiDockGeometry geo, List<double> settledCapsuleWidths)
+    selectionRectBuilder,
+  )
+  builder;
 
   @override
   State<_DockSelectionSlide> createState() => _DockSelectionSlideState();
@@ -735,6 +896,7 @@ class _DockSelectionSlideState extends State<_DockSelectionSlide>
 
   List<double> _unitWeights(int slot, int count) {
     if (count <= 0) return const [];
+    if (slot < 0) return List<double>.filled(count, 0.0);
     final clamped = slot.clamp(0, count - 1);
     return List<double>.generate(count, (i) => i == clamped ? 1.0 : 0.0);
   }
@@ -775,6 +937,21 @@ class _DockSelectionSlideState extends State<_DockSelectionSlide>
     );
   }
 
+  List<double> _clampedSlotWeights(int count) {
+    final curved = _curved;
+    final target = _unitWeights(_toSlot, count);
+    if (curved == null ||
+        !(_ctrl?.isAnimating ?? false) ||
+        _fromWeights.length != count) {
+      return target;
+    }
+    final s = curved.value.clamp(0.0, 1.0);
+    return List<double>.generate(
+      count,
+      (i) => lerpDouble(_fromWeights[i].clamp(0.0, 1.0), target[i], s)!,
+    );
+  }
+
   AnimationController _ensureController() {
     var ctrl = _ctrl;
     if (ctrl != null) return ctrl;
@@ -788,7 +965,7 @@ class _DockSelectionSlideState extends State<_DockSelectionSlide>
   void initState() {
     super.initState();
     _toSlot = widget.activeIndex;
-    _fromWeights = _unitWeights(_toSlot, widget.geometry.tabCentersX.length);
+    _fromWeights = _unitWeights(_toSlot, widget.slotCount);
   }
 
   @override
@@ -797,16 +974,18 @@ class _DockSelectionSlideState extends State<_DockSelectionSlide>
     if (UiMotion.reduced(context) && (_ctrl?.isAnimating ?? false)) {
       _ctrl?.stop();
       _toSlot = widget.activeIndex;
-      _fromWeights = _unitWeights(_toSlot, widget.geometry.tabCentersX.length);
+      _fromWeights = _unitWeights(_toSlot, widget.slotCount);
     }
   }
 
   @override
   void didUpdateWidget(covariant _DockSelectionSlide oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final count = widget.geometry.tabCentersX.length;
+    final count = widget.slotCount;
     if (widget.activeIndex != oldWidget.activeIndex) {
-      if (UiMotion.reduced(context)) {
+      if (UiMotion.reduced(context) ||
+          widget.activeIndex < 0 ||
+          oldWidget.activeIndex < 0) {
         _ctrl?.stop();
         _toSlot = widget.activeIndex;
         _fromWeights = _unitWeights(_toSlot, count);
@@ -833,46 +1012,47 @@ class _DockSelectionSlideState extends State<_DockSelectionSlide>
   Widget build(BuildContext context) {
     final ctrl = _ctrl;
     final curved = _curved;
-    final g = widget.geometry;
+    final count = widget.slotCount;
     if (UiMotion.reduced(context) ||
         ctrl == null ||
         curved == null ||
         !ctrl.isAnimating) {
-      final rect = g.selectionRectAt(
-        _slotX(g, widget.activeIndex),
-        widget.compactT,
-        expandedWidth: widget.expandedCapsuleWidth,
-      );
-      return _DockSelection(
-        rect: rect,
-        accent: widget.accent,
-        surface: widget.surface,
-        outline: widget.outline,
-        shadow: widget.shadow,
-        useLiquid: widget.useLiquid,
-        dark: widget.dark,
+      final weights = _unitWeights(widget.activeIndex, count);
+      return widget.builder(
+        context,
+        weights,
+        (g, _) => g.selectionRectForTab(
+          widget.activeIndex.clamp(0, count - 1),
+          compactT: widget.compactT,
+        ),
       );
     }
 
     return AnimatedBuilder(
       animation: curved,
       builder: (context, _) {
-        final g = widget.geometry;
-        final cx = lerpDouble(_startX(g), _endX(g), curved.value)!;
-        final rect = g.selectionRectAt(
-          cx,
-          widget.compactT,
-          expandedWidth: widget.expandedCapsuleWidth,
-        );
-        return _DockSelection(
-          rect: rect,
-          accent: widget.accent,
-          surface: widget.surface,
-          outline: widget.outline,
-          shadow: widget.shadow,
-          useLiquid: widget.useLiquid,
-          dark: widget.dark,
-        );
+        final weights = _clampedSlotWeights(count);
+        return widget.builder(context, weights, (g, settledCapsuleWidths) {
+          final cx = lerpDouble(_startX(g), _endX(g), curved.value)!;
+          var expandedW = 0.0;
+          var weightSum = 0.0;
+          for (
+            var i = 0;
+            i < weights.length && i < settledCapsuleWidths.length;
+            i++
+          ) {
+            expandedW += weights[i] * settledCapsuleWidths[i];
+            weightSum += weights[i];
+          }
+          final resolvedExpandedW = weightSum > 0
+              ? expandedW / weightSum
+              : g.capsuleWidth;
+          return g.selectionRectAt(
+            cx,
+            widget.compactT,
+            expandedWidth: resolvedExpandedW,
+          );
+        });
       },
     );
   }

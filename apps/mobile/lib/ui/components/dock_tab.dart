@@ -24,10 +24,11 @@ const Duration _kDockGlyphDuration = Duration(milliseconds: 180);
 Color dockSelectionFill(Color accent, Color surface) =>
     Color.alphaBlend(accent.withValues(alpha: 0.30), surface);
 
-/// Corner radius of the selection pill: a full capsule, as in V2 `app.css`
-/// (`.dock-selection-capsule`, `border-radius: 999px`). In E4 the expanded
-/// capsule is 52dp tall (`r = 26dp`) and labels are constrained to
-/// `capW - 6dp` (`dockE4CapsuleLabelSidePad`) per the approved E4 mockup.
+/// Default corner radius of the selection pill for legacy callers. In E4 (C1),
+/// the expanded selection capsule uses [dockE4CapsuleRadius] (`16dp`) inside
+/// the [dockE4IslandRadius] (`22dp`) island (a concentric `6dp` moat) and
+/// morphs to [dockE4CapsuleRadiusCompact] (`20dp`) inside the
+/// [dockE4IslandRadiusCompact] (`26dp`) compact island.
 const double dockSelectionRadius = UiRadius.capsule;
 
 /// The non-liquid selection capsule.
@@ -53,8 +54,24 @@ const double dockTabLift = 6;
 /// Largest text scale the tab label follows (Dynamic Type cap).
 const double dockLabelMaxScale = 1.35;
 
-/// Label font size at 1x text scale.
+/// Label font size at 1x text scale on standard/wide phones (`>= 390dp`).
 const double dockLabelSize = 10.5;
+
+/// Label font size at 1x text scale on compact phones (`< 390dp`).
+const double dockLabelSizeCompactWidth = 10.0;
+
+/// Dock width threshold (dp) at which 1x label font steps from `10.0` to `10.5`.
+const double dockLabelWidthBreakpoint = 390.0;
+
+/// Base 1x label font size for a given [dockWidth] (`10.0` at `< 390dp`,
+/// `10.5` at `>= 390dp`).
+double dockBaseLabelSize(double dockWidth) =>
+    dockWidth < dockLabelWidthBreakpoint
+    ? dockLabelSizeCompactWidth
+    : dockLabelSize;
+
+/// Relative tracking for dock tab labels (`-0.01em`).
+const double dockLabelLetterSpacingEm = -0.01;
 
 /// Label line-height multiplier.
 const double dockLabelHeightRatio = 1.35;
@@ -65,8 +82,25 @@ const double dockLabelLineHeight = dockLabelSize * dockLabelHeightRatio;
 /// Default E4 capsule height at 1x text scale (dp).
 const double dockE4CapsuleHeight = 52.0;
 
-/// Horizontal padding deducted from `capsuleWidth` for the label (`capW - 6`).
+/// E4 (C1) expanded selection pill corner radius (`16dp`).
+const double dockE4CapsuleRadius = 16.0;
+
+/// E4 (C1) compact selection circle corner radius (`20dp`).
+const double dockE4CapsuleRadiusCompact = 20.0;
+
+/// E4 (C1) expanded island corner radius (`22dp`, concentric `16 + 6`).
+const double dockE4IslandRadius = 22.0;
+
+/// E4 (C1) compact island corner radius (`26dp`, concentric `20 + 6`).
+const double dockE4IslandRadiusCompact = 26.0;
+
+/// Horizontal padding deducted from equal-slot `capsuleWidth` for `labelMaxW`.
 const double dockE4CapsuleLabelSidePad = 6.0;
+
+/// Total horizontal clearance + corner curve margin (`2 * 1.5dp` border +
+/// `8.0dp` `r=16` descender curve inset + `2 * 4.0dp` inner clearance) added to
+/// the label width to determine whether the active slot needs adaptive flex.
+const double dockE4DescenderClearanceMargin = 19.0;
 
 /// Default E4 glyph size (dp).
 const double dockE4GlyphSize = 24.0;
@@ -74,8 +108,8 @@ const double dockE4GlyphSize = 24.0;
 /// Default E4 active glyph scale factor.
 const double dockE4GlyphActiveScale = 1.08;
 
-/// Default E4 glyph-to-label gap (dp).
-const double dockE4LabelGap = 3.0;
+/// Default E4 (C1) glyph-to-label gap (dp).
+const double dockE4LabelGap = 2.5;
 
 /// Default E4 vertical padding inside the capsule (`2 * 5.2dp`).
 const double dockE4CapsuleVertPad = 10.4;
@@ -84,36 +118,53 @@ const double dockE4CapsuleVertPad = 10.4;
 const double dockE4CapsuleOpticalLift =
     dockE4GlyphSize * (dockE4GlyphActiveScale - 1) / 4;
 
+/// Measures a single dock [label] width at [fontSize] (with `-0.01em` tracking
+/// and the dock's clamped text scaler).
+double dockMeasureLabelWidth(
+  BuildContext context,
+  String label, {
+  required double fontSize,
+}) {
+  final scaler = MediaQuery.textScalerOf(context)
+      .clamp(maxScaleFactor: dockLabelMaxScale);
+  final textScale = scaler.scale(1);
+  final tp = TextPainter(
+    text: TextSpan(
+      text: label,
+      // Same inheritance as the rendered Text (theme tracking etc.).
+      style: DefaultTextStyle.of(context).style.merge(
+        UiText.body(
+          size: fontSize,
+          weight: FontWeight.w700,
+          height: dockLabelHeightRatio,
+        ).copyWith(
+          letterSpacing: fontSize * textScale * dockLabelLetterSpacingEm,
+        ),
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+    textScaler: scaler,
+    maxLines: 1,
+  )..layout();
+  final w = tp.width;
+  tp.dispose();
+  return w;
+}
+
 /// One shrink factor for all tab labels: the largest `f <= 1` at which the
-/// widest label fits within [maxWidth] (`capW - 6` in E4).
+/// widest label fits within [maxWidth].
 double dockLabelFit(
   BuildContext context,
   Iterable<String> labels,
-  double maxWidth,
-) {
-  final scaler = MediaQuery.textScalerOf(context)
-      .clamp(maxScaleFactor: dockLabelMaxScale);
+  double maxWidth, {
+  double baseFontSize = dockLabelSize,
+}) {
   double widestAt(double fit) {
     var widest = 0.0;
+    final fontSize = baseFontSize * fit;
     for (final label in labels) {
-      final tp = TextPainter(
-        text: TextSpan(
-          text: label,
-          // Same inheritance as the rendered Text (theme tracking etc.).
-          style: DefaultTextStyle.of(context).style.merge(
-            UiText.body(
-              size: dockLabelSize * fit,
-              weight: FontWeight.w700,
-              height: dockLabelHeightRatio,
-            ).copyWith(letterSpacing: 0),
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-        textScaler: scaler,
-        maxLines: 1,
-      )..layout();
-      if (tp.width > widest) widest = tp.width;
-      tp.dispose();
+      final w = dockMeasureLabelWidth(context, label, fontSize: fontSize);
+      if (w > widest) widest = w;
     }
     return widest;
   }
@@ -133,13 +184,18 @@ class DockTab extends StatelessWidget {
     required this.item,
     required this.camera,
     this.onAccent,
+    this.baseFontSize = dockLabelSize,
     this.labelFit = 1,
     this.labelMaxWidth,
     this.lift = dockTabLift,
-    this.labelGap = 2,
+    this.labelGap = dockE4LabelGap,
     this.compactT = 0,
     super.key,
   });
+
+  /// Base 1x label font size before [labelFit] (`10.0` at `< 390dp`, `10.5` at
+  /// `>= 390dp`).
+  final double baseFontSize;
 
   /// Shared label shrink factor (<= 1), the same for every tab of the dock so
   /// all labels render at one font size (see [dockLabelFit]).
@@ -152,7 +208,7 @@ class DockTab extends StatelessWidget {
   /// Vertical lift above the slot centre (dp). E4 passes `0`.
   final double lift;
 
-  /// Gap between the 24dp glyph and the label when expanded (dp). E4 passes `3`.
+  /// Gap between the 24dp glyph and the label when expanded (dp). E4 passes `2.5`.
   final double labelGap;
 
   /// E4 compact morph progress (`0` = labels shown, `1` = compact).
@@ -201,6 +257,8 @@ class DockTab extends StatelessWidget {
     final t = compactT.clamp(0.0, 1.0);
     final clampedScaler = MediaQuery.textScalerOf(context)
         .clamp(maxScaleFactor: dockLabelMaxScale);
+    final textScale = clampedScaler.scale(1);
+    final fontSize = baseFontSize * labelFit;
     final Widget labelBox = ConstrainedBox(
       constraints: BoxConstraints(maxWidth: labelMaxWidth ?? double.infinity),
       child: FittedBox(
@@ -212,12 +270,16 @@ class DockTab extends StatelessWidget {
             maxLines: 1,
             softWrap: false,
             textAlign: TextAlign.center,
-            style: UiText.body(
-              size: dockLabelSize * labelFit,
-              weight: active ? FontWeight.w700 : FontWeight.w600,
-              height: dockLabelHeightRatio,
-              color: labelColor,
-            ).copyWith(letterSpacing: 0),
+            style:
+                UiText.body(
+                  size: fontSize,
+                  weight: active ? FontWeight.w700 : FontWeight.w600,
+                  height: dockLabelHeightRatio,
+                  color: labelColor,
+                ).copyWith(
+                  letterSpacing:
+                      fontSize * textScale * dockLabelLetterSpacingEm,
+                ),
           ),
         ),
       ),

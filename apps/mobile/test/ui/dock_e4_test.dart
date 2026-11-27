@@ -123,7 +123,7 @@ Rect _cameraCircleRect(WidgetTester tester) {
 void main() {
   setUpAll(_loadBodyFont);
 
-  group('T1 — Pure E4 Geometry (UiDockGeometry.compute)', () {
+  group('T1 — Pure E4 (C1) Geometry (UiDockGeometry.compute)', () {
     const cases =
         <
           ({
@@ -147,13 +147,13 @@ void main() {
             cam: 60,
             islandH: 64,
             bandH: 64,
-            slot: 62,
+            slot: 61,
             leftL: 12,
             leftR: 144,
             rightL: 216,
             rightR: 348,
-            centres: [47, 109, 180, 251, 313],
-            capW: 60,
+            centres: [47.5, 108.5, 180, 251.5, 312.5],
+            capW: 59,
           ),
           (
             w: 360,
@@ -161,12 +161,12 @@ void main() {
             cam: 52,
             islandH: 52,
             bandH: 64,
-            slot: 64,
+            slot: 63,
             leftL: 12,
             leftR: 148,
             rightL: 212,
             rightR: 348,
-            centres: [48, 112, 180, 248, 312],
+            centres: [48.5, 111.5, 180, 248.5, 311.5],
             capW: null,
           ),
           (
@@ -175,12 +175,12 @@ void main() {
             cam: 76,
             islandH: 64,
             bandH: 76,
-            slot: 58,
+            slot: 57,
             leftL: 12,
             leftR: 136,
             rightL: 224,
             rightR: 348,
-            centres: [45, 103, 180, 257, 315],
+            centres: [45.5, 102.5, 180, 257.5, 314.5],
             capW: null,
           ),
           (
@@ -189,13 +189,13 @@ void main() {
             cam: 60,
             islandH: 64,
             bandH: 64,
-            slot: 69.5,
+            slot: 68.5,
             leftL: 12,
             leftR: 159,
             rightL: 231,
             rightR: 378,
-            centres: [50.75, 120.25, 195, 269.75, 339.25],
-            capW: 67.5,
+            centres: [51.25, 119.75, 195, 270.25, 338.75],
+            capW: 66.5,
           ),
           (
             w: 390,
@@ -203,12 +203,12 @@ void main() {
             cam: 52,
             islandH: 52,
             bandH: 64,
-            slot: 71.5,
+            slot: 70.5,
             leftL: 12,
             leftR: 163,
             rightL: 227,
             rightR: 378,
-            centres: [51.75, 123.25, 195, 266.75, 338.25],
+            centres: [52.25, 122.75, 195, 267.25, 337.75],
             capW: null,
           ),
           (
@@ -217,12 +217,12 @@ void main() {
             cam: 76,
             islandH: 64,
             bandH: 76,
-            slot: 65.5,
+            slot: 64.5,
             leftL: 12,
             leftR: 151,
             rightL: 239,
             rightR: 378,
-            centres: [48.75, 114.25, 195, 275.75, 341.25],
+            centres: [49.25, 113.75, 195, 276.25, 340.75],
             capW: null,
           ),
           (
@@ -231,13 +231,13 @@ void main() {
             cam: 60,
             islandH: 64,
             bandH: 64,
-            slot: 75,
+            slot: 74,
             leftL: 12,
             leftR: 170,
             rightL: 242,
             rightR: 400,
-            centres: [53.5, 128.5, 206, 283.5, 358.5],
-            capW: 73,
+            centres: [54, 128, 206, 284, 358],
+            capW: 72,
           ),
           (
             w: 412,
@@ -245,12 +245,12 @@ void main() {
             cam: 52,
             islandH: 52,
             bandH: 64,
-            slot: 76,
+            slot: 75,
             leftL: 14,
             leftR: 174,
             rightL: 238,
             rightR: 398,
-            centres: [56, 132, 206, 280, 356],
+            centres: [56.5, 131.5, 206, 280.5, 355.5],
             capW: null,
           ),
           (
@@ -259,82 +259,131 @@ void main() {
             cam: 60,
             islandH: 64,
             bandH: 64,
-            slot: 76,
+            slot: 75,
             leftL: 19,
             leftR: 179,
             rightL: 251,
             rightR: 411,
-            centres: [61, 137, 215, 293, 369],
-            capW: 74,
+            centres: [61.5, 136.5, 215, 293.5, 368.5],
+            capW: 73,
           ),
         ];
 
     for (final c in cases) {
-      test('matches §1.2 reference table at W=${c.w.toInt()} (${c.state})', () {
-        final g = UiDockGeometry.compute(
-          width: c.w,
-          cam: c.cam,
-          islandH: c.islandH,
-          bandH: c.bandH,
-        );
-        expect(g.slotWidth, closeTo(c.slot, 0.5));
-        expect(g.leftIsland.left, closeTo(c.leftL, 0.5));
-        expect(g.leftIsland.right, closeTo(c.leftR, 0.5));
-        expect(g.rightIsland.left, closeTo(c.rightL, 0.5));
-        expect(g.rightIsland.right, closeTo(c.rightR, 0.5));
-        for (var i = 0; i < 5; i++) {
-          expect(
-            g.allCentersX[i],
-            closeTo(c.centres[i], 0.5),
-            reason: 'slot $i centre x',
+      test(
+        'matches §1.2 outer island reference table at W=${c.w.toInt()} (${c.state})',
+        () {
+          final g = UiDockGeometry.compute(
+            width: c.w,
+            cam: c.cam,
+            islandH: c.islandH,
+            bandH: c.bandH,
           );
-        }
+          expect(g.slotWidth, closeTo(c.slot, 0.5));
+          expect(g.leftIsland.left, closeTo(c.leftL, 0.5));
+          expect(g.leftIsland.right, closeTo(c.leftR, 0.5));
+          expect(g.rightIsland.left, closeTo(c.rightL, 0.5));
+          expect(g.rightIsland.right, closeTo(c.rightR, 0.5));
+          for (var i = 0; i < 5; i++) {
+            expect(
+              g.allCentersX[i],
+              closeTo(c.centres[i], 0.5),
+              reason: 'slot $i centre x',
+            );
+          }
 
-        // Mirror symmetry
-        expect(
-          g.leftIsland.left,
-          closeTo(c.w - g.rightIsland.right, 0.5),
-          reason: 'island outer margins mirrored',
-        );
-        expect(
-          g.leftIsland.width,
-          closeTo(g.rightIsland.width, 0.5),
-          reason: 'island widths equal',
-        );
-        for (var i = 0; i < 5; i++) {
+          // Mirror symmetry
           expect(
-            g.allCentersX[i] + g.allCentersX[4 - i],
-            closeTo(c.w, 0.5),
-            reason: 'control $i mirrored with ${4 - i} about W/2',
+            g.leftIsland.left,
+            closeTo(c.w - g.rightIsland.right, 0.5),
+            reason: 'island outer margins mirrored',
           );
-        }
-
-        // Camera centring & island-camera gaps
-        expect(g.cameraRect.center.dx, closeTo(c.w / 2, 0.5));
-        expect(g.cameraRect.center.dy, closeTo(g.leftIsland.center.dy, 0.5));
-        expect(g.cameraRect.center.dy, closeTo(g.rightIsland.center.dy, 0.5));
-        expect(g.cameraRect.left - g.leftIsland.right, closeTo(6, 0.5));
-        expect(g.rightIsland.left - g.cameraRect.right, closeTo(6, 0.5));
-
-        if (c.capW != null) {
-          expect(g.capsuleWidth, closeTo(c.capW!, 0.5));
-          for (var t = 0; t < 4; t++) {
-            final cap = g.selectionRectForTab(t);
-            expect(cap.width, closeTo(c.capW!, 0.5));
-            expect(cap.height, closeTo(52, 0.5));
+          expect(
+            g.leftIsland.width,
+            closeTo(g.rightIsland.width, 0.5),
+            reason: 'island widths equal',
+          );
+          for (var i = 0; i < 5; i++) {
+            expect(
+              g.allCentersX[i] + g.allCentersX[4 - i],
+              closeTo(c.w, 0.5),
+              reason: 'control $i mirrored with ${4 - i} about W/2',
+            );
           }
-        } else if (c.state == 'compact') {
-          for (var t = 0; t < 4; t++) {
-            final ring = g.selectionRectForTab(t, compactT: 1);
-            expect(ring.width, closeTo(40, 0.5));
-            expect(ring.height, closeTo(40, 0.5));
-            expect(ring.center, Offset(g.tabCentersX[t], g.centerY));
-            expect(ring.top - g.leftIsland.top, closeTo(6, 0.5));
-            expect(g.leftIsland.bottom - ring.bottom, closeTo(6, 0.5));
+
+          // Camera centring & island-camera gaps
+          expect(g.cameraRect.center.dx, closeTo(c.w / 2, 0.5));
+          expect(g.cameraRect.center.dy, closeTo(g.leftIsland.center.dy, 0.5));
+          expect(g.cameraRect.center.dy, closeTo(g.rightIsland.center.dy, 0.5));
+          expect(g.cameraRect.left - g.leftIsland.right, closeTo(6, 0.5));
+          expect(g.rightIsland.left - g.cameraRect.right, closeTo(6, 0.5));
+
+          if (c.capW != null) {
+            expect(g.capsuleWidth, closeTo(c.capW!, 0.5));
+            for (var t = 0; t < 4; t++) {
+              final cap = g.selectionRectForTab(t);
+              expect(cap.width, closeTo(c.capW!, 0.5));
+              expect(cap.height, closeTo(52, 0.5));
+            }
+          } else if (c.state == 'compact') {
+            for (var t = 0; t < 4; t++) {
+              final ring = g.selectionRectForTab(t, compactT: 1);
+              expect(ring.width, closeTo(40, 0.5));
+              expect(ring.height, closeTo(40, 0.5));
+              expect(ring.center, Offset(g.tabCentersX[t], g.centerY));
+              expect(ring.top - g.leftIsland.top, closeTo(6, 0.5));
+              expect(g.leftIsland.bottom - ring.bottom, closeTo(6, 0.5));
+            }
           }
-        }
-      });
+        },
+      );
     }
+
+    test(
+      'C1 adaptive active-slot flex & concentric radii at t = 0, 0.5, 1',
+      () {
+        for (final t in [0.0, 0.5, 1.0]) {
+          expect(
+            UiDockGeometry.islandRadiusAt(t) - UiDockGeometry.pillRadiusAt(t),
+            closeTo(6.0, 0.001),
+            reason: '6dp concentric moat at t=$t',
+          );
+        }
+
+        for (final (w, longActiveSlot, longPartnerSlot, equalSlot) in const [
+          (360.0, 72.0, 50.0, 61.0),
+          (390.0, 75.0, 62.0, 68.5),
+          (412.0, 75.0, 73.0, 74.0),
+        ]) {
+          for (var tabIdx = 0; tabIdx < 4; tabIdx++) {
+            final g = UiDockGeometry.compute(
+              width: w,
+              cam: 60,
+              islandH: 64,
+              activeTabIndex: tabIdx,
+            );
+            if (tabIdx == 0) {
+              expect(g.tabSlots[0].width, closeTo(longActiveSlot, 0.01));
+              expect(g.tabSlots[1].width, closeTo(longPartnerSlot, 0.01));
+              expect(g.tabSlots[2].width, closeTo(equalSlot, 0.01));
+              expect(g.tabSlots[3].width, closeTo(equalSlot, 0.01));
+            } else if (tabIdx == 2) {
+              expect(g.tabSlots[0].width, closeTo(equalSlot, 0.01));
+              expect(g.tabSlots[1].width, closeTo(equalSlot, 0.01));
+              expect(g.tabSlots[2].width, closeTo(longActiveSlot, 0.01));
+              expect(g.tabSlots[3].width, closeTo(longPartnerSlot, 0.01));
+            } else {
+              for (var i = 0; i < 4; i++) {
+                expect(g.tabSlots[i].width, closeTo(equalSlot, 0.01));
+              }
+            }
+            for (var i = 0; i < 4; i++) {
+              expect(g.tabSlots[i].width, greaterThanOrEqualTo(48.0));
+            }
+          }
+        }
+      },
+    );
 
     test('320dp and 430dp graceful bounds: no overflow, slot >= 48dp, constant dockHeight across compact', () {
       for (final w in [320.0, 360.0, 390.0, 412.0, 430.0, 600.0]) {
@@ -382,7 +431,7 @@ void main() {
         testWidgets(
           'pumped islands, tab centres, symmetry & camera gaps at W=${w.toInt()}, compact=$compact',
           (tester) async {
-            await _pumpDock(tester, width: w, compact: compact);
+            await _pumpDock(tester, width: w, active: 0, compact: compact);
             await tester.pumpAndSettle();
 
             final expected = UiDockGeometry.compute(
@@ -390,6 +439,8 @@ void main() {
               cam: compact ? 52 : 60,
               islandH: compact ? 52 : 64,
               bandH: 64,
+              activeTabIndex: 0,
+              compactT: compact ? 1 : 0,
             );
 
             final glasses = find.byType(UiGlass);
@@ -404,7 +455,7 @@ void main() {
             expect(rightIsland.right, closeTo(expected.rightIsland.right, 0.5));
             expect(rightIsland.height, closeTo(compact ? 52 : 64, 0.5));
 
-            // Mirror symmetry
+            // Mirror symmetry of outer islands
             expect(leftIsland.left, closeTo(w - rightIsland.right, 0.5));
             expect(leftIsland.top, closeTo(rightIsland.top, 0.5));
             expect(leftIsland.bottom, closeTo(rightIsland.bottom, 0.5));
@@ -432,14 +483,6 @@ void main() {
                 reason: 'tab $i center dy',
               );
             }
-            expect(
-              tabRects[0].center.dx + tabRects[3].center.dx,
-              closeTo(w, 0.5),
-            );
-            expect(
-              tabRects[1].center.dx + tabRects[2].center.dx,
-              closeTo(w, 0.5),
-            );
           },
         );
       }
@@ -449,29 +492,52 @@ void main() {
   group('T2 — Capsule (compact=false) across all 4 tabs', () {
     for (final w in [360.0, 390.0, 412.0]) {
       testWidgets(
-        'capsule size, radius 26, and balanced visible top/bottom gaps at W=${w.toInt()}',
+        'capsule size, concentric r16/R22 radii, and balanced visible top/bottom gaps at W=${w.toInt()}',
         (tester) async {
-          final expected = UiDockGeometry.compute(
-            width: w,
-            cam: 60,
-            islandH: 64,
-            bandH: 64,
-          );
           for (var tabIdx = 0; tabIdx < 4; tabIdx++) {
+            final expected = UiDockGeometry.compute(
+              width: w,
+              cam: 60,
+              islandH: 64,
+              bandH: 64,
+              activeTabIndex: tabIdx,
+            );
             await _pumpDock(tester, width: w, active: tabIdx, compact: false);
             await tester.pumpAndSettle();
+
+            final glasses = tester
+                .widgetList<UiGlass>(find.byType(UiGlass))
+                .toList();
+            for (final g in glasses) {
+              expect(g.borderRadius, BorderRadius.circular(22));
+            }
 
             final pillFinder = find.byKey(
               const ValueKey('dock-selection-pill'),
             );
             final capsule = tester.getRect(pillFinder);
-            expect(capsule.width, closeTo(expected.slotWidth - 2, 0.5));
+            expect(
+              capsule.width,
+              closeTo(expected.capsuleWidthForTab(tabIdx), 0.5),
+            );
             expect(capsule.height, closeTo(52, 0.5));
 
             final deco =
                 tester.widget<DecoratedBox>(pillFinder).decoration
                     as BoxDecoration;
-            expect(deco.borderRadius, BorderRadius.circular(26));
+            expect(deco.borderRadius, BorderRadius.circular(16));
+
+            // Concentric 6dp outer moat on the island's outer/inner end-cap
+            final hostIsland = tester.getRect(
+              tabIdx < 2
+                  ? find.byType(UiGlass).first
+                  : find.byType(UiGlass).last,
+            );
+            if (tabIdx == 0 || tabIdx == 2) {
+              expect(capsule.left - hostIsland.left, closeTo(6.0, 0.05));
+            } else {
+              expect(hostIsland.right - capsule.right, closeTo(6.0, 0.05));
+            }
 
             final tabFinder = find.byKey(ValueKey(_tabKeys[tabIdx]));
             final glyphRect = tester.getRect(
@@ -490,13 +556,8 @@ void main() {
               lessThanOrEqualTo(0.5),
               reason: 'tab $tabIdx at W=$w: top=$topGap bottom=$bottomGap',
             );
-            if (w == 360.0) {
-              expect(topGap, closeTo(5.2, 0.5));
-              expect(bottomGap, closeTo(5.2, 0.5));
-            } else if (w == 390.0) {
-              expect(topGap, closeTo(4.9, 0.5));
-              expect(bottomGap, closeTo(4.9, 0.5));
-            }
+            expect(topGap, closeTo(5.2, 0.5));
+            expect(bottomGap, closeTo(5.2, 0.5));
           }
         },
       );
@@ -506,7 +567,7 @@ void main() {
   group('T3 — Circle (compact=true) across all 4 tabs', () {
     for (final w in [360.0, 390.0, 412.0]) {
       testWidgets(
-        '40x40 r20 circle centred on glyph, 6/6 island gaps, 52 islands and camera at W=${w.toInt()}',
+        '40x40 r20 circle centred on glyph, R26 islands, 6/6 island gaps, 52 islands and camera at W=${w.toInt()}',
         (tester) async {
           for (var tabIdx = 0; tabIdx < 4; tabIdx++) {
             await _pumpDock(tester, width: w, active: tabIdx, compact: true);
@@ -517,6 +578,9 @@ void main() {
             final rightIsland = tester.getRect(glasses.last);
             expect(leftIsland.height, closeTo(52, 0.5));
             expect(rightIsland.height, closeTo(52, 0.5));
+            for (final g in tester.widgetList<UiGlass>(glasses)) {
+              expect(g.borderRadius, BorderRadius.circular(26));
+            }
 
             final camRect = _cameraCircleRect(tester);
             expect(camRect.width, closeTo(52, 0.5));
@@ -550,9 +614,9 @@ void main() {
     }
   });
 
-  group('T4 — Morph Synchronization & Reversal', () {
+  group('T4 — Morph Synchronization, Concentricity at t=0/0.5/1 & Reversal', () {
     testWidgets(
-      'single 220ms t driver moves islands, camera, selection and labels in lockstep and reverses cleanly',
+      'single 220ms t driver moves islands, camera, selection and labels in lockstep, keeps R_island - r_pill == 6dp at t=0, 0.5, 1, and reverses cleanly',
       (tester) async {
         tester.view.devicePixelRatio = 1;
         tester.view.physicalSize = const Size(360, 800);
@@ -582,12 +646,35 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        double currentIslandRadius() => tester
+            .widget<UiGlass>(find.byType(UiGlass).first)
+            .borderRadius
+            .topLeft
+            .x;
+        double currentPillRadius() =>
+            ((tester
+                                .widget<DecoratedBox>(
+                                  find.byKey(
+                                    const ValueKey('dock-selection-pill'),
+                                  ),
+                                )
+                                .decoration
+                            as BoxDecoration)
+                        .borderRadius!
+                    as BorderRadius)
+                .topLeft
+                .x;
+
         final pillFinder = find.byKey(const ValueKey('dock-selection-pill'));
         final initialIslandBottom = tester
             .getRect(find.byType(UiGlass).first)
             .bottom;
-        expect(tester.getRect(pillFinder).width, closeTo(60, 0.5));
+        expect(tester.getRect(pillFinder).width, closeTo(70, 0.5));
         expect(tester.getRect(pillFinder).height, closeTo(52, 0.5));
+        // t = 0 concentricity: R_island = 22, r_pill = 16 -> moat = 6
+        expect(currentIslandRadius(), closeTo(22.0, 0.01));
+        expect(currentPillRadius(), closeTo(16.0, 0.01));
+        expect(currentIslandRadius() - currentPillRadius(), closeTo(6.0, 0.01));
 
         // Trigger compact = true
         setHost(() => compact = true);
@@ -601,11 +688,19 @@ void main() {
         // Island bottom never moves
         expect(midIsland.bottom, closeTo(initialIslandBottom, 0.01));
 
-        // Selection is strictly between capsule (60x52) and circle (40x40)
+        // Selection is strictly between capsule (70x52) and circle (40x40)
         expect(midPill.width, greaterThan(40));
-        expect(midPill.width, lessThan(60));
+        expect(midPill.width, lessThan(70));
         expect(midPill.height, greaterThan(40));
         expect(midPill.height, lessThan(52));
+
+        // t ≈ 0.5 concentricity: R_island(t) - r_pill(t) == 6.0dp
+        expect(currentIslandRadius(), greaterThan(22.0));
+        expect(currentIslandRadius(), lessThan(26.0));
+        expect(currentPillRadius(), greaterThan(16.0));
+        expect(currentPillRadius(), lessThan(20.0));
+        expect(currentIslandRadius() - currentPillRadius(), closeTo(6.0, 0.01));
+        expect(midPill.left - midIsland.left, greaterThanOrEqualTo(6.0));
 
         // Label opacity is between 0 and 1
         final opacities = tester
@@ -628,10 +723,9 @@ void main() {
         expect(derivedT, lessThan(0.99));
         expect(midCam.width, closeTo(lerpDouble(60, 52, derivedT)!, 0.5));
         expect(midPill.height, closeTo(lerpDouble(52, 40, derivedT)!, 0.5));
-        expect(midPill.width, closeTo(lerpDouble(60, 40, derivedT)!, 0.5));
         expect(opacities.first.opacity, closeTo(1 - derivedT, 0.05));
 
-        // Finish 220ms morph -> equals T3
+        // Finish 220ms morph -> equals T3 (t = 1 concentricity: R_island = 26, r_pill = 20)
         await tester.pump(const Duration(milliseconds: 110));
         expect(
           tester.getRect(find.byType(UiGlass).first).height,
@@ -640,6 +734,9 @@ void main() {
         expect(_cameraCircleRect(tester).width, closeTo(52, 0.5));
         expect(tester.getRect(pillFinder).width, closeTo(40, 0.5));
         expect(tester.getRect(pillFinder).height, closeTo(40, 0.5));
+        expect(currentIslandRadius(), closeTo(26.0, 0.01));
+        expect(currentPillRadius(), closeTo(20.0, 0.01));
+        expect(currentIslandRadius() - currentPillRadius(), closeTo(6.0, 0.01));
 
         // Reverse to compact = false -> equals T2 after 220ms
         setHost(() => compact = false);
@@ -650,7 +747,7 @@ void main() {
           closeTo(64, 0.5),
         );
         expect(_cameraCircleRect(tester).width, closeTo(60, 0.5));
-        expect(tester.getRect(pillFinder).width, closeTo(60, 0.5));
+        expect(tester.getRect(pillFinder).width, closeTo(70, 0.5));
         expect(tester.getRect(pillFinder).height, closeTo(52, 0.5));
 
         // Mid-way reversal: start compacting again, flip back at +110ms,
@@ -694,7 +791,7 @@ void main() {
         expect(revCam1.width, greaterThan(revCam0.width));
         expect(revCam1.width, lessThan(58.0));
         expect(revPill1.width, greaterThan(revPill0.width));
-        expect(revPill1.width, lessThan(56.0));
+        expect(revPill1.width, lessThan(66.0));
 
         await tester.pump(const Duration(milliseconds: 220));
         expect(
@@ -702,7 +799,7 @@ void main() {
           closeTo(64, 0.5),
         );
         expect(_cameraCircleRect(tester).width, closeTo(60, 0.5));
-        expect(tester.getRect(pillFinder).width, closeTo(60, 0.5));
+        expect(tester.getRect(pillFinder).width, closeTo(70, 0.5));
         expect(tester.getRect(pillFinder).height, closeTo(52, 0.5));
       },
     );
@@ -747,7 +844,7 @@ void main() {
         await tester.pumpAndSettle();
 
         final pillFinder = find.byKey(const ValueKey('dock-selection-pill'));
-        expect(tester.getCenter(pillFinder).dx, closeTo(48, 0.5));
+        expect(tester.getCenter(pillFinder).dx, closeTo(48.5, 0.5));
 
         // Tap tab 1 (inner left) while compact -> simultaneously expands & slides.
         await tester.tap(find.byKey(ValueKey(_tabKeys[1])));
@@ -768,7 +865,7 @@ void main() {
           reason: 'no snap when 280ms slide completes after compact expand',
         );
         expect((x296 - x280).abs(), lessThan(0.01));
-        expect(x296, closeTo(109, 0.5));
+        expect(x296, closeTo(108.5, 0.5));
       },
     );
 
@@ -866,7 +963,7 @@ void main() {
           );
 
           final pillFinder = find.byKey(const ValueKey('dock-selection-pill'));
-          expect(tester.getRect(pillFinder).size, const Size(60, 52));
+          expect(tester.getRect(pillFinder).size, const Size(70, 52));
 
           // Flip to compact: single pump() reaches final 40x40 / 52 geometry
           setHost(() => compact = true);
@@ -875,10 +972,10 @@ void main() {
           expect(tester.getRect(find.byType(UiGlass).first).height, 52);
           expect(_cameraCircleRect(tester).size, const Size(52, 52));
 
-          // Flip back to expanded: single pump() reaches final 60x52 / 64 geometry
+          // Flip back to expanded: single pump() reaches final 70x52 / 64 geometry
           setHost(() => compact = false);
           await tester.pump();
-          expect(tester.getRect(pillFinder).size, const Size(60, 52));
+          expect(tester.getRect(pillFinder).size, const Size(70, 52));
           expect(tester.getRect(find.byType(UiGlass).first).height, 64);
           expect(_cameraCircleRect(tester).size, const Size(60, 60));
 

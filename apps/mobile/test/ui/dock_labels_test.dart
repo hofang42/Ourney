@@ -1,12 +1,21 @@
 import 'dart:io';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/ui/components/dock.dart';
 import 'package:ourney/ui/components/dock_tab.dart'
-    show DockTab, dockE4CapsuleLabelSidePad, dockLabelMaxScale;
+    show
+        DockTab,
+        dockE4CapsuleLabelSidePad,
+        dockLabelLetterSpacingEm,
+        dockLabelMaxScale;
+import 'package:ourney/ui/components/glass.dart';
 import 'package:ourney/ui/theme.dart';
+import 'package:ourney/ui/tokens.dart';
 import 'package:ourney/ui/typography.dart';
 
 const _labels = ['Hành trình', 'Nhóm', 'Hoạt động', 'Hồ sơ'];
@@ -32,6 +41,7 @@ Future<void> _pump(
   double scale, {
   List<String> labels = _labels,
   bool camera = false,
+  bool compact = false,
   int active = 0,
   ValueChanged<String>? onTap,
 }) async {
@@ -44,6 +54,7 @@ Future<void> _pump(
   );
   await tester.pumpWidget(
     MaterialApp(
+      debugShowCheckedModeBanner: false,
       theme: OurneyTheme.build(Brightness.light),
       home: MediaQuery(
         data: MediaQueryData(
@@ -53,25 +64,137 @@ Future<void> _pump(
         child: Scaffold(
           body: Align(
             alignment: Alignment.bottomCenter,
-            child: UiDock(
-              camera: camera,
-              left: item(labels[0], 0),
-              extraLeft: [item(labels[1], 1)],
-              extraRight: [item(labels[2], 2)],
-              right: item(labels[3], 3),
-              snapLabel: 'Chụp',
-              onSnap: () => onTap?.call('snap'),
-              center: camera
-                  ? UiShutter(
-                      label: 'Chụp',
-                      onPressed: () => onTap?.call('shutter'),
-                    )
-                  : null,
+            child: RepaintBoundary(
+              key: const ValueKey('dock-boundary'),
+              child: UiDock(
+                camera: camera,
+                compact: compact,
+                left: item(labels[0], 0),
+                extraLeft: [item(labels[1], 1)],
+                extraRight: [item(labels[2], 2)],
+                right: item(labels[3], 3),
+                snapLabel: 'Chụp',
+                onSnap: () => onTap?.call('snap'),
+                center: camera
+                    ? UiShutter(
+                        label: 'Chụp',
+                        onPressed: () => onTap?.call('shutter'),
+                      )
+                    : null,
+              ),
             ),
           ),
         ),
       ),
     ),
+  );
+}
+
+/// Scans the rendered 3x bitmap of the active selection pill and returns
+/// `(leftHorizDp, rightHorizDp, minHorizDp, minRadialDp)` from the outermost
+/// label glyph ink pixel to the inner edge of the 1.5dp pill border.
+Future<({double leftDp, double rightDp, double minHorizDp, double minRadialDp})>
+_scanActivePillClearance(
+  WidgetTester tester, {
+  required Rect pillGlobal,
+  required Rect labelGlobal,
+  required double pillRadius,
+}) async {
+  const ratio = 3.0;
+  final boundaryFinder = find.byKey(const ValueKey('dock-boundary'));
+  final boundaryOrigin = tester.getTopLeft(boundaryFinder);
+  final pill = pillGlobal.shift(-boundaryOrigin);
+  final label = labelGlobal.shift(-boundaryOrigin);
+
+  late ByteData bytes;
+  late int imgW;
+  late int imgH;
+  await tester.runAsync(() async {
+    final boundary =
+        tester.renderObject(boundaryFinder) as RenderRepaintBoundary;
+    final image = await boundary.toImage(pixelRatio: ratio);
+    imgW = image.width;
+    imgH = image.height;
+    bytes = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
+    image.dispose();
+  });
+
+  // Sample reference pill fill colour in the peach region between icon and label
+  final sampleX = (pill.left + 8.0) * ratio;
+  final sampleY = (label.top - 1.0) * ratio;
+  final sIdx =
+      (sampleY.floor().clamp(0, imgH - 1) * imgW +
+          sampleX.floor().clamp(0, imgW - 1)) *
+      4;
+  final fillR = bytes.getUint8(sIdx);
+  final fillG = bytes.getUint8(sIdx + 1);
+  final fillB = bytes.getUint8(sIdx + 2);
+
+  bool isInk(int px, int py) {
+    final idx = (py * imgW + px) * 4;
+    final r = bytes.getUint8(idx);
+    final g = bytes.getUint8(idx + 1);
+    final b = bytes.getUint8(idx + 2);
+    final diff = (r - fillR).abs() + (g - fillG).abs() + (b - fillB).abs();
+    return diff > 60;
+  }
+
+  final rInner = pillRadius - UiBorder.thin;
+  final yMin = (label.top * ratio).floor().clamp(0, imgH - 1);
+  final yMax = (label.bottom * ratio).ceil().clamp(0, imgH - 1);
+
+  var minLeftDp = double.infinity;
+  var minRightDp = double.infinity;
+  var minRadialDp = double.infinity;
+
+  for (var py = yMin; py <= yMax; py++) {
+    final yDp = (py + 0.5) / ratio;
+    final dyBottom = math.max(0.0, yDp - (pill.bottom - pillRadius));
+    final dyTop = math.max(0.0, (pill.top + pillRadius) - yDp);
+    final dy = math.max(dyBottom, dyTop);
+    if (dy >= rInner) continue;
+
+    final dxArc = math.sqrt(rInner * rInner - dy * dy);
+    final innerLeftDp = (pill.left + pillRadius) - dxArc;
+    final innerRightDp = (pill.right - pillRadius) + dxArc;
+
+    // Scan strictly inside the inner pill fill at this scanline (excluding the
+    // pill's own 1.5dp curved border and 2dp outer shadow).
+    final rowXMin = ((innerLeftDp + 0.75) * ratio).ceil().clamp(0, imgW - 1);
+    final rowXMax = ((innerRightDp - 0.75) * ratio).floor().clamp(0, imgW - 1);
+
+    var firstInk = -1;
+    var lastInk = -1;
+    for (var px = rowXMin; px <= rowXMax; px++) {
+      if (isInk(px, py)) {
+        if (firstInk < 0) firstInk = px;
+        lastInk = px;
+      }
+    }
+    if (firstInk < 0) continue;
+
+    final leftInkDp = firstInk / ratio;
+    final rightInkDp = (lastInk + 1) / ratio;
+
+    final leftClear = leftInkDp - innerLeftDp;
+    final rightClear = innerRightDp - rightInkDp;
+    if (leftClear < minLeftDp) minLeftDp = leftClear;
+    if (rightClear < minRightDp) minRightDp = rightClear;
+
+    // 2D radial clearance to the bottom/top corner arcs when inside corner x-range:
+    for (final xDp in [leftInkDp, rightInkDp]) {
+      final cx = xDp.clamp(pill.left + pillRadius, pill.right - pillRadius);
+      final cy = yDp.clamp(pill.top + pillRadius, pill.bottom - pillRadius);
+      final radial = rInner - (Offset(xDp, yDp) - Offset(cx, cy)).distance;
+      if (radial < minRadialDp) minRadialDp = radial;
+    }
+  }
+
+  return (
+    leftDp: minLeftDp,
+    rightDp: minRightDp,
+    minHorizDp: math.min(minLeftDp, minRightDp),
+    minRadialDp: minRadialDp,
   );
 }
 
@@ -117,93 +240,129 @@ void main() {
   }
 
   for (final w in [360.0, 390.0, 412.0]) {
-    testWidgets('Vietnamese dock labels stay >= 10dp at 360dp and 10.5dp from '
-        '390dp up, with bounded capsule overhang (1x, ${w}dp)', (tester) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = Size(w, 700);
-      addTearDown(tester.view.reset);
-      await _pump(tester, w, 1);
-      final geo = UiDockGeometry.compute(width: w, cam: 60, islandH: 64);
-      final maxLabelW = geo.capsuleWidth - dockE4CapsuleLabelSidePad;
-      for (final l in _labels) {
-        final text = tester.widget<Text>(find.text(l));
-        expect(
-          text.style!.fontSize!,
-          w >= 390 ? 10.5 : greaterThanOrEqualTo(10),
-          reason: '$l at ${w}dp',
-        );
-        expect(
-          tester.getSize(find.text(l)).width,
-          lessThanOrEqualTo(maxLabelW + 0.5),
-          reason: '$l width <= capW - 6 at ${w}dp',
-        );
-      }
-      final dockTabs = tester
-          .widgetList<DockTab>(find.byType(DockTab))
-          .toList();
-      expect(dockTabs, hasLength(4));
-      for (var i = 0; i < 4; i++) {
-        expect(
-          dockTabs[i].labelMaxWidth,
-          closeTo(maxLabelW, 0.05),
-          reason: 'tab $i labelMaxWidth',
-        );
-        expect(
-          tester.getSize(find.byKey(ValueKey('t$i'))).width,
-          closeTo(geo.slotWidth, 0.5),
-          reason: 'tab $i slot width',
-        );
-      }
+    testWidgets(
+      'C1 Vietnamese dock labels at ${w.toInt()}dp across all 4 active tabs: '
+      'font 10.0 (<390) / 10.5 (>=390), -0.01em tracking, adaptive slot flex, '
+      'partner >=48dp, and 3x pixel ink-to-inner-edge clearance >=4.5dp',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = Size(w, 700);
+        addTearDown(tester.view.reset);
 
-      // Bounded overhang past the outer capsule outline on the two widest
-      // active labels ('Hành trình' = 0, 'Hoạt động' = 2):
-      // <= 4dp at 360, <= 1dp at 390, 0 at 412.
-      final maxOverhang = switch (w) {
-        360.0 => 4.0,
-        390.0 => 1.0,
-        _ => 0.0,
-      };
-      for (final activeIdx in [0, 2]) {
-        await _pump(tester, w, 1.0, active: activeIdx);
-        await tester.pumpAndSettle();
-        final pill = tester.getRect(
-          find.byKey(const ValueKey('dock-selection-pill')),
-        );
-        expect(pill.width, closeTo(geo.capsuleWidth, 0.5));
-        final labelText = _labels[activeIdx];
-        final labelRect = tester.getRect(find.text(labelText));
-        final activeText = tester.widget<Text>(find.text(labelText));
-        final tp = TextPainter(
-          text: TextSpan(text: labelText, style: activeText.style),
-          textDirection: TextDirection.ltr,
-          maxLines: 1,
-        )..layout();
-        final baselineFromTop = tp.computeDistanceToActualBaseline(
-          TextBaseline.alphabetic,
-        );
-        tp.dispose();
-        final baselineY = labelRect.top + baselineFromTop;
-        final r = pill.height / 2;
-        double overhangPastOutline(Offset p) {
-          final cx = p.dx.clamp(pill.left + r, pill.right - r);
-          final dist = (p - Offset(cx, pill.center.dy)).distance;
-          return dist > r ? dist - r : 0.0;
-        }
+        final equalGeo = UiDockGeometry.compute(width: w, cam: 60, islandH: 64);
+        final maxLabelW = equalGeo.capsuleWidth - dockE4CapsuleLabelSidePad;
+        final expectedFont = w < 390 ? 10.0 : 10.5;
 
-        for (final p in [
-          Offset(labelRect.left, baselineY),
-          Offset(labelRect.right, baselineY),
-          labelRect.topLeft,
-          labelRect.topRight,
-        ]) {
+        for (var activeIdx = 0; activeIdx < 4; activeIdx++) {
+          await _pump(tester, w, 1.0, active: activeIdx);
+          await tester.pumpAndSettle();
+
+          final activeGeo = UiDockGeometry.compute(
+            width: w,
+            cam: 60,
+            islandH: 64,
+            activeTabIndex: activeIdx,
+          );
+
+          // 1. All 4 labels share exact font size (10.0 at <390, 10.5 at >=390) and -0.01em tracking
+          for (final l in _labels) {
+            final text = tester.widget<Text>(find.text(l));
+            expect(
+              text.style!.fontSize!,
+              closeTo(expectedFont, 0.01),
+              reason: '$l fontSize at W=$w active=$activeIdx',
+            );
+            expect(
+              text.style!.letterSpacing!,
+              closeTo(expectedFont * dockLabelLetterSpacingEm, 0.001),
+              reason: '$l letterSpacing (-0.01em) at W=$w active=$activeIdx',
+            );
+            expect(
+              tester.getSize(find.text(l)).width,
+              lessThanOrEqualTo(maxLabelW + 0.5),
+              reason: '$l width <= equalCapW - 6 at W=$w',
+            );
+          }
+
+          // 2. Slot widths match C1 adaptive flex (equal when short tab active, widened when long tab active; partner >= 48dp)
+          final dockTabs = tester
+              .widgetList<DockTab>(find.byType(DockTab))
+              .toList();
+          expect(dockTabs, hasLength(4));
+          for (var i = 0; i < 4; i++) {
+            expect(
+              dockTabs[i].labelMaxWidth,
+              closeTo(maxLabelW, 0.05),
+              reason: 'tab $i labelMaxWidth',
+            );
+            final slotSize = tester.getSize(find.byKey(ValueKey('t$i')));
+            expect(
+              slotSize.width,
+              closeTo(activeGeo.tabSlots[i].width, 0.5),
+              reason: 'tab $i slot width at W=$w active=$activeIdx',
+            );
+            expect(
+              slotSize.width,
+              greaterThanOrEqualTo(48.0),
+              reason:
+                  'tab $i partner tap target >= 48dp at W=$w active=$activeIdx',
+            );
+          }
+          if (activeIdx == 1 || activeIdx == 3) {
+            // Short labels (Nhóm / Hồ sơ) -> strictly equal slots
+            for (var i = 0; i < 4; i++) {
+              expect(
+                tester.getSize(find.byKey(ValueKey('t$i'))).width,
+                closeTo(equalGeo.slotWidth, 0.01),
+                reason: 'short tab $activeIdx must keep equal slots at W=$w',
+              );
+            }
+          }
+
+          // 3. Concentric radii at expanded state (R_island = 22, r_pill = 16 -> 6dp moat)
+          final glasses = tester
+              .widgetList<UiGlass>(find.byType(UiGlass))
+              .toList();
+          for (final g in glasses) {
+            expect(g.borderRadius, BorderRadius.circular(22));
+          }
+          final pillFinder = find.byKey(const ValueKey('dock-selection-pill'));
+          final pill = tester.getRect(pillFinder);
           expect(
-            overhangPastOutline(p),
-            lessThanOrEqualTo(maxOverhang),
-            reason: '$labelText point $p overhang vs $pill at ${w}dp',
+            pill.width,
+            closeTo(activeGeo.capsuleWidthForTab(activeIdx), 0.5),
+            reason: 'active=$activeIdx capsule width at W=$w',
+          );
+          final pillDeco =
+              tester.widget<DecoratedBox>(pillFinder).decoration
+                  as BoxDecoration;
+          expect(pillDeco.borderRadius, BorderRadius.circular(16));
+
+          // 4. Real 3x bitmap ink-scan clearance inside the r=16 (r_inner=14.5) pill
+          final labelText = _labels[activeIdx];
+          final labelRect = tester.getRect(find.text(labelText));
+          final scan = await _scanActivePillClearance(
+            tester,
+            pillGlobal: pill,
+            labelGlobal: labelRect,
+            pillRadius: 16.0,
+          );
+          expect(
+            scan.minHorizDp,
+            greaterThanOrEqualTo(4.5),
+            reason:
+                '$labelText at W=$w horiz clearance=${scan.minHorizDp.toStringAsFixed(2)}dp '
+                '(L=${scan.leftDp.toStringAsFixed(2)}, R=${scan.rightDp.toStringAsFixed(2)})',
+          );
+          expect(
+            scan.minRadialDp,
+            greaterThanOrEqualTo(3.5),
+            reason:
+                '$labelText at W=$w 2D radial clearance=${scan.minRadialDp.toStringAsFixed(2)}dp',
           );
         }
-      }
-    });
+      },
+    );
   }
 
   for (final (locale, labels) in [('vi', _labels), ('en', _enLabels)]) {

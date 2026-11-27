@@ -209,10 +209,24 @@ void main() {
             final pillRect = tester.getRect(
               find.byKey(const ValueKey('dock-selection-pill')),
             );
-            final expectedSlot = ((width - 2 * 12 - 60 - 2 * 6 - 4 * 4) / 4)
-                .clamp(0.0, 76.0);
-            expect(pillRect.width, closeTo(expectedSlot - 2, 0.5));
+            final equalGeo = UiDockGeometry.compute(
+              width: width,
+              cam: 60,
+              islandH: 64,
+            );
+            expect(
+              pillRect.width,
+              inInclusiveRange(equalGeo.capsuleWidth - 0.5, 73.5),
+            );
             expect(pillRect.height, closeTo(52, 0.5));
+            for (final (_, k) in tabs) {
+              final slotRect = tester.getRect(find.byKey(ValueKey(k)));
+              expect(
+                slotRect.width,
+                greaterThanOrEqualTo(48),
+                reason: 'tab $k width >= 48 at ${width}pt',
+              );
+            }
             final tabFinder = find.byKey(ValueKey(tabKey));
             final iconRect = tester.getRect(
               find.descendant(of: tabFinder, matching: find.byType(OurneyIcon)),
