@@ -30,7 +30,7 @@ for entry in "$LANDING_DIR"/*; do
   cp -R "$entry" "$DIST_DIR/$name"
 done
 
-for required in _headers _redirects index.html 404.html f.html j.html p.html; do
+for required in _headers _redirects index.html 404.html f.html j.html p.html privacy.html terms.html support.html; do
   if [ ! -f "$DIST_DIR/$required" ]; then
     printf 'build-pages: missing required output file: %s\n' "$required" >&2
     exit 1

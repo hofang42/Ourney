@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base href="/">
+  <title>ourney · điều khoản sử dụng</title>
+  <meta name="description" content="Điều khoản sử dụng Ourney, gồm quy định không dung thứ nội dung phản cảm, báo cáo và chặn.">
+  <link rel="canonical" href="https://ourney.tech/terms">
+  <meta name="theme-color" content="#FFF8EE" id="meta-theme-light" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1B1916" id="meta-theme-dark" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/svg+xml" href="/assets/brand/favicon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/brand/icon-192.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="/assets/brand/favicon-96x96.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/brand/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preload" href="/assets/fonts/SpaceGrotesk-Variable.woff2" as="font" type="font/woff2" crossorigin>
+  <script>
+    (function () {
+      var d = document.documentElement;
+      try {
+        if (sessionStorage.getItem('ourney-intro-seen') === '1') d.classList.add('intro-seen');
+        var t = localStorage.getItem('ourney-theme');
+        if (t === 'light' || t === 'dark') {
+          d.dataset.theme = t;
+          var m = t === 'dark' ? 'all' : 'not all';
+          var mo = new MutationObserver(function () {
+            var s = d.querySelectorAll('source.src-dark');
+            for (var i = 0; i < s.length; i++) if (s[i].media !== m) s[i].media = m;
+          });
+          mo.observe(d, { childList: true, subtree: true });
+          addEventListener('DOMContentLoaded', function () { mo.disconnect(); }, { once: true });
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body data-doc="terms">
+  <a class="skip" href="#main" data-i18n="skip">Bỏ qua tới nội dung chính</a>
+
+  <header class="nav doc-nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="/" translate="no" aria-label="Ourney, về trang chủ" data-i18n-aria="nf_brand_aria" data-home-link>
+        <img src="/assets/brand/wordmark.svg" alt="ourney" width="122" height="45">
+      </a>
+      <div class="nav-actions">
+        <button class="lang-btn" id="lang-toggle" type="button" aria-label="Chuyển ngôn ngữ sang tiếng Anh" data-i18n-aria="nav_lang_aria">
+          <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5h10M9 3v2M6 5c.5 4 3 7 6 8M12 5c-.5 4-3 7-7 9M13 20l4-10 4 10M14.5 17h5"/>
+          </svg>
+          <span class="lang-pill" data-lang-opt="vi">VI</span>
+          <span class="lang-pill" data-lang-opt="en">EN</span>
+        </button>
+        <button class="icon-btn" id="theme-toggle" type="button" aria-label="Đổi giao diện sáng hoặc tối" data-i18n-aria="nav_theme_aria">
+          <svg class="tg-sun" viewBox="0 0 24 24" aria-hidden="true">
+            <g class="o-halo"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></g>
+            <g class="o-fill"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></g>
+          </svg>
+          <svg class="tg-moon" viewBox="0 0 24 24" aria-hidden="true">
+            <g class="o-halo"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/></g>
+            <g class="o-fill"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/></g>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="doc-stage">
+    <article class="wrap doc-wrap">
+      <div class="doc-body" lang="vi" data-lang-block="vi">
+        <h1>điều khoản sử dụng.</h1>
+        <p class="doc-updated">Cập nhật lần cuối: 16/10/2026</p>
+        <section class="doc-section">
+          <h2>1. Đồng ý điều khoản</h2>
+          <p>Khi tạo tài khoản hoặc dùng Ourney, bạn đồng ý với các điều khoản này. Nếu không đồng ý, vui lòng không sử dụng ứng dụng.</p>
+        </section>
+        <section class="doc-section">
+          <h2>2. Không dung thứ nội dung phản cảm</h2>
+          <p>Ourney không chấp nhận bất kỳ nội dung phản cảm hay người dùng lạm dụng nào. Bạn không được đăng hoặc gửi: ảnh khoả thân, khiêu dâm; nội dung quấy rối, bắt nạt, đe doạ; phát ngôn thù ghét hoặc phân biệt đối xử; bạo lực; nội dung cổ vũ tự làm hại bản thân; spam, lừa đảo; nội dung vi phạm pháp luật hoặc quyền của người khác.</p>
+        </section>
+        <section class="doc-section">
+          <h2>3. Nội dung của bạn</h2>
+          <p>Ảnh, chú thích và số liệu bạn đăng vẫn thuộc về bạn. Bạn cho phép Ourney lưu trữ và hiển thị chúng cho những người bạn chọn chia sẻ (thành viên nhóm, người có link công khai). Bạn chịu trách nhiệm về nội dung mình đăng.</p>
+        </section>
+        <section class="doc-section">
+          <h2>4. Báo cáo, chặn và kiểm duyệt</h2>
+          <p>Bạn có thể báo cáo check-in hoặc người dùng và chặn bất kỳ ai. Chúng mình xem xét báo cáo trong vòng 24 giờ, gỡ nội dung vi phạm và khóa tài khoản của người vi phạm.</p>
+        </section>
+        <section class="doc-section">
+          <h2>5. Chấm dứt</h2>
+          <p>Chúng mình có thể tạm khóa hoặc xóa tài khoản vi phạm các điều khoản này mà không cần báo trước. Bạn có thể xóa tài khoản bất cứ lúc nào tại Hồ sơ &gt; Cài đặt &gt; Xóa tài khoản.</p>
+        </section>
+        <section class="doc-section">
+          <h2>6. Miễn trừ và thay đổi</h2>
+          <p>Ourney được cung cấp &quot;như hiện có&quot; và không thay thế lời khuyên y tế, dinh dưỡng hay tập luyện chuyên môn. Khi điều khoản thay đổi, chúng mình sẽ thông báo trong ứng dụng.</p>
+        </section>
+        <section class="doc-section">
+          <h2>Email hỗ trợ</h2>
+          <p>Bạn cũng có thể viết trực tiếp cho chúng mình tại <a href="mailto:support@ourney.tech?subject=Ourney%20-%20hỗ%20trợ" translate="no">support@ourney.tech</a>.</p>
+        </section>
+      </div>
+      <div class="doc-body" lang="en" data-lang-block="en">
+        <h1>terms of use.</h1>
+        <p class="doc-updated">Last updated: October 16, 2026</p>
+        <section class="doc-section">
+          <h2>1. Accepting these terms</h2>
+          <p>By creating an account or using Ourney you agree to these terms. If you don&#x27;t agree, please don&#x27;t use the app.</p>
+        </section>
+        <section class="doc-section">
+          <h2>2. Zero tolerance for objectionable content</h2>
+          <p>Ourney does not tolerate objectionable content or abusive users of any kind. You may not post or send: nudity or sexual content; harassment, bullying or threats; hate speech or discrimination; violence; content that encourages self-harm; spam or scams; anything illegal or that infringes the rights of others.</p>
+        </section>
+        <section class="doc-section">
+          <h2>3. Your content</h2>
+          <p>Photos, captions and numbers you post stay yours. You allow Ourney to store them and show them to the people you choose to share with (squad members, people with your public link). You are responsible for what you post.</p>
+        </section>
+        <section class="doc-section">
+          <h2>4. Reporting, blocking and moderation</h2>
+          <p>You can report check-ins or users and block anyone. We review reports within 24 hours, remove content that breaks these terms and remove the accounts of users who post it.</p>
+        </section>
+        <section class="doc-section">
+          <h2>5. Termination</h2>
+          <p>We may suspend or delete accounts that break these terms without notice. You can delete your account at any time in Profile &gt; Settings &gt; Delete account.</p>
+        </section>
+        <section class="doc-section">
+          <h2>6. Disclaimer and changes</h2>
+          <p>Ourney is provided &quot;as is&quot; and is not a substitute for professional medical, nutrition or fitness advice. When these terms change we&#x27;ll let you know in the app.</p>
+        </section>
+        <section class="doc-section">
+          <h2>Support email</h2>
+          <p>You can also write to us directly at <a href="mailto:support@ourney.tech?subject=Ourney%20-%20support" translate="no">support@ourney.tech</a>.</p>
+        </section>
+      </div>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <img src="/assets/brand/wordmark-compact.svg" alt="ourney" width="98" height="30">
+      <nav aria-label="Pháp lý và hỗ trợ" data-i18n-aria="footer_legal_aria">
+        <ul>
+          <li><a href="/" data-home-link data-i18n="doc_home">về trang chủ</a></li>
+          <li><a href="/privacy" data-i18n="footer_privacy_policy">chính sách riêng tư</a></li>
+          <li><a href="/terms" aria-current="page" data-i18n="footer_terms">điều khoản</a></li>
+          <li><a href="/support" data-i18n="footer_support">hỗ trợ</a></li>
+        </ul>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="/main.js" defer></script>
+  <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6accad2341fb415da9961f1d8b70f8e6"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
