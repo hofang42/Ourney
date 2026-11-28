@@ -1145,5 +1145,33 @@
   "@journeys_clearYear": {"placeholders": {"year": {"type": "int"}}},
   "journeys_range30Pace": "Few values in 30 days, showing check-ins",
   "journeys_startsIn": "Starts in {days, plural, one{1 day} other{{days} days}} · {total, plural, one{1 day} other{{total} days}}",
-  "@journeys_startsIn": {"placeholders": {"days": {"type": "int"}, "total": {"type": "int"}}}
+  "@journeys_startsIn": {"placeholders": {"days": {"type": "int"}, "total": {"type": "int"}}},
+  "journeys_dayPrevious": "Earlier",
+  "journeys_dayNext": "Later",
+  "journeys_dayPreviousSemantics": "Previous check-in, {date}",
+  "@journeys_dayPreviousSemantics": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_dayNextSemantics": "Next check-in, {date}",
+  "@journeys_dayNextSemantics": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_dayViewFull": "View full photo",
+  "journeys_dayOpenJourney": "Open journey",
+  "journeys_dayPartnerNoPhoto": "{name} has no photo for this day",
+  "@journeys_dayPartnerNoPhoto": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

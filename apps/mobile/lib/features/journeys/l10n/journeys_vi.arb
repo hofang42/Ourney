@@ -1672,5 +1672,33 @@
   "@journeys_clearYear": {"placeholders": {"year": {"type": "int"}}},
   "journeys_range30Pace": "Ít số liệu trong 30 ngày, đang hiện số ngày check-in",
   "journeys_startsIn": "Bắt đầu sau {days} ngày · {total} ngày",
-  "@journeys_startsIn": {"placeholders": {"days": {"type": "int"}, "total": {"type": "int"}}}
+  "@journeys_startsIn": {"placeholders": {"days": {"type": "int"}, "total": {"type": "int"}}},
+  "journeys_dayPrevious": "Trước",
+  "journeys_dayNext": "Sau",
+  "journeys_dayPreviousSemantics": "Check-in trước, {date}",
+  "@journeys_dayPreviousSemantics": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_dayNextSemantics": "Check-in sau, {date}",
+  "@journeys_dayNextSemantics": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_dayViewFull": "Xem ảnh đầy đủ",
+  "journeys_dayOpenJourney": "Mở hành trình",
+  "journeys_dayPartnerNoPhoto": "{name} chưa có ảnh ngày này",
+  "@journeys_dayPartnerNoPhoto": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

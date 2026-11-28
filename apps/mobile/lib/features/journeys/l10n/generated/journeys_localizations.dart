@@ -3367,6 +3367,48 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Bắt đầu sau {days} ngày · {total} ngày'**
   String journeys_startsIn(int days, int total);
+
+  /// No description provided for @journeys_dayPrevious.
+  ///
+  /// In vi, this message translates to:
+  /// **'Trước'**
+  String get journeys_dayPrevious;
+
+  /// No description provided for @journeys_dayNext.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sau'**
+  String get journeys_dayNext;
+
+  /// No description provided for @journeys_dayPreviousSemantics.
+  ///
+  /// In vi, this message translates to:
+  /// **'Check-in trước, {date}'**
+  String journeys_dayPreviousSemantics(String date);
+
+  /// No description provided for @journeys_dayNextSemantics.
+  ///
+  /// In vi, this message translates to:
+  /// **'Check-in sau, {date}'**
+  String journeys_dayNextSemantics(String date);
+
+  /// No description provided for @journeys_dayViewFull.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem ảnh đầy đủ'**
+  String get journeys_dayViewFull;
+
+  /// No description provided for @journeys_dayOpenJourney.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mở hành trình'**
+  String get journeys_dayOpenJourney;
+
+  /// No description provided for @journeys_dayPartnerNoPhoto.
+  ///
+  /// In vi, this message translates to:
+  /// **'{name} chưa có ảnh ngày này'**
+  String journeys_dayPartnerNoPhoto(String name);
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

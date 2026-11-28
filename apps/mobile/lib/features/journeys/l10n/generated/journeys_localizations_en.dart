@@ -2034,4 +2034,31 @@ class JourneysL10nEn extends JourneysL10n {
     );
     return 'Starts in $_temp0 · $_temp1';
   }
+
+  @override
+  String get journeys_dayPrevious => 'Earlier';
+
+  @override
+  String get journeys_dayNext => 'Later';
+
+  @override
+  String journeys_dayPreviousSemantics(String date) {
+    return 'Previous check-in, $date';
+  }
+
+  @override
+  String journeys_dayNextSemantics(String date) {
+    return 'Next check-in, $date';
+  }
+
+  @override
+  String get journeys_dayViewFull => 'View full photo';
+
+  @override
+  String get journeys_dayOpenJourney => 'Open journey';
+
+  @override
+  String journeys_dayPartnerNoPhoto(String name) {
+    return '$name has no photo for this day';
+  }
 }

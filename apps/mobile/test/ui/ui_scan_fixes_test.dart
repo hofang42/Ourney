@@ -474,8 +474,9 @@ void main() {
     );
     await tester.pump();
     final spinner = tester.widget<UiSpinner>(find.byType(UiSpinner));
-    expect(spinner.color, UiCamera.ink);
-    expect(uiContrast(spinner.color!, UiCamera.bg), greaterThanOrEqualTo(4.5));
+    final ui = tester.element(find.byType(UiSpinner)).ui;
+    expect(spinner.color, ui.ink);
+    expect(uiContrast(spinner.color!, ui.bg), greaterThanOrEqualTo(4.5));
   });
 
   testWidgets('F2 CreateTypeDeck 1.0x uses Expanded without clipping on '

@@ -118,7 +118,7 @@ void main() {
   }
 
   group('Journey detail (FR-B4/B5)', () {
-    testWidgets('a partner-only day opens with two authored viewer slots', (
+    testWidgets('a partner-only day opens with two person chips', (
       tester,
     ) async {
       final j = testJourney(kind: JourneyKind.group, maxMembers: 2);
@@ -147,11 +147,11 @@ void main() {
       await _tap(tester, _day(date));
       final viewer = find.byType(DayViewerScreen);
       expect(viewer, findsOneWidget);
-      expect(find.descendant(of: viewer, matching: find.text('An')), findsOneWidget);
+      expect(find.descendant(of: viewer, matching: find.text('You')), findsOneWidget);
       expect(find.descendant(of: viewer, matching: find.text('Binh')), findsOneWidget);
-      expect(find.text('No photo for this day'), findsOneWidget);
+      expect(find.text('No photo for this day'), findsNothing);
       final photos = find.descendant(of: viewer, matching: find.byType(JourneyPhoto));
-      expect(tester.widget<JourneyPhoto>(photos).checkIn, same(partner));
+      expect(tester.widget<JourneyPhoto>(photos.first).checkIn, same(partner));
       expect(_key('journey-day-metric'), findsNothing);
     });
 
@@ -962,13 +962,13 @@ void main() {
 
         expect(
           find.byKey(
-            const ValueKey<(String, int, String?)>(('day-viewer-slot', 0, 'u1')),
+            const ValueKey<(String, int, String?)>(('day-person-chip', 0, 'u1')),
           ),
           findsOneWidget,
         );
         expect(
           find.byKey(
-            const ValueKey<(String, int, String?)>(('day-viewer-slot', 1, 'u2')),
+            const ValueKey<(String, int, String?)>(('day-person-chip', 1, 'u2')),
           ),
           findsOneWidget,
         );
