@@ -85,7 +85,9 @@
   "checkin_resumeDraft": "Mở lại bản nháp cho {journey}",
   "@checkin_resumeDraft": {
     "placeholders": {
-      "journey": { "type": "String" }
+      "journey": {
+        "type": "String"
+      }
     }
   },
   "checkin_draftCue": "Bản nháp · chạm để mở lại",
@@ -288,16 +290,8 @@
   "@checkin_coupleWaiting": {
     "description": "Post screen status when an active partner has not posted on the captured photo’s journey-local date."
   },
-  "checkin_extraPaceLabel": "Nhịp chạy (phút/km)",
-  "@checkin_extraPaceLabel": {
-    "description": "Post screen per-skin input."
-  },
-  "checkin_extraPaceInvalid": "Nhịp không hợp lệ, giây phải dưới 60",
+  "checkin_extraPaceInvalid": "Nhập pace dạng phút:giây, ví dụ 5:42.",
   "@checkin_extraPaceInvalid": {
-    "description": "Post screen per-skin input."
-  },
-  "checkin_extraKmLabel": "Quãng đường (km)",
-  "@checkin_extraKmLabel": {
     "description": "Post screen per-skin input."
   },
   "checkin_extraKmHint": "VD: 5,3",
@@ -306,10 +300,6 @@
   },
   "checkin_extraKmInvalid": "Quãng đường từ 0,1 đến 500 km, một chữ số thập phân",
   "@checkin_extraKmInvalid": {
-    "description": "Post screen per-skin input."
-  },
-  "checkin_extraBackspace": "Xóa một số",
-  "@checkin_extraBackspace": {
     "description": "Post screen per-skin input."
   },
   "checkin_details": "Chi tiết",
@@ -328,5 +318,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "checkin_distanceLabel": "Quãng đường",
+  "checkin_paceLabel": "Pace (phút : giây)",
+  "checkin_paceMinutes": "phút",
+  "checkin_paceSeconds": "giây",
+  "checkin_paceInvalid": "Giây chỉ từ 00 đến 59.",
+  "checkin_metricWeight": "Cân nặng",
+  "checkin_show": "Hiện",
+  "checkin_paceMinutesInvalid": "Phút phải từ 1 trở lên."
 }

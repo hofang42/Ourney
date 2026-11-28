@@ -1352,35 +1352,11 @@ abstract class JourneysL10n {
   /// **'Sửa tên cặp đôi'**
   String get journeys_renameCoupleTitle;
 
-  /// No description provided for @journeys_quietHold.
-  ///
-  /// In vi, this message translates to:
-  /// **'Giữ để xem'**
-  String get journeys_quietHold;
-
-  /// No description provided for @journeys_quietHolding.
-  ///
-  /// In vi, this message translates to:
-  /// **'Đang xem'**
-  String get journeys_quietHolding;
-
-  /// No description provided for @journeys_quietHoldHint.
-  ///
-  /// In vi, this message translates to:
-  /// **'Nhấn giữ để hiện số của bạn'**
-  String get journeys_quietHoldHint;
-
   /// No description provided for @journeys_quietHidden.
   ///
   /// In vi, this message translates to:
   /// **'Đã ẩn'**
   String get journeys_quietHidden;
-
-  /// No description provided for @journeys_quietAxis.
-  ///
-  /// In vi, this message translates to:
-  /// **'{value} kg'**
-  String journeys_quietAxis(String value);
 
   /// No description provided for @journeys_quietDayTag.
   ///
@@ -1411,12 +1387,6 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'VỀ ĐÍCH'**
   String get journeys_quietFinish;
-
-  /// No description provided for @journeys_quietMissed.
-  ///
-  /// In vi, this message translates to:
-  /// **'Một ngày nghỉ không xóa hành trình.'**
-  String get journeys_quietMissed;
 
   /// No description provided for @journeys_quietMilestones.
   ///
@@ -1459,12 +1429,6 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'cân nặng hiện tại.'**
   String get journeys_dna_weight_title;
-
-  /// No description provided for @journeys_dna_ghost_title.
-  ///
-  /// In vi, this message translates to:
-  /// **'chụp ảnh ngày 1 làm khung căn dáng.'**
-  String get journeys_dna_ghost_title;
 
   /// No description provided for @journeys_dna_goal_title_english.
   ///
@@ -1916,24 +1880,6 @@ abstract class JourneysL10n {
   /// **'Bỏ qua'**
   String get journeys_dna_weight_skip;
 
-  /// No description provided for @journeys_dna_ghost_body.
-  ///
-  /// In vi, this message translates to:
-  /// **'Hiện khung bóng mờ trong máy ảnh để ngày nào chụp cũng khớp một góc.'**
-  String get journeys_dna_ghost_body;
-
-  /// No description provided for @journeys_dna_ghost_now.
-  ///
-  /// In vi, this message translates to:
-  /// **'Bật khung căn dáng'**
-  String get journeys_dna_ghost_now;
-
-  /// No description provided for @journeys_dna_ghost_later.
-  ///
-  /// In vi, this message translates to:
-  /// **'Tắt đi, để bật sau.'**
-  String get journeys_dna_ghost_later;
-
   /// No description provided for @journeys_dna_trophy_label.
   ///
   /// In vi, this message translates to:
@@ -2167,18 +2113,6 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'{month} · CHUỖI {streak} NGÀY'**
   String journeys_home_monthStreak(int streak, String month);
-
-  /// No description provided for @journeys_home_holdReveal.
-  ///
-  /// In vi, this message translates to:
-  /// **'Giữ để xem'**
-  String get journeys_home_holdReveal;
-
-  /// No description provided for @journeys_home_viewing.
-  ///
-  /// In vi, this message translates to:
-  /// **'Đang xem'**
-  String get journeys_home_viewing;
 
   /// No description provided for @journeys_home_chartA11y.
   ///
@@ -3014,18 +2948,6 @@ abstract class JourneysL10n {
   /// **'hôm nay chưa ai chụp'**
   String get journeys_home_pairNeither;
 
-  /// No description provided for @journeys_home_flexSummary.
-  ///
-  /// In vi, this message translates to:
-  /// **'{km} KM TỔNG · {pace} /KM NHỊP TB'**
-  String journeys_home_flexSummary(String km, String pace);
-
-  /// No description provided for @journeys_home_flexKmOnly.
-  ///
-  /// In vi, this message translates to:
-  /// **'{km} KM TỔNG'**
-  String journeys_home_flexKmOnly(String km);
-
   /// No description provided for @journeys_home_flexRan.
   ///
   /// In vi, this message translates to:
@@ -3356,12 +3278,6 @@ abstract class JourneysL10n {
   /// **'Bỏ lọc năm {year}'**
   String journeys_clearYear(int year);
 
-  /// No description provided for @journeys_range30Pace.
-  ///
-  /// In vi, this message translates to:
-  /// **'Ít số liệu trong 30 ngày, đang hiện số ngày check-in'**
-  String get journeys_range30Pace;
-
   /// No description provided for @journeys_startsIn.
   ///
   /// In vi, this message translates to:
@@ -3409,6 +3325,156 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'{name} chưa có ảnh ngày này'**
   String journeys_dayPartnerNoPhoto(String name);
+
+  /// No description provided for @journeys_homeMeta.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày {day} / {total} · {range}'**
+  String journeys_homeMeta(int day, int total, String range);
+
+  /// No description provided for @journeys_homeMetaOpen.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày {day} · từ {start}'**
+  String journeys_homeMetaOpen(int day, String start);
+
+  /// No description provided for @journeys_daysLeft.
+  ///
+  /// In vi, this message translates to:
+  /// **'Còn {n} ngày'**
+  String journeys_daysLeft(int n);
+
+  /// No description provided for @journeys_weekLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tuần {n}'**
+  String journeys_weekLabel(int n);
+
+  /// No description provided for @journeys_weekKm.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tuần {n} · {km} km'**
+  String journeys_weekKm(int n, String km);
+
+  /// No description provided for @journeys_runTotalKm.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tổng km'**
+  String get journeys_runTotalKm;
+
+  /// No description provided for @journeys_runCount.
+  ///
+  /// In vi, this message translates to:
+  /// **'Buổi chạy'**
+  String get journeys_runCount;
+
+  /// No description provided for @journeys_runAvgPace.
+  ///
+  /// In vi, this message translates to:
+  /// **'Pace trung bình'**
+  String get journeys_runAvgPace;
+
+  /// No description provided for @journeys_sessionCount.
+  ///
+  /// In vi, this message translates to:
+  /// **'Buổi tập'**
+  String get journeys_sessionCount;
+
+  /// No description provided for @journeys_weightTrend.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xu hướng · {direction}'**
+  String journeys_weightTrend(String direction);
+
+  /// No description provided for @journeys_trendDown.
+  ///
+  /// In vi, this message translates to:
+  /// **'đang xuống nhẹ'**
+  String get journeys_trendDown;
+
+  /// No description provided for @journeys_trendFlat.
+  ///
+  /// In vi, this message translates to:
+  /// **'khá đều'**
+  String get journeys_trendFlat;
+
+  /// No description provided for @journeys_trendUp.
+  ///
+  /// In vi, this message translates to:
+  /// **'đang lên nhẹ'**
+  String get journeys_trendUp;
+
+  /// No description provided for @journeys_trendFooter.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count} lần cân · đã làm mượt'**
+  String journeys_trendFooter(int count);
+
+  /// No description provided for @journeys_trendNeedMore.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cân thêm vài lần nữa là thấy xu hướng.'**
+  String get journeys_trendNeedMore;
+
+  /// No description provided for @journeys_trendChange.
+  ///
+  /// In vi, this message translates to:
+  /// **'{delta} {unit} từ ngày 1'**
+  String journeys_trendChange(String delta, String unit);
+
+  /// No description provided for @journeys_showNumbers.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hiện số'**
+  String get journeys_showNumbers;
+
+  /// No description provided for @journeys_hideNumbers.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ẩn số'**
+  String get journeys_hideNumbers;
+
+  /// No description provided for @journeys_firstLatest.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày {first} và ngày {latest}'**
+  String journeys_firstLatest(int first, int latest);
+
+  /// No description provided for @journeys_viewerMetricHidden.
+  ///
+  /// In vi, this message translates to:
+  /// **'••,•'**
+  String get journeys_viewerMetricHidden;
+
+  /// No description provided for @journeys_semRunBar.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày {day}, {km} km'**
+  String journeys_semRunBar(int day, String km);
+
+  /// No description provided for @journeys_semRunBarNone.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày {day}, không ghi km'**
+  String journeys_semRunBarNone(int day);
+
+  /// No description provided for @journeys_photoLogEmpty.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh check-in sẽ ở đây.'**
+  String get journeys_photoLogEmpty;
+
+  /// No description provided for @journeys_streakOnly.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuỗi {n}'**
+  String journeys_streakOnly(int n);
+
+  /// No description provided for @journeys_runDay.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày'**
+  String get journeys_runDay;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

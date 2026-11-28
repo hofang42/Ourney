@@ -92,11 +92,13 @@ class TimelineTile extends StatelessWidget {
     required this.size,
     this.round = false,
     this.cacheWidth = 200,
+    this.height,
     super.key,
   });
 
   final TimelineDay day;
   final double size;
+  final double? height;
   final bool round;
 
   /// Decode width of the photo: grid cells pass cell size x pixel ratio.
@@ -154,8 +156,9 @@ class TimelineTile extends StatelessWidget {
         ),
       ),
     };
-    return SizedBox.square(
-      dimension: size,
+    return SizedBox(
+      width: size,
+      height: height ?? size,
       child: ClipRRect(borderRadius: radius, child: inner),
     );
   }

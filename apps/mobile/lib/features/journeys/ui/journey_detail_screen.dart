@@ -25,6 +25,7 @@ import '../data/journeys_providers.dart';
 import '../data/long_timeline_state.dart';
 import '../domain/journey_progress.dart';
 import '../domain/journey_time.dart';
+import '../domain/run_stats.dart';
 import '../domain/timeline_window.dart';
 import '../journeys_paths.dart';
 import '../l10n/generated/journeys_localizations.dart';
@@ -57,8 +58,40 @@ class JourneyDetailScreen extends ConsumerStatefulWidget {
       _JourneyDetailScreenState();
 }
 
-class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
+class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen>
+    with WidgetsBindingObserver {
   bool _menuOpen = false;
+  bool _weightNumbersShown = false;
+  GoRouter? _router;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final router = GoRouter.maybeOf(context);
+    if (router != _router) {
+      _router?.routerDelegate.removeListener(_onRouteChanged);
+      _router = router;
+      router?.routerDelegate.addListener(_onRouteChanged);
+    }
+  }
+
+  void _onRouteChanged() {
+    // Root-navigator overlays can cover this screen while its shell route
+    // remains current. Observe the top route so weight stays private on return.
+    if (mounted &&
+        _weightNumbersShown &&
+        _router?.state.uri.path != JourneysPaths.home(journeyId)) {
+      setState(() => _weightNumbersShown = false);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant JourneyDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.journeyId != widget.journeyId) {
+      _weightNumbersShown = false;
+    }
+  }
 
   // Long journeys (more than 31 days passed): the choices live in
   // `longTimelineProvider`; the scroll state is per screen.
@@ -71,11 +104,27 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _router?.routerDelegate.removeListener(_onRouteChanged);
     _scroll.dispose();
     super.dispose();
   }
 
   String get journeyId => widget.journeyId;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if ((state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) && _weightNumbersShown) {
+      setState(() => _weightNumbersShown = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -203,8 +252,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
           final missedDay = index?.lastMissedDay;
           final showMissedChip =
               perms.isActive &&
-              missedDay != null &&
-              (skin == 'quiet' || skin == 'squad');
+              missedDay != null && skin == 'squad';
           final showBottomOverlay = showMissedChip || perms.canCheckIn;
           final bottomInset = MediaQuery.paddingOf(context).bottom;
           // U15: at large text the chip and the button no longer share a row
@@ -221,6 +269,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                   (journey.durationDays ?? 0) > longJourneyDays
               ? index.shortWindow
               : null;
+          final photoLog = skin == 'quiet' || skin == 'flexer';
           final topChildren = <Widget>[
             UiMenuAnchor(
               open: _menuOpen && actions.isNotEmpty,
@@ -274,6 +323,19 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
             if (progress != null)
               JourneyHomeIntro(
                 skin: skin,
+                dateRange: !photoLog
+                    ? null
+                    : journey.durationDays == null
+                    ? l10n.journeys_homeMetaOpen(
+                        progress.dayNumber,
+                        MaterialLocalizations.of(context)
+                            .formatShortDate(displayDate(journey.startDate)),
+                      )
+                    : l10n.journeys_homeMeta(
+                        progress.dayNumber,
+                        journey.durationDays!,
+                        _dateRange(context, journey, compact: true),
+                      ),
                 day: progress.dayNumber,
                 total: journey.durationDays,
                 streak: progress.summary.current,
@@ -286,8 +348,10 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
               ),
             if (progress != null) SizedBox(height: bigText ? 10 : UiSpace.lg),
             DeadUploadsBanner(journeyId: journey.id),
-            UiEyebrow(_dateRange(context, journey).toUpperCase()),
-            const SizedBox(height: 4),
+            if (!photoLog)
+              UiEyebrow(_dateRange(context, journey).toUpperCase()),
+            if (!photoLog) const SizedBox(height: 4),
+            if (!photoLog)
             Semantics(
               header: true,
               child: MediaQuery.withClampedTextScaling(
@@ -295,9 +359,13 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                 child: Text(journey.title, style: UiText.h1(color: ui.ink)),
               ),
             ),
-            SizedBox(height: bigText ? 12 : 22),
+            if (!photoLog) SizedBox(height: bigText ? 12 : 22),
             if (progress != null) ...[
-              if (skin != 'quiet') ...[
+              if (skin == 'flexer' && journey.kind == JourneyKind.group) ...[
+                JourneyWorkoutMembers(journey: journey),
+                const SizedBox(height: UiSpace.md),
+              ],
+              if (skin != 'quiet' && skin != 'flexer') ...[
                 JourneyHomeSkinHeader(
                   journey: journey,
                   skin: skinOfJourney(journey),
@@ -314,14 +382,12 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                 const SizedBox(height: UiSpace.lg),
               ],
             ],
-            _SectionTab(title: l10n.journeys_timelineTitle, accent: pal.accent),
+            if (!photoLog)
+              _SectionTab(title: l10n.journeys_timelineTitle, accent: pal.accent,
+              ),
+            if (!photoLog)
             SizedBox(height: bigText ? 12 : UiSpace.xl),
           ];
-          final startingWeight = skin == 'quiet'
-              ? ref
-                    .watch(sharedPreferencesProvider)
-                    .getDouble(journeyStartingWeightPrefKey(journey.id))
-              : null;
           final timelineChildren = <Widget>[
             if (checkIns.hasError && progress == null)
               UiEmptyState(
@@ -340,23 +406,37 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
               )
             else if (!long)
               JourneyTimeline(
+                metricUnit: journey.metricUnit,
                 skinId: uiSkinIdFor(skinOfJourney(journey)),
                 days: shortWindow?.days ?? progress.timeline(),
+                allDays: photoLog ? index!.elapsed : null,
+                weightNumbersShown: _weightNumbersShown,
+                onWeightNumbersChanged: (v) =>
+                    setState(() => _weightNumbersShown = v),
+                isRunning: isRunJourney(journey),
                 summary: shortWindow == null ? null : index!.summary,
                 window: shortWindow,
                 pal: pal,
                 selfName: journey.coupleSelfName,
                 partnerName: journey.couplePartnerName,
                 selfOnRight: journey.dna?['side'] == 'right',
-                startingWeight: startingWeight,
-                isOpenEnded: journey.durationDays == null,
-                showMilestones: false,
                 showOfflineStamps: !ref.watch(appConfigProvider).localOnly,
                 onTapDay: (d) =>
                     context.push(JourneysPaths.day(journey.id, d.date)),
               ),
           ];
           final bottomChildren = <Widget>[
+            if (photoLog &&
+                progress != null &&
+                perms.isActive &&
+                journey.endDate != null &&
+                journey.endDate!.isAfter(progress.today))
+              Text(
+                l10n.journeys_daysLeft(
+                  progress.today.daysUntil(journey.endDate!),
+                ),
+                style: UiText.muted(color: ui.inkMuted),
+              ),
             if (progress != null) ...[
               const SizedBox(height: UiSpace.xl),
               JourneyHomeMilestones(
@@ -382,9 +462,11 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
           ];
           // The overlay text is clamped to 1.35x (below), so its height
           // is bounded and this reserve keeps it off the content.
-          final double padBottom = showBottomOverlay
+          final double padBottom =
+              (showBottomOverlay
               ? (stackOverlay ? 180 : (bigText ? 130 : 96))
-              : UiSpace.xxl;
+              : UiSpace.xxl) +
+              (photoLog ? bottomInset + 16 : 0);
           final home = DayTicker(
             child: ActiveJourneyScope(
               journeyId: journey.id,
@@ -589,8 +671,16 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
         else
           SliverToBoxAdapter(
             child: JourneyTimeline(
+              metricUnit: journey.metricUnit,
               skinId: skin,
               days: window.days,
+              allDays: skin == 'quiet' || skin == 'flexer'
+                  ? index.elapsed
+                  : null,
+              weightNumbersShown: _weightNumbersShown,
+              onWeightNumbersChanged: (v) =>
+                  setState(() => _weightNumbersShown = v),
+              isRunning: isRunJourney(journey),
               summary: index.summary,
               window: window,
               rangeShort: st.range30,
@@ -599,13 +689,6 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
               selfName: journey.coupleSelfName,
               partnerName: journey.couplePartnerName,
               selfOnRight: journey.dna?['side'] == 'right',
-              startingWeight: skin == 'quiet'
-                  ? ref
-                        .watch(sharedPreferencesProvider)
-                        .getDouble(journeyStartingWeightPrefKey(journey.id))
-                  : null,
-              isOpenEnded: journey.durationDays == null,
-              showMilestones: false,
               showOfflineStamps: !ref.watch(appConfigProvider).localOnly,
               onTapDay: openDay,
               onOpenEarlier: () =>
@@ -839,12 +922,12 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
   }
 
   /// "MON 28 SEP - TUE 27 OCT", or "Since MON 28 SEP" when open-ended.
-  static String _dateRange(BuildContext context, Journey journey) {
+  static String _dateRange(BuildContext context, Journey journey, {
+    bool compact = false,
+  }) {
     final l10n = JourneysL10n.of(context);
-    final f = DateFormat(
-      'EEE d MMM',
-      Localizations.localeOf(context).toString(),
-    );
+    final locale = Localizations.localeOf(context).toString();
+    final f = compact ? DateFormat.Md(locale) : DateFormat('EEE d MMM', locale);
     final start = f.format(displayDate(journey.startDate));
     final end = journey.endDate;
     return end == null

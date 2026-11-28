@@ -322,13 +322,8 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_coupleWaiting => 'Chờ người ấy đăng ảnh';
 
   @override
-  String get checkin_extraPaceLabel => 'Nhịp chạy (phút/km)';
-
-  @override
-  String get checkin_extraPaceInvalid => 'Nhịp không hợp lệ, giây phải dưới 60';
-
-  @override
-  String get checkin_extraKmLabel => 'Quãng đường (km)';
+  String get checkin_extraPaceInvalid =>
+      'Nhập pace dạng phút:giây, ví dụ 5:42.';
 
   @override
   String get checkin_extraKmHint => 'VD: 5,3';
@@ -336,9 +331,6 @@ class CheckinL10nVi extends CheckinL10n {
   @override
   String get checkin_extraKmInvalid =>
       'Quãng đường từ 0,1 đến 500 km, một chữ số thập phân';
-
-  @override
-  String get checkin_extraBackspace => 'Xóa một số';
 
   @override
   String get checkin_details => 'Chi tiết';
@@ -352,4 +344,28 @@ class CheckinL10nVi extends CheckinL10n {
   String checkin_metricLast(String value) {
     return 'Lần trước: $value';
   }
+
+  @override
+  String get checkin_distanceLabel => 'Quãng đường';
+
+  @override
+  String get checkin_paceLabel => 'Pace (phút : giây)';
+
+  @override
+  String get checkin_paceMinutes => 'phút';
+
+  @override
+  String get checkin_paceSeconds => 'giây';
+
+  @override
+  String get checkin_paceInvalid => 'Giây chỉ từ 00 đến 59.';
+
+  @override
+  String get checkin_metricWeight => 'Cân nặng';
+
+  @override
+  String get checkin_show => 'Hiện';
+
+  @override
+  String get checkin_paceMinutesInvalid => 'Phút phải từ 1 trở lên.';
 }

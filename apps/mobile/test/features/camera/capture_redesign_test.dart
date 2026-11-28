@@ -1,5 +1,3 @@
-// Camera redesign (2026-11-20): one shared camera, a large preview, and a
-// status pill instead of a toast (the toast covered the shutter).
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -14,6 +12,9 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
 import '../checkin/fakes.dart';
+
+// Camera redesign (2026-11-20): one shared camera, a large preview, and a
+// status pill instead of a toast (the toast covered the shutter).
 
 class _FailingShotCamera extends FakeCameraSession {
   @override
@@ -206,14 +207,12 @@ void main() {
   });
 
   group('persona guides', () {
-    testWidgets('quiet: the ghost tool toggles the silhouette', (tester) async {
+    testWidgets('weight: no ghost overlay or toggle', (tester) async {
       await pump(
         tester,
         journeys: [testJourney(templateId: TemplateId.weightLoss)],
       );
-      expect(find.byKey(const ValueKey('overlay-ghost')), findsOneWidget);
-      await tester.tap(find.byKey(const ValueKey('capture-ghost')));
-      await tester.pump();
+      expect(find.byKey(const ValueKey('capture-ghost')), findsNothing);
       expect(find.byKey(const ValueKey('overlay-ghost')), findsNothing);
       await tester.pump(const Duration(seconds: 2));
       expect(camera.starts, 1);

@@ -55,6 +55,7 @@ class JourneyHomeIntro extends StatelessWidget {
     this.couple = false,
     this.readOnly = false,
     this.ritual,
+    this.dateRange,
     super.key,
   });
 
@@ -73,6 +74,7 @@ class JourneyHomeIntro extends StatelessWidget {
 
   /// Couple ritual code (`cook`, `save`, `ldr`, `custom`).
   final String? ritual;
+  final String? dateRange;
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +109,9 @@ class JourneyHomeIntro extends StatelessWidget {
       },
       _ => null,
     };
-    final line = skin == 'minimal'
+    final line = dateRange != null
+        ? l10n.journeys_streakOnly(streak)
+        : skin == 'minimal'
         ? l10n.journeys_home_monthStreak(
             streak,
             DateFormat.MMMM(locale)
@@ -144,6 +148,11 @@ class JourneyHomeIntro extends StatelessWidget {
                 style: UiText.h1(color: ui.ink).copyWith(height: 1.2),
               ),
             ),
+          ),
+        if (dateRange != null)
+          Padding(
+            padding: const EdgeInsets.only(top: UiSpace.xs),
+            child: Text(dateRange!, style: UiText.muted(color: ui.inkMuted)),
           ),
         const SizedBox(height: UiSpace.xs),
         Row(

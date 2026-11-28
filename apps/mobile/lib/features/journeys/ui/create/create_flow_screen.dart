@@ -351,8 +351,8 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
         '${rt.minute.toString().padLeft(2, '0')}';
   }
 
-  /// DNA answers the server stores (`journeys.dna`); weight and the ghost
-  /// photo request stay on the device.
+  /// DNA answers the server stores (`journeys.dna`); starting weight stays
+  /// on the device.
   Map<String, Object?>? _storableDna() {
     String iso(DateTime d) =>
         '${d.year.toString().padLeft(4, '0')}-'
@@ -449,16 +449,6 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                 journeyStartingWeightPrefKey(journey.id),
                 weight.toDouble(),
               );
-        } on Object {
-          settingsNotSaved = true;
-        }
-      }
-      final ghost = _dna['ghostRequested'];
-      if (ghost is bool) {
-        try {
-          await container
-              .read(sharedPreferencesProvider)
-              .setBool(journeyGhostGuidePrefKey(journey.id), ghost);
         } on Object {
           settingsNotSaved = true;
         }
@@ -568,8 +558,6 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           key: ValueKey(_step == _steps - 1 ? 'journey-create' : 'create-next'),
           label: _step == _steps - 1
               ? l10n.journeys_createButton
-              : _inDna && _questions[_dnaPage].kind == DnaKind.ghost
-              ? l10n.journeys_dna_ghost_now
               : l10n.journeys_createNext,
           loading: _busy,
           onPressed: _step == _steps - 1 ? _submit : _next,
@@ -655,7 +643,6 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                                           _update((f) => f.hideMetric = v),
                                       onAdvanceDna: _advanceDna,
                                       onSkipWeight: _skipWeight,
-                                      onGhostLater: _skipGhost,
                                       onApplyDates: _applyDates,
                                       today: _todayDate(_form!),
                                     )
@@ -900,20 +887,11 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     });
   }
 
-  void _skipGhost() {
-    setState(() {
-      _dna['ghostRequested'] = false;
-      _direction = 1;
-      _dnaPage += 1;
-    });
-  }
-
   void _advanceDna() {
     final q = _questions[_dnaPage];
     if (q.kind == DnaKind.weight && !_weightSkipped) {
       _dna.putIfAbsent('weight', () => dnaWeightDefault.toDouble());
     }
-    if (q.kind == DnaKind.ghost) _dna['ghostRequested'] = true;
     setState(() {
       _direction = 1;
       _dnaPage += 1;

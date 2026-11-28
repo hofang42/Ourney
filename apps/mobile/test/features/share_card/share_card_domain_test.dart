@@ -26,6 +26,8 @@ ShareCardContent _content(
   List<CheckIn> checkIns = const [],
   ShareCardNumber number = ShareCardNumber.streak,
   bool forceHideMetric = false,
+  bool hideMetricOnShare = false,
+  bool weightNumbersOptIn = false,
 }) => ShareCardContent.from(
   journey: j,
   membership: membership,
@@ -34,6 +36,8 @@ ShareCardContent _content(
   checkIns: checkIns,
   number: number,
   forceHideMetric: forceHideMetric,
+  hideMetricOnShare: hideMetricOnShare,
+  weightNumbersOptIn: weightNumbersOptIn,
 );
 
 void main() {
@@ -171,6 +175,74 @@ void main() {
         metricUnit: 'kg',
       );
       expect(metricHiddenFor(j, testMembership(j)), isTrue);
+    });
+
+    test('weight opt-in lifts only the template default for card data', () {
+      final j = testJourney(
+        templateId: TemplateId.weightLoss,
+        metricName: 'Weight',
+        metricUnit: 'kg',
+      );
+      final checkIns = [
+        testCheckIn(j.id, const LocalDate(2026, 10, 15), metricValue: 71.5),
+      ];
+      final shown = _content(
+        j,
+        membership: testMembership(j),
+        checkIns: checkIns,
+        weightNumbersOptIn: true,
+      );
+      expect((shown.metricHidden, shown.metricValue, shown.metricUnit), (
+        false,
+        71.5,
+        'kg',
+      ));
+
+      final guarded = [
+        _content(j, membership: testMembership(j), checkIns: checkIns),
+        _content(
+          weightLossJourney(),
+          membership: testMembership(j),
+          checkIns: checkIns,
+          weightNumbersOptIn: true,
+        ),
+        _content(
+          j,
+          membership: testMembership(j, hideMetric: true),
+          checkIns: checkIns,
+          weightNumbersOptIn: true,
+        ),
+        _content(
+          j,
+          membership: testMembership(j),
+          checkIns: checkIns,
+          hideMetricOnShare: true,
+          weightNumbersOptIn: true,
+        ),
+        _content(
+          j,
+          membership: testMembership(j),
+          checkIns: checkIns,
+          forceHideMetric: true,
+          weightNumbersOptIn: true,
+        ),
+      ];
+      for (final content in guarded) {
+        expect((content.metricHidden, content.metricValue, content.metricUnit), (
+          true,
+          null,
+          null,
+        ));
+      }
+      expect(
+        shareMetricHidden(
+          j,
+          testMembership(j),
+          forceHideMetric: false,
+          hideWeight: false,
+        ),
+        isTrue,
+      );
     });
 
     test('other metric journeys show the latest value unless hidden', () {

@@ -731,21 +731,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_renameCoupleTitle => 'Sửa tên cặp đôi';
 
   @override
-  String get journeys_quietHold => 'Giữ để xem';
-
-  @override
-  String get journeys_quietHolding => 'Đang xem';
-
-  @override
-  String get journeys_quietHoldHint => 'Nhấn giữ để hiện số của bạn';
-
-  @override
   String get journeys_quietHidden => 'Đã ẩn';
-
-  @override
-  String journeys_quietAxis(String value) {
-    return '$value kg';
-  }
 
   @override
   String journeys_quietDayTag(int day) {
@@ -763,9 +749,6 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_quietFinish => 'VỀ ĐÍCH';
-
-  @override
-  String get journeys_quietMissed => 'Một ngày nghỉ không xóa hành trình.';
 
   @override
   String get journeys_quietMilestones => 'Cột mốc';
@@ -789,9 +772,6 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_dna_weight_title => 'cân nặng hiện tại.';
-
-  @override
-  String get journeys_dna_ghost_title => 'chụp ảnh ngày 1 làm khung căn dáng.';
 
   @override
   String get journeys_dna_goal_title_english => 'mục tiêu.';
@@ -1027,16 +1007,6 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_dna_weight_skip => 'Bỏ qua';
 
   @override
-  String get journeys_dna_ghost_body =>
-      'Hiện khung bóng mờ trong máy ảnh để ngày nào chụp cũng khớp một góc.';
-
-  @override
-  String get journeys_dna_ghost_now => 'Bật khung căn dáng';
-
-  @override
-  String get journeys_dna_ghost_later => 'Tắt đi, để bật sau.';
-
-  @override
   String get journeys_dna_trophy_label => 'Tên chiếc cúp';
 
   @override
@@ -1173,12 +1143,6 @@ class JourneysL10nVi extends JourneysL10n {
   String journeys_home_monthStreak(int streak, String month) {
     return '$month · CHUỖI $streak NGÀY';
   }
-
-  @override
-  String get journeys_home_holdReveal => 'Giữ để xem';
-
-  @override
-  String get journeys_home_viewing => 'Đang xem';
 
   @override
   String get journeys_home_chartA11y => 'Đường tiến trình';
@@ -1668,16 +1632,6 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_home_pairNeither => 'hôm nay chưa ai chụp';
 
   @override
-  String journeys_home_flexSummary(String km, String pace) {
-    return '$km KM TỔNG · $pace /KM NHỊP TB';
-  }
-
-  @override
-  String journeys_home_flexKmOnly(String km) {
-    return '$km KM TỔNG';
-  }
-
-  @override
   String journeys_home_flexRan(int done, int total) {
     return '$done/$total ĐÃ CHẠY';
   }
@@ -1904,10 +1858,6 @@ class JourneysL10nVi extends JourneysL10n {
   }
 
   @override
-  String get journeys_range30Pace =>
-      'Ít số liệu trong 30 ngày, đang hiện số ngày check-in';
-
-  @override
   String journeys_startsIn(int days, int total) {
     return 'Bắt đầu sau $days ngày · $total ngày';
   }
@@ -1938,4 +1888,103 @@ class JourneysL10nVi extends JourneysL10n {
   String journeys_dayPartnerNoPhoto(String name) {
     return '$name chưa có ảnh ngày này';
   }
+
+  @override
+  String journeys_homeMeta(int day, int total, String range) {
+    return 'Ngày $day / $total · $range';
+  }
+
+  @override
+  String journeys_homeMetaOpen(int day, String start) {
+    return 'Ngày $day · từ $start';
+  }
+
+  @override
+  String journeys_daysLeft(int n) {
+    return 'Còn $n ngày';
+  }
+
+  @override
+  String journeys_weekLabel(int n) {
+    return 'Tuần $n';
+  }
+
+  @override
+  String journeys_weekKm(int n, String km) {
+    return 'Tuần $n · $km km';
+  }
+
+  @override
+  String get journeys_runTotalKm => 'Tổng km';
+
+  @override
+  String get journeys_runCount => 'Buổi chạy';
+
+  @override
+  String get journeys_runAvgPace => 'Pace trung bình';
+
+  @override
+  String get journeys_sessionCount => 'Buổi tập';
+
+  @override
+  String journeys_weightTrend(String direction) {
+    return 'Xu hướng · $direction';
+  }
+
+  @override
+  String get journeys_trendDown => 'đang xuống nhẹ';
+
+  @override
+  String get journeys_trendFlat => 'khá đều';
+
+  @override
+  String get journeys_trendUp => 'đang lên nhẹ';
+
+  @override
+  String journeys_trendFooter(int count) {
+    return '$count lần cân · đã làm mượt';
+  }
+
+  @override
+  String get journeys_trendNeedMore => 'Cân thêm vài lần nữa là thấy xu hướng.';
+
+  @override
+  String journeys_trendChange(String delta, String unit) {
+    return '$delta $unit từ ngày 1';
+  }
+
+  @override
+  String get journeys_showNumbers => 'Hiện số';
+
+  @override
+  String get journeys_hideNumbers => 'Ẩn số';
+
+  @override
+  String journeys_firstLatest(int first, int latest) {
+    return 'Ngày $first và ngày $latest';
+  }
+
+  @override
+  String get journeys_viewerMetricHidden => '••,•';
+
+  @override
+  String journeys_semRunBar(int day, String km) {
+    return 'Ngày $day, $km km';
+  }
+
+  @override
+  String journeys_semRunBarNone(int day) {
+    return 'Ngày $day, không ghi km';
+  }
+
+  @override
+  String get journeys_photoLogEmpty => 'Ảnh check-in sẽ ở đây.';
+
+  @override
+  String journeys_streakOnly(int n) {
+    return 'Chuỗi $n';
+  }
+
+  @override
+  String get journeys_runDay => 'Ngày';
 }

@@ -19,8 +19,11 @@ import '../camera/capture_services.dart' show galleryPickerProvider;
 import '../groups/ui/invite_sheet.dart' show showGroupInviteSheet;
 import '../journeys/data/journeys_providers.dart'
     show journeyStartingWeightPrefKey, recentTripPlacesProvider;
+import '../journeys/domain/run_stats.dart';
+import '../journeys/l10n/generated/journeys_localizations.dart';
 import '../reminders/data/reminder_scheduler.dart';
 import '../reminders/ui/reminder_permission_prompt.dart';
+import '../share_card/domain/share_card_content.dart' show isWeightMetric;
 import '../update/data/update_providers.dart' show appUpdateWorkPausedProvider;
 import '../widgets/data/widget_sync_controller.dart' show syncWidgetsNow;
 import 'captured_photo.dart';
@@ -70,6 +73,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
   bool _workPaused = false;
   bool _canSaveDraft = true;
   bool _metricError = false;
+  bool _metricHintShown = false;
+  final _metricFocus = FocusNode();
   CheckInOutcome? _outcome;
   CapturedPhoto? _overridePhoto;
   final _metricKey = GlobalKey();
@@ -105,9 +110,32 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
         }
       }
     }
+    _metricFocus.addListener(() {
+      if (_metricFocus.hasFocus) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _metricKey.currentContext != null) {
+            unawaited(
+              Scrollable.ensureVisible(
+                _metricKey.currentContext!,
+                alignment: 0.3,
+                duration: UiMotion.fadeOf(context, UiMotion.normal),
+              ),
+            );
+          }
+        });
+      }
+    });
     _caption.addListener(_onCaptionChanged);
     _captionFocus.addListener(_onCaptionFocus);
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if ((state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) && _metricHintShown) {
+      setState(() => _metricHintShown = false);
+    }
   }
 
   bool _keyboardWasUp = false;
@@ -165,6 +193,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
     _caption
       ..removeListener(_onCaptionChanged)
       ..dispose();
+    _metricFocus.dispose();
     _metric.dispose();
     _extras.dispose();
     super.dispose();
@@ -304,13 +333,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
       return;
     }
     final skin = personaSkinOf(journey);
-    final sport = journey.dna?['sport'] as String?;
-    final measure = journey.dna?['measure'] as String?;
-    final unit = (journey.metricUnit ?? '').trim().toLowerCase();
-    final isRun =
-        (sport == null || sport == 'run') &&
-        (measure == null || measure == 'km') &&
-        (unit.isEmpty || unit == 'km');
+    final isRun = isRunJourney(journey);
     if (skin == PersonaSkinId.aestheticFlexer &&
         isRun &&
         (_extras.paceInvalid || _extras.kmInvalid)) {
@@ -565,14 +588,22 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
     final style = uiStyleForSkin(personaSkinOf(journey));
     final count = _caption.text.runes.length;
     final membership = ref.watch(myMembershipProvider(journey.id)).value;
-    final hideMetric = membership?.hideMetric ?? journey.hideMetricDefault;
+    final hideMetric =
+        journey.templateId == TemplateId.weightLoss ||
+        isWeightMetric(journey) ||
+        (membership?.hideMetric ?? journey.hideMetricDefault);
     final template = templateFor(journey.templateId);
     final vi = Localizations.localeOf(context).languageCode == 'vi';
+    final metricHint = _lastMetricHint(l10n, vi, journey.id);
+    final maskMetricHint = hideMetric && metricHint != null && !_metricHintShown;
     // The thumbnail swap follows the caption's focus, not any keyboard (the
     // metric field's keyboard keeps the full photo).
     final typing = _captionFocus.hasFocus;
     final keyboardUp = MediaQuery.viewInsetsOf(context).bottom > 0;
-    final metricName = journey.metricName;
+    final metricName = journey.metricName != null &&
+            journey.templateId == TemplateId.weightLoss
+        ? l10n.checkin_metricWeight
+        : journey.metricName;
     final metricLabel = metricName == null
         ? null
         : journey.metricUnit == null
@@ -598,13 +629,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
     final recentPlaces = skin == PersonaSkinId.memoryCollectors
         ? ref.watch(recentTripPlacesProvider).asData?.value ?? const <String>[]
         : const <String>[];
-    final sport = journey.dna?['sport'] as String?;
-    final measure = journey.dna?['measure'] as String?;
-    final unit = (journey.metricUnit ?? '').trim().toLowerCase();
-    final isRun =
-        (sport == null || sport == 'run') &&
-        (measure == null || measure == 'km') &&
-        (unit.isEmpty || unit == 'km');
+    final isRun = isRunJourney(journey);
     final postLabel = switch (skin) {
       PersonaSkinId.memoryCollectors => l10n.checkin_postMemory,
       _ => l10n.checkin_post,
@@ -814,7 +839,13 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
               child: UiTextField(
                 fieldKey: const ValueKey('checkin-metric'),
                 label: metricLabel,
-                hint: _lastMetricHint(l10n, vi, journey.id),
+                hint: maskMetricHint
+                    ? [
+                        JourneysL10n.of(context).journeys_viewerMetricHidden,
+                        ?journey.metricUnit,
+                      ].join(' ')
+                    : metricHint,
+                focusNode: _metricFocus,
                 controller: _metric,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
@@ -827,12 +858,12 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
                 },
                 error: _metricError ? l10n.checkin_metricInvalid : null,
                 helper: hideMetric ? l10n.checkin_metricPrivate : null,
-                trailing: hideMetric
-                    ? OurneyIcon(
-                        name: 'lock',
-                        flat: true,
-                        size: 18,
-                        color: ui.inkMuted,
+                trailing: maskMetricHint
+                    ? UiTextAction(
+                        label: l10n.checkin_show,
+                        expand: false,
+                        onPressed: () =>
+                            setState(() => _metricHintShown = true),
                       )
                     : null,
               ),

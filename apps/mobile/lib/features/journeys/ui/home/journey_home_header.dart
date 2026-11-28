@@ -5,6 +5,7 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../../../data/group_daily_checkins_provider.dart';
 import '../../../../ui/ui.dart';
 import '../../domain/journey_title.dart';
+import '../../domain/run_stats.dart';
 import '../../domain/wrapped_story.dart';
 import '../../l10n/generated/journeys_localizations.dart';
 
@@ -38,7 +39,8 @@ class JourneyHomeSkinHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = JourneysL10n.of(context);
     return switch (skin) {
-      PersonaSkinId.quietTransformer => const SizedBox.shrink(),
+      PersonaSkinId.quietTransformer ||
+      PersonaSkinId.aestheticFlexer => const SizedBox.shrink(),
       PersonaSkinId.accountabilitySquad => _Squad(
         journey: journey,
         day: day,
@@ -54,7 +56,6 @@ class JourneyHomeSkinHeader extends ConsumerWidget {
         streak: streak,
         total: stats.total,
       ),
-      PersonaSkinId.aestheticFlexer => _Flexer(journey: journey, stats: stats),
       PersonaSkinId.minimalistHabit => _Month(journeyId: journey.id),
     };
   }
@@ -453,54 +454,29 @@ class _Person extends StatelessWidget {
   }
 }
 
-class _Flexer extends ConsumerWidget {
-  const _Flexer({required this.journey, required this.stats});
+/// Today's group attendance, shown once above the workout stats.
+class JourneyWorkoutMembers extends ConsumerWidget {
+  const JourneyWorkoutMembers({required this.journey, super.key});
 
   final Journey journey;
-  final WrappedStats stats;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = JourneysL10n.of(context);
-    final ui = context.ui;
-    final members =
-        ref.watch(groupMembersTodaySafeProvider(journey.id)).value ??
+    final members = ref.watch(groupMembersTodaySafeProvider(journey.id)).value ??
         const <MemberToday>[];
-    final ran = members.where((m) => m.checkedIn).length;
-    final km = stats.kmText;
-    final pace = stats.pace;
-    final sport = journey.dna?['sport'] as String?;
-    final measure = journey.dna?['measure'] as String?;
-    final unit = (journey.metricUnit ?? '').trim().toLowerCase();
-    final isRun =
-        (sport == null || sport == 'run') &&
-        (measure == null || measure == 'km') &&
-        (unit.isEmpty || unit == 'km');
-    return Column(
-      key: const ValueKey('journey-home-flexer-header'),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (members.length > 1) ...[
-          _pill(
-            context,
-            Text(
-              isRun
-                  ? l10n.journeys_home_flexRan(ran, members.length)
-                  : l10n.journeys_home_flexTrained(ran, members.length),
-              style: UiText.eyebrow(color: ui.ink),
-            ),
-          ),
-          const SizedBox(height: UiSpace.sm),
-        ],
-        if (stats.totalKm > 0)
-          Text(
-            (pace ?? '').isEmpty
-                ? l10n.journeys_home_flexKmOnly(km)
-                : l10n.journeys_home_flexSummary(km, pace!),
-            key: const ValueKey('journey-flexer-summary'),
-            style: UiText.eyebrow(color: ui.ink).copyWith(height: 1.4),
-          ),
-      ],
+    if (journey.kind != JourneyKind.group || members.length <= 1) {
+      return const SizedBox.shrink();
+    }
+    final done = members.where((m) => m.checkedIn).length;
+    final l10n = JourneysL10n.of(context);
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: _pill(context, Text(
+        isRunJourney(journey)
+            ? l10n.journeys_home_flexRan(done, members.length)
+            : l10n.journeys_home_flexTrained(done, members.length),
+        style: UiText.eyebrow(color: context.ui.inkMuted),
+      ), key: const ValueKey('journey-workout-members')),
     );
   }
 }

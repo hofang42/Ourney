@@ -10,6 +10,7 @@ import 'package:ourney/features/camera/capture_services.dart';
 import 'package:ourney/features/profile/settings_providers.dart';
 import 'package:ourney/features/share_card/data/share_card_providers.dart';
 import 'package:ourney/features/share_card/domain/share_card_content.dart';
+import 'package:ourney/features/share_card/routes.dart';
 import 'package:ourney/features/share_card/ui/share_card.dart';
 import 'package:ourney/features/share_card/ui/share_skin_chrome.dart';
 import 'package:ourney/features/sharing/data/sharing_providers.dart';
@@ -407,6 +408,40 @@ void main() {
       final switchTile = tester.widget<UiSwitchRow>(_key('share-card-blur'));
       expect(switchTile.value, isTrue);
     });
+
+    testWidgets('quiet card shows weight only with matching in-app opt-in', (
+      tester,
+    ) async {
+      final j = testJourney(
+        templateId: TemplateId.weightLoss,
+        metricName: 'Weight',
+        metricUnit: 'kg',
+      );
+      final h = await pumpShare(
+        tester,
+        journey: j,
+        checkIns: streakCheckIns(j.id, metricValue: 71.5),
+      );
+      final router = h.container.read(routerProvider);
+      final metric = _key('share-card-weight-metric');
+      expect(metric, findsNothing);
+
+      Future<void> open(String format, {Object? extra}) async {
+        router.go(
+          AppRoutes.share(j.id, format: format, hideMetric: false),
+          extra: extra,
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+      }
+
+      await open('story');
+      expect(metric, findsNothing);
+      await open('feed', extra: const WeightNumbersOptIn('other'));
+      expect(metric, findsNothing);
+      await open('story', extra: WeightNumbersOptIn(j.id));
+      expect(tester.widget<Text>(metric).data, '71,5 kg');
+    }, timeout: const Timeout(Duration(seconds: 30)));
 
     testWidgets('feed size keeps the blur too', (tester) async {
       final j = weightLossJourney();
