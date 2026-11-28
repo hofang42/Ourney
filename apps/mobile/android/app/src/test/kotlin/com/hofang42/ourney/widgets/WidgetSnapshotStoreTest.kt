@@ -14,6 +14,27 @@ import java.io.File
 import java.time.Instant
 
 class WidgetSnapshotStoreTest {
+    @Test
+    fun streakFlagsAcceptLegacyBooleanRepresentations() {
+        for (truthy in listOf<Any>(true, "true", 1, "1")) {
+            val json = org.json.JSONObject().put("id", "retold")
+                .put("showStreak", truthy).put("streakCheckedInToday", truthy)
+            val journey = WidgetJourneyItem.fromJson(json)
+            assertTrue(journey.showStreak)
+            assertTrue(journey.streakCheckedInToday)
+        }
+        for (falsy in listOf<Any>(false, "false", 0, "0")) {
+            val json = org.json.JSONObject().put("id", "retold")
+                .put("showStreak", falsy).put("streakCheckedInToday", falsy)
+            val journey = WidgetJourneyItem.fromJson(json)
+            assertFalse(journey.showStreak)
+            assertFalse(journey.streakCheckedInToday)
+        }
+        val legacy = WidgetJourneyItem.fromJson(org.json.JSONObject("""{"id":"old","checkedInToday":1}"""))
+        assertTrue(legacy.showStreak)
+        assertTrue(legacy.streakCheckedInToday)
+    }
+
 
     @Test
     fun retoldLibraryPhotoDoesNotPreserveCameraStreakAtMidnight() {

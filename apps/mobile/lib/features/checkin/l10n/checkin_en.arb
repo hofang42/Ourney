@@ -150,12 +150,9 @@
   },
   "checkin_coupleInvite": "Invite your partner to join",
   "checkin_coupleWaiting": "Waiting for your partner’s photo",
-  "checkin_extraPaceLabel": "Pace (min/km)",
-  "checkin_extraPaceInvalid": "Invalid pace, seconds must be under 60",
-  "checkin_extraKmLabel": "Distance (km)",
+  "checkin_extraPaceInvalid": "Enter pace as min:sec, e.g. 5:42.",
   "checkin_extraKmHint": "e.g. 5.3",
   "checkin_extraKmInvalid": "Distance must be 0.1 to 500 km, one decimal",
-  "checkin_extraBackspace": "Delete one digit",
   "checkin_details": "Details",
   "checkin_captionLimitReached": "Limit reached: {max} characters",
   "@checkin_captionLimitReached": {
@@ -172,5 +169,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "checkin_distanceLabel": "Distance",
+  "checkin_paceLabel": "Pace (min : sec)",
+  "checkin_paceMinutes": "min",
+  "checkin_paceSeconds": "sec",
+  "checkin_paceInvalid": "Seconds go from 00 to 59.",
+  "checkin_metricWeight": "Weight",
+  "checkin_show": "Show",
+  "checkin_paceMinutesInvalid": "Minutes must be at least 1."
 }

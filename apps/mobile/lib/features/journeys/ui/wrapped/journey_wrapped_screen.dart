@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../../app/app_routes.dart';
@@ -31,6 +32,7 @@ import '../../../share_card/domain/share_card_content.dart'
         isWeightMetric,
         publicAddressForCaption,
         shareMetricHidden;
+import '../../../share_card/routes.dart' show WeightNumbersOptIn;
 import '../../../sharing/data/sharing_providers.dart' show shareStateProvider;
 import '../../data/journeys_providers.dart';
 import '../../domain/journey_progress.dart';
@@ -60,7 +62,11 @@ String wrappedShareText(
       ? l10n.journeys_wrapped_sumQuiet(stats.total)
       : wrappedSummaryTitle(l10n, journey, skin, stats);
   final weights = skin == PersonaSkinId.quietTransformer && !hideKg
-      ? _Summary._weights(stats, unit: journey.metricUnit)
+      ? _Summary._weights(
+          stats,
+          locale: l10n.localeName,
+          unit: journey.metricUnit,
+        )
       : null;
   final String? footer;
   if (publicAddress != null) {
@@ -593,11 +599,13 @@ class _Summary extends ConsumerStatefulWidget {
   final ValueChanged<bool> onHideBrand;
 
   /// "65.2 kg - 62.0 kg" from the first and last logged metric, if any.
-  static String? _weights(WrappedStats s, {String? unit}) {
+  static String? _weights(WrappedStats s, {
+    required String locale,
+    String? unit}) {
     final values = s.weights;
     if (values.length < 2) return null;
     final u = (unit == null || unit.trim().isEmpty) ? 'kg' : unit.trim();
-    String f(double v) => v.toStringAsFixed(1);
+    String f(double v) => NumberFormat('0.0', locale).format(v);
     return '${f(values.first)} $u  >  ${f(values.last)} $u';
   }
 
@@ -641,7 +649,11 @@ class _SummaryState extends ConsumerState<_Summary> {
     final ui = context.ui;
     final quiet = skin == PersonaSkinId.quietTransformer;
     final weights = quiet
-        ? _Summary._weights(stats, unit: journey.metricUnit)
+        ? _Summary._weights(
+            stats,
+            locale: l10n.localeName,
+            unit: journey.metricUnit,
+          )
         : null;
     final membershipProvider = myMembershipProvider(journey.id);
     final hasBackend = ref.watch(appConfigProvider).hasBackend;
@@ -679,6 +691,7 @@ class _SummaryState extends ConsumerState<_Summary> {
         hideBrand: hideBrand,
         hideMetric: quiet ? hideKg : null,
       ),
+      extra: quiet && !hideKg ? WeightNumbersOptIn(journey.id) : null,
     );
     Future<void> shareNow(bool hideWordmark) async {
       final exporter = ref.read(shareCardExporterProvider);

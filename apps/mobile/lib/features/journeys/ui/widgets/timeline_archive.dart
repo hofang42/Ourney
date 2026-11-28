@@ -9,10 +9,12 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../../../ui/ui.dart';
 import '../../domain/journey_progress.dart';
 import '../../domain/journey_time.dart';
+import '../../domain/run_stats.dart';
 import '../../domain/timeline_window.dart';
 import '../../l10n/generated/journeys_localizations.dart';
 import '../journey_photo.dart';
 import 'journey_timeline.dart' show wrapTimelineDayHero;
+import 'photo_log_timelines.dart';
 import 'timeline_common.dart';
 
 /// Exact extents of the By month archive. Every row has a known height (no
@@ -103,6 +105,41 @@ List<Widget> buildArchiveSlivers({
     final m = months[i];
     if (multiYear && (i == months.length - 1 || months[i + 1].year != m.year)) {
       out.add(_YearDivider(year: m.year));
+    }
+    final skin = UiSkinScope.maybeOf(context)?.skin.id;
+    if (skin == 'quiet' || skin == 'flexer') {
+      final days = index.progress.range(m.first, m.last);
+      final key = headerKeys.putIfAbsent(m.id, GlobalKey.new);
+      final grid = JourneyWeekGrid(
+        days: days,
+        onTapDay: onTapDay,
+        showKm: skin == 'flexer' && isRunJourney(index.progress.journey),
+        aspectRatio: skin == 'quiet' ? 3 / 4 : 4 / 5,
+      );
+      out.add(
+        SliverToBoxAdapter(
+          child: UiMonthHeader(
+            key: key,
+            title: monthTitle(context, m),
+            summary: l10n.journeys_monthSummary(m.checked, m.days, m.photos),
+            expanded: open.contains(m.id),
+            accent: accent,
+            background: paper,
+            semanticLabel: l10n.journeys_monthA11y(
+              monthPlain(context, m),
+              m.checked,
+              m.days,
+              m.photos,
+            ),
+            semanticHint: open.contains(m.id)
+                ? l10n.journeys_monthCollapseHint
+                : l10n.journeys_monthExpandHint,
+            onPressed: () => onToggle(m.id),
+          ),
+        ),
+      );
+      if (open.contains(m.id)) out.addAll(grid.slivers(context));
+      continue;
     }
     final isOpen = open.contains(m.id);
     final title = monthTitle(context, m);

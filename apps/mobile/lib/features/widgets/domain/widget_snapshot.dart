@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform;
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:ourney_core/ourney_core.dart';
 
@@ -572,6 +573,10 @@ abstract final class WidgetSnapshotBuilder {
     Set<String> hiddenCheckInIds = const {},
     String? currentUserId,
     String? dismissedWindowKey,
+    TargetPlatform? platform,
+    String? widgetConfigMode,
+    String? defaultJourneyId,
+    String? defaultSquadId,
   }) {
     ensureTimeZonesLoaded();
     final nowUtc = now.toUtc();
@@ -1032,6 +1037,11 @@ abstract final class WidgetSnapshotBuilder {
       dismissedWindowKey: dismissedWindowKey,
     );
 
+    final useGlobalDefaults =
+        platform == TargetPlatform.iOS && widgetConfigMode == 'static';
+    final journeyId = defaultJourneyId?.trim();
+    final squadId = defaultSquadId?.trim();
+
     return WidgetSnapshot(
       schemaVersion: kWidgetSnapshotSchemaVersion,
       generatedAtUtc: nowUtc.toIso8601String(),
@@ -1044,7 +1054,22 @@ abstract final class WidgetSnapshotBuilder {
         explicitRedactLockScreenTitles: explicitRedactLockScreenTitles,
         liveActivityEnabled: liveActivityEnabled,
       ),
-      defaultJourneyId: null,
+      defaultJourneyId:
+          useGlobalDefaults &&
+              journeyId != null &&
+              journeyId.isNotEmpty &&
+              journeyId != 'auto' &&
+              journeyItems.any((j) => j.id == journeyId)
+          ? journeyId
+          : null,
+      defaultSquadId:
+          useGlobalDefaults &&
+              squadId != null &&
+              squadId.isNotEmpty &&
+              squadId != 'auto' &&
+              squadItems.any((s) => s.journeyId == squadId)
+          ? squadId
+          : null,
       totals: WidgetTotalsSnapshot(
         activeCount: activeCount,
         completedTodayCount: completedTodayCount,

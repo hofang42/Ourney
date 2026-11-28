@@ -40,17 +40,19 @@ class JourneyTimeline extends StatelessWidget {
     required this.days,
     required this.pal,
     required this.onTapDay,
+    this.metricUnit,
     this.selfName,
     this.partnerName,
     this.selfOnRight = false,
     this.showOfflineStamps = false,
-    this.startingWeight,
-    this.isOpenEnded = false,
-    this.showMilestones = true,
     this.summary,
     this.window,
     this.onOpenEarlier,
     this.rangeShort,
+    this.allDays,
+    this.weightNumbersShown,
+    this.onWeightNumbersChanged,
+    this.isRunning = true,
     this.onRangeChanged,
     super.key,
   });
@@ -58,22 +60,18 @@ class JourneyTimeline extends StatelessWidget {
   /// Offline stamps need a server to sync to; local-only never shows them.
   final bool showOfflineStamps;
 
-  /// Baseline weight from Create Flow (`UX-02`), prepended to the quiet curve.
-  final double? startingWeight;
-
-  /// True when the journey has no fixed duration (`durationDays == null`).
-  final bool isOpenEnded;
-
-  /// Whether [QuietTimeline] renders its inline milestone stars (`false` on
-  /// [JourneyDetailScreen] where [JourneyHomeMilestones] already renders them).
-  final bool showMilestones;
-
   /// Couple names of the journey (couple skin only).
+  final String? metricUnit;
   final String? selfName;
   final String? partnerName;
 
   /// True when the owner chose the right-hand diptych slot (`dna['side'] == 'right'`).
   final bool selfOnRight;
+
+  final bool? weightNumbersShown;
+  final ValueChanged<bool>? onWeightNumbersChanged;
+  final List<TimelineDay>? allDays;
+  final bool isRunning;
 
   final String skinId;
   final List<TimelineDay> days;
@@ -95,24 +93,24 @@ class JourneyTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (days.isEmpty) {
+    if (days.isEmpty && skinId != 'quiet' && skinId != 'flexer') {
       // Nothing to list, but the finish card still tells the way.
       final w = window;
       return w != null && w.hasEndCap
           ? TimelineEndCap(window: w)
           : const SizedBox.shrink();
     }
-    final variant = days.first.coupleSlots.isEmpty ? skinId : 'couple';
+    final variant = days.isEmpty || days.first.coupleSlots.isEmpty ? skinId : 'couple';
     final core = switch (variant) {
       'quiet' => QuietTimeline(
+        metricUnit: metricUnit,
         days: days,
+        numbersShown: weightNumbersShown,
+        onNumbersChanged: onWeightNumbersChanged,
+        allDays: allDays,
         onTapDay: onTapDay,
-        summary: summary,
         short: rangeShort,
         onShortChanged: onRangeChanged,
-        startingWeight: startingWeight,
-        isOpenEnded: isOpenEnded,
-        showMilestones: showMilestones,
       ),
       'squad' => SquadTimeline(
         days: days,
@@ -135,6 +133,8 @@ class JourneyTimeline extends StatelessWidget {
       ),
       'flexer' => FlexerTimeline(
         days: days,
+        allDays: allDays,
+        isRunning: isRunning,
         onTapDay: onTapDay,
         summary: summary,
       ),
@@ -148,7 +148,7 @@ class JourneyTimeline extends StatelessWidget {
         if (w.hasEarlier && skinId != 'squad' && onOpenEarlier != null)
           TimelineEarlierLink(window: w, onPressed: onOpenEarlier!),
         core,
-        if (w.hasEndCap) TimelineEndCap(window: w),
+        if (w.hasEndCap && skinId != 'quiet' && skinId != 'flexer') TimelineEndCap(window: w),
       ],
     );
   }

@@ -797,7 +797,8 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     };
     final quiet =
         journey != null &&
-        personaSkinOf(journey) == PersonaSkinId.quietTransformer;
+        personaSkinOf(journey) == PersonaSkinId.quietTransformer &&
+        journey.templateId != TemplateId.weightLoss;
     final ghostOn = _ghostFor(journey?.id);
     return [
       if (quiet)
@@ -1015,6 +1016,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
               child: CaptureSkinOverlay(
                 key: ValueKey('capture-overlay-${journey.id}'),
                 skin: personaSkinOf(journey),
+                allowGhost: journey.templateId != TemplateId.weightLoss,
                 showGhost: _ghostFor(journey.id),
                 partnerPhotoFile: data.partnerPhoto,
               ),

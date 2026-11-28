@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 /// Which page widget a question uses.
-enum DnaKind { choice, weight, ghost, trophy, place, dates, names, habit }
+enum DnaKind { choice, weight, trophy, place, dates, names, habit }
 
 /// One page of the V2 step 2 ("DNA") questions for a journey type
 /// (`CreateStepTwo` / `questionSets` in create.tsx). Text is looked up by id
@@ -77,7 +77,6 @@ List<DnaQuestion> dnaQuestionsFor(TemplateId template) => switch (template) {
       choiceIds: ['lose', 'keep', 'shape'],
     ),
     DnaQuestion(key: 'weight', titleId: 'weight_title', kind: DnaKind.weight),
-    DnaQuestion(key: 'ghost', titleId: 'ghost_title', kind: DnaKind.ghost),
   ],
   TemplateId.englishDaily => const [
     DnaQuestion(
@@ -143,11 +142,11 @@ const List<DnaQuestion> dnaCoupleQuestions = [
   ),
 ];
 
-/// Whether [q] is answered. Weight and the ghost photo are always allowed.
+/// Whether [q] is answered. Starting weight is optional.
 bool dnaAnswered(DnaQuestion q, Map<String, Object> answers) {
   bool filled(String k) => (answers[k] as String?)?.trim().isNotEmpty ?? false;
   return switch (q.kind) {
-    DnaKind.weight || DnaKind.ghost => true,
+    DnaKind.weight => true,
     DnaKind.trophy => filled('trophy'),
     DnaKind.place =>
       filled('place') &&

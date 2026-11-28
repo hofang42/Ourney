@@ -59,18 +59,16 @@ public final class OurneyWidgetBridge {
   public func currentCapabilities() -> [String: Any] {
     let appGroupAvailable = WidgetSnapshotStore.sharedRootDirectory() != nil
     var liveActivityAvailable = false
-    var configurableWidgets = false
     #if canImport(ActivityKit)
     if #available(iOS 16.2, *) {
       liveActivityAvailable = ActivityAuthorizationInfo().areActivitiesEnabled
     }
     #endif
-    if #available(iOS 17.0, *) {
-      configurableWidgets = true
-    }
+    let mode = WidgetConfigMode.current
     return [
       "widgets": true,
-      "configurableWidgets": configurableWidgets,
+      "configurableWidgets": mode == .configurable,
+      "widgetConfigMode": mode.rawValue,
       "liveActivity": liveActivityAvailable,
       "promotedLiveUpdates": false,
       "appGroup": appGroupAvailable,

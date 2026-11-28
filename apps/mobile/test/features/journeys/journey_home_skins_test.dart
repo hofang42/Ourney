@@ -291,9 +291,7 @@ void main() {
       },
     );
 
-    testWidgets(
-      'flexer gym shows TRAINED instead of RAN (UX-24)',
-      (tester) async {
+    testWidgets('gym shows sessions without run distance', (tester) async {
         final gymSquad = testJourney(
           kind: JourneyKind.group,
           templateId: TemplateId.workout30,
@@ -303,7 +301,8 @@ void main() {
           gymSquad,
           members: [_m('a', 'An', shot: true), _m('b', 'Binh')],
         );
-        expect(find.text('1/2 TRAINED'), findsOneWidget);
+        expect(find.text('Sessions'), findsOneWidget);
+      expect(find.byKey(const ValueKey('run-bar-2026-10-10')), findsNothing);
       },
     );
   });

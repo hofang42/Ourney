@@ -1,9 +1,11 @@
+import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../data/group_daily_checkins_provider.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'journey_progress.dart';
 import 'journey_title.dart';
+import 'run_stats.dart';
 
 /// Numbers the end-of-journey story is built from (Figma
 /// `wrappedPagesFor`), taken from the caller's own check-ins.
@@ -28,12 +30,15 @@ class WrappedStats {
     final perDay = [for (final d in dates) p.checkInsByDate[d]!];
     // Every photo counts (several a day since `0014`, B-B5).
     final every = p.allCheckIns;
-    var km = 0.0;
-    String? pace;
+    final start = p.journey.startDate;
+    final last = p.lastDay;
+    final runStats = RunStats.from([
+      for (final date in dates)
+        if (!date.isBefore(start) && !date.isAfter(last)) p.dayAt(date),
+    ]);
+    final avgPace = runStats.avgPaceSec;
     String? place;
     for (final c in every) {
-      km += c.extras.km ?? 0;
-      pace = c.extras.pace ?? pace;
       place = c.extras.place ?? place;
     }
     String? caption;
@@ -55,11 +60,11 @@ class WrappedStats {
       streak: p.journey.origin == JourneyOrigin.imported
           ? null
           : p.summary.best,
-      totalKm: km,
+      totalKm: runStats.totalKm,
       photos: perDay,
       lastCaption: caption,
       lastPlace: place,
-      pace: pace,
+      pace: avgPace == null ? null : formatPace(avgPace),
       weights: [for (final d in dates) ?latestMetric(p.checkInsOn(d))],
       coupleSlots: p.couple.slotsOn(
         coupleDate,
@@ -91,18 +96,8 @@ class WrappedStats {
 
   int get percent => total == 0 ? 0 : (days * 100 / total).round();
 
-  String get kmText =>
-      totalKm.toStringAsFixed(1).replaceFirst(RegExp(r'\.0$'), '');
-}
-
-bool _isRunningWorkout(Journey j, WrappedStats s) {
-  if (s.totalKm > 0) return true;
-  final sport = j.dna?['sport'] as String?;
-  final measure = j.dna?['measure'] as String?;
-  final unit = (j.metricUnit ?? '').trim().toLowerCase();
-  return (sport == null || sport == 'run') &&
-      (measure == null || measure == 'km') &&
-      (unit.isEmpty || unit == 'km');
+  String kmTextFor(String locale) =>
+      NumberFormat('0.#', locale).format(totalKm);
 }
 
 /// The story pages of [journey]'s skin, in order (headline of each page).
@@ -145,11 +140,11 @@ List<String> wrappedPagesFor(
         s.lastCaption ?? l10n.journeys_wrapped_coupleFallback,
       ];
     case PersonaSkinId.aestheticFlexer:
-      final isRun = _isRunningWorkout(journey, s);
+      final isRun = isRunJourney(journey);
       return [
         summary.toUpperCase(),
         isRun
-            ? l10n.journeys_wrapped_km(s.kmText)
+            ? l10n.journeys_wrapped_km(s.kmTextFor(l10n.localeName))
             : l10n.journeys_wrapped_checkIns(s.days).toUpperCase(),
         (s.pace ?? '').isNotEmpty
             ? l10n.journeys_wrapped_pace(s.pace!)
@@ -191,8 +186,8 @@ String wrappedSummaryTitle(
     s.moments,
   ),
   PersonaSkinId.aestheticFlexer =>
-    _isRunningWorkout(journey, s)
-        ? l10n.journeys_wrapped_sumFlexer(s.total, s.kmText)
+    isRunJourney(journey)
+        ? l10n.journeys_wrapped_sumFlexer(s.total, s.kmTextFor(l10n.localeName))
         : l10n.journeys_wrapped_sumSquad(s.days, s.total),
   PersonaSkinId.minimalistHabit => l10n.journeys_wrapped_sumMinimal(
     s.days,

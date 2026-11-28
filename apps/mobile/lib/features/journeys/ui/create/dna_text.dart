@@ -5,7 +5,6 @@ import '../../l10n/generated/journeys_localizations.dart';
 String dnaText(JourneysL10n l, String id) => switch (id) {
   'goal_title_weight' => l.journeys_dna_goal_title_weight,
   'weight_title' => l.journeys_dna_weight_title,
-  'ghost_title' => l.journeys_dna_ghost_title,
   'goal_title_english' => l.journeys_dna_goal_title_english,
   'minutes_title' => l.journeys_dna_minutes_title,
   'trophy_title' => l.journeys_dna_trophy_title,
@@ -80,9 +79,6 @@ String dnaText(JourneysL10n l, String id) => switch (id) {
   'weight_private' => l.journeys_dna_weight_private,
   'weight_hide' => l.journeys_dna_weight_hide,
   'weight_skip' => l.journeys_dna_weight_skip,
-  'ghost_body' => l.journeys_dna_ghost_body,
-  'ghost_now' => l.journeys_dna_ghost_now,
-  'ghost_later' => l.journeys_dna_ghost_later,
   'trophy_label' => l.journeys_dna_trophy_label,
   'trophy_hint' => l.journeys_dna_trophy_hint,
   'place_search' => l.journeys_dna_place_search,

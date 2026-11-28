@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../ui/ui.dart';
 
-/// V2 `MissedDayOverlay` (quiet and squad skins only): a dashed capsule chip
+/// V2 `MissedDayOverlay` (squad skin only): a dashed capsule chip
 /// ("NGÀY 9 · NGHỈ" / "NGÀY 9 · LỠ", squad: square corners tilted -3deg) that
 /// opens a calm sheet explaining the gap. Placed at bottom-start above the
 /// dock alongside the floating Check-in button.
@@ -25,14 +25,14 @@ class MissedDayOverlay extends StatefulWidget {
     super.key,
   });
 
-  /// `squad` or `quiet`; other skins render nothing, as in V2.
+  /// `squad`; other skins render nothing.
   final String skinId;
   final int day;
   final bool visible;
   final VoidCallback? onDismiss;
 
   static bool isSupportedSkin(String skinId) =>
-      skinId == 'squad' || skinId == 'quiet';
+      skinId == 'squad';
 
   @override
   State<MissedDayOverlay> createState() => _MissedDayOverlayState();

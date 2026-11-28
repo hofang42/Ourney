@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -11,14 +13,6 @@ const List<String> postMoodCodes = ['light', 'normal', 'tired'];
 
 /// Quick picks of the study-time chips (Figma squad Post).
 const List<int> postMinuteChoices = [15, 30, 45, 60];
-
-/// Pace as typed on the keypad: digits only, `504` reads `5:04`.
-String paceFromDigits(String digits) {
-  if (digits.isEmpty) return '';
-  final padded = digits.padLeft(3, '0');
-  final minutes = int.parse(padded.substring(0, padded.length - 2));
-  return '$minutes:${padded.substring(padded.length - 2)}';
-}
 
 typedef PostExtrasDraft = ({
   String? mood,
@@ -40,7 +34,7 @@ class PostExtrasController extends ChangeNotifier {
       minutes = initial.minutes,
       hearts = initial.hearts,
       cook = initial.cook,
-      _paceDigits = (initial.pace ?? '').replaceAll(':', '');
+      _paceDigits = initial.pace ?? '';
 
   final TextEditingController place = TextEditingController();
   final TextEditingController dish = TextEditingController();
@@ -82,16 +76,28 @@ class PostExtrasController extends ChangeNotifier {
   }
 
   /// `m:ss` once something is typed, otherwise empty.
-  String get paceText => paceFromDigits(_paceDigits);
+  String get paceText => _paceDigits;
+
+  void setPaceParts(String minutes, String seconds) {
+    _paceDigits = minutes.isEmpty && seconds.isEmpty
+        ? ''
+        : '$minutes:${seconds.padLeft(2, '0')}';
+    notifyListeners();
+  }
+
+  bool get paceMinutesInvalid =>
+      _paceDigits.isNotEmpty &&
+      (int.tryParse(paceText.split(':').first) ?? 0) < 1;
 
   bool get paceInvalid =>
       _paceDigits.isNotEmpty &&
-      CheckInExtras(pace: paceText).validate() != null;
+      (paceMinutesInvalid || CheckInExtras(pace: paceText).validate() != null);
 
   /// Parsed distance, null when empty or not a number.
   double? get kmValue {
     final t = km.text.trim().replaceAll(',', '.');
-    return t.isEmpty ? null : double.tryParse(t);
+    final value = double.tryParse(t);
+    return value == null || !value.isFinite ? null : roundKm(value);
   }
 
   /// Something is typed but it is not a valid distance (0.1..500, one decimal).
@@ -119,18 +125,6 @@ class PostExtrasController extends ChangeNotifier {
 
   void pickCook(String value) {
     cook = cook == value ? null : value;
-    notifyListeners();
-  }
-
-  void typeDigit(String digit) {
-    if (_paceDigits.length >= 4) return;
-    _paceDigits = '$_paceDigits$digit';
-    notifyListeners();
-  }
-
-  void backspace() {
-    if (_paceDigits.isEmpty) return;
-    _paceDigits = _paceDigits.substring(0, _paceDigits.length - 1);
     notifyListeners();
   }
 
@@ -493,7 +487,7 @@ class _CoupleInputs extends StatelessWidget {
   }
 }
 
-/// Flexer inputs: distance field above the pace keypad.
+/// Distance and pace use the same system number keyboard.
 class _FlexerInputs extends StatelessWidget {
   const _FlexerInputs(this.c);
 
@@ -501,90 +495,191 @@ class _FlexerInputs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = CheckinL10n.of(context);
-    return ListenableBuilder(
+    final l = CheckinL10n.of(context);
+    final ui = context.ui;
+    final distance = ListenableBuilder(
       listenable: c.km,
-      builder: (context, _) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          UiTextField(
-            fieldKey: const ValueKey('checkin-km'),
-            label: l10n.checkin_extraKmLabel,
-            hint: l10n.checkin_extraKmHint,
-            controller: c.km,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
-              LengthLimitingTextInputFormatter(5),
-            ],
-            error: c.kmInvalid ? l10n.checkin_extraKmInvalid : null,
-          ),
-          const SizedBox(height: UiSpace.md),
-          _PaceKeypad(c),
+      builder: (context, _) => UiTextField(
+        fieldKey: const ValueKey('checkin-km'),
+        label: l.checkin_distanceLabel,
+        hint: l.checkin_extraKmHint,
+        trailing: Center(
+          widthFactor: 1,
+          child: Text('km', style: UiText.muted(color: ui.inkMuted)),
+        ),
+        controller: c.km,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
+          LengthLimitingTextInputFormatter(6),
         ],
+        error: c.kmInvalid ? l.checkin_extraKmInvalid : null,
       ),
     );
+    final pace = _PaceFields(c);
+    final stack =
+        MediaQuery.sizeOf(context).width < 360 ||
+        MediaQuery.textScalerOf(context).scale(10) > 12;
+    return stack
+        ? Column(
+            key: const ValueKey('checkin-run-inputs-stacked'),
+            children: [distance, const SizedBox(height: UiSpace.md), pace],
+          )
+        : Row(
+            key: const ValueKey('checkin-run-inputs-row'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(flex: 2, child: distance),
+              const SizedBox(width: UiSpace.md),
+              Expanded(flex: 3, child: pace),
+            ],
+          );
   }
 }
 
-/// Pace keypad (Figma flexer Post): digits fill `m:ss` from the right.
-class _PaceKeypad extends StatelessWidget {
-  const _PaceKeypad(this.c);
+class _PaceFields extends StatefulWidget {
+  const _PaceFields(this.c);
 
   final PostExtrasController c;
+  @override
+  State<_PaceFields> createState() => _PaceFieldsState();
+}
 
-  static const _keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+class _PaceFieldsState extends State<_PaceFields> {
+  final _minutes = TextEditingController();
+  final _seconds = TextEditingController();
+  final _secondsFocus = FocusNode();
+  @override
+  void initState() {
+    super.initState();
+    if (widget.c.paceText.isNotEmpty) {
+      final parts = widget.c.paceText.split(':');
+      _minutes.text = parts.first;
+      _seconds.text = parts.last;
+    }
+    _secondsFocus.addListener(_onFocus);
+  }
+
+  void _onFocus() {
+    if (!_secondsFocus.hasFocus && _seconds.text.isNotEmpty) {
+      _seconds.text = _seconds.text.padLeft(2, '0');
+      _sync();
+    }
+  }
+
+  void _sync() => widget.c.setPaceParts(_minutes.text, _seconds.text);
+
+  void _onMinutesChanged(String text) {
+    if (text.contains(':')) {
+      final parts = text.split(':');
+      final minutes = parts.first;
+      _minutes.text = minutes.substring(0, math.min(2, minutes.length));
+      final seconds = parts[1];
+      final parsedSeconds = int.tryParse(seconds);
+      if (parsedSeconds != null && parsedSeconds <= 59) {
+        _seconds.text = seconds.substring(0, math.min(2, seconds.length));
+      }
+      _secondsFocus.requestFocus();
+    } else if (text.length >= 2 || (int.tryParse(text) ?? 0) >= 2) {
+      if (text.length > 2) _minutes.text = text.substring(0, 2);
+      _secondsFocus.requestFocus();
+    }
+    _sync();
+  }
+
+  @override
+  void dispose() {
+    _secondsFocus.removeListener(_onFocus);
+    _minutes.dispose();
+    _seconds.dispose();
+    _secondsFocus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = CheckinL10n.of(context);
+    final l = CheckinL10n.of(context);
     final ui = context.ui;
-    final invalid = c.paceInvalid;
-    final text = c.paceText.isEmpty ? '0:00' : c.paceText;
-
-    Widget key(String digit) => UiChip(
-      key: ValueKey('checkin-pace-key-$digit'),
-      label: digit,
-      onPressed: () => c.typeDigit(digit),
-    );
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          l10n.checkin_extraPaceLabel,
-          style: UiText.fieldLabel(color: ui.inkMuted),
-        ),
-        const SizedBox(height: UiSpace.xs),
-        Semantics(
-          liveRegion: true,
-          child: Text(
-            text,
-            key: const ValueKey('checkin-pace-value'),
-            style: UiText.h2(color: invalid ? ui.danger : ui.ink, size: 32),
+          l.checkin_paceLabel,
+          style: UiText.body(
+            size: 14,
+            weight: FontWeight.w700,
+            height: 1.4,
+            color: ui.ink,
           ),
         ),
-        if (invalid)
-          Text(
-            l10n.checkin_extraPaceInvalid,
-            key: const ValueKey('checkin-pace-error'),
-            style: UiText.body(size: 12, height: 1.4, color: ui.danger),
-          ),
         const SizedBox(height: UiSpace.sm),
-        Wrap(
-          spacing: UiSpace.sm,
-          runSpacing: UiSpace.sm,
+        Row(
           children: [
-            for (final k in _keys) key(k),
-            key('0'),
-            UiIconButton(
-              key: const ValueKey('checkin-pace-backspace'),
-              glyph: const OurneyIcon(name: 'back', size: 22),
-              label: l10n.checkin_extraBackspace,
-              onPressed: c.backspace,
+            Expanded(
+              child: UiTextField(
+                fieldKey: const ValueKey('checkin-pace-minutes'),
+                label: l.checkin_paceMinutes,
+                hint: l.checkin_paceMinutes,
+                showLabel: false,
+                controller: _minutes,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.next,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp('[0-9:]')),
+                  LengthLimitingTextInputFormatter(5),
+                ],
+                onSubmitted: (_) => _secondsFocus.requestFocus(),
+                onChanged: _onMinutesChanged,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: UiSpace.xs),
+              child: ExcludeSemantics(
+                child: Text(':', style: UiText.body(color: ui.ink)),
+              ),
+            ),
+            Expanded(
+              child: UiTextField(
+                fieldKey: const ValueKey('checkin-pace-seconds'),
+                label: l.checkin_paceSeconds,
+                hint: l.checkin_paceSeconds,
+                showLabel: false,
+                controller: _seconds,
+                focusNode: _secondsFocus,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(2),
+                  TextInputFormatter.withFunction(
+                    (old, next) =>
+                        next.text.isEmpty || (int.tryParse(next.text) ?? 60) <= 59
+                        ? next
+                        : old,
+                  ),
+                ],
+                onChanged: (_) => _sync(),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: UiSpace.xs),
+              child: Text(
+                '/km',
+                style: UiText.muted(size: 11, color: ui.inkMuted),
+              ),
             ),
           ],
         ),
+        if (widget.c.paceInvalid)
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              widget.c.paceMinutesInvalid
+                  ? l.checkin_paceMinutesInvalid
+                  : l.checkin_paceInvalid,
+              key: const ValueKey('checkin-pace-error'),
+              style: UiText.muted(color: ui.danger),
+            ),
+          ),
       ],
     );
   }

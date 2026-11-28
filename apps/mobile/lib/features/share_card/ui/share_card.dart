@@ -375,6 +375,7 @@ class _QuietCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = ctx.content;
+    final metric = ctx.metric;
     const ink = Color(0xFF0F172A);
     final padBlock = ctx.width * (ctx.story ? 0.13 : 0.18);
     final label = UiText.body(
@@ -441,7 +442,15 @@ class _QuietCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      const Expanded(child: SizedBox.shrink()),
+                      Expanded(
+                        child: metric == null
+                            ? const SizedBox.shrink()
+                            : Text(
+                                metric,
+                                key: const ValueKey('share-card-weight-metric'),
+                                style: label,
+                              ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),

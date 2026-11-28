@@ -1732,7 +1732,7 @@ void main() {
                 builder: (context, setState) {
                   setHost = setState;
                   return MissedDayOverlay(
-                    skinId: 'quiet',
+                    skinId: 'squad',
                     day: 5,
                     visible: visible,
                     onDismiss: () => dismissed++,

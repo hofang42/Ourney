@@ -62,6 +62,27 @@ JourneyHomeIntro _intro(
 Finder _k(String k) => find.byKey(ValueKey(k));
 
 void main() {
+  testWidgets('retold photo log keeps date range without a zero streak line', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(
+        const JourneyHomeIntro(
+          skin: 'quiet',
+          day: 9,
+          streak: 0,
+          showStreak: false,
+          today: LocalDate(2026, 11, 28),
+          dateRange: 'Day 9 / 30',
+        ),
+        locale: const Locale('en'),
+      ),
+    );
+    expect(find.text('Day 9 / 30'), findsOneWidget);
+    expect(_k('journey-home-line'), findsNothing);
+    expect(find.textContaining('streak'), findsNothing);
+  });
+
   const skins = ['quiet', 'squad', 'memory', 'couple', 'flexer', 'minimal'];
 
   testWidgets('each skin has its own headline copy (Figma)', (tester) async {

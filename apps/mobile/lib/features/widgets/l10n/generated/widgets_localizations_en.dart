@@ -206,4 +206,41 @@ class WidgetsL10nEn extends WidgetsL10n {
   @override
   String get widgets_setupStep3BodyAndroid =>
       'Every widget opens the camera for that exact journey. To switch journeys, tap Switch on the widget.';
+
+  @override
+  String get widgets_secJourneyPicker => 'widget journeys';
+
+  @override
+  String get widgets_iosTodayStreakRowTitle => 'Today & Streak';
+
+  @override
+  String get widgets_iosSquadRowTitle => 'Squad & Couple';
+
+  @override
+  String get widgets_pickerSheetTodayTitle => 'Switch journey';
+
+  @override
+  String get widgets_pickerSheetSquadTitle => 'Switch squad';
+
+  @override
+  String get widgets_pickerSheetSubtitle =>
+      'Choose a shared journey for widgets of this type, or leave it on Automatic.';
+
+  @override
+  String get widgets_autoOptionTitle => 'Automatic';
+
+  @override
+  String get widgets_autoTodaySubtitle =>
+      'Prioritizes the journey that still needs today\'s check-in';
+
+  @override
+  String get widgets_autoSquadSubtitle =>
+      'Shows your active Squad or Couple journey';
+
+  @override
+  String get widgets_changeAction => 'Switch';
+
+  @override
+  String get widgets_setupStep3BodyJourneyPicker =>
+      'To switch journeys, choose one in the widget journey section below.';
 }

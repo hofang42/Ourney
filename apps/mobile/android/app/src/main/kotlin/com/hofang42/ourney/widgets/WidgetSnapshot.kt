@@ -667,8 +667,8 @@ data class WidgetJourneyItem(
                 totalDays = obj.optPositiveIntOrNull("totalDays"),
                 currentStreak = obj.optIntCompat("currentStreak", 0),
                 bestStreak = obj.optIntCompat("bestStreak", 0),
-                streakCheckedInToday = obj.optBoolean("streakCheckedInToday", obj.optBoolean("checkedInToday", false)),
-                showStreak = obj.optBoolean("showStreak", true),
+                streakCheckedInToday = obj.optBooleanCompat("streakCheckedInToday", obj.optBooleanCompat("checkedInToday", false)),
+                showStreak = obj.optBooleanCompat("showStreak", true),
                 checkedInToday = obj.optBooleanCompat("checkedInToday", false),
                 atRisk = obj.optBooleanCompat("atRisk", false),
                 eveningCueAtUtc = obj.optNullableString("eveningCueAtUtc"),
@@ -1089,7 +1089,20 @@ private fun JSONObject.optPositiveIntOrNull(key: String): Int? {
 
 private fun JSONObject.optBooleanCompat(key: String, fallback: Boolean): Boolean {
     if (!has(key) || isNull(key)) return fallback
-    return optBoolean(key, fallback)
+    return when (val value = opt(key)) {
+        is Boolean -> value
+        is Number -> when (value.toDouble()) {
+            0.0 -> false
+            1.0 -> true
+            else -> fallback
+        }
+        is String -> when (value.lowercase()) {
+            "true", "1" -> true
+            "false", "0" -> false
+            else -> fallback
+        }
+        else -> fallback
+    }
 }
 
 private fun JSONObject.optObjectOrNull(key: String): JSONObject? {

@@ -210,7 +210,12 @@ void main() {
         expect(_images.evaluate(), isNotEmpty);
         expect(_images.evaluate().length, lessThanOrEqualTo(60));
         // 390dp: 20dp gutter, 350dp / 7 = 50dp pitch, 47dp tile; covers 56.
-        expect(widths(tester), {47, 56});
+        if (skin == PersonaSkinId.quietTransformer ||
+            skin == PersonaSkinId.aestheticFlexer) {
+          expect(widths(tester), {109});
+        } else {
+          expect(widths(tester), {47, 56});
+        }
         expect(_key('day-${j.startDate}'), findsNothing);
         expect(tester.takeException(), isNull);
       });
@@ -310,13 +315,9 @@ void main() {
     );
     // 05:00 UTC on Oct 16 is still Oct 15 in Los Angeles.
     await _pump(tester, j, until: const LocalDate(2026, 10, 14));
-    final tap = tester.widget<TimelineDayTap>(
-      find.ancestor(
-        of: _key('journey-today-ring'),
-        matching: find.byType(TimelineDayTap),
-      ),
-    );
-    expect(tap.day.date, const LocalDate(2026, 10, 15));
+    expect(_key('journey-today-ring'), findsNothing);
+    expect(_key('day-2026-10-16'), findsNothing);
+    expect(find.textContaining('Ngày 99'), findsWidgets);
   });
 
   testWidgets('a fixed journey that starts in 5 days shows a preview', (
@@ -349,7 +350,7 @@ void main() {
     final taps = _dayTaps.evaluate().map(
       (e) => (e.widget as TimelineDayTap).day,
     );
-    expect(taps.last.date, j.startDate.addDays(59));
+    expect(taps.map((d) => d.dayNumber).reduce((a, b) => a > b ? a : b), 60);
     expect(taps.any((d) => d.state == DayState.future), isFalse);
     expect(tester.takeException(), isNull);
   });

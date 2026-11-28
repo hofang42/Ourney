@@ -5,6 +5,13 @@ import '../../ui/ui.dart';
 import 'domain/share_card_content.dart';
 import 'ui/share_card_screen.dart';
 
+/// In-app handoff from Wrapped's privacy toggle to a specific card editor.
+final class WeightNumbersOptIn {
+  const WeightNumbersOptIn(this.journeyId);
+
+  final String journeyId;
+}
+
 class _UriKeyedState implements GoRouterState {
   _UriKeyedState(this._base);
 
@@ -68,12 +75,14 @@ final List<RouteBase> shareCardRoutes = [
     path: '/share/:journeyId',
     pageBuilder: (context, state) {
       final q = state.uri.queryParameters;
+      final journeyId = state.pathParameters['journeyId']!;
+      final extra = state.extra;
       return buildUiPage(
         context: context,
         state: _UriKeyedState(state),
         kind: UiPageTransition.sharedZ,
         child: ShareCardScreen(
-          journeyId: state.pathParameters['journeyId']!,
+          journeyId: journeyId,
           initialFormat: q['format'] == 'feed'
               ? ShareCardFormat.feed
               : q['format'] == 'story'
@@ -82,6 +91,8 @@ final List<RouteBase> shareCardRoutes = [
           initialBlur: bool.tryParse(q['blur'] ?? ''),
           initialHideBrand: bool.tryParse(q['hideBrand'] ?? ''),
           initialHideMetric: bool.tryParse(q['hideMetric'] ?? ''),
+          weightNumbersOptIn:
+              extra is WeightNumbersOptIn && extra.journeyId == journeyId,
         ),
       );
     },

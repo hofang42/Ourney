@@ -203,7 +203,11 @@ class StreakGlanceWidget : GlanceAppWidget() {
             else -> l10n.getString(R.string.widget_snap_cta)
         }
         val a11yDescription =
-            "${journey.title}, ${if (journey.showStreak) l10n.getString(R.string.widget_streak_days, journey.currentStreak) else ""}, $statusLabel"
+            listOfNotNull(
+                journey.title,
+                if (journey.showStreak) l10n.getString(R.string.widget_streak_days, journey.currentStreak) else null,
+                statusLabel,
+            ).joinToString(", ")
 
         Column(
             modifier = GlanceModifier
@@ -244,6 +248,17 @@ class StreakGlanceWidget : GlanceAppWidget() {
                     contentDescription = null,
                     modifier = GlanceModifier.height(44.dp).width(100.dp),
                     contentScale = ContentScale.Fit,
+                )
+            } else if (!journey.showStreak) {
+                val totalDays = journey.totalDays
+                Text(
+                    text = if (totalDays != null && totalDays > 0) {
+                        l10n.getString(R.string.widget_day_progress, journey.dayNumber, totalDays)
+                    } else {
+                        l10n.getString(R.string.widget_day_only, journey.dayNumber)
+                    },
+                    style = TextStyle(color = palette.inkProvider, fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                    maxLines = 1,
                 )
             }
 

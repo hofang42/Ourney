@@ -158,7 +158,8 @@ void main() {
     testWidgets('home: day/streak line, milestones, actions', (tester) async {
       await _pumpDetail(tester);
       expect(_key('journey-detail'), findsOneWidget);
-      expect(find.text('Day 7/14 · streak 3'), findsOneWidget);
+      expect(find.text('3 day streak'), findsOneWidget);
+      expect(find.textContaining('Day 7 / 14'), findsOneWidget);
       // Day 7 of 14: the first-week and finish cards; only week 1 reached.
       expect(_key('journey-home-milestones'), findsOneWidget);
       expect(_key('journey-milestone-7'), findsOneWidget);
@@ -172,6 +173,7 @@ void main() {
     testWidgets('squad home tracks pending uploads for the signed-in member', (
       tester,
     ) async {
+      // Squad upload copy is specific to the squad skin; weight has no upload pill.
       final j = testJourney(
         templateId: TemplateId.englishDaily,
         kind: JourneyKind.group,
@@ -228,6 +230,7 @@ void main() {
     testWidgets(
       'squad home hides pending chip while DeadUploadsBanner owns a failed upload',
       (tester) async {
+        // DeadUploadsBanner displaces only the squad upload chip.
         final j = testJourney(
           templateId: TemplateId.englishDaily,
           kind: JourneyKind.group,
@@ -333,14 +336,14 @@ void main() {
       },
     );
 
-    testWidgets('quiet home shows the missed-day chip from the Figma overlay', (
+    testWidgets('weight home has no rest-day overlay', (
       tester,
     ) async {
       await _pumpDetail(
         tester,
         journey: testJourney(templateId: TemplateId.weightLoss),
       );
-      expect(_key('missed-day-chip'), findsOneWidget);
+      expect(_key('missed-day-chip'), findsNothing);
     });
 
     testWidgets('U15: at 2.0x the chip and Check-in button stack, no overlap', (
@@ -351,9 +354,10 @@ void main() {
       addTearDown(tester.view.reset);
       tester.platformDispatcher.textScaleFactorTestValue = 2.0;
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      // Weight no longer has a missed-day chip; this checks squad stacking.
       await _pumpDetail(
         tester,
-        journey: testJourney(templateId: TemplateId.weightLoss),
+        journey: testJourney(templateId: TemplateId.englishDaily),
       );
       expect(_key('journey-overlay-stacked'), findsOneWidget);
       final chip = tester.getRect(_key('missed-day-chip'));
@@ -371,7 +375,9 @@ void main() {
     testWidgets('journey chain: checked, missed, today, future', (
       tester,
     ) async {
-      await _pumpDetail(tester);
+      await _pumpDetail(tester,
+        journey: testJourney(templateId: TemplateId.custom),
+      );
       expect(_key('journey-timeline'), findsOneWidget);
       expect(_allDays, findsNWidgets(14));
       expect(_day(testToday), findsOneWidget);
@@ -404,9 +410,7 @@ void main() {
       expect(_allDays, findsNWidgets(7));
     });
 
-    testWidgets(
-      'tapping a day opens the photo viewer and always shows own metric (UX-25)',
-      (tester) async {
+    testWidgets('tapping a weight day opens a private metric with reveal', (tester) async {
         final j = testJourney(
           templateId: TemplateId.weightLoss,
           metricName: 'Weight',
@@ -425,6 +429,8 @@ void main() {
         );
         expect(_key('journey-day-viewer'), findsOneWidget);
         expect(find.text('weighed'), findsOneWidget);
+      expect(find.text('71.5 kg'), findsNothing);
+      await _tap(tester, find.text('Show'));
         expect(find.text('71.5 kg'), findsOneWidget);
         expect(find.text('Hidden'), findsNothing);
         expect(_key('journey-day-reveal'), findsNothing);
@@ -462,8 +468,16 @@ void main() {
     });
 
     testWidgets('missed and future days are not tappable', (tester) async {
-      final h = await _pumpDetail(tester);
-      await _tap(tester, _day(const LocalDate(2026, 10, 12)));
+      final h = await _pumpDetail(tester,
+        journey: testJourney(templateId: TemplateId.custom),
+      );
+      final day = _day(const LocalDate(2026, 10, 12));
+      await tester.scrollUntilVisible(
+        day,
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await _tap(tester, day);
       expect(h.location, AppRoutes.journey('j1'));
     });
   });
@@ -676,14 +690,31 @@ void main() {
     });
   });
 
+  for (final status in [JourneyStatus.active, JourneyStatus.ended]) {
+    testWidgets('weight ${status.name} keeps menu and check-in controls', (tester) async {
+      final j = testJourney(templateId: TemplateId.weightLoss, status: status);
+      await _pumpDetail(tester, journey: j);
+      expect(_key('missed-day-chip'), findsNothing);
+      expect(_key('journey-checkin'), status == JourneyStatus.active
+          ? findsOneWidget : findsNothing);
+      await _tap(tester, _key('journey-more'));
+      expect(_key('journey-action-end'), status == JourneyStatus.active
+          ? findsOneWidget : findsNothing);
+      expect(_key('journey-action-archive'), status == JourneyStatus.ended
+          ? findsOneWidget : findsNothing);
+      expect(tester.takeException(), isNull);
+    }, timeout: const Timeout(Duration(seconds: 30)));
+  }
+
   group('Floating check-in, missed-day chip, and dock scroll clearance', () {
     testWidgets(
-      'quiet 30-day journey with a missed day scrolls behind dock/check-in '
+      'squad 30-day journey with a missed day scrolls behind dock/check-in '
       'and places final item completely above check-in on 393pt',
       (tester) async {
+        // This chip-clearance case needs squad: weight intentionally has no chip.
         // Day 4 of 30 (`testToday` = 2026-10-16), Day 3 (2026-10-15) missed.
         final j = testJourney(
-          templateId: TemplateId.weightLoss,
+          templateId: TemplateId.englishDaily,
           startDate: const LocalDate(2026, 10, 13),
           durationDays: 30,
           metricName: 'Weight',
@@ -761,15 +792,17 @@ void main() {
       'missed-day chip and check-in do not overlap at 360pt, and chip stays '
       'above the dock when canCheckIn is false',
       (tester) async {
+        // Squad retains the missed-day chip whose collision this test measures.
+        // Weight's active/ended controls are covered separately below.
         final active = testJourney(
           id: 'j-active',
-          templateId: TemplateId.weightLoss,
+          templateId: TemplateId.englishDaily,
           startDate: const LocalDate(2026, 10, 13),
           durationDays: 30,
         );
         final ended = testJourney(
           id: 'j-ended',
-          templateId: TemplateId.weightLoss,
+          templateId: TemplateId.englishDaily,
           startDate: const LocalDate(2026, 10, 13),
           durationDays: 30,
           status: JourneyStatus.ended,

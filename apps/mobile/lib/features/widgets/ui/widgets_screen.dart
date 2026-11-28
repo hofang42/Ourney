@@ -83,6 +83,41 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
     }
   }
 
+  Future<void> _openIosDefaultPicker({
+    required bool isSquad,
+    required List<Journey> options,
+    required String? currentSelectedId,
+  }) async {
+    OurneyHaptics.selection();
+    final l10n = WidgetsL10n.of(context);
+    final owner = ref.read(currentUserIdProvider);
+    final chosen = await showUiSheet<String>(
+      context: context,
+      builder: (sheetContext) => _WidgetJourneyPickerSheet(
+        title: isSquad
+            ? l10n.widgets_pickerSheetSquadTitle
+            : l10n.widgets_pickerSheetTodayTitle,
+        subtitle: l10n.widgets_pickerSheetSubtitle,
+        autoTitle: l10n.widgets_autoOptionTitle,
+        autoSubtitle: isSquad
+            ? l10n.widgets_autoSquadSubtitle
+            : l10n.widgets_autoTodaySubtitle,
+        journeys: options,
+        selectedId: currentSelectedId ?? 'auto',
+      ),
+    );
+    if (chosen == null ||
+        !mounted ||
+        owner != ref.read(currentUserIdProvider)) {
+      return;
+    }
+    if (isSquad) {
+      await ref.read(defaultWidgetSquadIdProvider.notifier).set(chosen);
+    } else {
+      await ref.read(defaultWidgetJourneyIdProvider.notifier).set(chosen);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = WidgetsL10n.of(context);
@@ -107,6 +142,14 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
     final isIOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
     final capabilities = ref.watch(widgetCapabilitiesProvider).asData?.value;
     final configurableWidgets = capabilities?.configurableWidgets == true;
+    final showJourneyPicker =
+        isIOS && capabilities?.widgetConfigMode == 'static';
+    final defaultJourneyId = showJourneyPicker
+        ? ref.watch(defaultWidgetJourneyIdProvider)
+        : null;
+    final defaultSquadId = showJourneyPicker
+        ? ref.watch(defaultWidgetSquadIdProvider)
+        : null;
     final showAppGroupNotice = isIOS && capabilities?.appGroup == false;
     final showDebugDiagnostics =
         widget.debugShowDiagnostics &&
@@ -231,11 +274,65 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
                       ? l10n.widgets_setupStep3BodyAndroid
                       : configurableWidgets
                       ? l10n.widgets_setupStep3Body
+                      : showJourneyPicker
+                      ? l10n.widgets_setupStep3BodyJourneyPicker
                       : l10n.widgets_setupStep3BodyAutomatic,
                 ),
               ],
             ),
           ),
+          if (showJourneyPicker) ...[
+            const SizedBox(height: UiSpace.xl),
+            UiListHeading(title: l10n.widgets_secJourneyPicker),
+            const SizedBox(height: UiSpace.xs),
+            UiCard(
+              key: const ValueKey('widgets-ios-picker-card'),
+              radius: UiRadius.card,
+              shadowOffset: 0,
+              padding: const EdgeInsets.symmetric(horizontal: UiSpace.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _IosWidgetPickerRow(
+                    key: const ValueKey('widgets-ios-today-journey-row'),
+                    title: l10n.widgets_iosTodayStreakRowTitle,
+                    selectedJourney: activeJourneys
+                        .where((j) => j.id == defaultJourneyId)
+                        .firstOrNull,
+                    fallbackIconName: 'journeys',
+                    autoLabel: l10n.widgets_autoOptionTitle,
+                    changeLabel: l10n.widgets_changeAction,
+                    divider: true,
+                    onPressed: () => unawaited(
+                      _openIosDefaultPicker(
+                        isSquad: false,
+                        options: activeJourneys,
+                        currentSelectedId: defaultJourneyId,
+                      ),
+                    ),
+                  ),
+                  _IosWidgetPickerRow(
+                    key: const ValueKey('widgets-ios-squad-journey-row'),
+                    title: l10n.widgets_iosSquadRowTitle,
+                    selectedJourney: activeSquadJourneys
+                        .where((j) => j.id == defaultSquadId)
+                        .firstOrNull,
+                    fallbackIconName: 'squad',
+                    autoLabel: l10n.widgets_autoOptionTitle,
+                    changeLabel: l10n.widgets_changeAction,
+                    divider: false,
+                    onPressed: () => unawaited(
+                      _openIosDefaultPicker(
+                        isSquad: true,
+                        options: activeSquadJourneys,
+                        currentSelectedId: defaultSquadId,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: UiSpace.xl),
           UiListHeading(title: l10n.widgets_secPrivacy),
           const SizedBox(height: UiSpace.xs),
@@ -349,6 +446,293 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
           ),
           const SizedBox(height: UiSpace.xl),
         ],
+      ),
+    );
+  }
+}
+
+class _IosWidgetPickerRow extends StatelessWidget {
+  const _IosWidgetPickerRow({
+    required this.title,
+    required this.selectedJourney,
+    required this.fallbackIconName,
+    required this.autoLabel,
+    required this.changeLabel,
+    required this.divider,
+    required this.onPressed,
+    super.key,
+  });
+
+  final String title;
+  final Journey? selectedJourney;
+  final String fallbackIconName;
+  final String autoLabel;
+  final String changeLabel;
+  final bool divider;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    final j = selectedJourney;
+    final subtitleText = j?.title ?? autoLabel;
+
+    return UiRow(
+      title: title,
+      divider: divider,
+      showChevron: false,
+      leading: j != null
+          ? UiTypeBadge(type: journeyTypeId(j), size: 36)
+          : _WidgetIconBadge(iconName: fallbackIconName),
+      subtitle: Text(
+        subtitleText,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: UiText.body(
+          size: 13,
+          weight: FontWeight.w600,
+          height: 1.35,
+          color: j != null ? ui.ink : ui.inkMuted,
+        ),
+      ),
+      trailing: _ChangeBadgePill(label: changeLabel),
+      onPressed: onPressed,
+    );
+  }
+}
+
+class _WidgetIconBadge extends StatelessWidget {
+  const _WidgetIconBadge({required this.iconName});
+
+  final String iconName;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    return Container(
+      width: 36,
+      height: 36,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: ui.fill,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: ui.outline, width: UiBorder.thin),
+      ),
+      child: OurneyIcon(name: iconName, size: 18),
+    );
+  }
+}
+
+class _ChangeBadgePill extends StatelessWidget {
+  const _ChangeBadgePill({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: ui.fill,
+        borderRadius: BorderRadius.circular(UiRadius.capsule),
+        border: Border.all(color: ui.outline, width: UiBorder.thin),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const OurneyIcon(name: 'edit', size: 13),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: UiText.body(
+              size: 12,
+              weight: FontWeight.w700,
+              height: 1.3,
+              color: ui.ink,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WidgetJourneyPickerSheet extends ConsumerWidget {
+  const _WidgetJourneyPickerSheet({
+    required this.title,
+    required this.subtitle,
+    required this.autoTitle,
+    required this.autoSubtitle,
+    required this.journeys,
+    required this.selectedId,
+  });
+
+  final String title;
+  final String subtitle;
+  final String autoTitle;
+  final String autoSubtitle;
+  final List<Journey> journeys;
+  final String selectedId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ui = context.ui;
+    final l10n = WidgetsL10n.of(context);
+    final now = ref.watch(journeysNowProvider);
+    final isAutoSelected =
+        selectedId.isEmpty ||
+        selectedId == 'auto' ||
+        !journeys.any((j) => j.id == selectedId);
+
+    return Column(
+      key: const ValueKey('widget-journey-picker-sheet'),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          header: true,
+          child: Text(title, style: UiText.h2(color: ui.ink)),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          subtitle,
+          style: UiText.body(size: 13, height: 1.35, color: ui.inkMuted),
+        ),
+        const SizedBox(height: UiSpace.md),
+        _PickerOptionCard(
+          key: const ValueKey('widget-picker-option-auto'),
+          title: autoTitle,
+          subtitle: autoSubtitle,
+          selected: isAutoSelected,
+          leading: const _WidgetIconBadge(iconName: 'sparkle'),
+          onPressed: () => Navigator.of(context).pop('auto'),
+        ),
+        for (final j in journeys) ...[
+          const SizedBox(height: UiSpace.sm),
+          Builder(
+            builder: (context) {
+              final checkIns =
+                  ref.watch(myCheckInsProvider(j.id)).asData?.value ??
+                  const <CheckIn>[];
+              final membership = ref
+                  .watch(myMembershipProvider(j.id))
+                  .asData
+                  ?.value;
+              final progress = JourneyProgress.compute(
+                journey: j,
+                membership: membership,
+                checkIns: checkIns,
+                now: now,
+              );
+              final totalDays = progress.totalDays ?? j.durationDays ?? 0;
+              final dayPart = totalDays > 0
+                  ? l10n.widgets_previewDayOf(progress.dayNumber, totalDays)
+                  : l10n.widgets_previewDayOpen(progress.dayNumber);
+              final streakPart = progress.showStreak
+                  ? l10n.widgets_previewStreakDays(progress.summary.current)
+                  : JourneysL10n.of(
+                      context,
+                    ).journeys_wrappedPhotoDays(progress.checkInsByDate.length);
+              return _PickerOptionCard(
+                key: ValueKey('widget-picker-option-${j.id}'),
+                title: j.title,
+                subtitle: '$dayPart · $streakPart',
+                selected: selectedId == j.id,
+                leading: UiTypeBadge(type: journeyTypeId(j), size: 36),
+                onPressed: () => Navigator.of(context).pop(j.id),
+              );
+            },
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _PickerOptionCard extends StatelessWidget {
+  const _PickerOptionCard({
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.leading,
+    required this.onPressed,
+    super.key,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final Widget leading;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    return UiCard(
+      radius: UiRadius.menu,
+      shadowOffset: selected ? UiShadow.small : 0,
+      color: selected ? ui.surface : ui.fill,
+      borderColor: selected ? ui.accent : ui.outline,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      onPressed: onPressed,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: UiSize.tap),
+        child: Row(
+          children: [
+            leading,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: UiText.body(
+                      size: 15,
+                      weight: FontWeight.w700,
+                      height: 1.35,
+                      color: ui.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: UiText.body(
+                      size: 12,
+                      weight: FontWeight.w600,
+                      height: 1.35,
+                      color: ui.inkMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            if (selected)
+              const OurneyIcon(name: 'check-circle', size: 22)
+            else
+              Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: ui.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: ui.inkMuted,
+                    width: UiBorder.standard,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
