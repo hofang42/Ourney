@@ -4,22 +4,22 @@
     "ios": "1.0.0"
   },
   "recommended": {
-    "android": "1.2.5",
-    "ios": "1.2.5"
+    "android": "1.2.6",
+    "ios": "1.2.6"
   },
   "force_on_major": true,
   "notes": {
     "vi": [
-      "iPhone (iOS 17 trở lên): chạm và giữ tiện ích, chọn Sửa tiện ích để chọn hành trình riêng cho từng tiện ích. Tiện ích đang đặt sẽ về Tự động",
-      "Xem check-in: ảnh dọc hiện đủ khung, chạm hai lần để phóng to, theo đúng nền sáng hoặc tối",
-      "Thẻ chia sẻ: tiêu đề không lặp số ngày, thẻ chạy bộ hiện đúng số km đã ghi",
-      "Màn mở app có slogan mới: Góp tấm hình, giữ nhịp mình"
+      "Tổng kết hành trình mới: ảnh đầu tiên, bức tường ảnh mỗi ngày, con số thật của hành trình và tấm vé về đích bạn tự đóng dấu",
+      "Chạy bộ và giảm cân có màn nhật ký ảnh mới, quãng đường và nhịp chạy trung bình hiện rõ hơn",
+      "Kể lại hành trình: viết chú thích cho từng ảnh, chuỗi ngày chỉ tính từ các lần check-in thật",
+      "iPhone cài bản tự ký: chọn hành trình cho tiện ích ngay trong app. Nếu tiện ích trống, gỡ ra thêm lại hoặc khởi động lại máy"
     ],
     "en": [
-      "iPhone (iOS 17+): touch and hold a widget, then tap Edit Widget to pick its journey. Widgets already placed switch back to Automatic",
-      "Check-in view: portrait photos show in full, double-tap to zoom, and the screen follows light or dark mode",
-      "Share cards: no repeated day count in titles, and run cards show the km you logged",
-      "New slogan on the opening screen: One photo at a time, at your own pace"
+      "New journey recap: your first photo, a wall of every day, real numbers from the journey, and a finish ticket you stamp yourself",
+      "Running and weight journeys get a new photo log, with clearer distance and average pace",
+      "Retell a journey: add a caption to each photo, and streaks count only real check-ins",
+      "iPhone sideloaded builds: pick each widget journey inside the app. If a widget is blank, remove and re-add it or restart the phone"
     ]
   }
 }
