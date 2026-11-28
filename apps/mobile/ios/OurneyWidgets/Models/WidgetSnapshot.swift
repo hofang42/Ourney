@@ -92,6 +92,20 @@ public enum OurneySquadCardState: Equatable {
   }
 }
 
+/// Pure model representation of a selectable `AppEntity` option in the iOS 17+ `"Edit Widget"`
+/// sheet (`"auto"` or an active journey/squad ID, §B.2 & §B.4).
+public struct WidgetEntityOption: Equatable, Identifiable {
+  public let id: String
+  public let title: String
+  public let subtitle: String?
+
+  public init(id: String, title: String, subtitle: String? = nil) {
+    self.id = id
+    self.title = title
+    self.subtitle = subtitle
+  }
+}
+
 /// Root `snapshot_v1.json` contract (§4.3).
 /// Privacy-by-omission invariant: contains zero fields for weight (`kg`), metrics,
 /// health DNA (`goal`, `reason`), captions, email, or phone.
@@ -102,6 +116,7 @@ public struct WidgetSnapshot: Codable, Equatable {
   public var locale: String
   public var themeMode: String
   public var privacy: WidgetPrivacySettings
+  // Legacy payload fields retained so Runner can detect upgrades and reset the old cycle index.
   public var defaultJourneyId: String?
   public var defaultSquadId: String?
   public var totals: WidgetTotals
@@ -166,6 +181,18 @@ public struct WidgetSnapshot: Codable, Equatable {
     self.journeys = try c.decodeIfPresent([WidgetJourneyItem].self, forKey: .journeys) ?? []
     self.squads = try c.decodeIfPresent([WidgetSquadItem].self, forKey: .squads) ?? []
     self.liveWindow = try c.decodeIfPresent(WidgetLiveWindow.self, forKey: .liveWindow)
+  }
+
+  public static let autoEntityId = "auto"
+
+  public static func normalizedPinnedId(_ raw: String?) -> String? {
+    guard let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines),
+          !trimmed.isEmpty,
+          trimmed.lowercased() != autoEntityId
+    else {
+      return nil
+    }
+    return trimmed
   }
 
   public var isSignedOut: Bool {
@@ -260,44 +287,44 @@ public struct WidgetSnapshot: Codable, Equatable {
     return dates
   }
 
-  /// Ordered cycle pool for `OurneyTodayWidget`: cycles pending journeys when 2+ are
-  /// unchecked and no explicit `defaultJourneyId` override is pinned; otherwise cycles
-  /// across all active journeys so the `1/N ›` button keeps working after check-in.
-  public func todayCyclePool() -> [WidgetJourneyItem] {
-    guard !journeys.isEmpty else { return [] }
-    let pending = journeys.filter { !$0.checkedInToday }
-    if pending.count >= 2 && (defaultJourneyId?.isEmpty ?? true) {
-      return pending
-    }
-    var ordered: [WidgetJourneyItem] = []
-    if let defaultId = defaultJourneyId,
-       let preferred = journeys.first(where: { $0.id == defaultId }) {
-      ordered.append(preferred)
-    } else if let firstPending = pending.first {
-      ordered.append(firstPending)
-    }
-    for j in journeys where !ordered.contains(where: { $0.id == j.id }) {
-      ordered.append(j)
-    }
-    return ordered
+  /// True when `pinnedId` refers to a concrete active journey in `journeys` (not `"auto"` and not archived/deleted).
+  public func isTodayJourneyPinned(_ pinnedId: String?) -> Bool {
+    guard let pinned = Self.normalizedPinnedId(pinnedId) else { return false }
+    return journeys.contains(where: { $0.id == pinned })
   }
 
-  /// Prioritizes the explicit `defaultJourneyId` or pending check-ins, honoring the
-  /// Today cycle action's shared index-based state across all active journeys.
+  /// Cycle pending journeys when at least two are unchecked. Otherwise, cycle
+  /// all active journeys, starting with the remaining pending journey, if any.
+  public func todayCyclePool() -> [WidgetJourneyItem] {
+    let pending = journeys.filter { !$0.checkedInToday }
+    if pending.count >= 2 { return pending }
+    guard let firstPending = pending.first else { return journeys }
+    return [firstPending] + journeys.filter { $0.id != firstPending.id }
+  }
+
+  /// Prioritizes a per-widget `pinnedId` (falling back to `"auto"` if `pinnedId` is `nil`,
+  /// `"auto"`, or archived/deleted), then uses `todayCyclePool()` honoring the Today cycle
+  /// action's shared index-based state across all active journeys.
   public func selectedTodayJourney(
+    pinnedId: String? = nil,
     state: WidgetInteractiveState = WidgetInteractiveState()
   ) -> WidgetJourneyItem? {
+    guard !journeys.isEmpty else { return nil }
+    if let pinned = Self.normalizedPinnedId(pinnedId),
+       let match = journeys.first(where: { $0.id == pinned }) {
+      return match
+    }
     let pool = todayCyclePool()
     guard !pool.isEmpty else { return nil }
     let idx = ((state.selectedTodayIndex % pool.count) + pool.count) % pool.count
     return pool[idx]
   }
 
-  /// Uses the snapshot's featured journey, with highest active streak as a fallback.
-  public func selectedStreakJourney() -> WidgetJourneyItem? {
+  /// Uses the widget's selection, with the highest active streak as the automatic fallback.
+  public func selectedStreakJourney(preferredId: String? = nil) -> WidgetJourneyItem? {
     guard !journeys.isEmpty else { return nil }
-    if let defaultId = defaultJourneyId,
-       let match = journeys.first(where: { $0.id == defaultId }) {
+    if let id = Self.normalizedPinnedId(preferredId),
+       let match = journeys.first(where: { $0.id == id }) {
       return match
     }
     return journeys.max(by: { a, b in
@@ -308,30 +335,35 @@ public struct WidgetSnapshot: Codable, Equatable {
     }) ?? journeys.first
   }
 
-  /// Uses the snapshot's selected squad (`defaultSquadId` or `defaultJourneyId`), then the first pending squad.
-  public func selectedSquad() -> WidgetSquadItem? {
+  /// Uses the widget's selection, with the first pending squad as the automatic fallback.
+  public func selectedSquad(preferredId: String? = nil) -> WidgetSquadItem? {
     guard !squads.isEmpty else { return nil }
-    if let squadId = defaultSquadId,
-       let match = squads.first(where: { $0.journeyId == squadId }) {
-      return match
-    }
-    if let defaultId = defaultJourneyId,
-       let match = squads.first(where: { $0.journeyId == defaultId }) {
+    if let id = Self.normalizedPinnedId(preferredId),
+       let match = squads.first(where: { $0.journeyId == id }) {
       return match
     }
     return squads.first(where: { !$0.meCheckedInToday }) ?? squads.first
   }
 
+  /// Selects the featured journey for `OurneyLockScreenWidget`.
+  public func selectedLockScreenJourney(
+    pinnedId: String? = nil,
+    state: WidgetInteractiveState = WidgetInteractiveState()
+  ) -> WidgetJourneyItem? {
+    selectedTodayJourney(pinnedId: pinnedId, state: state)
+  }
+
   /// Resolves the card state for `OurneyTodayWidget` and `OurneyLockScreenWidget`.
   public static func resolveTodayCardState(
     snapshot: WidgetSnapshot?,
+    pinnedId: String? = nil,
     state: WidgetInteractiveState = WidgetInteractiveState(),
     appGroupAvailable: Bool = true
   ) -> OurneyJourneyCardState {
     guard appGroupAvailable else { return .appGroupUnavailable }
     guard let snap = snapshot else { return .unsynced }
     if snap.isSignedOut { return .signedOut }
-    guard let journey = snap.selectedTodayJourney(state: state) else {
+    guard let journey = snap.selectedTodayJourney(pinnedId: pinnedId, state: state) else {
       return .noJourneys
     }
     return .ready(journey)
@@ -340,12 +372,13 @@ public struct WidgetSnapshot: Codable, Equatable {
   /// Resolves the card state for `OurneyStreakWidget`.
   public static func resolveStreakCardState(
     snapshot: WidgetSnapshot?,
+    pinnedId: String? = nil,
     appGroupAvailable: Bool = true
   ) -> OurneyJourneyCardState {
     guard appGroupAvailable else { return .appGroupUnavailable }
     guard let snap = snapshot else { return .unsynced }
     if snap.isSignedOut { return .signedOut }
-    guard let journey = snap.selectedStreakJourney() else {
+    guard let journey = snap.selectedStreakJourney(preferredId: pinnedId) else {
       return .noJourneys
     }
     return .ready(journey)
@@ -354,12 +387,13 @@ public struct WidgetSnapshot: Codable, Equatable {
   /// Resolves the card state for `OurneySquadWidget`.
   public static func resolveSquadCardState(
     snapshot: WidgetSnapshot?,
+    pinnedId: String? = nil,
     appGroupAvailable: Bool = true
   ) -> OurneySquadCardState {
     guard appGroupAvailable else { return .appGroupUnavailable }
     guard let snap = snapshot else { return .unsynced }
     if snap.isSignedOut { return .signedOut }
-    if let squad = snap.selectedSquad() {
+    if let squad = snap.selectedSquad(preferredId: pinnedId) {
       return .ready(squad)
     }
     if !snap.journeys.isEmpty {
@@ -1401,6 +1435,192 @@ public enum WidgetSnapshotStore {
     var resourceValues = URLResourceValues()
     resourceValues.isExcludedFromBackup = true
     try? mutableURL.setResourceValues(resourceValues)
+  }
+
+  // MARK: - Configurable Widget Entity Query Backing (§B.2 & §C.2)
+
+  /// Pure in-memory default `"auto"` option (`"Tự động"` / `"Automatic"`), zero disk I/O.
+  public static func defaultJourneyEntityOption(
+    fallbackLocale: String? = nil
+  ) -> WidgetEntityOption {
+    let locale = fallbackLocale ?? (Locale.preferredLanguages.first ?? "")
+    return WidgetEntityOption(
+      id: WidgetSnapshot.autoEntityId,
+      title: WidgetL10n.autoJourneyOptionTitle(locale: locale),
+      subtitle: WidgetL10n.autoJourneyOptionSubtitle(locale: locale)
+    )
+  }
+
+  public static func suggestedJourneyEntityOptions(
+    at referenceDate: Date = Date(),
+    rootDirectory: URL? = nil,
+    allowLocalFallback: Bool = true,
+    fallbackLocale: String? = nil,
+    onSnapshotError: ((String) -> Void)? = nil
+  ) -> [WidgetEntityOption] {
+    let snapshot: WidgetSnapshot?
+    if rootDirectory == nil && !allowLocalFallback {
+      snapshot = nil
+    } else {
+      snapshot = loadSnapshot(at: referenceDate, rootDirectory: rootDirectory, onError: onSnapshotError)
+    }
+    let locale = snapshot?.locale ?? fallbackLocale ?? ""
+    var options = [defaultJourneyEntityOption(fallbackLocale: locale)]
+    guard let snap = snapshot, !snap.isSignedOut else {
+      return options
+    }
+    for j in snap.journeys {
+      options.append(
+        WidgetEntityOption(
+          id: j.id,
+          title: j.title,
+          subtitle: WidgetL10n.journeyEntitySubtitle(
+            dayNumber: j.dayNumber,
+            totalDays: j.totalDays,
+            locale: locale
+          )
+        )
+      )
+    }
+    return options
+  }
+
+  public static func journeyEntityOptions(
+    for identifiers: [String],
+    at referenceDate: Date = Date(),
+    rootDirectory: URL? = nil,
+    allowLocalFallback: Bool = true,
+    fallbackLocale: String? = nil,
+    onSnapshotError: ((String) -> Void)? = nil
+  ) -> [WidgetEntityOption] {
+    let snapshot: WidgetSnapshot?
+    if rootDirectory == nil && !allowLocalFallback {
+      snapshot = nil
+    } else {
+      snapshot = loadSnapshot(at: referenceDate, rootDirectory: rootDirectory, onError: onSnapshotError)
+    }
+    let locale = snapshot?.locale ?? fallbackLocale ?? ""
+    let isSignedOut = snapshot?.isSignedOut ?? true
+    return identifiers.map { rawId in
+      let trimmed = rawId.trimmingCharacters(in: .whitespacesAndNewlines)
+      if trimmed.isEmpty || trimmed.lowercased() == WidgetSnapshot.autoEntityId {
+        return WidgetEntityOption(
+          id: trimmed.isEmpty ? WidgetSnapshot.autoEntityId : trimmed,
+          title: WidgetL10n.autoJourneyOptionTitle(locale: locale),
+          subtitle: WidgetL10n.autoJourneyOptionSubtitle(locale: locale)
+        )
+      }
+      if !isSignedOut, let match = snapshot?.journeys.first(where: { $0.id == trimmed }) {
+        return WidgetEntityOption(
+          id: match.id,
+          title: match.title,
+          subtitle: WidgetL10n.journeyEntitySubtitle(
+            dayNumber: match.dayNumber,
+            totalDays: match.totalDays,
+            locale: locale
+          )
+        )
+      }
+      // Archived/deleted journey ID: return a valid fallback option so WidgetKit never displays a
+      // broken parameter row in the "Edit Widget" sheet while the provider falls back to "auto".
+      return WidgetEntityOption(
+        id: trimmed,
+        title: WidgetL10n.autoJourneyOptionTitle(locale: locale),
+        subtitle: WidgetL10n.archivedEntityFallbackSubtitle(locale: locale)
+      )
+    }
+  }
+
+  /// Pure in-memory default `"auto"` option (`"Tự động"` / `"Automatic"`), zero disk I/O.
+  public static func defaultSquadEntityOption(
+    fallbackLocale: String? = nil
+  ) -> WidgetEntityOption {
+    let locale = fallbackLocale ?? (Locale.preferredLanguages.first ?? "")
+    return WidgetEntityOption(
+      id: WidgetSnapshot.autoEntityId,
+      title: WidgetL10n.autoSquadOptionTitle(locale: locale),
+      subtitle: WidgetL10n.autoSquadOptionSubtitle(locale: locale)
+    )
+  }
+
+  public static func suggestedSquadEntityOptions(
+    at referenceDate: Date = Date(),
+    rootDirectory: URL? = nil,
+    allowLocalFallback: Bool = true,
+    fallbackLocale: String? = nil,
+    onSnapshotError: ((String) -> Void)? = nil
+  ) -> [WidgetEntityOption] {
+    let snapshot: WidgetSnapshot?
+    if rootDirectory == nil && !allowLocalFallback {
+      snapshot = nil
+    } else {
+      snapshot = loadSnapshot(at: referenceDate, rootDirectory: rootDirectory, onError: onSnapshotError)
+    }
+    let locale = snapshot?.locale ?? fallbackLocale ?? ""
+    var options = [defaultSquadEntityOption(fallbackLocale: locale)]
+    guard let snap = snapshot, !snap.isSignedOut else {
+      return options
+    }
+    for s in snap.squads {
+      options.append(
+        WidgetEntityOption(
+          id: s.journeyId,
+          title: s.title,
+          subtitle: WidgetL10n.squadEntitySubtitle(
+            doneCount: s.doneCount,
+            memberCount: max(s.memberCount, s.members.count),
+            dayNumber: s.dayNumber,
+            locale: locale
+          )
+        )
+      )
+    }
+    return options
+  }
+
+  public static func squadEntityOptions(
+    for identifiers: [String],
+    at referenceDate: Date = Date(),
+    rootDirectory: URL? = nil,
+    allowLocalFallback: Bool = true,
+    fallbackLocale: String? = nil,
+    onSnapshotError: ((String) -> Void)? = nil
+  ) -> [WidgetEntityOption] {
+    let snapshot: WidgetSnapshot?
+    if rootDirectory == nil && !allowLocalFallback {
+      snapshot = nil
+    } else {
+      snapshot = loadSnapshot(at: referenceDate, rootDirectory: rootDirectory, onError: onSnapshotError)
+    }
+    let locale = snapshot?.locale ?? fallbackLocale ?? ""
+    let isSignedOut = snapshot?.isSignedOut ?? true
+    return identifiers.map { rawId in
+      let trimmed = rawId.trimmingCharacters(in: .whitespacesAndNewlines)
+      if trimmed.isEmpty || trimmed.lowercased() == WidgetSnapshot.autoEntityId {
+        return WidgetEntityOption(
+          id: trimmed.isEmpty ? WidgetSnapshot.autoEntityId : trimmed,
+          title: WidgetL10n.autoSquadOptionTitle(locale: locale),
+          subtitle: WidgetL10n.autoSquadOptionSubtitle(locale: locale)
+        )
+      }
+      if !isSignedOut, let match = snapshot?.squads.first(where: { $0.journeyId == trimmed }) {
+        return WidgetEntityOption(
+          id: match.journeyId,
+          title: match.title,
+          subtitle: WidgetL10n.squadEntitySubtitle(
+            doneCount: match.doneCount,
+            memberCount: max(match.memberCount, match.members.count),
+            dayNumber: match.dayNumber,
+            locale: locale
+          )
+        )
+      }
+      return WidgetEntityOption(
+        id: trimmed,
+        title: WidgetL10n.autoSquadOptionTitle(locale: locale),
+        subtitle: WidgetL10n.archivedEntityFallbackSubtitle(locale: locale)
+      )
+    }
   }
 }
 

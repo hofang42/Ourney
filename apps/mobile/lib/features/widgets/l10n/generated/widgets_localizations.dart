@@ -386,11 +386,17 @@ abstract class WidgetsL10n {
   /// **'1. Chạm và giữ Màn hình chính'**
   String get widgets_setupStep1TitleAndroid;
 
-  /// Step 1 body of the widget setup instructions.
+  /// Step 1 body of the widget setup instructions (iOS).
   ///
   /// In vi, this message translates to:
-  /// **'Chạm giữ vùng trống đến khi các biểu tượng rung nhẹ, sau đó chọn Sửa hoặc Tiện ích (Widgets).'**
+  /// **'Chạm và giữ vùng trống đến khi các biểu tượng rung nhẹ, sau đó chọn Sửa hoặc Tiện ích (Widgets).'**
   String get widgets_setupStep1Body;
+
+  /// Step 1 body of the widget setup instructions (Android).
+  ///
+  /// In vi, this message translates to:
+  /// **'Chạm và giữ vùng trống rồi chọn Tiện ích (Widgets).'**
+  String get widgets_setupStep1BodyAndroid;
 
   /// Step 2 title of the widget setup instructions.
   ///
@@ -410,107 +416,23 @@ abstract class WidgetsL10n {
   /// **'3. Chạm \"Chụp ngay\" để mở thẳng máy ảnh'**
   String get widgets_setupStep3Title;
 
-  /// Step 3 body of the widget setup instructions.
+  /// Step 3 body of the widget setup instructions (iOS).
   ///
   /// In vi, this message translates to:
-  /// **'Mỗi tiện ích mở thẳng máy ảnh của đúng hành trình đó. Muốn đổi hành trình, chạm nút Đổi ở góc trên tiện ích hoặc chọn ngay tại màn hình này.'**
+  /// **'Mỗi tiện ích mở máy ảnh của hành trình đó. Để đổi hành trình, chạm và giữ tiện ích rồi chọn Sửa tiện ích.'**
   String get widgets_setupStep3Body;
 
-  /// Section heading for placed Home Screen widgets on Android.
+  /// Step 3 body for iOS versions without configurable widgets (iOS 15–16).
   ///
   /// In vi, this message translates to:
-  /// **'tiện ích đang đặt'**
-  String get widgets_secPlacedWidgets;
+  /// **'Tiện ích tự chọn hành trình cần check-in hôm nay.'**
+  String get widgets_setupStep3BodyAutomatic;
 
-  /// Section heading for in-app widget journey pickers on iOS.
+  /// Step 3 body of the widget setup instructions (Android).
   ///
   /// In vi, this message translates to:
-  /// **'đổi hành trình trên tiện ích'**
-  String get widgets_secJourneyPicker;
-
-  /// Helper text shown on Android when no widgets are currently placed on the Home Screen.
-  ///
-  /// In vi, this message translates to:
-  /// **'Sau khi đặt tiện ích ra Màn hình chính, bạn có thể đổi hành trình cho từng ô ngay tại đây hoặc chạm nút Đổi ở góc trên phải tiện ích.'**
-  String get widgets_placedEmptyNote;
-
-  /// Label for a placed Today widget row.
-  ///
-  /// In vi, this message translates to:
-  /// **'Ourney · Hôm nay'**
-  String get widgets_placedTodayTitle;
-
-  /// Label for a placed Streak widget row.
-  ///
-  /// In vi, this message translates to:
-  /// **'Ourney · Chuỗi ngày'**
-  String get widgets_placedStreakTitle;
-
-  /// Label for a placed Squad widget row.
-  ///
-  /// In vi, this message translates to:
-  /// **'Ourney · Đồng đội'**
-  String get widgets_placedSquadTitle;
-
-  /// iOS picker row title for Today and Streak widgets.
-  ///
-  /// In vi, this message translates to:
-  /// **'Hôm nay & Chuỗi'**
-  String get widgets_iosTodayStreakRowTitle;
-
-  /// iOS picker row title for Squad and Couple widgets.
-  ///
-  /// In vi, this message translates to:
-  /// **'Đồng đội & Cặp đôi'**
-  String get widgets_iosSquadRowTitle;
-
-  /// Title of the bottom sheet for selecting a widget journey.
-  ///
-  /// In vi, this message translates to:
-  /// **'Đổi hành trình'**
-  String get widgets_pickerSheetTodayTitle;
-
-  /// Title of the bottom sheet for selecting a widget squad or couple journey.
-  ///
-  /// In vi, this message translates to:
-  /// **'Đổi nhóm đồng đội'**
-  String get widgets_pickerSheetSquadTitle;
-
-  /// Subtitle inside the widget journey picker bottom sheet.
-  ///
-  /// In vi, this message translates to:
-  /// **'Chọn hành trình hiển thị trên tiện ích này hoặc để Tự động.'**
-  String get widgets_pickerSheetSubtitle;
-
-  /// Automatic option title in the widget journey picker.
-  ///
-  /// In vi, this message translates to:
-  /// **'Tự động'**
-  String get widgets_autoOptionTitle;
-
-  /// Automatic option subtitle for Today widgets.
-  ///
-  /// In vi, this message translates to:
-  /// **'Ưu tiên hành trình cần chụp hôm nay'**
-  String get widgets_autoTodaySubtitle;
-
-  /// Automatic option subtitle for Streak widgets.
-  ///
-  /// In vi, this message translates to:
-  /// **'Hiện hành trình có chuỗi ngày nổi bật nhất'**
-  String get widgets_autoStreakSubtitle;
-
-  /// Automatic option subtitle for Squad widgets.
-  ///
-  /// In vi, this message translates to:
-  /// **'Hiện nhóm hoặc cặp đôi đang hoạt động'**
-  String get widgets_autoSquadSubtitle;
-
-  /// Short action pill label on widget rows.
-  ///
-  /// In vi, this message translates to:
-  /// **'Đổi'**
-  String get widgets_changeAction;
+  /// **'Mỗi tiện ích mở thẳng máy ảnh của đúng hành trình đó. Muốn đổi hành trình, bấm Đổi trên tiện ích.'**
+  String get widgets_setupStep3BodyAndroid;
 }
 
 class _WidgetsL10nDelegate extends LocalizationsDelegate<WidgetsL10n> {

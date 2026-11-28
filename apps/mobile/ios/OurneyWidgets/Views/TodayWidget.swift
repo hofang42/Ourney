@@ -36,9 +36,11 @@ public struct TodayWidgetEntryView: View {
     let themeMode = snapshot?.themeMode ?? "system"
     let cardState = WidgetSnapshot.resolveTodayCardState(
       snapshot: snapshot,
+      pinnedId: entry.pinnedId,
       state: entry.state,
       appGroupAvailable: entry.appGroupAvailable
     )
+    let allowsCycling = !(snapshot?.isTodayJourneyPinned(entry.pinnedId) ?? false)
     let featured: WidgetJourneyItem? = {
       if case .ready(let journey) = cardState { return journey }
       return nil
@@ -60,6 +62,7 @@ public struct TodayWidgetEntryView: View {
               snapshot: snap,
               journey: journey,
               entryDate: entry.date,
+              allowsCycling: allowsCycling,
               theme: theme
             )
           case .systemLarge:
@@ -67,6 +70,7 @@ public struct TodayWidgetEntryView: View {
               snapshot: snap,
               journey: journey,
               entryDate: entry.date,
+              allowsCycling: allowsCycling,
               theme: theme
             )
           default:
@@ -74,6 +78,7 @@ public struct TodayWidgetEntryView: View {
               snapshot: snap,
               journey: journey,
               entryDate: entry.date,
+              allowsCycling: allowsCycling,
               theme: theme
             )
           }
@@ -127,6 +132,7 @@ private struct TodaySmallView: View {
   let snapshot: WidgetSnapshot
   let journey: WidgetJourneyItem
   let entryDate: Date
+  let allowsCycling: Bool
   let theme: OurneyWidgetTheme
 
   var body: some View {
@@ -134,7 +140,7 @@ private struct TodaySmallView: View {
     let phase = journey.phase(at: entryDate)
     let cyclePool = snapshot.todayCyclePool()
     let cycleIndex = (cyclePool.firstIndex(where: { $0.id == journey.id }) ?? 0) + 1
-    let showCycleControl = cyclePool.count >= 2
+    let showCycleControl = allowsCycling && cyclePool.count >= 2
     let destination = journey.captureURL
 
     VStack(alignment: .leading, spacing: 6) {
@@ -288,6 +294,7 @@ private struct TodayMediumView: View {
   let snapshot: WidgetSnapshot
   let journey: WidgetJourneyItem
   let entryDate: Date
+  let allowsCycling: Bool
   let theme: OurneyWidgetTheme
 
   var body: some View {
@@ -310,7 +317,7 @@ private struct TodayMediumView: View {
 
           Spacer(minLength: 2)
 
-          if cyclePool.count >= 2 {
+          if allowsCycling && cyclePool.count >= 2 {
             TodayCycleJourneyButton(
               currentIndex: cycleIndex,
               totalPending: cyclePool.count,
@@ -441,6 +448,7 @@ private struct TodayLargeView: View {
   let snapshot: WidgetSnapshot
   let journey: WidgetJourneyItem
   let entryDate: Date
+  let allowsCycling: Bool
   let theme: OurneyWidgetTheme
 
   var body: some View {
@@ -467,7 +475,7 @@ private struct TodayLargeView: View {
 
         Spacer()
 
-        if cyclePool.count >= 2 {
+        if allowsCycling && cyclePool.count >= 2 {
           TodayCycleJourneyButton(
             currentIndex: cycleIndex,
             totalPending: cyclePool.count,

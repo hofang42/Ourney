@@ -94,6 +94,7 @@ data class WidgetSnapshot(
         if (pending.size == 1) {
             ordered.add(pending.first())
         } else if (!defaultJourneyId.isNullOrBlank()) {
+            // Honor the default from a legacy snapshot payload.
             journeys.firstOrNull { it.id == defaultJourneyId }?.let(ordered::add)
         }
         for (j in journeys) {
@@ -153,8 +154,8 @@ data class WidgetSnapshot(
 
     /**
      * Selects the journey for `OurneyStreakWidget` (prefers per-widget pinned
-     * [selectedId], falling back to `defaultJourneyId`, then highest active
-     * streak or first journey).
+     * [selectedId], falling back to a legacy payload's `defaultJourneyId`, then
+     * the highest active streak or first journey).
      */
     fun selectStreakJourney(selectedId: String? = AUTO_SELECTION_ID): WidgetJourneyItem? {
         if (journeys.isEmpty()) return null
@@ -170,8 +171,8 @@ data class WidgetSnapshot(
 
     /**
      * Selects the primary squad/couple journey for `OurneySquadWidget` (prefers
-     * per-widget pinned [selectedId], falling back to `defaultSquadId`,
-     * `defaultJourneyId`, or first squad).
+     * per-widget pinned [selectedId], falling back to a legacy payload's
+     * `defaultSquadId` or `defaultJourneyId`, then the first squad).
      */
     fun selectSquad(selectedId: String? = AUTO_SELECTION_ID): WidgetSquadItem? {
         if (squads.isEmpty()) return null
@@ -321,6 +322,7 @@ data class WidgetSnapshot(
                 redactLockScreenTitles = redactLockScreenTitles,
                 liveActivityEnabled = privacyObj?.optBooleanCompat("liveActivityEnabled", true) ?: true,
             )
+            // Older snapshot payloads can still contain these global defaults.
             val defaultJourneyId = root.optNullableString("defaultJourneyId")
             val defaultSquadId = root.optNullableString("defaultSquadId")
 

@@ -12,10 +12,7 @@ import '../../../app/providers.dart';
 import '../../../app/redirect.dart' show AuthStatus;
 import '../../../data/data_providers.dart' show dataLayerProvider;
 import '../../groups/data/groups_providers.dart'
-    show
-        groupBlockedIdsProvider,
-        groupCheckInsProvider,
-        groupTodayProvider;
+    show groupBlockedIdsProvider, groupCheckInsProvider, groupTodayProvider;
 import '../../journeys/data/journeys_providers.dart';
 import '../../profile/settings_providers.dart'
     show
@@ -181,10 +178,7 @@ class WidgetSyncController {
       if (_disposed || clearEpoch != _epoch) return;
       if (_ref.read(authStatusProvider) == AuthStatus.signedOut) {
         _nativeClearedForSignedOut = true;
-        await _syncSignedOutSnapshot(
-          force: true,
-          requestEpoch: clearEpoch,
-        );
+        await _syncSignedOutSnapshot(force: true, requestEpoch: clearEpoch);
       }
     });
     _serial = next.catchError((Object _) {});
@@ -248,10 +242,7 @@ class WidgetSyncController {
           if (_disposed || requestEpoch != _epoch) return;
           _nativeClearedForSignedOut = true;
         }
-        await _syncSignedOutSnapshot(
-          force: force,
-          requestEpoch: requestEpoch,
-        );
+        await _syncSignedOutSnapshot(force: force, requestEpoch: requestEpoch);
         return;
       }
       _nativeClearedForSignedOut = false;
@@ -263,14 +254,16 @@ class WidgetSyncController {
       }
 
       final now = _ref.read(widgetsClockProvider).now().toUtc();
+      await WidgetPrefs.clearLegacyDefaultSelectionKeys(
+        _ref.read(sharedPreferencesProvider),
+      );
+      if (_disposed || requestEpoch != _epoch) return;
       final locale = _ref.read(reminderLocaleProvider).languageCode;
       final themeMode = _ref.read(themeModeProvider);
       final photoMode = _ref.read(widgetPhotoModeProvider);
       final explicitRedact = _ref.read(redactLockScreenTitlesPrefProvider);
       final liveEnabled = _ref.read(liveActivityEnabledProvider);
       final dismissedWindowKey = _ref.read(dismissedLiveWindowKeyProvider);
-      final defaultJourneyId = _ref.read(defaultWidgetJourneyIdProvider);
-      final defaultSquadId = _ref.read(defaultWidgetSquadIdProvider);
       final reminderSettings = _ref.read(reminderSettingsProvider);
       final streakAlerts = _ref.read(streakAlertsEnabledProvider);
       final blurPhotosOnShare = _ref.read(blurPhotosOnShareProvider);
@@ -319,8 +312,6 @@ class WidgetSyncController {
         hiddenCheckInIds: hiddenCheckInIds,
         currentUserId: currentUserId,
         dismissedWindowKey: dismissedWindowKey,
-        defaultJourneyId: defaultJourneyId,
-        defaultSquadId: defaultSquadId,
       );
 
       final preparedThumbs = await _thumbPreparer.prepare(
@@ -679,9 +670,7 @@ class _WidgetLifecycleHookState extends ConsumerState<WidgetLifecycleHook>
   void didChangeLocales(List<Locale>? locales) {
     if (mounted) {
       ref.invalidate(reminderLocaleProvider);
-      ref
-          .read(widgetSyncControllerProvider)
-          .scheduleCoalescedMicrotaskSync();
+      ref.read(widgetSyncControllerProvider).scheduleCoalescedMicrotaskSync();
     }
   }
 
@@ -694,9 +683,8 @@ class _WidgetLifecycleHookState extends ConsumerState<WidgetLifecycleHook>
 
   @override
   Widget build(BuildContext context) {
-    void trigger<T>(T? _, T _) => ref
-        .read(widgetSyncControllerProvider)
-        .scheduleCoalescedMicrotaskSync();
+    void trigger<T>(T? _, T _) =>
+        ref.read(widgetSyncControllerProvider).scheduleCoalescedMicrotaskSync();
     void ignoreError(Object _, StackTrace _) {}
 
     final authStatus = ref.watch(authStatusProvider);
@@ -714,11 +702,13 @@ class _WidgetLifecycleHookState extends ConsumerState<WidgetLifecycleHook>
       ..listen(reminderSettingsProvider, trigger, onError: ignoreError)
       ..listen(streakAlertsEnabledProvider, trigger, onError: ignoreError)
       ..listen(widgetPhotoModeProvider, trigger, onError: ignoreError)
-      ..listen(redactLockScreenTitlesPrefProvider, trigger, onError: ignoreError)
+      ..listen(
+        redactLockScreenTitlesPrefProvider,
+        trigger,
+        onError: ignoreError,
+      )
       ..listen(liveActivityEnabledProvider, trigger, onError: ignoreError)
-      ..listen(dismissedLiveWindowKeyProvider, trigger, onError: ignoreError)
-      ..listen(defaultWidgetJourneyIdProvider, trigger, onError: ignoreError)
-      ..listen(defaultWidgetSquadIdProvider, trigger, onError: ignoreError);
+      ..listen(dismissedLiveWindowKeyProvider, trigger, onError: ignoreError);
 
     if (authStatus != AuthStatus.signedOut) {
       ref
@@ -737,7 +727,11 @@ class _WidgetLifecycleHookState extends ConsumerState<WidgetLifecycleHook>
         if (j.kind == JourneyKind.group && !localOnly) {
           ref
             ..listen(groupTodayProvider(j.id), trigger, onError: ignoreError)
-            ..listen(groupCheckInsProvider(j.id), trigger, onError: ignoreError);
+            ..listen(
+              groupCheckInsProvider(j.id),
+              trigger,
+              onError: ignoreError,
+            );
         }
       }
     }

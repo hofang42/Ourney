@@ -218,9 +218,13 @@
   "@widgets_setupStep1TitleAndroid": {
     "description": "Step 1 title of the widget setup instructions (Android)."
   },
-  "widgets_setupStep1Body": "Chạm giữ vùng trống đến khi các biểu tượng rung nhẹ, sau đó chọn Sửa hoặc Tiện ích (Widgets).",
+  "widgets_setupStep1Body": "Chạm và giữ vùng trống đến khi các biểu tượng rung nhẹ, sau đó chọn Sửa hoặc Tiện ích (Widgets).",
   "@widgets_setupStep1Body": {
-    "description": "Step 1 body of the widget setup instructions."
+    "description": "Step 1 body of the widget setup instructions (iOS)."
+  },
+  "widgets_setupStep1BodyAndroid": "Chạm và giữ vùng trống rồi chọn Tiện ích (Widgets).",
+  "@widgets_setupStep1BodyAndroid": {
+    "description": "Step 1 body of the widget setup instructions (Android)."
   },
   "widgets_setupStep2Title": "2. Tìm Ourney trong thư viện tiện ích",
   "@widgets_setupStep2Title": {
@@ -234,72 +238,16 @@
   "@widgets_setupStep3Title": {
     "description": "Step 3 title of the widget setup instructions."
   },
-  "widgets_setupStep3Body": "Mỗi tiện ích mở thẳng máy ảnh của đúng hành trình đó. Muốn đổi hành trình, chạm nút Đổi ở góc trên tiện ích hoặc chọn ngay tại màn hình này.",
+  "widgets_setupStep3Body": "Mỗi tiện ích mở máy ảnh của hành trình đó. Để đổi hành trình, chạm và giữ tiện ích rồi chọn Sửa tiện ích.",
   "@widgets_setupStep3Body": {
-    "description": "Step 3 body of the widget setup instructions."
+    "description": "Step 3 body of the widget setup instructions (iOS)."
   },
-  "widgets_secPlacedWidgets": "tiện ích đang đặt",
-  "@widgets_secPlacedWidgets": {
-    "description": "Section heading for placed Home Screen widgets on Android."
+  "widgets_setupStep3BodyAutomatic": "Tiện ích tự chọn hành trình cần check-in hôm nay.",
+  "@widgets_setupStep3BodyAutomatic": {
+    "description": "Step 3 body for iOS versions without configurable widgets (iOS 15–16)."
   },
-  "widgets_secJourneyPicker": "đổi hành trình trên tiện ích",
-  "@widgets_secJourneyPicker": {
-    "description": "Section heading for in-app widget journey pickers on iOS."
-  },
-  "widgets_placedEmptyNote": "Sau khi đặt tiện ích ra Màn hình chính, bạn có thể đổi hành trình cho từng ô ngay tại đây hoặc chạm nút Đổi ở góc trên phải tiện ích.",
-  "@widgets_placedEmptyNote": {
-    "description": "Helper text shown on Android when no widgets are currently placed on the Home Screen."
-  },
-  "widgets_placedTodayTitle": "Ourney · Hôm nay",
-  "@widgets_placedTodayTitle": {
-    "description": "Label for a placed Today widget row."
-  },
-  "widgets_placedStreakTitle": "Ourney · Chuỗi ngày",
-  "@widgets_placedStreakTitle": {
-    "description": "Label for a placed Streak widget row."
-  },
-  "widgets_placedSquadTitle": "Ourney · Đồng đội",
-  "@widgets_placedSquadTitle": {
-    "description": "Label for a placed Squad widget row."
-  },
-  "widgets_iosTodayStreakRowTitle": "Hôm nay & Chuỗi",
-  "@widgets_iosTodayStreakRowTitle": {
-    "description": "iOS picker row title for Today and Streak widgets."
-  },
-  "widgets_iosSquadRowTitle": "Đồng đội & Cặp đôi",
-  "@widgets_iosSquadRowTitle": {
-    "description": "iOS picker row title for Squad and Couple widgets."
-  },
-  "widgets_pickerSheetTodayTitle": "Đổi hành trình",
-  "@widgets_pickerSheetTodayTitle": {
-    "description": "Title of the bottom sheet for selecting a widget journey."
-  },
-  "widgets_pickerSheetSquadTitle": "Đổi nhóm đồng đội",
-  "@widgets_pickerSheetSquadTitle": {
-    "description": "Title of the bottom sheet for selecting a widget squad or couple journey."
-  },
-  "widgets_pickerSheetSubtitle": "Chọn hành trình hiển thị trên tiện ích này hoặc để Tự động.",
-  "@widgets_pickerSheetSubtitle": {
-    "description": "Subtitle inside the widget journey picker bottom sheet."
-  },
-  "widgets_autoOptionTitle": "Tự động",
-  "@widgets_autoOptionTitle": {
-    "description": "Automatic option title in the widget journey picker."
-  },
-  "widgets_autoTodaySubtitle": "Ưu tiên hành trình cần chụp hôm nay",
-  "@widgets_autoTodaySubtitle": {
-    "description": "Automatic option subtitle for Today widgets."
-  },
-  "widgets_autoStreakSubtitle": "Hiện hành trình có chuỗi ngày nổi bật nhất",
-  "@widgets_autoStreakSubtitle": {
-    "description": "Automatic option subtitle for Streak widgets."
-  },
-  "widgets_autoSquadSubtitle": "Hiện nhóm hoặc cặp đôi đang hoạt động",
-  "@widgets_autoSquadSubtitle": {
-    "description": "Automatic option subtitle for Squad widgets."
-  },
-  "widgets_changeAction": "Đổi",
-  "@widgets_changeAction": {
-    "description": "Short action pill label on widget rows."
+  "widgets_setupStep3BodyAndroid": "Mỗi tiện ích mở thẳng máy ảnh của đúng hành trình đó. Muốn đổi hành trình, bấm Đổi trên tiện ích.",
+  "@widgets_setupStep3BodyAndroid": {
+    "description": "Step 3 body of the widget setup instructions (Android)."
   }
 }

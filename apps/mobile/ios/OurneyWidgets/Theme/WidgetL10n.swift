@@ -208,6 +208,58 @@ public enum WidgetL10n {
     isEnglish(locale) ? "Open Ourney" : "Mở Ourney"
   }
 
+  // MARK: - Configurable Widget Entity Picker Copy (§B.2, §C.2)
+
+  public static func autoJourneyOptionTitle(locale: String) -> String {
+    isEnglish(locale) ? "Automatic" : "Tự động"
+  }
+
+  public static func autoJourneyOptionSubtitle(locale: String) -> String {
+    isEnglish(locale) ? "Ourney picks a journey" : "Ourney tự chọn hành trình"
+  }
+
+  public static func autoSquadOptionTitle(locale: String) -> String {
+    isEnglish(locale) ? "Automatic" : "Tự động"
+  }
+
+  public static func autoSquadOptionSubtitle(locale: String) -> String {
+    isEnglish(locale)
+      ? "Squad or couple still checking in today"
+      : "Nhóm hoặc cặp đôi chưa check-in hôm nay"
+  }
+
+  public static func journeyEntitySubtitle(
+    dayNumber: Int,
+    totalDays: Int?,
+    locale: String
+  ) -> String {
+    let en = isEnglish(locale)
+    if let total = totalDays, total > 0 {
+      return en ? "Day \(dayNumber)/\(total)" : "Ngày \(dayNumber)/\(total)"
+    }
+    return en ? "Day \(dayNumber)" : "Ngày \(dayNumber)"
+  }
+
+  public static func squadEntitySubtitle(
+    doneCount: Int,
+    memberCount: Int,
+    dayNumber: Int,
+    locale: String
+  ) -> String {
+    let en = isEnglish(locale)
+    let total = max(memberCount, doneCount)
+    if en {
+      return "Day \(dayNumber) · \(doneCount)/\(total) checked in"
+    }
+    return "Ngày \(dayNumber) · \(doneCount)/\(total) đã check-in"
+  }
+
+  public static func archivedEntityFallbackSubtitle(locale: String) -> String {
+    isEnglish(locale)
+      ? "Switches to an active journey"
+      : "Tự động chuyển sang hành trình đang hoạt động"
+  }
+
   // MARK: - Lock Screen & Live Activity Copy
 
   public static func lockScreenRedactedTitle(locale: String) -> String {

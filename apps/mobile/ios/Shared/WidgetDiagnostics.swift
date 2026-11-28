@@ -12,15 +12,11 @@ enum WidgetDiagnostics {
   static func record(_ event: String, rootDirectory: URL?) {
     // Unified logging can still explain a missing ring file if the extension has no container.
     logger.notice("\(event, privacy: .public)")
+    guard let rootDirectory else { return }
     let timestamp = Date()
     writer.sync {
       append(event, at: timestamp, rootDirectory: rootDirectory)
     }
-  }
-
-  static func recordProcessLaunch() {
-    let identifier = WidgetAppGroup.current?.identifier ?? "unavailable"
-    record("process launch appGroup=\(identifier)", rootDirectory: WidgetSnapshotStore.sharedRootDirectory())
   }
 
   static func append(_ event: String, at timestamp: Date = Date(), rootDirectory: URL?) {

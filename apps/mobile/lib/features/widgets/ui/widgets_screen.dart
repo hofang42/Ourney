@@ -40,10 +40,7 @@ final widgetDiagnosticsDebugModeProvider = Provider<bool>((ref) => kDebugMode);
 /// widgets, 3-step OS setup guide, and explicit privacy & Live Activity
 /// controls (§3.1 #6, §7.2).
 class WidgetsScreen extends ConsumerStatefulWidget {
-  const WidgetsScreen({
-    super.key,
-    this.debugShowDiagnostics = kDebugMode,
-  });
+  const WidgetsScreen({super.key, this.debugShowDiagnostics = kDebugMode});
 
   /// Defaults to [kDebugMode]; tests may pass `false` or override
   /// [widgetDiagnosticsDebugModeProvider] to verify release-mode hiding.
@@ -53,14 +50,11 @@ class WidgetsScreen extends ConsumerStatefulWidget {
   ConsumerState<WidgetsScreen> createState() => _WidgetsScreenState();
 }
 
-class _WidgetsScreenState extends ConsumerState<WidgetsScreen>
-    with WidgetsBindingObserver {
+class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
   static const int _kDiagnosticsUnlockTaps = 7;
   static const Duration _kDiagnosticsUnlockWindow = Duration(seconds: 3);
 
   WidgetPreviewKind _previewKind = WidgetPreviewKind.today;
-  List<PlacedWidgetInfo> _placedWidgets = const [];
-  TargetPlatform? _lastPlatform;
   final List<DateTime> _titleTapTimes = <DateTime>[];
   bool _diagnosticsUnlocked = false;
 
@@ -80,140 +74,12 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen>
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    unawaited(_refreshPlacedWidgets());
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final platform = defaultTargetPlatform;
-    if (_lastPlatform != platform) {
-      _lastPlatform = platform;
-      unawaited(_refreshPlacedWidgets());
-    }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      unawaited(_refreshPlacedWidgets());
-    }
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  Future<void> _refreshPlacedWidgets() async {
-    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
-      if (_placedWidgets.isNotEmpty && mounted) {
-        setState(() => _placedWidgets = const []);
-      }
-      return;
-    }
-    final placed = await ref
-        .read(widgetBridgeGatewayProvider)
-        .getPlacedWidgets();
-    if (!mounted) return;
-    setState(() => _placedWidgets = placed);
-  }
-
   void _close() {
     if (context.canPop()) {
       context.pop();
     } else {
       context.go(AppRoutes.profile);
     }
-  }
-
-  String _placedKindTitle(WidgetsL10n l10n, PlacedWidgetKind kind) =>
-      switch (kind) {
-        PlacedWidgetKind.today => l10n.widgets_placedTodayTitle,
-        PlacedWidgetKind.streak => l10n.widgets_placedStreakTitle,
-        PlacedWidgetKind.squad => l10n.widgets_placedSquadTitle,
-      };
-
-  String _placedAutoSubtitle(WidgetsL10n l10n, PlacedWidgetKind kind) =>
-      switch (kind) {
-        PlacedWidgetKind.today => l10n.widgets_autoTodaySubtitle,
-        PlacedWidgetKind.streak => l10n.widgets_autoStreakSubtitle,
-        PlacedWidgetKind.squad => l10n.widgets_autoSquadSubtitle,
-      };
-
-  Future<void> _openAndroidPlacedWidgetPicker({
-    required PlacedWidgetInfo info,
-    required List<Journey> activeJourneys,
-    required List<Journey> activeSquadJourneys,
-  }) async {
-    OurneyHaptics.selection();
-    final l10n = WidgetsL10n.of(context);
-    final isSquad = info.kind == PlacedWidgetKind.squad;
-    final options = isSquad ? activeSquadJourneys : activeJourneys;
-    final chosen = await showUiSheet<String>(
-      context: context,
-      builder: (sheetContext) => _WidgetJourneyPickerSheet(
-        title: isSquad
-            ? l10n.widgets_pickerSheetSquadTitle
-            : l10n.widgets_pickerSheetTodayTitle,
-        subtitle: l10n.widgets_pickerSheetSubtitle,
-        autoTitle: l10n.widgets_autoOptionTitle,
-        autoSubtitle: _placedAutoSubtitle(l10n, info.kind),
-        journeys: options,
-        selectedId: info.isAuto ? 'auto' : info.selectedId,
-      ),
-    );
-    if (chosen == null || !mounted) return;
-    await ref
-        .read(widgetBridgeGatewayProvider)
-        .setWidgetSelection(
-          appWidgetId: info.appWidgetId,
-          selectedId: chosen,
-        );
-    await _refreshPlacedWidgets();
-  }
-
-  Future<void> _openIosDefaultPicker({
-    required bool isSquad,
-    required List<Journey> options,
-    required String? currentSelectedId,
-  }) async {
-    OurneyHaptics.selection();
-    final l10n = WidgetsL10n.of(context);
-    final chosen = await showUiSheet<String>(
-      context: context,
-      builder: (sheetContext) => _WidgetJourneyPickerSheet(
-        title: isSquad
-            ? l10n.widgets_pickerSheetSquadTitle
-            : l10n.widgets_pickerSheetTodayTitle,
-        subtitle: l10n.widgets_pickerSheetSubtitle,
-        autoTitle: l10n.widgets_autoOptionTitle,
-        autoSubtitle: isSquad
-            ? l10n.widgets_autoSquadSubtitle
-            : l10n.widgets_autoTodaySubtitle,
-        journeys: options,
-        selectedId: (currentSelectedId == null || currentSelectedId.isEmpty)
-            ? 'auto'
-            : currentSelectedId,
-      ),
-    );
-    if (chosen == null || !mounted) return;
-    final normalized = (chosen.isEmpty || chosen == 'auto') ? null : chosen;
-    if (isSquad) {
-      await ref.read(defaultWidgetSquadIdProvider.notifier).set(normalized);
-    } else {
-      await ref.read(defaultWidgetJourneyIdProvider.notifier).set(normalized);
-    }
-    unawaited(
-      ref
-          .read(widgetSyncControllerProvider)
-          .syncNow(force: true),
-    );
   }
 
   @override
@@ -223,8 +89,6 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen>
     final photoMode = ref.watch(widgetPhotoModeProvider);
     final redactTitles = ref.watch(redactLockScreenTitlesProvider);
     final liveEnabled = ref.watch(liveActivityEnabledProvider);
-    final defaultJourneyId = ref.watch(defaultWidgetJourneyIdProvider);
-    final defaultSquadId = ref.watch(defaultWidgetSquadIdProvider);
     final journeysAsync = ref.watch(journeysListProvider);
     final activeJourneys = [
       for (final j in journeysAsync.asData?.value ?? const <Journey>[])
@@ -235,64 +99,14 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen>
         if (j.kind == JourneyKind.group) j,
     ];
 
-    Journey? findJourneyById(List<Journey> list, String? id) {
-      if (id == null || id.isEmpty || id == 'auto') return null;
-      for (final j in list) {
-        if (j.id == id) return j;
-      }
-      return null;
-    }
-
-    final selectedDefaultJourney = findJourneyById(
-      activeJourneys,
-      defaultJourneyId,
-    );
-    final selectedDefaultSquad = findJourneyById(
-      activeSquadJourneys,
-      defaultSquadId,
-    );
-
-    Journey? androidPinnedPreviewJourney;
-    for (final w in _placedWidgets) {
-      if (!w.isAuto &&
-          ((_previewKind == WidgetPreviewKind.today &&
-                  w.kind == PlacedWidgetKind.today) ||
-              (_previewKind == WidgetPreviewKind.streak &&
-                  w.kind == PlacedWidgetKind.streak))) {
-        androidPinnedPreviewJourney = findJourneyById(
-          activeJourneys,
-          w.selectedId,
-        );
-        if (androidPinnedPreviewJourney != null) break;
-      }
-    }
-    Journey? androidPinnedPreviewSquad;
-    for (final w in _placedWidgets) {
-      if (!w.isAuto && w.kind == PlacedWidgetKind.squad) {
-        androidPinnedPreviewSquad = findJourneyById(
-          activeSquadJourneys,
-          w.selectedId,
-        );
-        if (androidPinnedPreviewSquad != null) break;
-      }
-    }
-
-    final featuredJourney =
-        androidPinnedPreviewJourney ??
-        selectedDefaultJourney ??
-        activeJourneys.firstOrNull;
-    final featuredSquadJourney =
-        androidPinnedPreviewSquad ??
-        selectedDefaultSquad ??
-        (featuredJourney != null && featuredJourney.kind == JourneyKind.group
-            ? featuredJourney
-            : activeSquadJourneys.firstOrNull);
+    final featuredJourney = activeJourneys.firstOrNull;
+    final featuredSquadJourney = activeSquadJourneys.firstOrNull;
 
     final isAndroid = defaultTargetPlatform == TargetPlatform.android;
     final isIOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
-    final showAppGroupNotice =
-        isIOS &&
-        ref.watch(widgetCapabilitiesProvider).asData?.value.appGroup == false;
+    final capabilities = ref.watch(widgetCapabilitiesProvider).asData?.value;
+    final configurableWidgets = capabilities?.configurableWidgets == true;
+    final showAppGroupNotice = isIOS && capabilities?.appGroup == false;
     final showDebugDiagnostics =
         widget.debugShowDiagnostics &&
         ref.watch(widgetDiagnosticsDebugModeProvider);
@@ -324,10 +138,7 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen>
             ),
           ),
           const SizedBox(height: UiSpace.sm),
-          Text(
-            l10n.widgets_intro,
-            style: UiText.muted(color: ui.inkMuted),
-          ),
+          Text(l10n.widgets_intro, style: UiText.muted(color: ui.inkMuted)),
           if (showAppGroupNotice) ...[
             const SizedBox(height: UiSpace.md),
             UiCard(
@@ -386,132 +197,44 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen>
               photoMode: photoMode,
             ),
           ),
-          if (isAndroid) ...[
-            const SizedBox(height: UiSpace.xl),
-            UiListHeading(title: l10n.widgets_secPlacedWidgets),
-            const SizedBox(height: UiSpace.xs),
-            if (_placedWidgets.isEmpty)
-              UiCard(
-                key: const ValueKey('widgets-placed-empty-card'),
-                radius: UiRadius.card,
-                shadowOffset: 0,
-                padding: const EdgeInsets.all(UiSpace.md),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: ui.fill,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: ui.outline,
-                          width: UiBorder.thin,
-                        ),
-                      ),
-                      child: const OurneyIcon(name: 'edit', size: 18),
-                    ),
-                    const SizedBox(width: UiSpace.md),
-                    Expanded(
-                      child: Text(
-                        l10n.widgets_placedEmptyNote,
-                        style: UiText.body(
-                          size: 13,
-                          height: 1.4,
-                          color: ui.inkMuted,
-                        ),
-                      ),
-                    ),
-                  ],
+          const SizedBox(height: UiSpace.xl),
+          UiListHeading(title: l10n.widgets_secSetup),
+          const SizedBox(height: UiSpace.xs),
+          UiCard(
+            radius: UiRadius.card,
+            shadowOffset: UiShadow.small,
+            padding: const EdgeInsets.all(UiSpace.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SetupStepRow(
+                  iconName: 'home',
+                  title: isAndroid
+                      ? l10n.widgets_setupStep1TitleAndroid
+                      : l10n.widgets_setupStep1Title,
+                  body: isAndroid
+                      ? l10n.widgets_setupStep1BodyAndroid
+                      : l10n.widgets_setupStep1Body,
                 ),
-              )
-            else
-              UiCard(
-                key: const ValueKey('widgets-placed-list-card'),
-                radius: UiRadius.card,
-                shadowOffset: 0,
-                padding: const EdgeInsets.symmetric(horizontal: UiSpace.md),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (var i = 0; i < _placedWidgets.length; i++)
-                      _PlacedWidgetRow(
-                        key: ValueKey(
-                          'widgets-placed-row-${_placedWidgets[i].appWidgetId}',
-                        ),
-                        info: _placedWidgets[i],
-                        title: _placedKindTitle(l10n, _placedWidgets[i].kind),
-                        selectedJourney: findJourneyById(
-                          _placedWidgets[i].kind == PlacedWidgetKind.squad
-                              ? activeSquadJourneys
-                              : activeJourneys,
-                          _placedWidgets[i].selectedId,
-                        ),
-                        autoLabel: l10n.widgets_autoOptionTitle,
-                        changeLabel: l10n.widgets_changeAction,
-                        divider: i < _placedWidgets.length - 1,
-                        onPressed: () => unawaited(
-                          _openAndroidPlacedWidgetPicker(
-                            info: _placedWidgets[i],
-                            activeJourneys: activeJourneys,
-                            activeSquadJourneys: activeSquadJourneys,
-                          ),
-                        ),
-                      ),
-                  ],
+                const SizedBox(height: UiSpace.md),
+                _SetupStepRow(
+                  iconName: 'plus',
+                  title: l10n.widgets_setupStep2Title,
+                  body: l10n.widgets_setupStep2Body,
                 ),
-              ),
-          ],
-          if (isIOS) ...[
-            const SizedBox(height: UiSpace.xl),
-            UiListHeading(title: l10n.widgets_secJourneyPicker),
-            const SizedBox(height: UiSpace.xs),
-            UiCard(
-              key: const ValueKey('widgets-ios-picker-card'),
-              radius: UiRadius.card,
-              shadowOffset: 0,
-              padding: const EdgeInsets.symmetric(horizontal: UiSpace.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _IosWidgetPickerRow(
-                    key: const ValueKey('widgets-ios-today-journey-row'),
-                    title: l10n.widgets_iosTodayStreakRowTitle,
-                    selectedJourney: selectedDefaultJourney,
-                    fallbackIconName: 'journeys',
-                    autoLabel: l10n.widgets_autoOptionTitle,
-                    changeLabel: l10n.widgets_changeAction,
-                    divider: true,
-                    onPressed: () => unawaited(
-                      _openIosDefaultPicker(
-                        isSquad: false,
-                        options: activeJourneys,
-                        currentSelectedId: defaultJourneyId,
-                      ),
-                    ),
-                  ),
-                  _IosWidgetPickerRow(
-                    key: const ValueKey('widgets-ios-squad-journey-row'),
-                    title: l10n.widgets_iosSquadRowTitle,
-                    selectedJourney: selectedDefaultSquad,
-                    fallbackIconName: 'squad',
-                    autoLabel: l10n.widgets_autoOptionTitle,
-                    changeLabel: l10n.widgets_changeAction,
-                    divider: false,
-                    onPressed: () => unawaited(
-                      _openIosDefaultPicker(
-                        isSquad: true,
-                        options: activeSquadJourneys,
-                        currentSelectedId: defaultSquadId,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                const SizedBox(height: UiSpace.md),
+                _SetupStepRow(
+                  iconName: 'camera',
+                  title: l10n.widgets_setupStep3Title,
+                  body: isAndroid
+                      ? l10n.widgets_setupStep3BodyAndroid
+                      : configurableWidgets
+                      ? l10n.widgets_setupStep3Body
+                      : l10n.widgets_setupStep3BodyAutomatic,
+                ),
+              ],
             ),
-          ],
+          ),
           const SizedBox(height: UiSpace.xl),
           UiListHeading(title: l10n.widgets_secPrivacy),
           const SizedBox(height: UiSpace.xs),
@@ -534,7 +257,9 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen>
                         onChanged: (mode) {
                           OurneyHaptics.selection();
                           unawaited(
-                            ref.read(widgetPhotoModeProvider.notifier).set(mode),
+                            ref
+                                .read(widgetPhotoModeProvider.notifier)
+                                .set(mode),
                           );
                         },
                         segments: [
@@ -622,381 +347,7 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen>
             ),
           ),
           const SizedBox(height: UiSpace.xl),
-          UiListHeading(title: l10n.widgets_secSetup),
-          const SizedBox(height: UiSpace.xs),
-          UiCard(
-            radius: UiRadius.card,
-            shadowOffset: UiShadow.small,
-            padding: const EdgeInsets.all(UiSpace.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _SetupStepRow(
-                  iconName: 'home',
-                  title: isAndroid
-                      ? l10n.widgets_setupStep1TitleAndroid
-                      : l10n.widgets_setupStep1Title,
-                  body: l10n.widgets_setupStep1Body,
-                ),
-                const SizedBox(height: UiSpace.md),
-                _SetupStepRow(
-                  iconName: 'plus',
-                  title: l10n.widgets_setupStep2Title,
-                  body: l10n.widgets_setupStep2Body,
-                ),
-                const SizedBox(height: UiSpace.md),
-                _SetupStepRow(
-                  iconName: 'camera',
-                  title: l10n.widgets_setupStep3Title,
-                  body: l10n.widgets_setupStep3Body,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: UiSpace.xl),
         ],
-      ),
-    );
-  }
-}
-
-class _PlacedWidgetRow extends StatelessWidget {
-  const _PlacedWidgetRow({
-    required this.info,
-    required this.title,
-    required this.selectedJourney,
-    required this.autoLabel,
-    required this.changeLabel,
-    required this.divider,
-    required this.onPressed,
-    super.key,
-  });
-
-  final PlacedWidgetInfo info;
-  final String title;
-  final Journey? selectedJourney;
-  final String autoLabel;
-  final String changeLabel;
-  final bool divider;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    final j = selectedJourney;
-    final fallbackIcon = switch (info.kind) {
-      PlacedWidgetKind.today => 'journeys',
-      PlacedWidgetKind.streak => 'flame',
-      PlacedWidgetKind.squad => 'squad',
-    };
-    final subtitleText = j?.title ?? autoLabel;
-
-    return UiRow(
-      title: title,
-      divider: divider,
-      leading: j != null
-          ? UiTypeBadge(type: journeyTypeId(j), size: 36)
-          : _WidgetIconBadge(iconName: fallbackIcon),
-      subtitle: Text(
-        subtitleText,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: UiText.body(
-          size: 13,
-          weight: FontWeight.w600,
-          height: 1.35,
-          color: j != null ? ui.ink : ui.inkMuted,
-        ),
-      ),
-      trailing: _ChangeBadgePill(label: changeLabel),
-      onPressed: onPressed,
-    );
-  }
-}
-
-class _IosWidgetPickerRow extends StatelessWidget {
-  const _IosWidgetPickerRow({
-    required this.title,
-    required this.selectedJourney,
-    required this.fallbackIconName,
-    required this.autoLabel,
-    required this.changeLabel,
-    required this.divider,
-    required this.onPressed,
-    super.key,
-  });
-
-  final String title;
-  final Journey? selectedJourney;
-  final String fallbackIconName;
-  final String autoLabel;
-  final String changeLabel;
-  final bool divider;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    final j = selectedJourney;
-    final subtitleText = j?.title ?? autoLabel;
-
-    return UiRow(
-      title: title,
-      divider: divider,
-      leading: j != null
-          ? UiTypeBadge(type: journeyTypeId(j), size: 36)
-          : _WidgetIconBadge(iconName: fallbackIconName),
-      subtitle: Text(
-        subtitleText,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: UiText.body(
-          size: 13,
-          weight: FontWeight.w600,
-          height: 1.35,
-          color: j != null ? ui.ink : ui.inkMuted,
-        ),
-      ),
-      trailing: _ChangeBadgePill(label: changeLabel),
-      onPressed: onPressed,
-    );
-  }
-}
-
-class _WidgetIconBadge extends StatelessWidget {
-  const _WidgetIconBadge({required this.iconName});
-
-  final String iconName;
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    return Container(
-      width: 36,
-      height: 36,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: ui.fill,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: ui.outline, width: UiBorder.thin),
-      ),
-      child: OurneyIcon(name: iconName, size: 18),
-    );
-  }
-}
-
-class _ChangeBadgePill extends StatelessWidget {
-  const _ChangeBadgePill({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: ui.fill,
-        borderRadius: BorderRadius.circular(UiRadius.capsule),
-        border: Border.all(color: ui.outline, width: UiBorder.thin),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const OurneyIcon(name: 'edit', size: 13),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: UiText.body(
-              size: 12,
-              weight: FontWeight.w700,
-              height: 1.3,
-              color: ui.ink,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WidgetJourneyPickerSheet extends ConsumerWidget {
-  const _WidgetJourneyPickerSheet({
-    required this.title,
-    required this.subtitle,
-    required this.autoTitle,
-    required this.autoSubtitle,
-    required this.journeys,
-    required this.selectedId,
-  });
-
-  final String title;
-  final String subtitle;
-  final String autoTitle;
-  final String autoSubtitle;
-  final List<Journey> journeys;
-  final String selectedId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final ui = context.ui;
-    final l10n = WidgetsL10n.of(context);
-    final now = ref.watch(journeysNowProvider);
-    final isAutoSelected =
-        selectedId.isEmpty ||
-        selectedId == 'auto' ||
-        !journeys.any((j) => j.id == selectedId);
-
-    return Column(
-      key: const ValueKey('widget-journey-picker-sheet'),
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Semantics(
-          header: true,
-          child: Text(
-            title,
-            style: UiText.h2(color: ui.ink),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          subtitle,
-          style: UiText.body(
-            size: 13,
-            height: 1.35,
-            color: ui.inkMuted,
-          ),
-        ),
-        const SizedBox(height: UiSpace.md),
-        _PickerOptionCard(
-          key: const ValueKey('widget-picker-option-auto'),
-          title: autoTitle,
-          subtitle: autoSubtitle,
-          selected: isAutoSelected,
-          leading: const _WidgetIconBadge(iconName: 'sparkle'),
-          onPressed: () => Navigator.of(context).pop('auto'),
-        ),
-        for (final j in journeys) ...[
-          const SizedBox(height: UiSpace.sm),
-          Builder(
-            builder: (context) {
-              final checkIns =
-                  ref.watch(myCheckInsProvider(j.id)).asData?.value ??
-                  const <CheckIn>[];
-              final membership = ref
-                  .watch(myMembershipProvider(j.id))
-                  .asData
-                  ?.value;
-              final progress = JourneyProgress.compute(
-                journey: j,
-                membership: membership,
-                checkIns: checkIns,
-                now: now,
-              );
-              final totalDays = progress.totalDays ?? j.durationDays ?? 0;
-              final dayPart = totalDays > 0
-                  ? l10n.widgets_previewDayOf(progress.dayNumber, totalDays)
-                  : l10n.widgets_previewDayOpen(progress.dayNumber);
-              final streakPart = l10n.widgets_previewStreakDays(
-                progress.summary.current,
-              );
-              return _PickerOptionCard(
-                key: ValueKey('widget-picker-option-${j.id}'),
-                title: j.title,
-                subtitle: '$dayPart · $streakPart',
-                selected: selectedId == j.id,
-                leading: UiTypeBadge(type: journeyTypeId(j), size: 36),
-                onPressed: () => Navigator.of(context).pop(j.id),
-              );
-            },
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _PickerOptionCard extends StatelessWidget {
-  const _PickerOptionCard({
-    required this.title,
-    required this.subtitle,
-    required this.selected,
-    required this.leading,
-    required this.onPressed,
-    super.key,
-  });
-
-  final String title;
-  final String subtitle;
-  final bool selected;
-  final Widget leading;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    return UiCard(
-      radius: UiRadius.menu,
-      shadowOffset: selected ? UiShadow.small : 0,
-      color: selected ? ui.surface : ui.fill,
-      borderColor: selected ? ui.accent : ui.outline,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      onPressed: onPressed,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 44),
-        child: Row(
-          children: [
-            leading,
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: UiText.body(
-                      size: 15,
-                      weight: FontWeight.w700,
-                      height: 1.35,
-                      color: ui.ink,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: UiText.body(
-                      size: 12,
-                      weight: FontWeight.w600,
-                      height: 1.35,
-                      color: ui.inkMuted,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            if (selected)
-              const OurneyIcon(name: 'check-circle', size: 22)
-            else
-              Container(
-                width: 22,
-                height: 22,
-                decoration: BoxDecoration(
-                  color: ui.surface,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: ui.inkMuted, width: UiBorder.standard),
-                ),
-              ),
-          ],
-        ),
       ),
     );
   }
@@ -1142,11 +493,7 @@ class _SetupStepRow extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 body,
-                style: UiText.body(
-                  size: 13,
-                  height: 1.4,
-                  color: ui.inkMuted,
-                ),
+                style: UiText.body(size: 13, height: 1.4, color: ui.inkMuted),
               ),
             ],
           ),
@@ -1196,9 +543,7 @@ class _WidgetPreviewCard extends ConsumerWidget {
               journey: j,
               photoMode: photoMode,
             ),
-            WidgetPreviewKind.streak => _StreakWidgetPreview(
-              journey: j,
-            ),
+            WidgetPreviewKind.streak => _StreakWidgetPreview(journey: j),
             WidgetPreviewKind.squad => _SquadWidgetPreview(
               journey: sq,
               photoMode: photoMode,
@@ -1260,10 +605,7 @@ class _SamplePreviewPill extends StatelessWidget {
 }
 
 class _TodayWidgetPreview extends ConsumerWidget {
-  const _TodayWidgetPreview({
-    required this.journey,
-    required this.photoMode,
-  });
+  const _TodayWidgetPreview({required this.journey, required this.photoMode});
 
   final Journey? journey;
   final WidgetPhotoMode photoMode;
@@ -1438,9 +780,7 @@ class _TodayWidgetPreview extends ConsumerWidget {
                         child: Container(
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: weekLabels[i].done
-                                ? ui.accent
-                                : ui.fill,
+                            color: weekLabels[i].done ? ui.accent : ui.fill,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                               color: ui.outline,
@@ -1671,11 +1011,7 @@ class _StreakWidgetPreview extends ConsumerWidget {
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: UiText.body(
-                  size: 12,
-                  height: 1.35,
-                  color: ui.inkMuted,
-                ),
+                style: UiText.body(size: 12, height: 1.35, color: ui.inkMuted),
               ),
               const SizedBox(height: UiSpace.md),
               Row(
@@ -1707,10 +1043,7 @@ class _StreakWidgetPreview extends ConsumerWidget {
 }
 
 class _SquadWidgetPreview extends ConsumerWidget {
-  const _SquadWidgetPreview({
-    required this.journey,
-    required this.photoMode,
-  });
+  const _SquadWidgetPreview({required this.journey, required this.photoMode});
 
   final Journey? journey;
   final WidgetPhotoMode photoMode;
@@ -1730,7 +1063,8 @@ class _SquadWidgetPreview extends ConsumerWidget {
     if (j != null) {
       final now = ref.watch(journeysNowProvider);
       final myCheckIns =
-          ref.watch(myCheckInsProvider(j.id)).asData?.value ?? const <CheckIn>[];
+          ref.watch(myCheckInsProvider(j.id)).asData?.value ??
+          const <CheckIn>[];
       final membership = ref.watch(myMembershipProvider(j.id)).asData?.value;
       final localOnly = ref.watch(appConfigProvider).localOnly;
       final rawMembers = localOnly
@@ -1951,11 +1285,7 @@ class _SquadMemberPreviewBubble extends StatelessWidget {
         Stack(
           clipBehavior: Clip.none,
           children: [
-            UiAvatar(
-              name: name,
-              colorIndex: colorIndex,
-              size: 36,
-            ),
+            UiAvatar(name: name, colorIndex: colorIndex, size: 36),
             if (done)
               PositionedDirectional(
                 end: -2,
@@ -1967,10 +1297,7 @@ class _SquadMemberPreviewBubble extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: ui.success,
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: ui.surface,
-                      width: UiBorder.thin,
-                    ),
+                    border: Border.all(color: ui.surface, width: UiBorder.thin),
                   ),
                   child: OurneyIcon(
                     name: 'check',

@@ -186,9 +186,8 @@ object WidgetActions {
     }
 
     /**
-     * Shared selection writer used by both [OurneyWidgetConfigureActivity] and
-     * [OurneyWidgetBridge] (`setWidgetSelection`) so `state.json` AND Glance
-     * `PreferencesGlanceStateDefinition` never drift (`§5 Guardrail 5`).
+     * Updates the selection from [OurneyWidgetConfigureActivity] in both
+     * `state.json` and Glance preferences (`§5 Guardrail 5`).
      */
     suspend fun applyWidgetSelection(
         context: Context,
