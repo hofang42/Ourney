@@ -55,5 +55,16 @@
   "widgets_setupStep3Title": "3. Tap \"Snap now\" to open the camera directly",
   "widgets_setupStep3Body": "Each widget opens the camera for its journey. To switch journeys, press and hold the widget, then tap Edit Widget.",
   "widgets_setupStep3BodyAutomatic": "The widget picks the journey that still needs today's check-in.",
-  "widgets_setupStep3BodyAndroid": "Every widget opens the camera for that exact journey. To switch journeys, tap Switch on the widget."
+  "widgets_setupStep3BodyAndroid": "Every widget opens the camera for that exact journey. To switch journeys, tap Switch on the widget.",
+  "widgets_secJourneyPicker": "widget journeys",
+  "widgets_iosTodayStreakRowTitle": "Today & Streak",
+  "widgets_iosSquadRowTitle": "Squad & Couple",
+  "widgets_pickerSheetTodayTitle": "Switch journey",
+  "widgets_pickerSheetSquadTitle": "Switch squad",
+  "widgets_pickerSheetSubtitle": "Choose a shared journey for widgets of this type, or leave it on Automatic.",
+  "widgets_autoOptionTitle": "Automatic",
+  "widgets_autoTodaySubtitle": "Prioritizes your next unchecked journey today",
+  "widgets_autoSquadSubtitle": "Shows your active Squad or Couple journey",
+  "widgets_changeAction": "Switch",
+  "widgets_setupStep3BodyJourneyPicker": "To switch journeys, choose one in the widget journey section below."
 }

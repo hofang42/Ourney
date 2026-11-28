@@ -422,7 +422,7 @@ abstract class WidgetsL10n {
   /// **'Mỗi tiện ích mở máy ảnh của hành trình đó. Để đổi hành trình, chạm và giữ tiện ích rồi chọn Sửa tiện ích.'**
   String get widgets_setupStep3Body;
 
-  /// Step 3 body for iOS versions without configurable widgets (iOS 15–16).
+  /// Step 3 body while widget configuration mode is unknown.
   ///
   /// In vi, this message translates to:
   /// **'Tiện ích tự chọn hành trình cần check-in hôm nay.'**
@@ -433,6 +433,72 @@ abstract class WidgetsL10n {
   /// In vi, this message translates to:
   /// **'Mỗi tiện ích mở thẳng máy ảnh của đúng hành trình đó. Muốn đổi hành trình, bấm Đổi trên tiện ích.'**
   String get widgets_setupStep3BodyAndroid;
+
+  /// No description provided for @widgets_secJourneyPicker.
+  ///
+  /// In vi, this message translates to:
+  /// **'đổi hành trình trên tiện ích'**
+  String get widgets_secJourneyPicker;
+
+  /// No description provided for @widgets_iosTodayStreakRowTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay & Chuỗi'**
+  String get widgets_iosTodayStreakRowTitle;
+
+  /// No description provided for @widgets_iosSquadRowTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đồng đội & Cặp đôi'**
+  String get widgets_iosSquadRowTitle;
+
+  /// No description provided for @widgets_pickerSheetTodayTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi hành trình'**
+  String get widgets_pickerSheetTodayTitle;
+
+  /// No description provided for @widgets_pickerSheetSquadTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi nhóm đồng đội'**
+  String get widgets_pickerSheetSquadTitle;
+
+  /// No description provided for @widgets_pickerSheetSubtitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn hành trình dùng chung cho các tiện ích cùng loại, hoặc để Tự động.'**
+  String get widgets_pickerSheetSubtitle;
+
+  /// No description provided for @widgets_autoOptionTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tự động'**
+  String get widgets_autoOptionTitle;
+
+  /// No description provided for @widgets_autoTodaySubtitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ưu tiên hành trình cần chụp hôm nay'**
+  String get widgets_autoTodaySubtitle;
+
+  /// No description provided for @widgets_autoSquadSubtitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hiện nhóm hoặc cặp đôi đang hoạt động'**
+  String get widgets_autoSquadSubtitle;
+
+  /// No description provided for @widgets_changeAction.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi'**
+  String get widgets_changeAction;
+
+  /// No description provided for @widgets_setupStep3BodyJourneyPicker.
+  ///
+  /// In vi, this message translates to:
+  /// **'Muốn đổi hành trình, chọn ở mục Hành trình trên tiện ích bên dưới.'**
+  String get widgets_setupStep3BodyJourneyPicker;
 }
 
 class _WidgetsL10nDelegate extends LocalizationsDelegate<WidgetsL10n> {

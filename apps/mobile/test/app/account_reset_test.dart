@@ -18,6 +18,7 @@ import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
 import 'package:ourney/features/reminders/data/reminder_settings.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney/features/update/data/update_prefs.dart';
+import 'package:ourney/features/widgets/data/widget_settings.dart';
 import 'package:ourney_core/ourney_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -67,6 +68,8 @@ void main() {
       journeyGhostGuidePrefKey(journeyId): true,
       ReminderPrefs.streakAlerts: false,
       ReminderPrefs.promptOffered: true,
+      WidgetPrefs.defaultJourneyId: journeyId,
+      WidgetPrefs.defaultSquadId: 'old-squad',
       // Device settings survive.
       AuthMethodPrefs.lastMethodKey: 'password',
       ThemeModeController.prefsKey: 'dark',
@@ -113,6 +116,8 @@ void main() {
     expect(container.read(eulaAcceptedProvider), isTrue);
     expect(container.read(feedbackDraftProvider)?.title, 'Secret draft idea');
     expect(container.read(streakAlertsEnabledProvider), isFalse);
+    expect(container.read(defaultWidgetJourneyIdProvider), journeyId);
+    expect(container.read(defaultWidgetSquadIdProvider), 'old-squad');
     container.read(hiddenCheckInIdsProvider.notifier).hide('c1');
     container.read(hiddenFeatureRequestIdsProvider.notifier).hide('req-1');
     container
@@ -165,6 +170,10 @@ void main() {
     expect(container.read(createProgressProvider), isNull);
     expect(container.read(reminderSettingsProvider), isEmpty);
     expect(container.read(streakAlertsEnabledProvider), isTrue);
+    expect(prefs.containsKey(WidgetPrefs.defaultJourneyId), isFalse);
+    expect(prefs.containsKey(WidgetPrefs.defaultSquadId), isFalse);
+    expect(container.read(defaultWidgetJourneyIdProvider), isNull);
+    expect(container.read(defaultWidgetSquadIdProvider), isNull);
     expect(container.read(reminderBannerProvider), isNull);
     expect(prefs.containsKey(ReminderPrefs.promptOffered), isFalse);
     expect(

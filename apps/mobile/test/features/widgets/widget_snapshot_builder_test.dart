@@ -3,6 +3,7 @@ library;
 
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show TargetPlatform;
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/redirect.dart' show AuthStatus;
@@ -82,6 +83,74 @@ CheckIn _makeCheckIn({
 void main() {
   // 2026-11-24 11:55 UTC == 2026-11-24 18:55 in Asia/Ho_Chi_Minh (+07:00).
   final nowUtc = DateTime.utc(2026, 11, 24, 11, 55);
+
+  group('Static widget defaults', () {
+    final journeys = [
+      WidgetJourneyBuildInput(
+        journey: _makeJourney(id: 'solo', title: 'Solo'),
+      ),
+      WidgetJourneyBuildInput(
+        journey: _makeJourney(
+          id: 'squad',
+          title: 'Squad',
+          kind: JourneyKind.group,
+        ),
+      ),
+      WidgetJourneyBuildInput(
+        journey: _makeJourney(
+          id: 'archived',
+          title: 'Archived squad',
+          kind: JourneyKind.group,
+        ).copyWith(status: JourneyStatus.archived),
+      ),
+    ];
+
+    WidgetSnapshot build({
+      TargetPlatform platform = TargetPlatform.iOS,
+      bool? configurable = false,
+      String journeyId = ' solo ',
+      String squadId = ' squad ',
+    }) => WidgetSnapshotBuilder.build(
+      now: nowUtc,
+      authStatus: AuthStatus.signedIn,
+      journeyInputs: journeys,
+      platform: platform,
+      configurableWidgets: configurable,
+      defaultJourneyId: journeyId,
+      defaultSquadId: squadId,
+    );
+
+    test('publishes concrete active IDs on static iOS', () {
+      final json = build().toJson();
+      expect(json['defaultJourneyId'], 'solo');
+      expect(json['defaultSquadId'], 'squad');
+    });
+
+    test(
+      'omits default IDs on Android and before or outside static iOS mode',
+      () {
+        for (final snapshot in [
+          build(platform: TargetPlatform.android),
+          build(configurable: true),
+          build(configurable: null),
+        ]) {
+          expect(snapshot.defaultJourneyId, isNull);
+          expect(snapshot.defaultSquadId, isNull);
+        }
+      },
+    );
+
+    test('omits Automatic, archived, unknown and invalid squad choices', () {
+      for (final snapshot in [
+        build(journeyId: 'auto', squadId: 'auto'),
+        build(journeyId: 'archived', squadId: 'archived'),
+        build(journeyId: 'missing', squadId: 'solo'),
+      ]) {
+        expect(snapshot.defaultJourneyId, isNull);
+        expect(snapshot.defaultSquadId, isNull);
+      }
+    });
+  });
 
   group('Couple widgets', () {
     final couple = _makeJourney(

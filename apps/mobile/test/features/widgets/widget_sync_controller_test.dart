@@ -1119,52 +1119,75 @@ void main() {
       expect(fakeBridge.snapshotSyncs, hasLength(3));
     });
 
-    test(
-      'syncNow removes legacy selection keys before publishing a snapshot',
-      () async {
-        final prefs = await testPrefs({
-          'widgets.defaultJourneyId.v2': 'legacy-journey',
-          'widgets.defaultSquadId.v2': 'legacy-squad',
-        });
-        final bridge = FakeWidgetBridgeGateway();
-        final container = ProviderContainer(
-          overrides: [
-            appConfigProvider.overrideWithValue(testBackendConfig),
-            sharedPreferencesProvider.overrideWithValue(prefs),
-            supabaseClientProvider.overrideWithValue(null),
-            currentUserIdProvider.overrideWith(_SignedInUser.new),
-            widgetBridgeGatewayProvider.overrideWithValue(bridge),
-            widgetThumbPreparerProvider.overrideWithValue(_NoOpThumbPreparer()),
-            journeyRepositoryProvider.overrideWithValue(
-              FakeReminderJourneyRepository([]),
+    for (final (platform, configurable, expectedId) in [
+      (TargetPlatform.iOS, false, 'j1'),
+      (TargetPlatform.iOS, true, null),
+      (TargetPlatform.android, false, null),
+    ]) {
+      test(
+        'syncNow on ${platform.name} with configurableWidgets=$configurable '
+        'preserves v2 preferences and publishes default ID $expectedId',
+        () async {
+          debugDefaultTargetPlatformOverride = platform;
+          addTearDown(() => debugDefaultTargetPlatformOverride = null);
+          final prefs = await testPrefs({
+            'widgets.defaultJourneyId': 'v1-journey',
+            'widgets.defaultSquadId': 'v1-squad',
+            'widgets.defaultJourneyId.v2': 'j1',
+            'widgets.defaultSquadId.v2': 'legacy-squad',
+          });
+          final bridge = FakeWidgetBridgeGateway(
+            capabilities: WidgetCapabilities(
+              widgets: true,
+              liveActivity: true,
+              promotedLiveUpdates: false,
+              appGroup: true,
+              configurableWidgets: configurable,
             ),
-            checkInRepositoryProvider.overrideWithValue(
-              FakeReminderCheckInRepository(),
-            ),
-            notificationGatewayProvider.overrideWithValue(
-              FakeNotificationGateway(granted: true),
-            ),
-            reminderDeviceTimezoneProvider.overrideWith(
-              (ref) async => 'Asia/Ho_Chi_Minh',
-            ),
-            widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
-          ],
-        );
-        addTearDown(container.dispose);
+          );
+          final container = ProviderContainer(
+            overrides: [
+              appConfigProvider.overrideWithValue(testBackendConfig),
+              sharedPreferencesProvider.overrideWithValue(prefs),
+              supabaseClientProvider.overrideWithValue(null),
+              currentUserIdProvider.overrideWith(_SignedInUser.new),
+              widgetBridgeGatewayProvider.overrideWithValue(bridge),
+              widgetThumbPreparerProvider.overrideWithValue(
+                _NoOpThumbPreparer(),
+              ),
+              journeyRepositoryProvider.overrideWithValue(
+                FakeReminderJourneyRepository([reminderJourney()]),
+              ),
+              checkInRepositoryProvider.overrideWithValue(
+                FakeReminderCheckInRepository(),
+              ),
+              notificationGatewayProvider.overrideWithValue(
+                FakeNotificationGateway(granted: true),
+              ),
+              reminderDeviceTimezoneProvider.overrideWith(
+                (ref) async => 'Asia/Ho_Chi_Minh',
+              ),
+              widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+            ],
+          );
+          addTearDown(container.dispose);
 
-        await container.read(widgetSyncControllerProvider).syncNow();
+          await container.read(widgetSyncControllerProvider).syncNow();
 
-        expect(prefs.containsKey('widgets.defaultJourneyId.v2'), isFalse);
-        expect(prefs.containsKey('widgets.defaultSquadId.v2'), isFalse);
-        expect(bridge.snapshotSyncs, hasLength(1));
-        final snapshot = jsonDecode(
-          bridge.snapshotSyncs.single.snapshotJson,
-        ) as Map<String, dynamic>;
-        expect(snapshot.containsKey('defaultJourneyId'), isFalse);
-        expect(snapshot.containsKey('defaultSquadId'), isFalse);
-      },
-      timeout: const Timeout(Duration(seconds: 30)),
-    );
+          expect(prefs.containsKey('widgets.defaultJourneyId'), isFalse);
+          expect(prefs.containsKey('widgets.defaultSquadId'), isFalse);
+          expect(prefs.getString('widgets.defaultJourneyId.v2'), 'j1');
+          expect(prefs.getString('widgets.defaultSquadId.v2'), 'legacy-squad');
+          expect(bridge.snapshotSyncs, hasLength(1));
+          final snapshot = jsonDecode(
+            bridge.snapshotSyncs.single.snapshotJson,
+          ) as Map<String, dynamic>;
+          expect(snapshot['defaultJourneyId'], expectedId);
+          expect(snapshot.containsKey('defaultSquadId'), isFalse);
+        },
+        timeout: const Timeout(Duration(seconds: 30)),
+      );
+    }
 
     test(
       'configurableWidgets defaults false when the native key is absent',
@@ -1184,8 +1207,7 @@ void main() {
     );
 
     test(
-      'WidgetPrefs.clearLegacyDefaultSelectionKeys one-time deletes both v1 and v2 '
-      'default widget selection keys so old values never pin silently',
+      'WidgetPrefs.clearLegacyDefaultSelectionKeys only deletes v1 keys',
       () async {
         final prefs = await testPrefs();
         await prefs.setString('widgets.defaultJourneyId', 'legacy-pinned-j1');
@@ -1200,8 +1222,8 @@ void main() {
 
         expect(prefs.containsKey('widgets.defaultJourneyId'), isFalse);
         expect(prefs.containsKey('widgets.defaultSquadId'), isFalse);
-        expect(prefs.containsKey('widgets.defaultJourneyId.v2'), isFalse);
-        expect(prefs.containsKey('widgets.defaultSquadId.v2'), isFalse);
+        expect(prefs.getString('widgets.defaultJourneyId.v2'), 'legacy-v2-j1');
+        expect(prefs.getString('widgets.defaultSquadId.v2'), 'legacy-v2-s1');
       },
     );
   });

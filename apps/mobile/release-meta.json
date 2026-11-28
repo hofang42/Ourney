@@ -10,13 +10,13 @@
   "force_on_major": true,
   "notes": {
     "vi": [
-      "iPhone (iOS 17 trở lên): chạm và giữ tiện ích, chọn Sửa tiện ích để chọn hành trình riêng cho từng tiện ích. Tiện ích đang đặt sẽ về Tự động",
+      "Trên bản iOS tự ký, tiện ích dùng lại bộ chọn hành trình trong Cài đặt → Tiện ích. Nếu sau khi cập nhật tiện ích vẫn xám, hãy gỡ và thêm lại tiện ích hoặc khởi động lại iPhone.",
       "Xem check-in: ảnh dọc hiện đủ khung, chạm hai lần để phóng to, theo đúng nền sáng hoặc tối",
       "Thẻ chia sẻ: tiêu đề không lặp số ngày, thẻ chạy bộ hiện đúng số km đã ghi",
       "Màn mở app có slogan mới: Góp tấm hình, giữ nhịp mình"
     ],
     "en": [
-      "iPhone (iOS 17+): touch and hold a widget, then tap Edit Widget to pick its journey. Widgets already placed switch back to Automatic",
+      "On self-signed iOS installs, widgets use the journey picker in Settings → Widgets again. If a widget stays grey after updating, remove and re-add it or restart your iPhone.",
       "Check-in view: portrait photos show in full, double-tap to zoom, and the screen follows light or dark mode",
       "Share cards: no repeated day count in titles, and run cards show the km you logged",
       "New slogan on the opening screen: One photo at a time, at your own pace"

@@ -206,4 +206,40 @@ class WidgetsL10nVi extends WidgetsL10n {
   @override
   String get widgets_setupStep3BodyAndroid =>
       'Mỗi tiện ích mở thẳng máy ảnh của đúng hành trình đó. Muốn đổi hành trình, bấm Đổi trên tiện ích.';
+
+  @override
+  String get widgets_secJourneyPicker => 'đổi hành trình trên tiện ích';
+
+  @override
+  String get widgets_iosTodayStreakRowTitle => 'Hôm nay & Chuỗi';
+
+  @override
+  String get widgets_iosSquadRowTitle => 'Đồng đội & Cặp đôi';
+
+  @override
+  String get widgets_pickerSheetTodayTitle => 'Đổi hành trình';
+
+  @override
+  String get widgets_pickerSheetSquadTitle => 'Đổi nhóm đồng đội';
+
+  @override
+  String get widgets_pickerSheetSubtitle =>
+      'Chọn hành trình dùng chung cho các tiện ích cùng loại, hoặc để Tự động.';
+
+  @override
+  String get widgets_autoOptionTitle => 'Tự động';
+
+  @override
+  String get widgets_autoTodaySubtitle => 'Ưu tiên hành trình cần chụp hôm nay';
+
+  @override
+  String get widgets_autoSquadSubtitle =>
+      'Hiện nhóm hoặc cặp đôi đang hoạt động';
+
+  @override
+  String get widgets_changeAction => 'Đổi';
+
+  @override
+  String get widgets_setupStep3BodyJourneyPicker =>
+      'Muốn đổi hành trình, chọn ở mục Hành trình trên tiện ích bên dưới.';
 }

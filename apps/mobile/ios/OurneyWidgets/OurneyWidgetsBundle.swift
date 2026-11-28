@@ -4,9 +4,9 @@ import WidgetKit
 @main
 enum OurneyWidgetsLauncher {
   @MainActor static func main() {
-    // Zero synchronous file or profile I/O before WidgetBundle.main() registers XPC with chronod!
+    // One profile existence check is allowed before WidgetBundle.main() registers XPC with chronod.
     #if canImport(AppIntents)
-    if #available(iOSApplicationExtension 17.0, iOS 17.0, *) {
+    if #available(iOSApplicationExtension 17.0, iOS 17.0, *), WidgetConfigMode.current == .configurable {
       OurneyConfigurableWidgetsBundle.main()
       return
     }

@@ -244,10 +244,21 @@
   },
   "widgets_setupStep3BodyAutomatic": "Tiện ích tự chọn hành trình cần check-in hôm nay.",
   "@widgets_setupStep3BodyAutomatic": {
-    "description": "Step 3 body for iOS versions without configurable widgets (iOS 15–16)."
+    "description": "Step 3 body while widget configuration mode is unknown."
   },
   "widgets_setupStep3BodyAndroid": "Mỗi tiện ích mở thẳng máy ảnh của đúng hành trình đó. Muốn đổi hành trình, bấm Đổi trên tiện ích.",
   "@widgets_setupStep3BodyAndroid": {
     "description": "Step 3 body of the widget setup instructions (Android)."
-  }
+  },
+  "widgets_secJourneyPicker": "đổi hành trình trên tiện ích",
+  "widgets_iosTodayStreakRowTitle": "Hôm nay & Chuỗi",
+  "widgets_iosSquadRowTitle": "Đồng đội & Cặp đôi",
+  "widgets_pickerSheetTodayTitle": "Đổi hành trình",
+  "widgets_pickerSheetSquadTitle": "Đổi nhóm đồng đội",
+  "widgets_pickerSheetSubtitle": "Chọn hành trình dùng chung cho các tiện ích cùng loại, hoặc để Tự động.",
+  "widgets_autoOptionTitle": "Tự động",
+  "widgets_autoTodaySubtitle": "Ưu tiên hành trình cần chụp hôm nay",
+  "widgets_autoSquadSubtitle": "Hiện nhóm hoặc cặp đôi đang hoạt động",
+  "widgets_changeAction": "Đổi",
+  "widgets_setupStep3BodyJourneyPicker": "Muốn đổi hành trình, chọn ở mục Hành trình trên tiện ích bên dưới."
 }
