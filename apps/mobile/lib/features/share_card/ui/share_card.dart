@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../ui/ui.dart';
+import '../../journeys/domain/journey_title.dart';
 import '../domain/share_card_content.dart';
 import '../l10n/generated/share_card_localizations.dart';
 
@@ -626,9 +627,15 @@ class _MemoryCard extends StatelessWidget {
     final c = ctx.content;
     final total = math.min(ctx.story ? 24 : 20, math.max(ctx.total, 1));
     final shot = math.min(c.photoCount, total);
-    final title = ctx.l10n.share_card_tripPosterTitle(
-      ctx.total,
-      c.title.toUpperCase(),
+    final cols = total == 1 ? 1 : (total <= 4 ? 2 : (total <= 9 ? 3 : 4));
+    final slots = ((total + cols - 1) ~/ cols) * cols;
+    final title = keepNumberWithUnit(
+      titleStatesLength(c.title)
+          ? c.title.toUpperCase()
+          : ctx.l10n.share_card_tripPosterTitle(
+              ctx.total,
+              c.title.toUpperCase(),
+            ),
     );
     return DecoratedBox(
       decoration: const BoxDecoration(
@@ -661,12 +668,14 @@ class _MemoryCard extends StatelessWidget {
                   Text(
                     title,
                     key: const ValueKey('share-card-title'),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
                     style: _heading(
                       'Fraunces',
                       size: 17,
                       weight: 600,
-                      height: 1.25,
+                      height: 1.3,
                       color: _ink,
                     ),
                   ),
@@ -677,7 +686,7 @@ class _MemoryCard extends StatelessWidget {
                       color: const Color(0xFF111111),
                       padding: const EdgeInsets.fromLTRB(4, 11, 4, 11),
                       child: GridView.count(
-                        crossAxisCount: 4,
+                        crossAxisCount: cols,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 3,
@@ -685,8 +694,13 @@ class _MemoryCard extends StatelessWidget {
                         childAspectRatio: 3 / 2,
                         padding: EdgeInsets.zero,
                         children: [
-                          for (var i = 0; i < total; i++)
-                            _Frame(ctx: ctx, index: i, shot: i < shot),
+                          for (var i = 0; i < slots; i++)
+                            _Frame(
+                              ctx: ctx,
+                              index: i,
+                              shot: i < shot,
+                              unexposed: i >= total,
+                            ),
                         ],
                       ),
                     ),
@@ -719,11 +733,17 @@ class _SprocketPainter extends CustomPainter {
 }
 
 class _Frame extends StatelessWidget {
-  const _Frame({required this.ctx, required this.index, required this.shot});
+  const _Frame({
+    required this.ctx,
+    required this.index,
+    required this.shot,
+    this.unexposed = false,
+  });
 
   final _Ctx ctx;
   final int index;
   final bool shot;
+  final bool unexposed;
 
   @override
   Widget build(BuildContext context) {
@@ -735,8 +755,10 @@ class _Frame extends StatelessWidget {
     ][index % 4];
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: const Color(0xFF080808),
-        border: Border.all(color: const Color(0xFF6B6258)),
+        color: unexposed ? const Color(0xFF030303) : const Color(0xFF080808),
+        border: Border.all(
+          color: unexposed ? const Color(0xFF302B27) : const Color(0xFF6B6258),
+        ),
       ),
       child: Stack(
         fit: StackFit.expand,
@@ -750,20 +772,21 @@ class _Frame extends StatelessWidget {
               gradient: tones,
               glyphSize: 0,
             ),
-          Positioned(
-            right: 2,
-            bottom: 1,
-            child: Text(
-              '${index + 1}'.padLeft(2, '0'),
-              style: const TextStyle(
-                fontFamily: UiFonts.mono,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                height: 1,
-                color: Color(0xFFFFFFFF),
+          if (!unexposed)
+            Positioned(
+              right: 2,
+              bottom: 1,
+              child: Text(
+                '${index + 1}'.padLeft(2, '0'),
+                style: const TextStyle(
+                  fontFamily: UiFonts.mono,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  height: 1,
+                  color: Color(0xFFFFFFFF),
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

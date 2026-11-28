@@ -4,6 +4,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../../data/group_daily_checkins_provider.dart';
 import '../../../../ui/ui.dart';
+import '../../domain/journey_title.dart';
 import '../../domain/wrapped_story.dart';
 import '../../l10n/generated/journeys_localizations.dart';
 
@@ -158,9 +159,13 @@ class _Squad extends ConsumerWidget {
     final duration = journey.durationDays;
     final chipText = duration == null
         ? l10n.journeys_home_squadChipOpen(journey.title.toUpperCase())
-        : l10n.journeys_home_squadChip(
-            journey.title.toUpperCase(),
-            duration,
+        : keepNumberWithUnit(
+            titleStatesLength(journey.title)
+                ? journey.title.toUpperCase()
+                : l10n.journeys_home_squadChip(
+                    journey.title.toUpperCase(),
+                    duration,
+                  ),
           );
     final trophySubtitle = duration == null
         ? l10n.journeys_home_trophyOpen

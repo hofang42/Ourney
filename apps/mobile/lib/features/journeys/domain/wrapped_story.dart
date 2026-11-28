@@ -3,6 +3,7 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../../data/group_daily_checkins_provider.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'journey_progress.dart';
+import 'journey_title.dart';
 
 /// Numbers the end-of-journey story is built from (Figma
 /// `wrappedPagesFor`), taken from the caller's own check-ins.
@@ -175,24 +176,18 @@ String wrappedSummaryTitle(
     s.days,
     s.total,
   ),
-  PersonaSkinId.memoryCollectors => l10n.journeys_wrapped_sumMemory(
-    s.total,
-    journey.title.toUpperCase(),
-  ),
+  PersonaSkinId.memoryCollectors =>
+    titleStatesLength(journey.title)
+        ? journey.title.toUpperCase()
+        : l10n.journeys_wrapped_sumMemory(s.total, journey.title.toUpperCase()),
   PersonaSkinId.coupleRituals => l10n.journeys_wrapped_sumCouple(
     s.total,
     s.moments,
   ),
   PersonaSkinId.aestheticFlexer =>
     _isRunningWorkout(journey, s)
-        ? l10n.journeys_wrapped_sumFlexer(
-            s.total,
-            s.kmText,
-          )
-        : l10n.journeys_wrapped_sumSquad(
-            s.days,
-            s.total,
-          ),
+        ? l10n.journeys_wrapped_sumFlexer(s.total, s.kmText)
+        : l10n.journeys_wrapped_sumSquad(s.days, s.total),
   PersonaSkinId.minimalistHabit => l10n.journeys_wrapped_sumMinimal(
     s.days,
     s.total,

@@ -141,6 +141,65 @@ void main() {
     expect(media.requested, [eligible.photoPath]);
   });
 
+  for (final (locale, title) in [
+    ('en', 'Da Lat 7 days'),
+    ('vi', 'Đà Lạt 7 ngày'),
+  ]) {
+    testWidgets('memory title states its length once ($locale)', (
+      tester,
+    ) async {
+      final j = testJourney(
+        templateId: TemplateId.travel,
+        title: title,
+        durationDays: 7,
+      );
+      await pumpShare(tester, journey: j, locale: Locale(locale));
+      final expected = title.toUpperCase().replaceFirst('7 ', '7\u00A0');
+      expect(_text(tester, 'share-card-heading'), expected);
+      expect(_text(tester, 'share-card-title'), expected);
+    });
+  }
+  for (final (days, columns) in [
+    (1, 1),
+    (3, 2),
+    (4, 2),
+    (7, 3),
+    (13, 4),
+    (20, 4),
+  ]) {
+    testWidgets('memory Story $days days uses $columns columns', (
+      tester,
+    ) async {
+      final j = testJourney(templateId: TemplateId.travel, durationDays: days);
+      await pumpShare(tester, journey: j);
+      final grid = tester.widget<GridView>(
+        find.descendant(
+          of: _key('share-card-skin-memory'),
+          matching: find.byType(GridView),
+        ),
+      );
+      expect(
+        (grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount)
+            .crossAxisCount,
+        columns,
+      );
+      expect(
+        grid.childrenDelegate.estimatedChildCount,
+        ((days + columns - 1) ~/ columns) * columns,
+      );
+      final frames = find.descendant(
+        of: _key('share-card-skin-memory'),
+        matching: find.byType(Text),
+      );
+      final numbers = tester
+          .widgetList<Text>(frames)
+          .map((text) => text.data)
+          .where((text) => RegExp(r'^\d{2}$').hasMatch(text ?? ''));
+      expect(numbers.length, days);
+      expect(numbers, contains(days.toString().padLeft(2, '0')));
+    });
+  }
+
   group('layout (FR-E1)', () {
     testWidgets('story by default at 360x640 (x3 = 1080x1920), toggles to '
         'feed 360x450 (x3 = 1080x1350)', (tester) async {
@@ -230,7 +289,7 @@ void main() {
         checkIns: [testCheckIn(day1Trip.id, const LocalDate(2026, 10, 16))],
         locale: const Locale('en'),
       );
-      expect(find.text('1 DAY · DA LAT'), findsWidgets);
+      expect(find.text('1\u00A0DAY · DA LAT'), findsWidgets);
       expect(find.textContaining('1 DAYS'), findsNothing);
     });
 
