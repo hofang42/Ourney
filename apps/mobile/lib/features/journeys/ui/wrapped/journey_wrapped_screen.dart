@@ -34,6 +34,7 @@ import '../../../share_card/domain/share_card_content.dart'
 import '../../../sharing/data/sharing_providers.dart' show shareStateProvider;
 import '../../data/journeys_providers.dart';
 import '../../domain/journey_progress.dart';
+import '../../domain/journey_title.dart';
 import '../../domain/wrapped_story.dart';
 import '../../journeys_paths.dart';
 import '../../l10n/generated/journeys_localizations.dart';
@@ -318,6 +319,8 @@ class _WrappedBodyState extends State<_WrappedBody>
             padTop: 0,
             scroll: false,
             child: Semantics(
+              namesRoute: true,
+              scopesRoute: true,
               label: l10n.journeys_wrapped_title,
               container: true,
               explicitChildNodes: true,
@@ -791,6 +794,7 @@ class _SummaryState extends ConsumerState<_Summary> {
       }
     }
 
+    final summaryTitle = wrappedSummaryTitle(l10n, journey, skin, stats);
     return SingleChildScrollView(
       key: const ValueKey('wrapped-summary'),
       child: Column(
@@ -876,7 +880,9 @@ class _SummaryState extends ConsumerState<_Summary> {
                                 ),
                               ),
                               Text(
-                                wrappedSummaryTitle(l10n, journey, skin, stats),
+                                skin == PersonaSkinId.memoryCollectors
+                                    ? keepNumberWithUnit(summaryTitle)
+                                    : summaryTitle,
                                 key: const ValueKey('wrapped-summary-title'),
                                 textAlign: TextAlign.center,
                                 maxLines: 3,

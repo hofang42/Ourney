@@ -159,7 +159,14 @@ void main() {
       expect(_text(tester, 'share-card-title'), expected);
     });
   }
-  for (final (days, columns) in [(7, 3), (20, 4)]) {
+  for (final (days, columns) in [
+    (1, 1),
+    (3, 2),
+    (4, 2),
+    (7, 3),
+    (13, 4),
+    (20, 4),
+  ]) {
     testWidgets('memory Story $days days uses $columns columns', (
       tester,
     ) async {
@@ -176,6 +183,20 @@ void main() {
             .crossAxisCount,
         columns,
       );
+      expect(
+        grid.childrenDelegate.estimatedChildCount,
+        ((days + columns - 1) ~/ columns) * columns,
+      );
+      final frames = find.descendant(
+        of: _key('share-card-skin-memory'),
+        matching: find.byType(Text),
+      );
+      final numbers = tester
+          .widgetList<Text>(frames)
+          .map((text) => text.data)
+          .where((text) => RegExp(r'^\d{2}$').hasMatch(text ?? ''));
+      expect(numbers.length, days);
+      expect(numbers, contains(days.toString().padLeft(2, '0')));
     });
   }
 

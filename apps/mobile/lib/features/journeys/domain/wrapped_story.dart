@@ -176,25 +176,18 @@ String wrappedSummaryTitle(
     s.days,
     s.total,
   ),
-  PersonaSkinId.memoryCollectors => keepNumberWithUnit(
+  PersonaSkinId.memoryCollectors =>
     titleStatesLength(journey.title)
         ? journey.title.toUpperCase()
         : l10n.journeys_wrapped_sumMemory(s.total, journey.title.toUpperCase()),
-  ),
   PersonaSkinId.coupleRituals => l10n.journeys_wrapped_sumCouple(
     s.total,
     s.moments,
   ),
   PersonaSkinId.aestheticFlexer =>
     _isRunningWorkout(journey, s)
-        ? l10n.journeys_wrapped_sumFlexer(
-            s.total,
-            s.kmText,
-          )
-        : l10n.journeys_wrapped_sumSquad(
-            s.days,
-            s.total,
-          ),
+        ? l10n.journeys_wrapped_sumFlexer(s.total, s.kmText)
+        : l10n.journeys_wrapped_sumSquad(s.days, s.total),
   PersonaSkinId.minimalistHabit => l10n.journeys_wrapped_sumMinimal(
     s.days,
     s.total,

@@ -2,7 +2,7 @@
 bool titleStatesLength(String title) => _length.hasMatch(title);
 
 final _length = RegExp(
-  r'(?<![\p{L}\p{N}])\d+\s*-?\s*(ngày|ngay|đêm|dem|tuần|tuan|tháng|thang|days?|nights?|weeks?|months?|n\d*đ|n\d*d|d\d*n)(?![\p{L}\p{N}])',
+  r'(?<![\p{L}\p{N}])\d{1,3}\s*-?\s*(ngày|ngay|đêm|dem|tuần|tuan|tháng|thang|days?|nights?|weeks?|months?|n\d+đ|n\d+d|d\d+n)(?![\p{L}\p{N}])',
   caseSensitive: false,
   unicode: true,
 );

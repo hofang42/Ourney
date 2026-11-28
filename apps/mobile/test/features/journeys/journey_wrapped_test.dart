@@ -80,6 +80,12 @@ void main() {
       );
       final header = find.byType(UiBackHeader);
       expect(tester.widget<UiBackHeader>(header).title, isNull);
+      final routeSemantics = tester
+          .widgetList<Semantics>(find.byType(Semantics))
+          .where((widget) => widget.properties.label == 'Hành trình đã về đích')
+          .single;
+      expect(routeSemantics.properties.namesRoute, isTrue);
+      expect(routeSemantics.properties.scopesRoute, isTrue);
       expect(
         find.descendant(of: header, matching: find.byType(Text)),
         findsNothing,
@@ -101,6 +107,24 @@ void main() {
     await tester.tap(_key('wrapped-segment-4'));
     await tester.pumpAndSettle();
     expect(find.text('ĐÀ LẠT 7\u00A0NGÀY'), findsOneWidget);
+    final caption = wrappedShareText(
+      lookupJourneysL10n(const Locale('en')),
+      j,
+      PersonaSkinId.memoryCollectors,
+      const WrappedStats(
+        days: 4,
+        moments: 4,
+        total: 7,
+        streak: 4,
+        totalKm: 0,
+        photos: [],
+        lastCaption: null,
+        lastPlace: null,
+        pace: null,
+      ),
+    );
+    expect(caption, contains('ĐÀ LẠT 7 NGÀY'));
+    expect(caption, isNot(contains('\u00A0')));
   });
 
   group('Wrapped story', () {
@@ -271,12 +295,13 @@ void main() {
           tester,
           locale: const Locale('en'),
           extraOverrides: [
-            journeyByIdProvider('pending-id').overrideWith(
-              (ref) => pending.stream,
-            ),
+            journeyByIdProvider('pending-id')
+                .overrideWith((ref) => pending.stream),
           ],
         );
-        h.container.read(routerProvider).go(JourneysPaths.wrapped('pending-id'));
+        h.container
+            .read(routerProvider)
+            .go(JourneysPaths.wrapped('pending-id'));
         await tester.pump();
         await tester.pump();
         expect(_key('journey-wrapped-loading'), findsOneWidget);
@@ -302,36 +327,35 @@ void main() {
       },
     );
 
-    testWidgets(
-      'stream error shows error state with retry (DE-13)',
-      (tester) async {
-        var fail = true;
-        final j = testJourney(
-          id: 'j-err',
-          status: JourneyStatus.ended,
-          templateId: TemplateId.custom,
-        );
-        await pumpJourneys(
-          tester,
-          locale: const Locale('en'),
-          location: JourneysPaths.wrapped('j-err'),
-          extraOverrides: [
-            journeyByIdProvider('j-err').overrideWith(
-              (ref) => fail
-                  ? Stream<Journey?>.error(
-                      const OurneyException(OurneyErrorCode.offline),
-                    )
-                  : Stream<Journey?>.value(j),
-            ),
-          ],
-        );
-        expect(_key('journey-wrapped-error'), findsOneWidget);
-        fail = false;
-        await tester.tap(find.text('Retry'));
-        await tester.pumpAndSettle();
-        expect(_key('journey-wrapped'), findsOneWidget);
-      },
-    );
+    testWidgets('stream error shows error state with retry (DE-13)', (
+      tester,
+    ) async {
+      var fail = true;
+      final j = testJourney(
+        id: 'j-err',
+        status: JourneyStatus.ended,
+        templateId: TemplateId.custom,
+      );
+      await pumpJourneys(
+        tester,
+        locale: const Locale('en'),
+        location: JourneysPaths.wrapped('j-err'),
+        extraOverrides: [
+          journeyByIdProvider('j-err').overrideWith(
+            (ref) => fail
+                ? Stream<Journey?>.error(
+                    const OurneyException(OurneyErrorCode.offline),
+                  )
+                : Stream<Journey?>.value(j),
+          ),
+        ],
+      );
+      expect(_key('journey-wrapped-error'), findsOneWidget);
+      fail = false;
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+      expect(_key('journey-wrapped'), findsOneWidget);
+    });
 
     testWidgets(
       'Share and Save image in share sheet export rendered card image, honor hide-brand toggle, and surface share errors (DE-17, UX-07)',
@@ -408,7 +432,10 @@ void main() {
         await tester.pumpAndSettle();
         expect(sharer.shared, hasLength(2));
         expect(sharer.shared.last.text, isNot(contains('ourney · ')));
-        expect(sharer.shared.last.text, contains('https://ourney.tech/p/$token'));
+        expect(
+          sharer.shared.last.text,
+          contains('https://ourney.tech/p/$token'),
+        );
         expect(_key('wrapped-brand'), findsNothing);
         expect(h.location, JourneysPaths.wrapped(j.id));
 
@@ -450,7 +477,10 @@ void main() {
         await tester.tap(_key('wrapped-share-now'));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
-        expect(find.text('Something went wrong. Please try again.'), findsOneWidget);
+        expect(
+          find.text('Something went wrong. Please try again.'),
+          findsOneWidget,
+        );
       },
     );
 
