@@ -1911,4 +1911,31 @@ class JourneysL10nVi extends JourneysL10n {
   String journeys_startsIn(int days, int total) {
     return 'Bắt đầu sau $days ngày · $total ngày';
   }
+
+  @override
+  String get journeys_dayPrevious => 'Trước';
+
+  @override
+  String get journeys_dayNext => 'Sau';
+
+  @override
+  String journeys_dayPreviousSemantics(String date) {
+    return 'Check-in trước, $date';
+  }
+
+  @override
+  String journeys_dayNextSemantics(String date) {
+    return 'Check-in sau, $date';
+  }
+
+  @override
+  String get journeys_dayViewFull => 'Xem ảnh đầy đủ';
+
+  @override
+  String get journeys_dayOpenJourney => 'Mở hành trình';
+
+  @override
+  String journeys_dayPartnerNoPhoto(String name) {
+    return '$name chưa có ảnh ngày này';
+  }
 }

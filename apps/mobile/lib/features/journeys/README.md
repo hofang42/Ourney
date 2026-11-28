@@ -53,3 +53,5 @@ Errors are mapped from `OurneyException.error` (`limit`, `not_alone`,
   server for groups with other members).
 * While the data layer is not wired (repositories throw
   `UnimplementedError`), the list/detail fall back to `PlaceholderScreen`.
+
+The day viewer follows the journey light/dark skin; the full-screen photo view is always black.
