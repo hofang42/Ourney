@@ -15,6 +15,7 @@ import '../../../ui/ui.dart';
 import '../../auth/l10n/generated/auth_localizations.dart';
 import '../../checkin/photo_compressor.dart';
 import '../../journeys/data/journeys_providers.dart';
+import '../../journeys/journeys_paths.dart';
 import '../data/import_draft.dart';
 import '../data/import_files.dart';
 import '../data/import_job.dart';
@@ -461,12 +462,18 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     });
   }
 
-  Future<void> _openJourney(ImportJob? job) async {
+  Future<void> _openJourney(ImportJob? job, {bool write = false}) async {
     final id = _jobId;
     if (id == null) return;
     // Everything saved: nothing is kept for a later retry.
     if (job != null && job.complete) await _runner!.discard(id);
-    if (mounted) context.go(AppRoutes.journey(id));
+    if (mounted) {
+      context.go(
+        write && job != null
+            ? '${JourneysPaths.day(id, job.firstDate)}?caption=edit'
+            : AppRoutes.journey(id),
+      );
+    }
   }
 
   /// A create that keeps failing: drop the job and its files, after asking.
@@ -1317,10 +1324,22 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
       );
     }
     if (unsaved == 0) {
-      return UiButton(
-        key: const ValueKey('import-open'),
-        label: l10n.import_openJourney,
-        onPressed: () => _openJourney(job),
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          UiButton(
+            key: const ValueKey('import-open'),
+            label: l10n.import_openJourney,
+            onPressed: () => _openJourney(job),
+          ),
+          if (job.saved > 0)
+            UiButton.ghost(
+              key: const ValueKey('import-done-write'),
+              label: l10n.import_doneWrite,
+              onPressed: () => _openJourney(job, write: true),
+            ),
+        ],
       );
     }
     final paused = job.paused;

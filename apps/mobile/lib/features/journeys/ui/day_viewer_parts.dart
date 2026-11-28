@@ -239,18 +239,51 @@ class DayFacts extends StatelessWidget {
 }
 
 class DayCaptionSlot extends StatelessWidget {
-  const DayCaptionSlot({required this.caption, super.key});
+  const DayCaptionSlot({required this.caption, this.onEdit, super.key});
   final String? caption;
+  final VoidCallback? onEdit;
   @override
   Widget build(BuildContext context) {
-    // Retell PR 2: add/edit caption control goes here (canEditCheckInCaption).
-    if (caption == null || caption!.isEmpty) return const SizedBox.shrink();
+    final l10n = JourneysL10n.of(context);
+    final hasCaption = caption != null && caption!.isNotEmpty;
+    if (!hasCaption && onEdit == null) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(top: UiSpace.sm),
-      child: Text(
-        caption!,
-        key: const ValueKey('journey-day-caption'),
-        style: UiText.body(size: 16, height: 1.45, color: context.ui.ink),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (hasCaption)
+            Text(
+              caption!,
+              key: const ValueKey('journey-day-caption'),
+              maxLines: 6,
+              overflow: TextOverflow.ellipsis,
+              style: UiText.body(size: 16, height: 1.45, color: context.ui.ink),
+            ),
+          if (onEdit != null)
+            if (hasCaption)
+              UiIconButton(
+                key: const ValueKey('journey-day-edit-caption'),
+                glyph: OurneyIcon(
+                  name: 'pencil',
+                  flat: true,
+                  color: context.ui.ink,
+                ),
+                label: l10n.journeys_dayEditCaption,
+                onPressed: onEdit,
+              )
+            else
+              UiChip(
+                key: const ValueKey('journey-day-add-caption'),
+                label: l10n.journeys_dayAddCaption,
+                glyph: OurneyIcon(
+                  name: 'pencil',
+                  flat: true,
+                  color: context.ui.ink,
+                ),
+                onPressed: onEdit,
+              ),
+        ],
       ),
     );
   }

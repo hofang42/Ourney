@@ -2395,4 +2395,36 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_keepPhotoOnly => 'Keep photo only';
+
+  @override
+  String get journeys_dayAddCaption => 'Add caption';
+
+  @override
+  String get journeys_dayEditCaption => 'Edit caption';
+
+  @override
+  String get journeys_captionSheetTitle => 'Caption';
+
+  @override
+  String get journeys_captionSave => 'Save';
+
+  @override
+  String get journeys_captionClear => 'Keep photo only';
+
+  @override
+  String get journeys_captionContentPolicy =>
+      'Some words in this caption aren\'t allowed. Change a few words, or keep just the photo.';
+
+  @override
+  String get journeys_captionOffline =>
+      'You need a connection to edit this caption. Your text is still here.';
+
+  @override
+  String get journeys_captionPublicHint =>
+      'The caption will show on your share page.';
+
+  @override
+  String journeys_dayCaptionDate(int day, String date) {
+    return 'Day $day · $date';
+  }
 }

@@ -110,6 +110,10 @@ class FakeCheckInRepository implements CheckInRepository {
   bool submitUploaded = false;
 
   @override
+  Future<CheckIn> updateCaption(String checkInId, String? caption) =>
+      throw UnimplementedError();
+
+  @override
   Stream<List<CheckIn>> watchForJourney(String journeyId, {String? userId}) =>
       Stream.value([
         for (final c in existing)

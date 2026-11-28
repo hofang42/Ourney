@@ -2160,4 +2160,36 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_keepPhotoOnly => 'Chỉ giữ ảnh';
+
+  @override
+  String get journeys_dayAddCaption => 'Thêm chú thích';
+
+  @override
+  String get journeys_dayEditCaption => 'Sửa chú thích';
+
+  @override
+  String get journeys_captionSheetTitle => 'Chú thích';
+
+  @override
+  String get journeys_captionSave => 'Lưu';
+
+  @override
+  String get journeys_captionClear => 'Chỉ giữ ảnh';
+
+  @override
+  String get journeys_captionContentPolicy =>
+      'Chú thích này có từ chưa phù hợp. Bạn sửa lại vài chữ, hoặc chỉ giữ ảnh.';
+
+  @override
+  String get journeys_captionOffline =>
+      'Cần có mạng để sửa chú thích này. Chữ bạn viết vẫn còn đây.';
+
+  @override
+  String get journeys_captionPublicHint =>
+      'Chú thích sẽ hiện trên trang chia sẻ.';
+
+  @override
+  String journeys_dayCaptionDate(int day, String date) {
+    return 'Ngày $day · $date';
+  }
 }

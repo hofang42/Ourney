@@ -716,6 +716,19 @@ class SyncEngine {
         }
       }
     }
+    if (committed != null && committed['caption'] != row.caption) {
+      // A pending caption edit can outlive a partially committed legacy upload.
+      // Replay only the caption to preserve the attachment's immutable path.
+      check();
+      final updated = await remote.update(
+        'check_ins',
+        {'caption': row.caption},
+        match: {'id': id},
+      );
+      if (updated.isEmpty) {
+        throw const OurneyException(OurneyErrorCode.forbidden);
+      }
+    }
 
     // Metrics live in their own table (RLS honours hide_metric, 0005).
     check();

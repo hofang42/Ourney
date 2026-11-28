@@ -2629,6 +2629,21 @@ class $CheckInsTable extends CheckIns
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _moderatedMeta = const VerificationMeta(
+    'moderated',
+  );
+  @override
+  late final GeneratedColumn<bool> moderated = GeneratedColumn<bool>(
+    'moderated',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("moderated" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _metricValueMeta = const VerificationMeta(
     'metricValue',
   );
@@ -2698,6 +2713,7 @@ class $CheckInsTable extends CheckIns
     thumbPath,
     fromLibrary,
     caption,
+    moderated,
     metricValue,
     extras,
     partnerPhotoPath,
@@ -2766,6 +2782,12 @@ class $CheckInsTable extends CheckIns
       context.handle(
         _captionMeta,
         caption.isAcceptableOrUnknown(data['caption']!, _captionMeta),
+      );
+    }
+    if (data.containsKey('moderated')) {
+      context.handle(
+        _moderatedMeta,
+        moderated.isAcceptableOrUnknown(data['moderated']!, _moderatedMeta),
       );
     }
     if (data.containsKey('metric_value')) {
@@ -2853,6 +2875,10 @@ class $CheckInsTable extends CheckIns
         DriftSqlType.string,
         data['${effectivePrefix}caption'],
       ),
+      moderated: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}moderated'],
+      )!,
       metricValue: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}metric_value'],
@@ -2897,6 +2923,7 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
   final String thumbPath;
   final bool fromLibrary;
   final String? caption;
+  final bool moderated;
   final double? metricValue;
 
   /// `check_ins.extras` as JSON text (0007; schema version 3).
@@ -2918,6 +2945,7 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
     required this.thumbPath,
     required this.fromLibrary,
     this.caption,
+    required this.moderated,
     this.metricValue,
     required this.extras,
     this.partnerPhotoPath,
@@ -2946,6 +2974,7 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
     if (!nullToAbsent || caption != null) {
       map['caption'] = Variable<String>(caption);
     }
+    map['moderated'] = Variable<bool>(moderated);
     if (!nullToAbsent || metricValue != null) {
       map['metric_value'] = Variable<double>(metricValue);
     }
@@ -2973,6 +3002,7 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
       caption: caption == null && nullToAbsent
           ? const Value.absent()
           : Value(caption),
+      moderated: Value(moderated),
       metricValue: metricValue == null && nullToAbsent
           ? const Value.absent()
           : Value(metricValue),
@@ -3002,6 +3032,7 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
       thumbPath: serializer.fromJson<String>(json['thumbPath']),
       fromLibrary: serializer.fromJson<bool>(json['fromLibrary']),
       caption: serializer.fromJson<String?>(json['caption']),
+      moderated: serializer.fromJson<bool>(json['moderated']),
       metricValue: serializer.fromJson<double?>(json['metricValue']),
       extras: serializer.fromJson<String>(json['extras']),
       partnerPhotoPath: serializer.fromJson<String?>(json['partnerPhotoPath']),
@@ -3022,6 +3053,7 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
       'thumbPath': serializer.toJson<String>(thumbPath),
       'fromLibrary': serializer.toJson<bool>(fromLibrary),
       'caption': serializer.toJson<String?>(caption),
+      'moderated': serializer.toJson<bool>(moderated),
       'metricValue': serializer.toJson<double?>(metricValue),
       'extras': serializer.toJson<String>(extras),
       'partnerPhotoPath': serializer.toJson<String?>(partnerPhotoPath),
@@ -3040,6 +3072,7 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
     String? thumbPath,
     bool? fromLibrary,
     Value<String?> caption = const Value.absent(),
+    bool? moderated,
     Value<double?> metricValue = const Value.absent(),
     String? extras,
     Value<String?> partnerPhotoPath = const Value.absent(),
@@ -3055,6 +3088,7 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
     thumbPath: thumbPath ?? this.thumbPath,
     fromLibrary: fromLibrary ?? this.fromLibrary,
     caption: caption.present ? caption.value : this.caption,
+    moderated: moderated ?? this.moderated,
     metricValue: metricValue.present ? metricValue.value : this.metricValue,
     extras: extras ?? this.extras,
     partnerPhotoPath: partnerPhotoPath.present
@@ -3078,6 +3112,7 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
           ? data.fromLibrary.value
           : this.fromLibrary,
       caption: data.caption.present ? data.caption.value : this.caption,
+      moderated: data.moderated.present ? data.moderated.value : this.moderated,
       metricValue: data.metricValue.present
           ? data.metricValue.value
           : this.metricValue,
@@ -3102,6 +3137,7 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
           ..write('thumbPath: $thumbPath, ')
           ..write('fromLibrary: $fromLibrary, ')
           ..write('caption: $caption, ')
+          ..write('moderated: $moderated, ')
           ..write('metricValue: $metricValue, ')
           ..write('extras: $extras, ')
           ..write('partnerPhotoPath: $partnerPhotoPath, ')
@@ -3122,6 +3158,7 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
     thumbPath,
     fromLibrary,
     caption,
+    moderated,
     metricValue,
     extras,
     partnerPhotoPath,
@@ -3141,6 +3178,7 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
           other.thumbPath == this.thumbPath &&
           other.fromLibrary == this.fromLibrary &&
           other.caption == this.caption &&
+          other.moderated == this.moderated &&
           other.metricValue == this.metricValue &&
           other.extras == this.extras &&
           other.partnerPhotoPath == this.partnerPhotoPath &&
@@ -3158,6 +3196,7 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
   final Value<String> thumbPath;
   final Value<bool> fromLibrary;
   final Value<String?> caption;
+  final Value<bool> moderated;
   final Value<double?> metricValue;
   final Value<String> extras;
   final Value<String?> partnerPhotoPath;
@@ -3174,6 +3213,7 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
     this.thumbPath = const Value.absent(),
     this.fromLibrary = const Value.absent(),
     this.caption = const Value.absent(),
+    this.moderated = const Value.absent(),
     this.metricValue = const Value.absent(),
     this.extras = const Value.absent(),
     this.partnerPhotoPath = const Value.absent(),
@@ -3191,6 +3231,7 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
     required String thumbPath,
     this.fromLibrary = const Value.absent(),
     this.caption = const Value.absent(),
+    this.moderated = const Value.absent(),
     this.metricValue = const Value.absent(),
     this.extras = const Value.absent(),
     this.partnerPhotoPath = const Value.absent(),
@@ -3214,6 +3255,7 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
     Expression<String>? thumbPath,
     Expression<bool>? fromLibrary,
     Expression<String>? caption,
+    Expression<bool>? moderated,
     Expression<double>? metricValue,
     Expression<String>? extras,
     Expression<String>? partnerPhotoPath,
@@ -3231,6 +3273,7 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
       if (thumbPath != null) 'thumb_path': thumbPath,
       if (fromLibrary != null) 'from_library': fromLibrary,
       if (caption != null) 'caption': caption,
+      if (moderated != null) 'moderated': moderated,
       if (metricValue != null) 'metric_value': metricValue,
       if (extras != null) 'extras': extras,
       if (partnerPhotoPath != null) 'partner_photo_path': partnerPhotoPath,
@@ -3250,6 +3293,7 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
     Value<String>? thumbPath,
     Value<bool>? fromLibrary,
     Value<String?>? caption,
+    Value<bool>? moderated,
     Value<double?>? metricValue,
     Value<String>? extras,
     Value<String?>? partnerPhotoPath,
@@ -3267,6 +3311,7 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
       thumbPath: thumbPath ?? this.thumbPath,
       fromLibrary: fromLibrary ?? this.fromLibrary,
       caption: caption ?? this.caption,
+      moderated: moderated ?? this.moderated,
       metricValue: metricValue ?? this.metricValue,
       extras: extras ?? this.extras,
       partnerPhotoPath: partnerPhotoPath ?? this.partnerPhotoPath,
@@ -3310,6 +3355,9 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
     if (caption.present) {
       map['caption'] = Variable<String>(caption.value);
     }
+    if (moderated.present) {
+      map['moderated'] = Variable<bool>(moderated.value);
+    }
     if (metricValue.present) {
       map['metric_value'] = Variable<double>(metricValue.value);
     }
@@ -3343,6 +3391,7 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
           ..write('thumbPath: $thumbPath, ')
           ..write('fromLibrary: $fromLibrary, ')
           ..write('caption: $caption, ')
+          ..write('moderated: $moderated, ')
           ..write('metricValue: $metricValue, ')
           ..write('extras: $extras, ')
           ..write('partnerPhotoPath: $partnerPhotoPath, ')
@@ -7536,6 +7585,7 @@ typedef $$CheckInsTableCreateCompanionBuilder = CheckInsCompanion Function({
   required String thumbPath,
   Value<bool> fromLibrary,
   Value<String?> caption,
+  Value<bool> moderated,
   Value<double?> metricValue,
   Value<String> extras,
   Value<String?> partnerPhotoPath,
@@ -7553,6 +7603,7 @@ typedef $$CheckInsTableUpdateCompanionBuilder = CheckInsCompanion Function({
   Value<String> thumbPath,
   Value<bool> fromLibrary,
   Value<String?> caption,
+  Value<bool> moderated,
   Value<double?> metricValue,
   Value<String> extras,
   Value<String?> partnerPhotoPath,
@@ -7614,6 +7665,11 @@ class $$CheckInsTableFilterComposer
 
   ColumnFilters<String> get caption => $composableBuilder(
     column: $table.caption,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get moderated => $composableBuilder(
+    column: $table.moderated,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7697,6 +7753,11 @@ class $$CheckInsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get moderated => $composableBuilder(
+    column: $table.moderated,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get metricValue => $composableBuilder(
     column: $table.metricValue,
     builder: (column) => ColumnOrderings(column),
@@ -7764,6 +7825,9 @@ class $$CheckInsTableAnnotationComposer
   GeneratedColumn<String> get caption =>
       $composableBuilder(column: $table.caption, builder: (column) => column);
 
+  GeneratedColumn<bool> get moderated =>
+      $composableBuilder(column: $table.moderated, builder: (column) => column);
+
   GeneratedColumn<double> get metricValue => $composableBuilder(
     column: $table.metricValue,
     builder: (column) => column,
@@ -7824,6 +7888,7 @@ class $$CheckInsTableTableManager
                 Value<String> thumbPath = const Value.absent(),
                 Value<bool> fromLibrary = const Value.absent(),
                 Value<String?> caption = const Value.absent(),
+                Value<bool> moderated = const Value.absent(),
                 Value<double?> metricValue = const Value.absent(),
                 Value<String> extras = const Value.absent(),
                 Value<String?> partnerPhotoPath = const Value.absent(),
@@ -7840,6 +7905,7 @@ class $$CheckInsTableTableManager
                 thumbPath: thumbPath,
                 fromLibrary: fromLibrary,
                 caption: caption,
+                moderated: moderated,
                 metricValue: metricValue,
                 extras: extras,
                 partnerPhotoPath: partnerPhotoPath,
@@ -7858,6 +7924,7 @@ class $$CheckInsTableTableManager
                 required String thumbPath,
                 Value<bool> fromLibrary = const Value.absent(),
                 Value<String?> caption = const Value.absent(),
+                Value<bool> moderated = const Value.absent(),
                 Value<double?> metricValue = const Value.absent(),
                 Value<String> extras = const Value.absent(),
                 Value<String?> partnerPhotoPath = const Value.absent(),
@@ -7874,6 +7941,7 @@ class $$CheckInsTableTableManager
                 thumbPath: thumbPath,
                 fromLibrary: fromLibrary,
                 caption: caption,
+                moderated: moderated,
                 metricValue: metricValue,
                 extras: extras,
                 partnerPhotoPath: partnerPhotoPath,

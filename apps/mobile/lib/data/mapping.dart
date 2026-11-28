@@ -183,6 +183,7 @@ CheckInsCompanion checkInFromRemote(RemoteRow r) => CheckInsCompanion(
   thumbPath: Value(r['thumb_path'] as String),
   fromLibrary: Value(r['from_library'] as bool? ?? false),
   caption: Value(r['caption'] as String?),
+  moderated: Value(r['moderated_at'] != null),
   // Since 0011 `check_ins.extras` is always blank: extras arrive from
   // `check_in_extras` (see [extrasFromRemote]) so applying a pulled row
   // keeps the cached value.
@@ -259,6 +260,7 @@ CheckIn checkInFromRow(
   localPhotoFile: r.uploaded ? null : localPhotoFile,
   localPartnerPhotoFile: r.uploaded ? null : localPartnerPhotoFile,
   uploaded: r.uploaded,
+  moderated: r.moderated,
 );
 
 // --- reactions / profiles ---------------------------------------------------

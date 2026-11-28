@@ -65,6 +65,39 @@ Future<void> _toDetails(WidgetTester t) async {
 }
 
 void main() {
+  testWidgets('done write action opens Day 1 with the caption editor request', (
+    tester,
+  ) async {
+    Future<void> step(String action) async {
+      await tester.pump();
+      await tester.ensureVisible(_key(action));
+      await tester.tap(_key(action));
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+    }
+
+    final sharing = FakeSharingRepository();
+    final h = await pumpSharing(
+      tester,
+      location: '/import',
+      sharing: sharing,
+      checkIns: FlakyCheckIns(),
+      picker: FakeImportPicker(threePhotos()),
+    );
+    await step('import-next');
+    await step('import-to-details');
+    await tester.enterText(_key('import-title'), 'Hoi An');
+    await step('import-save');
+    expect(_key('import-done-write'), findsOneWidget);
+    expect(find.text('Add a few words to the journey'), findsOneWidget);
+    await step('import-done-write');
+    expect(
+      h.location,
+      '/journey/${sharing.importedDraft!.id}/day/2024-02-03?caption=edit',
+    );
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
   testWidgets(
     'caption row opens sheet, date control stays separate, discard warns',
     (tester) async {
@@ -769,6 +802,7 @@ void main() {
     expect(sharing.ids, hasLength(2));
     expect(sharing.ids.first, sharing.ids.last);
     expect(_key('import-open'), findsNothing); // photos fail on the fake
+    expect(_key('import-done-write'), findsNothing);
   });
 
   testWidgets('a create that keeps failing can be discarded', (tester) async {

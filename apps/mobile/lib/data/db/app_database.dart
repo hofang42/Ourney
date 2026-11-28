@@ -121,6 +121,7 @@ class CheckIns extends Table {
   TextColumn get thumbPath => text()();
   BoolColumn get fromLibrary => boolean().withDefault(const Constant(false))();
   TextColumn get caption => text().nullable()();
+  BoolColumn get moderated => boolean().withDefault(const Constant(false))();
   RealColumn get metricValue => real().nullable()();
 
   /// `check_ins.extras` as JSON text (0007; schema version 3).
@@ -283,7 +284,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -364,6 +365,17 @@ class AppDatabase extends _$AppDatabase {
         if (has.isEmpty) {
           await m.addColumn(importJobPhotos, importJobPhotos.caption);
         }
+      }
+      if (from < 9) {
+        // The v6 table rebuild already uses the current columns.
+        final has = await customSelect(
+          "SELECT 1 FROM pragma_table_info('check_ins') WHERE name = 'moderated'",
+        ).get();
+        if (has.isEmpty) await m.addColumn(checkIns, checkIns.moderated);
+        // Pull the moderation status of check-ins cached before this column.
+        await (delete(
+          syncCursor,
+        )..where((t) => t.tableKey.equals('check_ins'))).go();
       }
     },
   );

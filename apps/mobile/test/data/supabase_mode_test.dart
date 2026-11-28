@@ -404,6 +404,41 @@ void main() {
       expect(saved.uploaded, isTrue);
       expect(saved.partnerPhotoPath, attachment);
     });
+
+    test('a committed replay sends a pending caption edit', () async {
+      remote.tables['check_ins'] = [
+        {
+          'id': pending.id,
+          'journey_id': pending.journeyId,
+          'user_id': me,
+          'partner_photo_path': attachment,
+          'caption': 'Original',
+          'updated_at': clock.value.toIso8601String(),
+        },
+      ];
+      await layer.ctx.files.delete([
+        pending.photoPath,
+        pending.thumbPath,
+        attachment,
+      ]);
+
+      await layer.checkIns.updateCaption(pending.id, 'Revised');
+      await settle();
+
+      expect(remote.callsOf('upload'), isEmpty);
+      expect(remote.callsOf('insert'), isEmpty);
+      expect(upsertsOf('check_ins'), isEmpty);
+      expect(remote.callsOf('update').single.args, {
+        'values': {'caption': 'Revised'},
+        'match': {'id': pending.id},
+      });
+      final saved =
+          (await layer.checkIns.watchForJourney(pending.journeyId).first)
+              .single;
+      expect(saved.uploaded, isTrue);
+      expect(saved.partnerPhotoPath, attachment);
+      expect(saved.caption, 'Revised');
+    }, timeout: const Timeout(Duration(seconds: 30)));
   });
 
   test(

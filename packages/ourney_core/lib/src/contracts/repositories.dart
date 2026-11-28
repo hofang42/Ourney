@@ -259,6 +259,10 @@ abstract interface class CheckInRepository {
   /// the member's join date, like the server's `journey_streak`).
   Future<CheckIn> submit(CheckInDraft draft);
 
+  /// Edits the author's caption. A blank caption removes it. Pending
+  /// uploads carry the edit. Synced check-ins require a connection.
+  Future<CheckIn> updateCaption(String checkInId, String? caption);
+
   /// Number of queued uploads not yet confirmed by the server.
   Stream<int> watchPendingUploads();
 }
@@ -430,7 +434,7 @@ class OurneyException implements Exception {
 /// A profile write failed because another account owns the requested handle.
 class ProfileUsernameTakenException extends OurneyException {
   const ProfileUsernameTakenException([String? detail])
-    : super(OurneyErrorCode.invalid, detail);
+      : super(OurneyErrorCode.invalid, detail);
 }
 
 class GroupException extends OurneyException {

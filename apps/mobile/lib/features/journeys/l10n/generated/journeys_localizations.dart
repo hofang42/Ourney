@@ -3679,6 +3679,60 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Chỉ giữ ảnh'**
   String get journeys_keepPhotoOnly;
+
+  /// No description provided for @journeys_dayAddCaption.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thêm chú thích'**
+  String get journeys_dayAddCaption;
+
+  /// No description provided for @journeys_dayEditCaption.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sửa chú thích'**
+  String get journeys_dayEditCaption;
+
+  /// No description provided for @journeys_captionSheetTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chú thích'**
+  String get journeys_captionSheetTitle;
+
+  /// No description provided for @journeys_captionSave.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lưu'**
+  String get journeys_captionSave;
+
+  /// No description provided for @journeys_captionClear.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ giữ ảnh'**
+  String get journeys_captionClear;
+
+  /// No description provided for @journeys_captionContentPolicy.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chú thích này có từ chưa phù hợp. Bạn sửa lại vài chữ, hoặc chỉ giữ ảnh.'**
+  String get journeys_captionContentPolicy;
+
+  /// No description provided for @journeys_captionOffline.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cần có mạng để sửa chú thích này. Chữ bạn viết vẫn còn đây.'**
+  String get journeys_captionOffline;
+
+  /// No description provided for @journeys_captionPublicHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chú thích sẽ hiện trên trang chia sẻ.'**
+  String get journeys_captionPublicHint;
+
+  /// No description provided for @journeys_dayCaptionDate.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày {day} · {date}'**
+  String journeys_dayCaptionDate(int day, String date);
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

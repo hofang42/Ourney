@@ -33,7 +33,7 @@ void main() {
     expect(row.origin, 'live');
     expect(journeyFromRow(row).origin, JourneyOrigin.live);
     final version = await db.customSelect('pragma user_version').getSingle();
-    expect(version.data.values.single, 8);
+    expect(version.data.values.single, db.schemaVersion);
   });
 
   test('v2 → v3 adds extras, partner photo and couple names', () async {
@@ -235,12 +235,40 @@ void main() {
     expect((await db.select(db.importJobs).getSingle()).id, 'j');
   }, timeout: const Timeout(Duration(seconds: 30)));
 
+  test(
+    'v8 to v9 preserves check-ins and refreshes the moderation cache',
+    () async {
+      final file = File('${tempDir().path}/moderation.sqlite');
+      final old = AppDatabase(NativeDatabase(file));
+      await old.customStatement(
+        "INSERT INTO check_ins (id,journey_id,user_id,local_date,captured_at,photo_path,thumb_path,caption) VALUES ('c','j','u','2024-01-01',0,'p','t','Caption')",
+      );
+      await old.writeCursor('check_ins', 'remote check-ins cursor');
+      await old.writeCursor('journeys', 'remote journeys cursor');
+      await old.customStatement('ALTER TABLE check_ins DROP COLUMN moderated');
+      await old.customStatement('PRAGMA user_version = 8');
+      await old.close();
+
+      final db = AppDatabase(NativeDatabase(file));
+      addTearDown(db.close);
+      final photo = await db.select(db.checkIns).getSingle();
+      expect(photo.id, 'c');
+      expect(photo.caption, 'Caption');
+      expect(photo.moderated, isFalse);
+      expect(await db.readCursor('check_ins'), isNull);
+      expect(await db.readCursor('journeys'), 'remote journeys cursor');
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
   test('existing v7 database without import_job_photos_job_pos index receives it on open (FS-34)', () async {
     final dir = Directory.systemTemp.createTempSync('ourney_mig_v7_idx');
     addTearDown(() => dir.deleteSync(recursive: true));
     final file = File('${dir.path}/db.sqlite');
     final initial = AppDatabase(NativeDatabase(file));
-    await initial.customStatement('drop index if exists import_job_photos_job_pos');
+    await initial.customStatement(
+      'drop index if exists import_job_photos_job_pos',
+    );
     await initial.customStatement('pragma user_version = 7');
     await initial.close();
 

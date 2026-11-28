@@ -2204,5 +2204,24 @@
       }
     }
   },
-  "journeys_keepPhotoOnly": "Chỉ giữ ảnh"
+  "journeys_keepPhotoOnly": "Chỉ giữ ảnh",
+  "journeys_dayAddCaption": "Thêm chú thích",
+  "journeys_dayEditCaption": "Sửa chú thích",
+  "journeys_captionSheetTitle": "Chú thích",
+  "journeys_captionSave": "Lưu",
+  "journeys_captionClear": "Chỉ giữ ảnh",
+  "journeys_captionContentPolicy": "Chú thích này có từ chưa phù hợp. Bạn sửa lại vài chữ, hoặc chỉ giữ ảnh.",
+  "journeys_captionOffline": "Cần có mạng để sửa chú thích này. Chữ bạn viết vẫn còn đây.",
+  "journeys_captionPublicHint": "Chú thích sẽ hiện trên trang chia sẻ.",
+  "journeys_dayCaptionDate": "Ngày {day} · {date}",
+  "@journeys_dayCaptionDate": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }
