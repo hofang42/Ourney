@@ -139,6 +139,7 @@ class ShareCardContent {
     );
     final hasMetric = journey.metricName != null || journey.metricUnit != null;
     double? metric;
+    var metricUnit = journey.metricUnit;
     if (!hideMetric && hasMetric) {
       CheckIn? latest;
       for (final c in checkIns) {
@@ -148,6 +149,19 @@ class ShareCardContent {
         }
       }
       metric = latest?.metricValue;
+    } else if (!hideMetric && !hasMetric) {
+      // Sum every run on the latest day with logged distance.
+      LocalDate? latestDate;
+      for (final c in checkIns) {
+        if (c.extras.km == null) continue;
+        if (latestDate == null || c.localDate.isAfter(latestDate)) {
+          latestDate = c.localDate;
+          metric = c.extras.km;
+        } else if (c.localDate == latestDate) {
+          metric = (metric ?? 0) + c.extras.km!;
+        }
+      }
+      metricUnit = 'km';
     }
 
     final days = <LocalDate>{for (final c in checkIns) c.localDate};
@@ -178,7 +192,7 @@ class ShareCardContent {
           (membership?.blurMedia ?? false),
       metricHidden: hideMetric && hasMetric,
       metricValue: metric,
-      metricUnit: metric == null ? null : journey.metricUnit,
+      metricUnit: metric == null ? null : metricUnit,
     );
   }
 
@@ -204,7 +218,7 @@ class ShareCardContent {
   /// True when the journey tracks a metric that must not appear on the card.
   final bool metricHidden;
 
-  /// Latest metric value to print, null when hidden or absent.
+  /// Latest custom metric or latest day's total km, null when hidden or absent.
   final double? metricValue;
   final String? metricUnit;
 

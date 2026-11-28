@@ -44,6 +44,19 @@ Future<void> _open(
 }
 
 void main() {
+  testWidgets('squad title with length does not repeat the duration', (
+    tester,
+  ) async {
+    final j = testJourney(
+      templateId: TemplateId.englishDaily,
+      title: 'Đà Lạt 7 ngày',
+      durationDays: 7,
+    );
+    await _open(tester, j);
+    expect(find.text('ĐÀ LẠT 7\u00A0NGÀY'), findsOneWidget);
+    expect(find.textContaining('7 DAYS'), findsNothing);
+  });
+
   group('Journey home: six distinct skin headers', () {
     testWidgets('squad: progress chip, avatar stack, trophy name', (
       tester,

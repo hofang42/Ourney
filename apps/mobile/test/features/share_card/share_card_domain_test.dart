@@ -37,6 +37,50 @@ ShareCardContent _content(
 );
 
 void main() {
+  test(
+    'logged km is used without a custom metric, latest day distance wins',
+    () {
+      final j = testJourney(templateId: TemplateId.workout30);
+      CheckIn run(int day, double? km, [int hour = 2]) => CheckIn(
+        id: 'run-$day-$hour',
+        journeyId: j.id,
+        userId: 'u1',
+        localDate: LocalDate(2026, 10, day),
+        capturedAt: DateTime.utc(2026, 10, day, hour),
+        photoPath: '',
+        thumbPath: '',
+        extras: CheckInExtras(km: km),
+      );
+      final checkIns = [
+        run(15, 3.0),
+        run(16, null),
+        run(14, 4.2),
+        run(15, 2.4, 12),
+      ];
+      final c = _content(j, checkIns: checkIns);
+      expect(c.metricValue, closeTo(5.4, 0.00001));
+      expect(
+        _content(j, checkIns: checkIns.reversed.toList()).metricValue,
+        closeTo(5.4, 0.00001),
+      );
+      expect(c.metricUnit, 'km');
+      expect(
+        _content(j, checkIns: checkIns, forceHideMetric: true).metricValue,
+        isNull,
+      );
+      final weight = testJourney(
+        metricName: 'Weight',
+        metricUnit: 'kg',
+        hideMetricDefault: true,
+      );
+      final hidden = _content(weight, checkIns: checkIns);
+      expect(hidden.metricValue, isNull);
+      expect(hidden.metricUnit, isNull);
+      final custom = testJourney(metricName: 'Weight', metricUnit: 'kg');
+      expect(_content(custom, checkIns: checkIns).metricValue, isNull);
+    },
+  );
+
   group('ShareCardFormat (FR-E1)', () {
     test('story is 1080x1920 at x3 with the IG safe zones', () {
       const f = ShareCardFormat.story;

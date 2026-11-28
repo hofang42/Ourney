@@ -79,6 +79,44 @@ Future<JourneysHarness> _pumpDetail(
 }
 
 void main() {
+  for (final size in [const Size(360, 740), const Size(390, 844)]) {
+    for (final scale in [1.0, 1.35]) {
+      for (final language in ['vi', 'en']) {
+        testWidgets(
+          'minimal share action clears check-in at $size $scale $language',
+          (tester) async {
+            final j = testJourney(templateId: TemplateId.custom);
+            await pumpJourneys(
+              tester,
+              locale: Locale(language),
+              location: AppRoutes.journey(j.id),
+              journeys: FakeJourneyRepository(
+                journeys: [j],
+                memberships: {j.id: testMembership(j)},
+              ),
+            );
+            tester.view.physicalSize = size;
+            tester.platformDispatcher.textScaleFactorTestValue = scale;
+            addTearDown(
+              tester.platformDispatcher.clearTextScaleFactorTestValue,
+            );
+            await tester.pumpAndSettle();
+            final scroll = tester.state<ScrollableState>(
+              find.byType(Scrollable).first,
+            );
+            scroll.position.jumpTo(scroll.position.maxScrollExtent);
+            await tester.pumpAndSettle();
+            final card = tester.getRect(_key('journey-home-card'));
+            final button = tester.getRect(_key('journey-checkin'));
+            expect(card.overlaps(button), isFalse);
+            expect(card.bottom, lessThanOrEqualTo(button.top));
+            expect(tester.takeException(), isNull);
+          },
+        );
+      }
+    }
+  }
+
   group('Journey detail (FR-B4/B5)', () {
     testWidgets('a partner-only day opens with two person chips', (
       tester,
