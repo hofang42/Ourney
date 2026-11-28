@@ -422,7 +422,7 @@ abstract class WidgetsL10n {
   /// **'Mỗi tiện ích mở máy ảnh của hành trình đó. Để đổi hành trình, chạm và giữ tiện ích rồi chọn Sửa tiện ích.'**
   String get widgets_setupStep3Body;
 
-  /// Step 3 body for iOS versions without configurable widgets (iOS 15–16).
+  /// Step 3 body while widget configuration mode is unknown.
   ///
   /// In vi, this message translates to:
   /// **'Tiện ích tự chọn hành trình cần check-in hôm nay.'**
@@ -433,6 +433,72 @@ abstract class WidgetsL10n {
   /// In vi, this message translates to:
   /// **'Mỗi tiện ích mở thẳng máy ảnh của đúng hành trình đó. Muốn đổi hành trình, bấm Đổi trên tiện ích.'**
   String get widgets_setupStep3BodyAndroid;
+
+  /// Section heading for shared static widget journey choices.
+  ///
+  /// In vi, this message translates to:
+  /// **'đổi hành trình trên tiện ích'**
+  String get widgets_secJourneyPicker;
+
+  /// Row label for the shared Today and Streak journey.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay & Chuỗi'**
+  String get widgets_iosTodayStreakRowTitle;
+
+  /// Row label for the shared Squad and Couple journey.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đồng đội & Cặp đôi'**
+  String get widgets_iosSquadRowTitle;
+
+  /// Title of the Today and Streak journey picker sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi hành trình'**
+  String get widgets_pickerSheetTodayTitle;
+
+  /// Title of the Squad and Couple journey picker sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi nhóm đồng đội'**
+  String get widgets_pickerSheetSquadTitle;
+
+  /// Explains that a selection is shared by widgets of the same type.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn hành trình dùng chung cho các tiện ích cùng loại, hoặc để Tự động.'**
+  String get widgets_pickerSheetSubtitle;
+
+  /// Label for automatic widget journey selection.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tự động'**
+  String get widgets_autoOptionTitle;
+
+  /// Explains automatic Today and Streak journey selection.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ưu tiên hành trình cần check-in hôm nay'**
+  String get widgets_autoTodaySubtitle;
+
+  /// Explains automatic Squad and Couple journey selection.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hiện nhóm hoặc cặp đôi đang hoạt động'**
+  String get widgets_autoSquadSubtitle;
+
+  /// Action to open the widget journey picker.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi'**
+  String get widgets_changeAction;
+
+  /// Step 3 body for static iOS widgets with the in-app journey picker.
+  ///
+  /// In vi, this message translates to:
+  /// **'Muốn đổi hành trình, chọn ở mục Đổi hành trình trên tiện ích bên dưới.'**
+  String get widgets_setupStep3BodyJourneyPicker;
 }
 
 class _WidgetsL10nDelegate extends LocalizationsDelegate<WidgetsL10n> {

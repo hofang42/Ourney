@@ -238,7 +238,7 @@ cd apps/mobile && flutter pub get && flutter run --dart-define-from-file=env.jso
 # Backend local (Docker trong WSL)
 supabase start && supabase test db
 ```
-**iOS**: merge vào `main` → workflow `ios` → tải artifact `Ourney-unsigned-ipa` → tự ký theo [platform/ios.md](platform/ios.md).
+**iOS**: merge vào `main` → workflow `ios` → tải artifact `Ourney-unsigned-ipa-auto` → tự ký theo [platform/ios.md](platform/ios.md).
 
 ### 6.4 Luật bất di bất dịch
 - ❌ Không commit secret (service_role, SMTP key, keystore, Apple ID). Dùng GitHub Secrets / `env.json` (đã gitignore).

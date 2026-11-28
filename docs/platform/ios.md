@@ -5,7 +5,7 @@ Không có Mac và không có tài khoản Apple trả phí. CI build ra file **
 ## 1. Lấy `.ipa`
 
 - **Mỗi tag `v*`** (vd `v0.1.0`): file `Ourney-unsigned.ipa` được tự động build và đính kèm vào trang **Releases** (và lưu trong **Artifacts** 30 ngày).
-- **Build thủ công bất cứ lúc nào**: vào tab **Actions** → workflow **iOS (unsigned IPA)** → bấm **Run workflow** → tải `Ourney-unsigned-ipa` trong mục **Artifacts**.
+- **Build thủ công bất cứ lúc nào**: vào tab **Actions** → workflow **iOS (unsigned IPA)** → bấm **Run workflow** → tải `Ourney-unsigned-ipa-auto` trong mục **Artifacts**.
 
 Build cục bộ trên Windows là không thể (cần macOS/Xcode). Chỉ CI build iOS.
 

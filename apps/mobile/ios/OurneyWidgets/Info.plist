@@ -25,6 +25,8 @@
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.widgetkit-extension</string>
 	</dict>
+	<key>OurneyWidgetConfigMode</key>
+	<string>$(OURNEY_WIDGET_CONFIG_MODE)</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>BeVietnamPro-SemiBold.ttf</string>

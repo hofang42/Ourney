@@ -1,6 +1,8 @@
 @Timeout(Duration(seconds: 30))
 library;
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart'
     show
         TargetPlatform,
@@ -361,23 +363,31 @@ void main() {
   );
 
   testWidgets(
-    'Slim WidgetsScreen omits in-app journey pickers and placed-widget list and '
-    'teaches OS-native journey switching in Step 3 on iOS and Android',
+    'Android and configurable iOS teach native switching without a picker',
     (tester) async {
+      final isAndroid = defaultTargetPlatform == TargetPlatform.android;
       final c = await pumpOurneyApp(
         tester,
         overrides: [
           widgetBridgeGatewayProvider.overrideWithValue(
-            FakeWidgetBridgeGateway(),
+            FakeWidgetBridgeGateway(
+              capabilities: WidgetCapabilities(
+                widgets: true,
+                liveActivity: true,
+                promotedLiveUpdates: false,
+                appGroup: true,
+                configurableWidgets: !isAndroid,
+              ),
+            ),
           ),
         ],
       );
       await goTo(tester, c, AppRoutes.widgets);
 
       expect(find.text('đổi hành trình trên tiện ích'), findsNothing);
+      expect(byKey('widgets-ios-picker-card'), findsNothing);
       expect(find.text('tiện ích đang đặt'), findsNothing);
       expect(find.text('chưa có tiện ích nào'), findsNothing);
-      final isAndroid = defaultTargetPlatform == TargetPlatform.android;
       expect(
         find.textContaining(
           isAndroid
@@ -397,41 +407,245 @@ void main() {
 
   for (final configurable in [false, true]) {
     for (final locale in ['vi', 'en']) {
-      testWidgets(
-        'iOS step 3 uses $locale copy for configurableWidgets=$configurable',
-        (tester) async {
-          final bridge = FakeWidgetBridgeGateway(
-            capabilities: WidgetCapabilities.fromMap({
-              'widgets': true,
-              'appGroup': true,
-              'configurableWidgets': configurable,
-            }),
-          );
-          final c = await pumpOurneyApp(
-            tester,
-            overrides: [widgetBridgeGatewayProvider.overrideWithValue(bridge)],
-          );
-          await c.read(localeOverrideProvider.notifier).set(Locale(locale));
-          await goTo(tester, c, AppRoutes.widgets);
-          final automatic = locale == 'vi'
-              ? 'Tiện ích tự chọn hành trình cần check-in hôm nay.'
-              : "The widget picks the journey that still needs today's check-in.";
-          final edit = locale == 'vi' ? 'Sửa tiện ích' : 'Edit Widget';
-          expect(
-            find.text(automatic),
-            configurable ? findsNothing : findsOneWidget,
-          );
-          expect(
-            find.textContaining(edit),
-            configurable ? findsOneWidget : findsNothing,
-          );
-          _expectNoRenderOverflowsOrTruncations(tester);
-        },
-        variant: const TargetPlatformVariant({TargetPlatform.iOS}),
-        timeout: const Timeout(Duration(seconds: 30)),
-      );
+      for (final brightness in Brightness.values) {
+        testWidgets(
+          'iOS picker and step 3 use $locale copy in ${brightness.name} mode '
+          'with configurableWidgets=$configurable',
+          (tester) async {
+            tester.platformDispatcher.platformBrightnessTestValue = brightness;
+            addTearDown(
+              tester.platformDispatcher.clearPlatformBrightnessTestValue,
+            );
+            final bridge = FakeWidgetBridgeGateway(
+              capabilities: WidgetCapabilities.fromMap({
+                'widgets': true,
+                'appGroup': true,
+                'configurableWidgets': configurable,
+                'widgetConfigMode': configurable ? 'configurable' : 'static',
+              }),
+            );
+            final c = await pumpOurneyApp(
+              tester,
+              overrides: [
+                widgetBridgeGatewayProvider.overrideWithValue(bridge),
+              ],
+            );
+            await c.read(localeOverrideProvider.notifier).set(Locale(locale));
+            await goTo(tester, c, AppRoutes.widgets);
+            expect(
+              Theme.of(tester.element(byKey('widgets-screen'))).brightness,
+              brightness,
+            );
+            final staticCopy = locale == 'vi'
+                ? 'Muốn đổi hành trình, chọn ở mục Đổi hành trình trên tiện ích bên dưới.'
+                : 'To switch journeys, choose one in the widget journey section below.';
+            final heading = locale == 'vi'
+                ? 'đổi hành trình trên tiện ích'
+                : 'widget journeys';
+            final edit = locale == 'vi' ? 'Sửa tiện ích' : 'Edit Widget';
+            expect(
+              find.text(staticCopy),
+              configurable ? findsNothing : findsOneWidget,
+            );
+            expect(
+              find.text(heading),
+              configurable ? findsNothing : findsOneWidget,
+            );
+            expect(
+              byKey('widgets-ios-picker-card'),
+              configurable ? findsNothing : findsOneWidget,
+            );
+            expect(
+              find.textContaining(edit),
+              configurable ? findsOneWidget : findsNothing,
+            );
+            _expectNoRenderOverflowsOrTruncations(tester);
+          },
+          variant: const TargetPlatformVariant({TargetPlatform.iOS}),
+          timeout: const Timeout(Duration(seconds: 30)),
+        );
+      }
     }
   }
+
+  for (final (index, capabilities) in [
+    WidgetCapabilities.unsupported,
+    WidgetCapabilities.fromMap({'widgets': true, 'configurableWidgets': false}),
+    WidgetCapabilities.fromMap({
+      'widgets': true,
+      'widgetConfigMode': 'unknown',
+    }),
+    WidgetCapabilities.fromMap({'widgets': true, 'widgetConfigMode': 42}),
+  ].indexed) {
+    testWidgets(
+      'iOS hides the picker for unconfirmed static mode case $index',
+      (tester) async {
+        final c = await pumpOurneyApp(
+          tester,
+          overrides: [
+            widgetBridgeGatewayProvider.overrideWithValue(
+              FakeWidgetBridgeGateway(capabilities: capabilities),
+            ),
+          ],
+        );
+        await goTo(tester, c, AppRoutes.widgets);
+        expect(byKey('widgets-ios-picker-card'), findsNothing);
+        expect(
+          find.textContaining('choose one in the widget journey section'),
+          findsNothing,
+        );
+        expect(find.textContaining('chọn ở mục Đổi hành trình'), findsNothing);
+      },
+      variant: const TargetPlatformVariant({TargetPlatform.iOS}),
+      timeout: const Timeout(Duration(seconds: 30)),
+    );
+  }
+
+  testWidgets('iOS leaves the picker hidden while capabilities load', (
+    tester,
+  ) async {
+    final capabilities = Completer<WidgetCapabilities>();
+    final c = await pumpOurneyApp(
+      tester,
+      overrides: [
+        widgetCapabilitiesProvider.overrideWith((ref) => capabilities.future),
+      ],
+    );
+    await goTo(tester, c, AppRoutes.widgets);
+    expect(byKey('widgets-ios-picker-card'), findsNothing);
+
+    capabilities.complete(
+      const WidgetCapabilities(
+        widgets: true,
+        liveActivity: true,
+        promotedLiveUpdates: false,
+        appGroup: true,
+        widgetConfigMode: 'static',
+      ),
+    );
+    await pumpAppFrames(tester);
+    expect(byKey('widgets-ios-picker-card'), findsOneWidget);
+  }, variant: const TargetPlatformVariant({TargetPlatform.iOS}));
+
+  testWidgets(
+    'static iOS picker saves journeys and resets the Squad picker to Automatic',
+    (tester) async {
+      final fakeBridge = FakeWidgetBridgeGateway(
+        capabilities: const WidgetCapabilities(
+          widgets: true,
+          liveActivity: true,
+          promotedLiveUpdates: false,
+          appGroup: true,
+          widgetConfigMode: 'static',
+        ),
+      );
+      final journeys = FakeJourneyRepository(
+        journeys: [
+          testJourney(
+            id: 'j-1',
+            title: 'Tự học IELTS 30 ngày',
+            durationDays: null,
+          ),
+          testJourney(
+            id: 'j-2',
+            title: 'Chạy bộ buổi sáng',
+            durationDays: null,
+          ),
+          testJourney(
+            id: 'j-couple-1',
+            title: 'Đôi mình 365',
+            kind: JourneyKind.group,
+            maxMembers: 2,
+            durationDays: null,
+          ),
+        ],
+      );
+
+      final c = await pumpOurneyApp(
+        tester,
+        overrides: [
+          journeyRepositoryProvider.overrideWithValue(journeys),
+          widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
+        ],
+      );
+
+      await c.read(localeOverrideProvider.notifier).set(const Locale('vi'));
+      await goTo(tester, c, AppRoutes.widgets);
+
+      expect(find.text('đổi hành trình trên tiện ích'), findsOneWidget);
+      expect(byKey('widgets-ios-today-journey-row'), findsOneWidget);
+      expect(byKey('widgets-ios-squad-journey-row'), findsOneWidget);
+      expect(find.text('Hôm nay & Chuỗi'), findsOneWidget);
+      expect(find.text('Đồng đội & Cặp đôi'), findsOneWidget);
+
+      // 1. Pick j-2 for Today & Streak
+      await tester.ensureVisible(byKey('widgets-ios-today-journey-row'));
+      await pumpAppFrames(tester);
+      await tester.tap(byKey('widgets-ios-today-journey-row'));
+      await pumpAppFrames(tester);
+
+      expect(byKey('widget-journey-picker-sheet'), findsOneWidget);
+      expect(byKey('widget-picker-option-auto'), findsOneWidget);
+      await tester.ensureVisible(byKey('widget-picker-option-j-2'));
+      await tester.tap(byKey('widget-picker-option-j-2'));
+      await pumpAppFrames(tester);
+
+      expect(c.read(defaultWidgetJourneyIdProvider), 'j-2');
+      expect(
+        c
+            .read(sharedPreferencesProvider)
+            .getString(WidgetPrefs.defaultJourneyId),
+        'j-2',
+      );
+      expect(
+        find.descendant(
+          of: byKey('widgets-ios-today-journey-row'),
+          matching: find.text('Chạy bộ buổi sáng'),
+        ),
+        findsOneWidget,
+      );
+
+      // 2. Pick j-couple-1 for Squad & Couple
+      await tester.ensureVisible(byKey('widgets-ios-squad-journey-row'));
+      await pumpAppFrames(tester);
+      await tester.tap(byKey('widgets-ios-squad-journey-row'));
+      await pumpAppFrames(tester);
+
+      expect(byKey('widget-journey-picker-sheet'), findsOneWidget);
+      expect(byKey('widget-picker-option-j-2'), findsNothing);
+      await tester.ensureVisible(byKey('widget-picker-option-j-couple-1'));
+      await tester.tap(byKey('widget-picker-option-j-couple-1'));
+      await pumpAppFrames(tester);
+
+      expect(c.read(defaultWidgetSquadIdProvider), 'j-couple-1');
+      expect(
+        c.read(sharedPreferencesProvider).getString(WidgetPrefs.defaultSquadId),
+        'j-couple-1',
+      );
+      expect(
+        find.descendant(
+          of: byKey('widgets-ios-squad-journey-row'),
+          matching: find.text('Đôi mình 365'),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.ensureVisible(byKey('widgets-ios-squad-journey-row'));
+      await tester.tap(byKey('widgets-ios-squad-journey-row'));
+      await pumpAppFrames(tester);
+      await tester.tap(byKey('widget-picker-option-auto'));
+      await pumpAppFrames(tester);
+      expect(c.read(defaultWidgetSquadIdProvider), isNull);
+      expect(
+        c
+            .read(sharedPreferencesProvider)
+            .containsKey(WidgetPrefs.defaultSquadId),
+        isFalse,
+      );
+      _expectNoRenderOverflowsOrTruncations(tester);
+    },
+    variant: const TargetPlatformVariant({TargetPlatform.iOS}),
+  );
 
   testWidgets('UX-26: Day 1 solo journey shows real 0-day streak (no fake 6-day green '
       'strip), and Squad preview shows localized sample when no group journey exists '
