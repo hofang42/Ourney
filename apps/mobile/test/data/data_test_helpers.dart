@@ -327,6 +327,9 @@ class FakeRemoteApi implements RemoteApi {
   /// Rows `update` reports as changed (default: one echo row).
   List<RemoteRow>? updateResult;
 
+  /// Makes only `update` calls throw.
+  OurneyException? updateFailure;
+
   @override
   Future<List<RemoteRow>> update(
     String table,
@@ -334,6 +337,8 @@ class FakeRemoteApi implements RemoteApi {
     required Map<String, Object> match,
   }) async {
     await _maybeFail('update', table, {'values': values, 'match': match});
+    final f = updateFailure;
+    if (f != null) throw f;
     return updateResult ??
         [
           {...match, ...values},

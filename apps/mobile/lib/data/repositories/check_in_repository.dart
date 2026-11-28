@@ -186,6 +186,78 @@ class DataCheckInRepository implements CheckInRepository {
   }
 
   @override
+  Future<CheckIn> updateCaption(String checkInId, String? caption) async {
+    final value = normalizeCaption(caption);
+    if (validateCaption(value) != null) {
+      throw const OurneyException(OurneyErrorCode.invalid);
+    }
+    final me = await ctx.claimUserId();
+    final row = await _requireEditableCheckIn(checkInId, me);
+    final queue = ctx.outbox;
+    if (!row.uploaded && queue != null) {
+      final saved = await queue.exclusive(
+        () => _db.transaction(() async {
+          final current = await _requireEditableCheckIn(checkInId, me);
+          if (current.uploaded) return null;
+          final updated = await _writeCaption(checkInId, me, value);
+          final key = checkInKey(checkInId);
+          // A live upload reads the row when it runs, so it keeps its place
+          // in the FIFO queue; only a dead or missing one is queued again.
+          if (!await queue.hasLive(key, OutboxKind.upsertCheckIn)) {
+            await queue.cancel(
+              key,
+              kind: OutboxKind.upsertCheckIn,
+              includeDead: true,
+            );
+            await queue.enqueue(OutboxKind.upsertCheckIn, key, {
+              'id': checkInId,
+            });
+          }
+          return updated;
+        }),
+      );
+      if (saved != null) {
+        unawaited(queue.flush());
+        return _toModel(saved);
+      }
+    }
+
+    final remote = ctx.remote;
+    if (remote != null) {
+      final updated = await remote.update(
+        'check_ins',
+        {'caption': value},
+        match: {'id': checkInId},
+      );
+      // RLS can reject an update by filtering out the row.
+      if (updated.isEmpty) {
+        throw const OurneyException(OurneyErrorCode.forbidden);
+      }
+    }
+    return _toModel(await _writeCaption(checkInId, me, value));
+  }
+
+  Future<CheckInRow> _requireEditableCheckIn(String id, String me) async {
+    final row = await (_db.select(
+      _db.checkIns,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (row == null) throw const OurneyException(OurneyErrorCode.notFound);
+    if (row.userId != me || row.moderated) {
+      throw const OurneyException(OurneyErrorCode.forbidden);
+    }
+    return row;
+  }
+
+  Future<CheckInRow> _writeCaption(String id, String me, String? value) async {
+    final rows =
+        await (_db.update(_db.checkIns)
+              ..where((t) => t.id.equals(id) & t.userId.equals(me)))
+            .writeReturning(CheckInsCompanion(caption: Value(value)));
+    return rows.singleOrNull ??
+        (throw const OurneyException(OurneyErrorCode.notFound));
+  }
+
+  @override
   Stream<int> watchPendingUploads() =>
       ctx.outbox?.watchPending(kind: OutboxKind.upsertCheckIn) ??
       Stream.value(0);

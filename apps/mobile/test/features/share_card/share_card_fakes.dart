@@ -325,6 +325,10 @@ class FakeCheckInRepository implements CheckInRepository {
   Future<CheckIn> submit(CheckInDraft draft) => throw UnimplementedError();
 
   @override
+  Future<CheckIn> updateCaption(String checkInId, String? caption) =>
+      throw UnimplementedError();
+
+  @override
   Stream<int> watchPendingUploads() => Stream.value(0);
 }
 

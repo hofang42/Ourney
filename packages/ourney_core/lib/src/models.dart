@@ -581,6 +581,7 @@ class CheckIn {
     this.localPhotoFile,
     this.localPartnerPhotoFile,
     this.uploaded = false,
+    this.moderated = false,
   });
 
   final String id;
@@ -604,6 +605,9 @@ class CheckIn {
   final String? localPhotoFile;
   final String? localPartnerPhotoFile;
   final bool uploaded;
+
+  /// Quarantined by moderation. The author can still see the photo.
+  final bool moderated;
 }
 
 class CheckInDraft {

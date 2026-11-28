@@ -582,5 +582,6 @@
     }
   },
   "import_captionHideKeyboard": "Close the keyboard",
-  "import_captionEdit": "Edit caption for the photo on {date}: {caption}"
+  "import_captionEdit": "Edit caption for the photo on {date}: {caption}",
+  "import_doneWrite": "Add a few words to the journey"
 }

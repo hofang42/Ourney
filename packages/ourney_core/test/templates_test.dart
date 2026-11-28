@@ -47,6 +47,9 @@ void main() {
       expect(t.titleEn, isNotEmpty);
       expect(t.emoji, isNotEmpty);
       expect(t.captionPromptVi, isNotEmpty);
+      expect(t.captionPromptEn, isNotEmpty);
+      expect(t.retellCaptionPromptVi, isNotEmpty);
+      expect(t.retellCaptionPromptEn, isNotEmpty);
     }
   });
 
