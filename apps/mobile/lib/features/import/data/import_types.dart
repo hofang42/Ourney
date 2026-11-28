@@ -76,6 +76,7 @@ ImportJob buildImportJob({
       for (var i = 0; i < sorted.length; i++)
         ImportJobPhoto(
           id: sorted[i].id,
+          caption: normalizeCaption(sorted[i].caption),
           position: i,
           sourcePath: sorted[i].path,
           date: sorted[i].date!,

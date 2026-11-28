@@ -123,7 +123,7 @@
   "@import_timelineTitle": {
     "description": "Retell a past journey flow."
   },
-  "import_timelineIntro": "Ngày lấy từ ảnh. Chạm vào một ảnh để đổi ngày.",
+  "import_timelineIntro": "Ngày lấy từ ảnh. Chạm vào lịch để đổi ngày, chạm vào ảnh để viết vài dòng.",
   "@import_timelineIntro": {
     "description": "Retell a past journey flow."
   },
@@ -564,5 +564,33 @@
   "import_discardKeep": "Tiếp tục",
   "@import_discardKeep": {
     "description": "Retell a past journey flow."
+  },
+  "import_captionAddHint": "Thêm chú thích…",
+  "import_captionOpenAll": "Viết chú thích",
+  "import_captionSheetEyebrow": "Ngày {day} · {date}",
+  "import_captionHint": "Bạn nhớ gì về tấm ảnh này?",
+  "import_captionHelper": "Không bắt buộc. Sửa được sau khi lưu.",
+  "import_captionPrev": "Ảnh trước",
+  "import_captionNext": "Ảnh tiếp",
+  "import_captionDone": "Xong",
+  "import_captionEditDate": "Đổi ngày",
+  "import_captionOpen": "Viết chú thích cho ảnh ngày {date}",
+  "import_discardCaptions": "Chú thích bạn đã viết cũng sẽ mất.",
+  "@import_captionSheetEyebrow": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@import_captionOpen": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   }
 }

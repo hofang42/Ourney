@@ -37,8 +37,7 @@ class Profiles extends Table {
   TextColumn get username => text()();
   TextColumn get displayName => text()();
   TextColumn get avatarPath => text().nullable()();
-  IntColumn get termsVersion =>
-      integer().withDefault(const Constant(0))();
+  IntColumn get termsVersion => integer().withDefault(const Constant(0))();
 
   /// Server `updated_at` (null while only local).
   TextColumn get updatedAt => text().nullable()();
@@ -241,6 +240,7 @@ class ImportJobs extends Table {
 @TableIndex(name: 'import_job_photos_job_pos', columns: {#jobId, #position})
 @DataClassName('ImportJobPhotoRow')
 class ImportJobPhotos extends Table {
+  TextColumn get caption => text().nullable()();
   TextColumn get id => text()();
   TextColumn get jobId => text()();
   IntColumn get position => integer()();
@@ -282,7 +282,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -341,8 +341,6 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 7) {
         // Durable retell (import) jobs + profiles.terms_version (0018).
-        // Schema 7 is unreleased: its tables can still change in place until
-        // it ships.
         await m.createTable(importJobs);
         await m.createTable(importJobPhotos);
         await customStatement(
@@ -357,6 +355,15 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(profiles, profiles.termsVersion);
         }
       }
+      if (from < 8) {
+        // from < 7 already created the table with the current columns.
+        final has = await customSelect(
+          "SELECT 1 FROM pragma_table_info('import_job_photos') WHERE name = 'caption'",
+        ).get();
+        if (has.isEmpty) {
+          await m.addColumn(importJobPhotos, importJobPhotos.caption);
+        }
+      }
     },
   );
 
@@ -367,9 +374,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> wipe() => transaction(() async {
     for (final table in allTables) {
       if (table.actualTableName == syncCursor.actualTableName) {
-        await (delete(
-          syncCursor,
-        )..where(
+        await (delete(syncCursor)..where(
               (t) =>
                   t.tableKey.equals(pendingTrashCursorKey).not() &
                   t.tableKey.like('$isolatedOutboxCursorPrefix%').not(),

@@ -515,7 +515,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
       readOnly: _posting,
       semanticLabel: semanticsLabel,
       hint: vi ? template.captionPromptVi : template.captionPromptEn,
-      inputFormatters: [_CodePointLimit(captionMax)],
+      inputFormatters: [CodePointLimitFormatter(captionMax)],
       // The counter only shows near the limit; screen readers always get it.
       counter: count >= _counterFrom
           ? l10n.checkin_captionCounter(count, captionMax)
@@ -1041,28 +1041,6 @@ class _PhotoThumb extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Limits input to [max] Unicode code points, matching `validateCaption`
-/// and the server CHECK (Flutter's `maxLength` counts grapheme clusters).
-class _CodePointLimit extends TextInputFormatter {
-  const _CodePointLimit(this.max);
-
-  final int max;
-
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final runes = newValue.text.runes;
-    if (runes.length <= max) return newValue;
-    final text = String.fromCharCodes(runes.take(max));
-    return TextEditingValue(
-      text: text,
-      selection: TextSelection.collapsed(offset: text.length),
     );
   }
 }

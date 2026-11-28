@@ -65,6 +65,61 @@ Future<void> _toDetails(WidgetTester t) async {
 }
 
 void main() {
+  testWidgets(
+    'caption row opens sheet, date control stays separate, discard warns',
+    (tester) async {
+      await pumpSharing(
+        tester,
+        location: '/import',
+        picker: FakeImportPicker(threePhotos()),
+      );
+      await _tap(tester, 'import-next');
+      await _tap(tester, 'import-row-1');
+      expect(_key('import-caption-sheet'), findsOneWidget);
+      expect(_key('import-date-confirm'), findsNothing);
+      await tester.enterText(_key('import-caption-field'), 'Một ngày ở Hội An');
+      await _tap(tester, 'import-caption-done');
+      expect(find.text('Một ngày ở Hội An'), findsOneWidget);
+      await _tap(tester, 'import-calendar-1');
+      expect(_key('import-date-confirm'), findsOneWidget);
+      await _tap(tester, 'import-date-cancel');
+      await _tap(tester, 'import-back');
+      await _tap(tester, 'import-back');
+      expect(
+        find.textContaining('Captions you wrote will be lost too.'),
+        findsOneWidget,
+      );
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets('caption entered on timeline reaches the saved check-in', (
+    tester,
+  ) async {
+    final checkIns = FlakyCheckIns();
+    await pumpSharing(
+      tester,
+      location: '/import',
+      checkIns: checkIns,
+      picker: FakeImportPicker(threePhotos()),
+    );
+    await _tap(tester, 'import-next');
+    await _tap(tester, 'import-row-1');
+    await tester.enterText(
+      _key('import-caption-field'),
+      '  Hội An ngày ấy 😀  ',
+    );
+    await _tap(tester, 'import-caption-done');
+    await _tap(tester, 'import-to-details');
+    await tester.enterText(_key('import-title'), 'Hội An');
+    await tester.pumpAndSettle();
+    await _tap(tester, 'import-save');
+    expect(
+      checkIns.landed.values.where((d) => d.caption != null).single.caption,
+      'Hội An ngày ấy 😀',
+    );
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
   testWidgets('opens the picker at once, then timeline, details, save', (
     tester,
   ) async {
@@ -210,7 +265,7 @@ void main() {
     );
     await _tap(tester, 'import-next');
     // Edit a.jpg (order 1): the picker opens on its date; OK keeps it.
-    await tester.tap(_key('import-row-1'));
+    await tester.tap(_key('import-calendar-1'));
     await tester.pumpAndSettle();
     expect(_key('import-date-confirm'), findsOneWidget);
     // The wheels move the date: one step up on the day wheel is the 4th.
@@ -224,14 +279,14 @@ void main() {
     expect(find.textContaining('Feb 4, 2024'), findsWidgets);
 
     // Cancel leaves the date alone.
-    await tester.tap(_key('import-row-1'));
+    await tester.tap(_key('import-calendar-1'));
     await tester.pumpAndSettle();
     await tester.tap(_key('import-date-cancel'));
     await tester.pumpAndSettle();
     expect(_key('import-date-confirm'), findsNothing);
     expect(find.textContaining('Feb 4, 2024'), findsWidgets);
     expect(find.textContaining('Date taken'), findsWidgets);
-    expect(find.textContaining('Set by you'), findsOneWidget);
+    expect(find.textContaining('Set by you'), findsWidgets);
 
     // Bulk: select b.jpg and c.jpg, set one date for both.
     await _tap(tester, 'import-select-mode');
@@ -893,6 +948,14 @@ void main() {
       await _tap(tester, 'import-next');
       expect(tester.takeException(), isNull, reason: 'timeline step');
       // Dated by hand, then on to the details and the saving screen.
+      for (
+        var i = 0;
+        i < 10 && _key('import-undated-all').evaluate().isEmpty;
+        i++
+      ) {
+        await tester.drag(find.byType(CustomScrollView), const Offset(0, -150));
+        await tester.pumpAndSettle();
+      }
       await tester.ensureVisible(_key('import-undated-all'));
       await tester.pumpAndSettle();
       await tester.tap(_key('import-undated-all'));

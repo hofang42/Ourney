@@ -28,12 +28,44 @@ class DeadUploadsBanner extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          UiBanner(
-            message: l10n.journeys_deadUploads(items.length),
-            kind: UiBannerKind.readOnly,
-            retryLabel: l10n.journeys_deadRetry,
-            onRetry: () => unawaited(dead?.retry(items) ?? Future.value()),
-          ),
+          for (final policy in [true, false])
+            if (items.any((i) => i.isContentPolicy == policy))
+              Builder(
+                builder: (context) {
+                  final subset = items
+                      .where((i) => i.isContentPolicy == policy)
+                      .toList();
+                  if (policy) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        UiBanner(
+                          message: l10n.journeys_deadUploadsPolicy(
+                            subset.length,
+                          ),
+                          kind: UiBannerKind.readOnly,
+                        ),
+                        const SizedBox(height: 8),
+                        UiButton(
+                          label: l10n.journeys_keepPhotoOnly,
+                          onPressed: () async {
+                            for (final item in subset) {
+                              await dead?.keepPhotoOnly(item);
+                            }
+                          },
+                        ),
+                      ],
+                    );
+                  }
+                  return UiBanner(
+                    message: l10n.journeys_deadUploads(subset.length),
+                    kind: UiBannerKind.readOnly,
+                    retryLabel: l10n.journeys_deadRetry,
+                    onRetry: () =>
+                        unawaited(dead?.retry(subset) ?? Future.value()),
+                  );
+                },
+              ),
           Align(
             alignment: AlignmentDirectional.centerEnd,
             child: UiButton.ghost(

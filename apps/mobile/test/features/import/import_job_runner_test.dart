@@ -47,7 +47,7 @@ class Env {
   String? signedIn = 'u1';
   bool policyPaused = false;
 
-  /// Where the "OS temp dir" is: elsewhere, so picked files are copied.
+  /// Where the 'OS temp dir' is: elsewhere, so picked files are copied.
   late final Directory osTemp = Directory('${tmp.path}/os_temp')..createSync();
 
   /// Copy mode (the picker's files are not in the temp dir).
@@ -142,7 +142,7 @@ class Env {
           dedupeKey: '$id-k$i',
           order: i,
           date: LocalDate(2024, 2, 1 + i),
-        ),
+        )..caption = i == 3 ? '   ' : '  Kỷ niệm 😀 $i  ',
     ],
   );
 
@@ -174,6 +174,7 @@ void main() {
     await env.reached.future;
     final kept = (await store.get('j1'))!;
     for (final p in kept.photos) {
+      expect(p.caption, 'Kỷ niệm 😀 ${p.position}');
       expect(p.sourcePath, startsWith(env.jobs.path));
       expect(env.exists(p.sourcePath!), isTrue);
     }
@@ -247,6 +248,8 @@ void main() {
     env.holdOnPhoto = null;
     await env.runner(store).resumeAll();
     expect(env.checkIns.keys, ['j1-ph0', 'j1-ph1', 'j1-ph2', 'j1-ph3']);
+    expect(env.checkIns['j1-ph2']!.caption, 'Kỷ niệm 😀 2');
+    expect(env.checkIns['j1-ph3']!.caption, isNull);
     expect(env.journeys, hasLength(1));
     expect(env.createCalls, 1);
     // Photos 1-2 were saved; the one in flight and the last went out again.
@@ -327,6 +330,7 @@ void main() {
     expect(env.submitCalls, before + 1);
     saved = (await store.get('j1'))!;
     expect(saved.complete, isTrue);
+    expect(env.checkIns['j1-ph1']!.caption, 'Kỷ niệm 😀 1');
     expect(env.checkIns, hasLength(4));
   });
 
@@ -624,6 +628,7 @@ void main() {
     final before = (await store.get('j1'))!;
     final reopened = await runner.reopen('j1');
     expect(reopened!.photos, hasLength(2));
+    expect(reopened.photos.first.caption, 'Kỷ niệm 😀 0');
     expect(await store.get('j1'), isNull);
     for (final p in before.photos) {
       expect(env.exists(p.sourcePath!), isTrue);

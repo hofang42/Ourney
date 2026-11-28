@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 
 import 'data_context.dart';
@@ -22,6 +23,9 @@ class DeadUpload {
   final String checkInId;
   final String journeyId;
   final String? lastError;
+
+  // The outbox persists OurneyException.toString(), including its wire code.
+  bool get isContentPolicy => lastError?.contains('content_policy') ?? false;
 }
 
 /// Lets the UI surface dead check-in uploads and offer Retry / Discard.
@@ -64,6 +68,19 @@ class DeadUploads {
     final outbox = _ctx.outbox;
     if (outbox == null || items.isEmpty) return;
     await outbox.retryDead([for (final i in items) i.queueId]);
+  }
+
+  /// Clears only an unsynced caption before reviving its upload.
+  Future<void> keepPhotoOnly(DeadUpload item) async {
+    final outbox = _ctx.outbox;
+    if (outbox == null) return;
+    await outbox.exclusive(() async {
+      await (_ctx.db.update(_ctx.db.checkIns)..where(
+            (t) => t.id.equals(item.checkInId) & t.uploaded.equals(false),
+          ))
+          .write(const CheckInsCompanion(caption: Value(null)));
+    });
+    await outbox.retryDead([item.queueId]);
   }
 
   /// Drops [items] and the local check-ins (and photos) they were for.

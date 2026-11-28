@@ -6,28 +6,10 @@ import '../typography.dart';
 import 'ourney_icons.dart';
 import 'pressable.dart';
 
+// Preserve direct inputs.dart callers while sharing the IME-safe formatter.
+export 'text_area.dart' show CodePointLimitFormatter;
+
 const double _otpW = 48;
-
-/// Limits input to Unicode code points, matching storage length checks.
-class CodePointLimitFormatter extends TextInputFormatter {
-  const CodePointLimitFormatter(this.max);
-
-  final int max;
-
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final runes = newValue.text.runes;
-    if (runes.length <= max) return newValue;
-    final text = String.fromCharCodes(runes.take(max));
-    return TextEditingValue(
-      text: text,
-      selection: TextSelection.collapsed(offset: text.length),
-    );
-  }
-}
 
 /// Outline of every kit text field: 16dp radius, 1.5dp at rest, 2dp on focus
 /// (pass [UiBorder.standard]). No shadow.

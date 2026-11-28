@@ -101,7 +101,7 @@ class ImportL10nEn extends ImportL10n {
 
   @override
   String get import_timelineIntro =>
-      'Dates come from the photos. Tap a photo to change its date.';
+      'Dates come from your photos. Tap the calendar to change a date, or the photo to add a caption.';
 
   @override
   String import_rangeLine(String range, String days) {
@@ -451,4 +451,41 @@ class ImportL10nEn extends ImportL10n {
 
   @override
   String get import_discardKeep => 'Keep going';
+
+  @override
+  String get import_captionAddHint => 'Add a caption…';
+
+  @override
+  String get import_captionOpenAll => 'Add captions';
+
+  @override
+  String import_captionSheetEyebrow(int day, String date) {
+    return 'Day $day · $date';
+  }
+
+  @override
+  String get import_captionHint => 'What do you remember about this photo?';
+
+  @override
+  String get import_captionHelper => 'Optional. You can edit it after saving.';
+
+  @override
+  String get import_captionPrev => 'Previous photo';
+
+  @override
+  String get import_captionNext => 'Next photo';
+
+  @override
+  String get import_captionDone => 'Done';
+
+  @override
+  String get import_captionEditDate => 'Change date';
+
+  @override
+  String import_captionOpen(String date) {
+    return 'Write a caption for the photo on $date';
+  }
+
+  @override
+  String get import_discardCaptions => 'Captions you wrote will be lost too.';
 }

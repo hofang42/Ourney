@@ -348,6 +348,7 @@ class ImportTimelineTile extends StatelessWidget {
     required this.dateLabel,
     required this.onTap,
     required this.onRemove,
+    this.onEditDate,
     this.selecting = false,
     this.selected = false,
     this.undated = false,
@@ -358,6 +359,7 @@ class ImportTimelineTile extends StatelessWidget {
   final String dateLabel;
   final VoidCallback onTap;
   final VoidCallback onRemove;
+  final VoidCallback? onEditDate;
   final bool selecting;
   final bool selected;
   final bool undated;
@@ -384,8 +386,9 @@ class ImportTimelineTile extends StatelessWidget {
                   ? (selected
                         ? l10n.import_deselectPhoto(dateLabel)
                         : l10n.import_selectPhoto(dateLabel))
-                  : l10n.import_editDate(dateLabel),
-              excludeChildSemantics: true,
+                  : undated
+                  ? l10n.import_editDate(dateLabel)
+                  : l10n.import_captionOpen(dateLabel),
               borderRadius: BorderRadius.circular(UiRadius.input),
               child: Container(
                 constraints: const BoxConstraints(minHeight: UiSize.tap),
@@ -409,8 +412,23 @@ class ImportTimelineTile extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          if (!undated &&
+                              !selecting &&
+                              (photo.caption?.trim().isNotEmpty ?? false))
+                            Text(
+                              photo.caption!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: UiText.body(
+                                size: 13,
+                                height: 1.35,
+                                color: ui.ink,
+                              ),
+                            ),
                           Text(
-                            dateLabel,
+                            source == null || undated || selecting
+                                ? dateLabel
+                                : '$dateLabel · $source',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: UiText.body(
@@ -420,7 +438,7 @@ class ImportTimelineTile extends StatelessWidget {
                               color: undated ? ui.warn : ui.ink,
                             ),
                           ),
-                          if (source != null)
+                          if ((undated || selecting) && source != null)
                             Text(
                               source,
                               maxLines: 1,
@@ -430,6 +448,32 @@ class ImportTimelineTile extends StatelessWidget {
                                 height: 1.4,
                                 color: ui.inkMuted,
                               ),
+                            ),
+                          if (!undated &&
+                              !selecting &&
+                              (photo.caption?.trim().isEmpty ?? true))
+                            Row(
+                              children: [
+                                OurneyIcon(
+                                  name: 'pencil',
+                                  size: 14,
+                                  flat: true,
+                                  color: ui.inkMuted,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    l10n.import_captionAddHint,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: UiText.body(
+                                      size: 11,
+                                      height: 1.35,
+                                      color: ui.inkMuted,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                         ],
                       ),
@@ -442,9 +486,9 @@ class ImportTimelineTile extends StatelessWidget {
                         flat: true,
                         color: selected ? ui.success : ui.inkMuted,
                       )
-                    else
+                    else if (undated)
                       OurneyIcon(
-                        name: undated ? 'warning' : 'calendar',
+                        name: 'warning',
                         size: 18,
                         flat: true,
                         color: undated ? ui.warn : ui.inkMuted,
@@ -455,6 +499,14 @@ class ImportTimelineTile extends StatelessWidget {
               ),
             ),
           ),
+          if (!selecting && !undated)
+            UiIconButton(
+              key: ValueKey('import-calendar-${photo.order}'),
+              glyph: const OurneyIcon(name: 'calendar', flat: true),
+              label: l10n.import_captionEditDate,
+              iconSize: 20,
+              onPressed: onEditDate,
+            ),
           if (!selecting)
             UiIconButton(
               key: ValueKey('import-remove-${photo.order}'),

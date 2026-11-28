@@ -123,7 +123,7 @@
   "@import_timelineTitle": {
     "description": "Retell a past journey flow."
   },
-  "import_timelineIntro": "Dates come from the photos. Tap a photo to change its date.",
+  "import_timelineIntro": "Dates come from your photos. Tap the calendar to change a date, or the photo to add a caption.",
   "@import_timelineIntro": {
     "description": "Retell a past journey flow."
   },
@@ -553,5 +553,33 @@
   "import_discardKeep": "Keep going",
   "@import_discardKeep": {
     "description": "Retell a past journey flow."
+  },
+  "import_captionAddHint": "Add a caption…",
+  "import_captionOpenAll": "Add captions",
+  "import_captionSheetEyebrow": "Day {day} · {date}",
+  "import_captionHint": "What do you remember about this photo?",
+  "import_captionHelper": "Optional. You can edit it after saving.",
+  "import_captionPrev": "Previous photo",
+  "import_captionNext": "Next photo",
+  "import_captionDone": "Done",
+  "import_captionEditDate": "Change date",
+  "import_captionOpen": "Write a caption for the photo on {date}",
+  "import_discardCaptions": "Captions you wrote will be lost too.",
+  "@import_captionSheetEyebrow": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@import_captionOpen": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   }
 }

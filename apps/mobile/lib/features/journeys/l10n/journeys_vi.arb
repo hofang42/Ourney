@@ -1700,5 +1700,14 @@
         "type": "String"
       }
     }
-  }
+  },
+  "journeys_deadUploadsPolicy": "{count} ảnh chưa lưu được vì chú thích. Ảnh vẫn còn trên máy.",
+  "@journeys_deadUploadsPolicy": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_keepPhotoOnly": "Chỉ giữ ảnh"
 }

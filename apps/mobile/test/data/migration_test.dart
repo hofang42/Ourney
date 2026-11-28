@@ -33,7 +33,7 @@ void main() {
     expect(row.origin, 'live');
     expect(journeyFromRow(row).origin, JourneyOrigin.live);
     final version = await db.customSelect('pragma user_version').getSingle();
-    expect(version.data.values.single, 7);
+    expect(version.data.values.single, 8);
   });
 
   test('v2 → v3 adds extras, partner photo and couple names', () async {
@@ -159,7 +159,7 @@ void main() {
     expect(index, hasLength(1));
   });
 
-  test('v6 to v7 adds the durable import job tables', () async {
+  test('v6 to v8 adds the durable import job tables', () async {
     final dir = Directory.systemTemp.createTempSync('ourney_mig_v7');
     addTearDown(() => dir.deleteSync(recursive: true));
     final file = File('${dir.path}/db.sqlite');
@@ -207,14 +207,42 @@ void main() {
         )
         .get();
     expect(idx, hasLength(1));
+    expect(
+      await db.customSelect('SELECT caption FROM import_job_photos').get(),
+      isEmpty,
+    );
   });
+
+  test('v7 to v8 preserves a job photo with a null caption', () async {
+    final file = File('${tempDir().path}/caption.sqlite');
+    final old = AppDatabase(NativeDatabase(file));
+    await old.customStatement(
+      "INSERT INTO import_jobs (id,title,emoji,template_id,start_date,end_date,timezone,phase,owner_id,created_at) VALUES ('j','T','x','custom','2024-01-01','2024-01-01','UTC','preparing','u',0)",
+    );
+    await old.customStatement(
+      "INSERT INTO import_job_photos (id,job_id,position,local_date,seconds_of_day,state) VALUES ('p','j',0,'2024-01-01',43200,'pending')",
+    );
+    await old.customStatement(
+      'ALTER TABLE import_job_photos DROP COLUMN caption',
+    );
+    await old.customStatement('PRAGMA user_version = 7');
+    await old.close();
+    final db = AppDatabase(NativeDatabase(file));
+    addTearDown(db.close);
+    final photo = await db.select(db.importJobPhotos).getSingle();
+    expect(photo.id, 'p');
+    expect(photo.caption, isNull);
+    expect((await db.select(db.importJobs).getSingle()).id, 'j');
+  }, timeout: const Timeout(Duration(seconds: 30)));
 
   test('existing v7 database without import_job_photos_job_pos index receives it on open (FS-34)', () async {
     final dir = Directory.systemTemp.createTempSync('ourney_mig_v7_idx');
     addTearDown(() => dir.deleteSync(recursive: true));
     final file = File('${dir.path}/db.sqlite');
     final initial = AppDatabase(NativeDatabase(file));
-    await initial.customStatement('drop index if exists import_job_photos_job_pos');
+    await initial.customStatement(
+      'drop index if exists import_job_photos_job_pos',
+    );
     await initial.customStatement('pragma user_version = 7');
     await initial.close();
 

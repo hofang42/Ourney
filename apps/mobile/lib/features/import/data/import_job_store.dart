@@ -86,6 +86,7 @@ class DriftImportJobStore implements ImportJobStore {
             ImportJobPhotosCompanion.insert(
               id: p.id,
               jobId: job.id,
+              caption: Value(p.caption),
               position: p.position,
               sourcePath: Value(p.sourcePath),
               photoFile: Value(p.photoFile),
@@ -129,6 +130,7 @@ class DriftImportJobStore implements ImportJobStore {
           ImportJobPhoto(
             id: p.id,
             position: p.position,
+            caption: p.caption,
             sourcePath: p.sourcePath,
             photoFile: p.photoFile,
             thumbFile: p.thumbFile,

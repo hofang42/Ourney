@@ -211,3 +211,25 @@ class UiCaptionField extends StatelessWidget {
     );
   }
 }
+
+/// Code-point cap matching core validation; leaves IME composition intact.
+class CodePointLimitFormatter extends TextInputFormatter {
+  const CodePointLimitFormatter(this.max);
+
+  final int max;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.composing.isValid) return newValue;
+    final runes = newValue.text.runes;
+    if (runes.length <= max) return newValue;
+    final text = String.fromCharCodes(runes.take(max));
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+}
