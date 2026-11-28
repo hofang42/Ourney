@@ -4,6 +4,26 @@ import XCTest
 @testable import Runner
 
 final class WidgetSnapshotRolloverTests: XCTestCase {
+
+  func testRetoldLibraryPhotoDoesNotPreserveCameraStreakAtMidnight() throws {
+    let json = """
+    {"id":"retold", "currentStreak":1, "bestStreak":1,
+     "checkedInToday":true, "streakCheckedInToday":false,
+     "showStreak":false, "midnightRolloverUtc":"2026-11-24T17:00:00Z"}
+    """
+    let journey = try JSONDecoder().decode(WidgetJourneyItem.self, from: Data(json.utf8))
+    XCTAssertFalse(journey.showStreak)
+    XCTAssertTrue(journey.checkedInToday)
+    XCTAssertFalse(journey.streakCheckedInToday)
+    let midnight = try XCTUnwrap(WidgetDateParser.parseISO8601("2026-11-24T17:05:00Z"))
+    let rolled = journey.evaluated(at: midnight)
+    XCTAssertEqual(rolled.currentStreak, 0)
+    XCTAssertFalse(rolled.atRisk)
+    let legacy = try JSONDecoder().decode(WidgetJourneyItem.self, from: Data("{\"id\":\"old\",\"checkedInToday\":true}".utf8))
+    XCTAssertTrue(legacy.showStreak)
+    XCTAssertTrue(legacy.streakCheckedInToday)
+  }
+
   private let sampleJson = """
   {
     "schemaVersion": 1,

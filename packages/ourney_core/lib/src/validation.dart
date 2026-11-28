@@ -67,7 +67,7 @@ String? normalizeCaption(String? raw) {
   final value = raw?.trim();
   return value == null || value.isEmpty
       ? null
-      : String.fromCharCodes(value.runes.take(captionMax));
+      : String.fromCharCodes(value.runes.take(captionMax)).trimRight();
 }
 
 CaptionError? validateCaption(String? value) {

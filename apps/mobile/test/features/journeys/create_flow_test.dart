@@ -651,13 +651,15 @@ void main() {
 
 void _dnaGroup() {
   group('Create step 2 DNA questions', () {
-    testWidgets('weight loss: goal, weight, ghost photo, then the form', (
+    testWidgets(
+      'weight loss: goal and weight, then the form without a ghost prompt',
+      (
       tester,
     ) async {
       await _open(tester);
       await _tap(tester, 'template-weight_loss');
       expect(_key('dna-page-goal'), findsOneWidget);
-      expect(find.text('Question 1/3'), findsOneWidget);
+      expect(find.text('Question 1/2'), findsOneWidget);
       // Next is a no-op until a card is chosen.
       await _tap(tester, 'create-next');
       expect(_key('dna-page-goal'), findsOneWidget);
@@ -667,13 +669,12 @@ void _dnaGroup() {
       expect(find.text('70'), findsOneWidget);
       expect(_key('dna-hide-weight'), findsOneWidget);
       await _tap(tester, 'create-next');
-      expect(_key('dna-page-ghost'), findsOneWidget);
-      expect(_key('dna-ghost-silhouette'), findsOneWidget);
-      await _tap(tester, 'dna-ghost-later');
+      expect(_key('dna-page-ghost'), findsNothing);
+      expect(_key('dna-ghost-silhouette'), findsNothing);
       expect(_key('journey-title'), findsOneWidget);
       expect(_stepLabel(tester), 'Step 2/5');
       await _tap(tester, 'create-back');
-      expect(_key('dna-page-ghost'), findsOneWidget);
+      expect(_key('dna-page-weight'), findsOneWidget);
     });
 
     testWidgets('travel: place, dates set the journey length, film', (
@@ -780,7 +781,6 @@ void _dnaGroup() {
       await _tap(tester, 'dna-hide-weight');
       expect(_switch(tester, 'dna-hide-weight'), isFalse);
       await _tap(tester, 'create-next');
-      await _tap(tester, 'dna-ghost-later');
       expect(_switch(tester, 'journey-hide-metric'), isFalse);
       await _tap(tester, 'journey-blur');
       await finish(tester);
@@ -939,7 +939,6 @@ void _dnaGroup() {
         await _tap(tester, 'dna-choice-goal-lose');
         await _tap(tester, 'create-next');
         await _tap(tester, 'create-next');
-        await _tap(tester, 'dna-ghost-later');
         await finish(tester);
 
         final journeyId = h.journeys.journeys.last.id;
@@ -951,7 +950,7 @@ void _dnaGroup() {
             journeyGhostGuidePrefKey(journeyId),
             const SharedPreferencesOptions(),
           ),
-          isFalse,
+          isNull,
         );
         expect(h.location, AppRoutes.journey(journeyId));
         expect(find.text("Some settings couldn't be saved"), findsOneWidget);
@@ -959,7 +958,7 @@ void _dnaGroup() {
     );
 
     testWidgets(
-      'weight loss: 0.1 kg precision and ghost guide preference are persisted on device (UX-02)',
+      'weight loss: 0.1 kg precision is persisted without a ghost preference (UX-02)',
       (tester) async {
         final h = await _open(tester);
         await _tap(tester, 'template-weight_loss');
@@ -969,15 +968,13 @@ void _dnaGroup() {
         await _tap(tester, 'dna-weight-dec');
         expect(find.text('69.9'), findsOneWidget);
         await _tap(tester, 'create-next');
-        // Tapping "Keep it off for now." sets ghost guide preference to false.
-        await _tap(tester, 'dna-ghost-later');
         await finish(tester);
         final prefs = h.container.read(sharedPreferencesProvider);
         expect(
           prefs.getDouble(journeyStartingWeightPrefKey('new-1')),
           closeTo(69.9, 0.01),
         );
-        expect(prefs.getBool(journeyGhostGuidePrefKey('new-1')), isFalse);
+        expect(prefs.getBool(journeyGhostGuidePrefKey('new-1')), isNull);
       },
     );
 
@@ -989,12 +986,10 @@ void _dnaGroup() {
         await _tap(tester, 'dna-choice-goal-lose');
         await _tap(tester, 'create-next');
         await _tap(tester, 'dna-weight-skip');
-        // Tapping primary CTA on ghost page enables the ghost guide.
-        await _tap(tester, 'create-next');
         await finish(tester);
         final prefs = h.container.read(sharedPreferencesProvider);
         expect(prefs.getDouble(journeyStartingWeightPrefKey('new-1')), isNull);
-        expect(prefs.getBool(journeyGhostGuidePrefKey('new-1')), isTrue);
+        expect(prefs.getBool(journeyGhostGuidePrefKey('new-1')), isNull);
       },
     );
 

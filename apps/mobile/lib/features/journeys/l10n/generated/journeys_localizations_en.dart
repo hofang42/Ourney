@@ -488,7 +488,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_retell => 'Retell a past journey';
 
   @override
-  String get journeys_imported => 'Imported';
+  String get journeys_imported => 'Retold';
 
   @override
   String get journeys_shareCard => 'Share card';
@@ -741,21 +741,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_renameCoupleTitle => 'Edit couple names';
 
   @override
-  String get journeys_quietHold => 'Hold to view';
-
-  @override
-  String get journeys_quietHolding => 'Viewing';
-
-  @override
-  String get journeys_quietHoldHint => 'Press and hold to reveal your numbers';
-
-  @override
   String get journeys_quietHidden => 'Hidden';
-
-  @override
-  String journeys_quietAxis(String value) {
-    return '$value kg';
-  }
 
   @override
   String journeys_quietDayTag(int day) {
@@ -773,9 +759,6 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_quietFinish => 'FINISH';
-
-  @override
-  String get journeys_quietMissed => 'A rest day doesn\'t erase the journey.';
 
   @override
   String get journeys_quietMilestones => 'Milestones';
@@ -805,10 +788,6 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_dna_weight_title => 'current weight.';
-
-  @override
-  String get journeys_dna_ghost_title =>
-      'take a day-1 photo as your alignment frame.';
 
   @override
   String get journeys_dna_goal_title_english => 'goal.';
@@ -1042,16 +1021,6 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_dna_weight_skip => 'Skip';
 
   @override
-  String get journeys_dna_ghost_body =>
-      'Show a translucent silhouette guide in the camera so every photo lines up.';
-
-  @override
-  String get journeys_dna_ghost_now => 'Turn on ghost guide';
-
-  @override
-  String get journeys_dna_ghost_later => 'Keep it off for now.';
-
-  @override
   String get journeys_dna_trophy_label => 'Trophy name';
 
   @override
@@ -1190,12 +1159,6 @@ class JourneysL10nEn extends JourneysL10n {
   String journeys_home_monthStreak(int streak, String month) {
     return '$month · $streak-DAY STREAK';
   }
-
-  @override
-  String get journeys_home_holdReveal => 'Hold to reveal';
-
-  @override
-  String get journeys_home_viewing => 'Viewing';
 
   @override
   String get journeys_home_chartA11y => 'Progress line';
@@ -1752,16 +1715,6 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_home_pairNeither => 'nobody has shot today yet';
 
   @override
-  String journeys_home_flexSummary(String km, String pace) {
-    return '$km KM TOTAL · $pace /KM AVG PACE';
-  }
-
-  @override
-  String journeys_home_flexKmOnly(String km) {
-    return '$km KM TOTAL';
-  }
-
-  @override
   String journeys_home_flexRan(int done, int total) {
     return '$done/$total RAN';
   }
@@ -2016,9 +1969,6 @@ class JourneysL10nEn extends JourneysL10n {
   }
 
   @override
-  String get journeys_range30Pace => 'Few values in 30 days, showing check-ins';
-
-  @override
   String journeys_startsIn(int days, int total) {
     String _temp0 = intl.Intl.pluralLogic(
       days,
@@ -2060,6 +2010,128 @@ class JourneysL10nEn extends JourneysL10n {
   @override
   String journeys_dayPartnerNoPhoto(String name) {
     return '$name has no photo for this day';
+  }
+
+  @override
+  String journeys_homeMeta(int day, int total, String range) {
+    return 'Day $day / $total · $range';
+  }
+
+  @override
+  String journeys_homeMetaOpen(int day, String start) {
+    return 'Day $day · since $start';
+  }
+
+  @override
+  String journeys_daysLeft(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n days to go',
+      one: '1 day to go',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String journeys_weekLabel(int n) {
+    return 'Week $n';
+  }
+
+  @override
+  String journeys_weekKm(int n, String km) {
+    return 'Week $n · $km km';
+  }
+
+  @override
+  String get journeys_runTotalKm => 'Total km';
+
+  @override
+  String get journeys_runCount => 'Runs';
+
+  @override
+  String get journeys_runAvgPace => 'Avg pace';
+
+  @override
+  String get journeys_sessionCount => 'Sessions';
+
+  @override
+  String journeys_weightTrend(String direction) {
+    return 'Trend · $direction';
+  }
+
+  @override
+  String get journeys_trendDown => 'easing down';
+
+  @override
+  String get journeys_trendFlat => 'holding steady';
+
+  @override
+  String get journeys_trendUp => 'drifting up';
+
+  @override
+  String journeys_trendFooter(int count) {
+    return '$count weigh-ins · smoothed';
+  }
+
+  @override
+  String get journeys_trendNeedMore =>
+      'A few more weigh-ins and the trend shows up.';
+
+  @override
+  String journeys_trendChange(String delta, String unit) {
+    return '$delta $unit since day 1';
+  }
+
+  @override
+  String get journeys_showNumbers => 'Show numbers';
+
+  @override
+  String get journeys_hideNumbers => 'Hide numbers';
+
+  @override
+  String journeys_firstLatest(int first, int latest) {
+    return 'Day $first and day $latest';
+  }
+
+  @override
+  String get journeys_viewerMetricHidden => '••.•';
+
+  @override
+  String journeys_semRunBar(int day, String km) {
+    return 'Day $day, $km km';
+  }
+
+  @override
+  String journeys_semRunBarNone(int day) {
+    return 'Day $day, no distance';
+  }
+
+  @override
+  String get journeys_photoLogEmpty => 'Your check-in photos will appear here.';
+
+  @override
+  String journeys_streakOnly(int n) {
+    return '$n day streak';
+  }
+
+  @override
+  String get journeys_runDay => 'Day';
+
+  @override
+  String journeys_cellQuiet(int day, String date) {
+    return 'Day $day, $date: no photo';
+  }
+
+  @override
+  String journeys_wrappedPhotoDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days with photos',
+      one: '1 day with photos',
+    );
+    return '$_temp0';
   }
 
   @override

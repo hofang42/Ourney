@@ -34,6 +34,7 @@ class UiTextField extends StatefulWidget {
     required this.controller,
     this.fieldKey,
     this.hint,
+    this.showLabel = true,
     this.helper,
     this.error,
     this.invalid = false,
@@ -72,6 +73,10 @@ class UiTextField extends StatefulWidget {
   /// Key for the inner [TextField] (tests and focus).
   final Key? fieldKey;
   final String? hint;
+
+  /// Whether to show the label above the field. It always labels the field for
+  /// assistive technology.
+  final bool showLabel;
   final String? helper;
   final String? error;
 
@@ -109,18 +114,20 @@ class _UiTextFieldState extends State<UiTextField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ExcludeSemantics(
-          child: Text(
-            widget.label,
-            style: UiText.body(
-              size: 14,
-              weight: FontWeight.w700,
-              height: 1.4,
-              color: ui.ink,
+        if (widget.showLabel) ...[
+          ExcludeSemantics(
+            child: Text(
+              widget.label,
+              style: UiText.body(
+                size: 14,
+                weight: FontWeight.w700,
+                height: 1.4,
+                color: ui.ink,
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 8),
+          const SizedBox(height: 8),
+        ],
         Semantics(
           container: true,
           label: widget.label,

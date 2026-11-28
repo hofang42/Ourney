@@ -390,7 +390,7 @@ class ImportTimelineTile extends StatelessWidget {
                   : undated
                   ? l10n.import_editDate(dateLabel)
                   : hasCaption
-                  ? '${l10n.import_captionEdit(dateLabel)}: ${photo.caption}'
+                  ? l10n.import_captionEdit(photo.caption!, dateLabel)
                   : l10n.import_captionOpen(dateLabel),
               excludeChildSemantics: true,
               borderRadius: BorderRadius.circular(UiRadius.input),

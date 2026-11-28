@@ -20,7 +20,7 @@ produce an **unsigned** `.ipa` that users sign themselves with a free Apple ID (
    fallback.
 4. **CI build**: `flutter build ios --release --no-codesign` on `macos-latest`, then
    `scripts/ios/package_ipa.sh` zips `Payload/Runner.app` into `Ourney-unsigned.ipa`
-   (artifact `Ourney-unsigned-ipa`; attached to the GitHub Release on `v*` tags).
+   (artifact `Ourney-unsigned-ipa-auto`; attached to the GitHub Release on `v*` tags).
 5. Android CI uses JDK 17 (Temurin) and a debug-signed release APK unless `ANDROID_KEYSTORE_BASE64` is set.
 
 ## Verification of plugin iOS minimums

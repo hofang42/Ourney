@@ -262,7 +262,7 @@ class ImportL10nVi extends ImportL10n {
 
   @override
   String get import_continueBody =>
-      'Giữ hành trình mở để bạn thêm ảnh mới. Chuỗi ngày bắt đầu từ ảnh chụp thật đầu tiên; ảnh kể lại không được tính.';
+      'Giữ hành trình mở để bạn check-in tiếp. Chuỗi ngày chỉ tính các check-in mới, ảnh kể lại không được tính.';
 
   @override
   String get import_privacyNote =>
@@ -476,7 +476,7 @@ class ImportL10nVi extends ImportL10n {
   String get import_captionHideKeyboard => 'Đóng bàn phím';
 
   @override
-  String import_captionEdit(Object date) {
-    return 'Sửa chú thích cho ảnh ngày $date';
+  String import_captionEdit(Object caption, Object date) {
+    return 'Sửa chú thích cho ảnh ngày $date: $caption';
   }
 }

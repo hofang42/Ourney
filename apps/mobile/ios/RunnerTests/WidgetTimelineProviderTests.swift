@@ -72,7 +72,152 @@ final class WidgetTimelineProviderTests: XCTestCase {
     wait(for: [delivered], timeout: 5)
   }
 
+  func testStaticJourneyWidgetsPinTheGlobalJourney() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    try WidgetSnapshotStore.ensureDirectoryPrepared(root)
+
+    let automatic = WidgetJourneyItem(id: "automatic", title: "Automatic", currentStreak: 10)
+    let selected = WidgetJourneyItem(id: "selected", title: "Selected")
+    let saved = WidgetSnapshot(defaultJourneyId: selected.id, journeys: [automatic, selected])
+    try JSONEncoder().encode(saved).write(to: root.appendingPathComponent(OurneyWidgetConstants.snapshotFileName))
+
+    assertStaticEntries(kind: OurneyWidgetKind.today, root: root) { entry in
+      XCTAssertEqual(entry.pinnedId, selected.id)
+      XCTAssertTrue(entry.snapshot?.isTodayJourneyPinned(entry.pinnedId) == true)
+      let card = WidgetSnapshot.resolveTodayCardState(snapshot: entry.snapshot, pinnedId: entry.pinnedId)
+      XCTAssertEqual(card.tapURL, selected.captureURL)
+    }
+    assertStaticEntries(kind: OurneyWidgetKind.streak, root: root) { entry in
+      XCTAssertEqual(entry.pinnedId, selected.id)
+      let card = WidgetSnapshot.resolveStreakCardState(snapshot: entry.snapshot, pinnedId: entry.pinnedId)
+      XCTAssertEqual(card.tapURL, selected.captureURL)
+    }
+    assertStaticEntries(kind: OurneyWidgetKind.lockScreen, root: root) { entry in
+      XCTAssertEqual(entry.pinnedId, selected.id)
+      XCTAssertEqual(entry.snapshot?.selectedLockScreenJourney(pinnedId: entry.pinnedId)?.id, selected.id)
+    }
+  }
+
+  func testStaticSquadUsesTheSquadDefaultBeforeTheJourneyDefault() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    try WidgetSnapshotStore.ensureDirectoryPrepared(root)
+    let snapshotFile = root.appendingPathComponent(OurneyWidgetConstants.snapshotFileName)
+
+    let journeyDefault = WidgetSquadItem(journeyId: "journey-default", title: "Journey default")
+    let squadDefault = WidgetSquadItem(journeyId: "squad-default", title: "Squad default")
+    var saved = WidgetSnapshot(
+      defaultJourneyId: journeyDefault.id,
+      defaultSquadId: squadDefault.id,
+      squads: [WidgetSquadItem(journeyId: "automatic", title: "Automatic"), journeyDefault, squadDefault]
+    )
+    try JSONEncoder().encode(saved).write(to: snapshotFile)
+    assertStaticEntries(kind: OurneyWidgetKind.squad, root: root) { entry in
+      XCTAssertEqual(entry.pinnedId, squadDefault.id)
+      let card = WidgetSnapshot.resolveSquadCardState(snapshot: entry.snapshot, pinnedId: entry.pinnedId)
+      XCTAssertEqual(card.tapURL, squadDefault.captureURL)
+    }
+
+    saved.defaultSquadId = nil
+    try JSONEncoder().encode(saved).write(to: snapshotFile)
+    assertStaticEntries(kind: OurneyWidgetKind.squad, root: root) { entry in
+      XCTAssertEqual(entry.pinnedId, journeyDefault.id)
+      let card = WidgetSnapshot.resolveSquadCardState(snapshot: entry.snapshot, pinnedId: entry.pinnedId)
+      XCTAssertEqual(card.tapURL, journeyDefault.captureURL)
+    }
+  }
+
+  func testStaticWidgetsFallBackToAutomaticWhenDefaultsHaveNoActiveMatch() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    try WidgetSnapshotStore.ensureDirectoryPrepared(root)
+
+    // Only active journeys and squads appear in the snapshot, so archived defaults cannot match.
+    let first = WidgetJourneyItem(id: "first", title: "First", currentStreak: 10)
+    let cycled = WidgetJourneyItem(id: "cycled", title: "Cycled")
+    let squad = WidgetSquadItem(journeyId: "active-squad", title: "Active squad")
+    let saved = WidgetSnapshot(
+      defaultJourneyId: "archived-journey",
+      defaultSquadId: "unknown-squad",
+      journeys: [first, cycled],
+      squads: [squad]
+    )
+    try JSONEncoder().encode(saved).write(to: root.appendingPathComponent(OurneyWidgetConstants.snapshotFileName))
+    XCTAssertTrue(WidgetSnapshotStore.saveState(
+      WidgetInteractiveState(selectedTodayIndex: 1, selectedTodayJourneyId: cycled.id),
+      rootDirectory: root
+    ))
+
+    assertStaticEntries(kind: OurneyWidgetKind.today, root: root) { entry in
+      XCTAssertFalse(entry.snapshot?.isTodayJourneyPinned(entry.pinnedId) ?? true)
+      let card = WidgetSnapshot.resolveTodayCardState(
+        snapshot: entry.snapshot, pinnedId: entry.pinnedId, state: entry.state
+      )
+      XCTAssertEqual(card.tapURL, cycled.captureURL)
+    }
+    assertStaticEntries(kind: OurneyWidgetKind.streak, root: root) { entry in
+      let card = WidgetSnapshot.resolveStreakCardState(snapshot: entry.snapshot, pinnedId: entry.pinnedId)
+      XCTAssertEqual(card.tapURL, first.captureURL)
+    }
+    assertStaticEntries(kind: OurneyWidgetKind.squad, root: root) { entry in
+      let card = WidgetSnapshot.resolveSquadCardState(snapshot: entry.snapshot, pinnedId: entry.pinnedId)
+      XCTAssertEqual(card.tapURL, squad.captureURL)
+    }
+  }
+
+  private func assertStaticEntries(kind: String, root: URL, verify: (OurneyWidgetEntry) -> Void) {
+    let provider = OurneyTimelineProvider(kind: kind, rootDirectory: { root })
+    provider.getSnapshot(isPreview: false, completion: verify)
+    provider.getTimeline { timeline in
+      XCTAssertFalse(timeline.entries.isEmpty)
+      timeline.entries.forEach(verify)
+    }
+  }
+
   #if canImport(AppIntents)
+  @available(iOS 17.0, *)
+  func testAutomaticAppIntentProvidersIgnoreBothGlobalDefaults() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    try WidgetSnapshotStore.ensureDirectoryPrepared(root)
+    var saved = WidgetPreviewFixtures.sampleTodaySnapshot(locale: "en")
+    saved.defaultJourneyId = saved.journeys[1].id
+    saved.defaultSquadId = saved.squads[0].id
+    try JSONEncoder().encode(saved).write(to: root.appendingPathComponent(OurneyWidgetConstants.snapshotFileName))
+
+    let today = TodayAppIntentProvider(rootDirectory: { root })
+    let streak = StreakAppIntentProvider(rootDirectory: { root })
+    let squad = SquadAppIntentProvider(rootDirectory: { root })
+    let lockScreen = LockScreenAppIntentProvider(rootDirectory: { root })
+    let automaticJourney = JourneyWidgetEntity.automatic(locale: "en")
+    let todayIntent = SelectTodayJourneyIntent(journey: automaticJourney)
+    let streakIntent = SelectStreakJourneyIntent(journey: automaticJourney)
+    let squadIntent = SelectSquadIntent(squad: .automatic(locale: "en"))
+    let lockScreenIntent = SelectLockScreenJourneyIntent(journey: automaticJourney)
+
+    let snapshots = [
+      today.snapshot(for: todayIntent, isPreview: false),
+      streak.snapshot(for: streakIntent, isPreview: false),
+      squad.snapshot(for: squadIntent, isPreview: false),
+      lockScreen.snapshot(for: lockScreenIntent, isPreview: false),
+    ]
+    let timelines = [
+      today.timeline(for: todayIntent),
+      streak.timeline(for: streakIntent),
+      squad.timeline(for: squadIntent),
+      lockScreen.timeline(for: lockScreenIntent),
+    ]
+    for timeline in timelines {
+      XCTAssertFalse(timeline.entries.isEmpty)
+    }
+    for entry in snapshots + timelines.flatMap(\.entries) {
+      XCTAssertEqual(entry.snapshot?.defaultJourneyId, saved.defaultJourneyId)
+      XCTAssertEqual(entry.snapshot?.defaultSquadId, saved.defaultSquadId)
+      XCTAssertNil(entry.pinnedId)
+    }
+  }
+
   @available(iOS 17.0, *)
   func testProductionWidgetConfigurationIntentsHaveEmptyDefaultInitAndResolveToAutomatic() async throws {
     // Smoking Gun #2 regression test: instantiate the real production intents with @Parameter

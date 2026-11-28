@@ -798,6 +798,11 @@ void main() {
         ),
       );
       expect(field.controller.text, isEmpty);
+      expect(find.text('Lần trước: 65,2'), findsNothing);
+      await tester.ensureVisible(find.byKey(const ValueKey('checkin-metric')));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Hiện'));
+      await tester.pump();
       expect(find.text('Lần trước: 65,2'), findsOneWidget);
       await tester.enterText(
         find.byKey(const ValueKey('checkin-metric')),
@@ -812,9 +817,7 @@ void main() {
       tester,
     ) async {
       journeys = FakeJourneyRepository(
-        journeys: [
-          testJourney(metricName: 'Cân nặng', hideMetricDefault: true),
-        ],
+        journeys: [testJourney(metricName: 'Minutes', hideMetricDefault: true)],
         membership: Membership(
           journeyId: 'j1',
           userId: 'me',

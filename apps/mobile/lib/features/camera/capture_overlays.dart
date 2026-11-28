@@ -21,6 +21,7 @@ class CaptureSkinOverlay extends StatefulWidget {
   const CaptureSkinOverlay({
     required this.skin,
     this.showGhost = true,
+    this.allowGhost = true,
     this.partnerPhotoFile,
     super.key,
   });
@@ -29,6 +30,9 @@ class CaptureSkinOverlay extends StatefulWidget {
 
   /// Quiet: draw the day-1 silhouette guide.
   final bool showGhost;
+
+  /// The silhouette guide is available only to custom Quiet journeys.
+  final bool allowGhost;
 
   /// Couple: local file of the partner's latest photo, when there is one.
   final String? partnerPhotoFile;
@@ -71,7 +75,7 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
   @override
   Widget build(BuildContext context) {
     final Widget? skinOverlay = switch (widget.skin) {
-      PersonaSkinId.quietTransformer => IgnorePointer(
+      PersonaSkinId.quietTransformer when widget.allowGhost => IgnorePointer(
         child: AnimatedOpacity(
           key: const ValueKey('overlay-ghost-fade'),
           opacity: widget.showGhost ? 1.0 : 0.0,
@@ -84,6 +88,7 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
           ),
         ),
       ),
+      PersonaSkinId.quietTransformer ||
       PersonaSkinId.coupleRituals ||
       PersonaSkinId.accountabilitySquad ||
       PersonaSkinId.memoryCollectors ||

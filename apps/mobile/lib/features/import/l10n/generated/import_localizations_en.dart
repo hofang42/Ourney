@@ -273,7 +273,7 @@ class ImportL10nEn extends ImportL10n {
 
   @override
   String get import_continueBody =>
-      'Keeps the journey open so you can add new photos. The streak starts from your first live photo; retold photos do not count.';
+      'Keep the journey open so you can keep checking in. Only new check-ins count toward a streak, not retold photos.';
 
   @override
   String get import_privacyNote =>
@@ -490,7 +490,7 @@ class ImportL10nEn extends ImportL10n {
   String get import_captionHideKeyboard => 'Close the keyboard';
 
   @override
-  String import_captionEdit(Object date) {
-    return 'Edit caption for the photo on $date';
+  String import_captionEdit(Object caption, Object date) {
+    return 'Edit caption for the photo on $date: $caption';
   }
 }

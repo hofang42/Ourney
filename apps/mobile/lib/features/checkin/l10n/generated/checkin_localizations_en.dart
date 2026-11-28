@@ -342,14 +342,7 @@ class CheckinL10nEn extends CheckinL10n {
   String get checkin_coupleWaiting => 'Waiting for your partner’s photo';
 
   @override
-  String get checkin_extraPaceLabel => 'Pace (min/km)';
-
-  @override
-  String get checkin_extraPaceInvalid =>
-      'Invalid pace, seconds must be under 60';
-
-  @override
-  String get checkin_extraKmLabel => 'Distance (km)';
+  String get checkin_extraPaceInvalid => 'Enter pace as min:sec, e.g. 5:42.';
 
   @override
   String get checkin_extraKmHint => 'e.g. 5.3';
@@ -357,9 +350,6 @@ class CheckinL10nEn extends CheckinL10n {
   @override
   String get checkin_extraKmInvalid =>
       'Distance must be 0.1 to 500 km, one decimal';
-
-  @override
-  String get checkin_extraBackspace => 'Delete one digit';
 
   @override
   String get checkin_details => 'Details';
@@ -373,4 +363,28 @@ class CheckinL10nEn extends CheckinL10n {
   String checkin_metricLast(String value) {
     return 'Last time: $value';
   }
+
+  @override
+  String get checkin_distanceLabel => 'Distance';
+
+  @override
+  String get checkin_paceLabel => 'Pace (min : sec)';
+
+  @override
+  String get checkin_paceMinutes => 'min';
+
+  @override
+  String get checkin_paceSeconds => 'sec';
+
+  @override
+  String get checkin_paceInvalid => 'Seconds go from 00 to 59.';
+
+  @override
+  String get checkin_metricWeight => 'Weight';
+
+  @override
+  String get checkin_show => 'Show';
+
+  @override
+  String get checkin_paceMinutesInvalid => 'Minutes must be at least 1.';
 }

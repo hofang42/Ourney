@@ -39,6 +39,7 @@ class ShareCardScreen extends ConsumerStatefulWidget {
     this.initialBlur,
     this.initialHideBrand,
     this.initialHideMetric,
+    this.weightNumbersOptIn = false,
     super.key,
   });
 
@@ -49,9 +50,11 @@ class ShareCardScreen extends ConsumerStatefulWidget {
   final bool? initialBlur;
   final bool? initialHideBrand;
 
-  /// `true` hides the kg / metric on the card. `false` or `null` leave it to
-  /// the journey and membership rules (FR-B7: never revealed from a link).
+  /// `true` hides the kg / metric on the card.
   final bool? initialHideMetric;
+
+  /// The user's card-only opt-in from Wrapped's privacy toggle.
+  final bool weightNumbersOptIn;
 
   @override
   ConsumerState<ShareCardScreen> createState() => _ShareCardScreenState();
@@ -132,7 +135,8 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       );
     }
 
-    final membership = ref.watch(shareMembershipProvider(id)).value;
+    final membershipAsync = ref.watch(shareMembershipProvider(id));
+    final membership = membershipAsync.value;
     final hasBackend = ref.watch(appConfigProvider).hasBackend;
     final currentUserId = ref.watch(currentUserIdProvider);
     final skinId = uiSkinIdFor(personaSkinOf(journey));
@@ -218,6 +222,8 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       checkIns: checkIns,
       number: _number,
       forceHideMetric: widget.initialHideMetric ?? false,
+      weightNumbersOptIn: widget.weightNumbersOptIn &&
+          (!hasBackend || membershipAsync.asData?.value != null),
       // Global Settings > privacy switches (FR-B7).
       hideMetricOnShare: ref.watch(hideWeightOnShareProvider),
       blurPhotosOnShare: ref.watch(blurPhotosOnShareProvider),
@@ -579,7 +585,9 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                 ],
                 const SizedBox(height: UiSpace.xl),
                 _SectionLabel(l10n.share_card_moreOptions),
-                if (skinId != 'memory' && skinId != 'couple') ...[
+                if (journey.origin != JourneyOrigin.imported &&
+                    skinId != 'memory' &&
+                    skinId != 'couple') ...[
                   _SectionLabel(l10n.share_card_numberLabel),
                   KeyedSubtree(
                     key: const ValueKey('share-card-number-mode'),

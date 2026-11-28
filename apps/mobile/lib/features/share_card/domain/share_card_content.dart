@@ -98,6 +98,7 @@ class ShareCardContent {
     required Iterable<CheckIn> checkIns,
     ShareCardNumber number = ShareCardNumber.streak,
     bool forceHideMetric = false,
+    bool weightNumbersOptIn = false,
     bool hideMetricOnShare = false,
     bool blurPhotosOnShare = false,
     int? photoCount,
@@ -123,10 +124,12 @@ class ShareCardContent {
       headline = ShareCardHeadline.day;
       value = effectiveDay;
     } else {
-      value = core.headlineNumber;
+      value = journey.origin == JourneyOrigin.imported
+          ? streak.completed
+          : core.headlineNumber;
       headline = core.milestone == Milestone.completed
           ? ShareCardHeadline.finished
-          : streak.current > 0
+          : journey.origin != JourneyOrigin.imported && streak.current > 0
           ? ShareCardHeadline.streak
           : ShareCardHeadline.checkedIn;
     }
@@ -136,6 +139,7 @@ class ShareCardContent {
       membership,
       forceHideMetric: forceHideMetric,
       hideWeight: hideMetricOnShare,
+      weightNumbersOptIn: weightNumbersOptIn,
     );
     final hasMetric = journey.metricName != null || journey.metricUnit != null;
     double? metric;
@@ -256,10 +260,14 @@ bool isWeightMetric(Journey journey) {
       name.contains('cân nặng');
 }
 
-/// FR-B7: weight-loss journeys never show kg outside the app; other
-/// journeys follow `hideMetricDefault` and the caller's `hideMetric`.
-bool metricHiddenFor(Journey journey, Membership? membership) =>
-    journey.templateId == TemplateId.weightLoss ||
+/// FR-B7: weight-loss journeys hide kg by default. A card's explicit opt-in
+/// leaves the journey and the caller's membership privacy rules in effect.
+bool metricHiddenFor(
+  Journey journey,
+  Membership? membership, {
+  bool weightNumbersOptIn = false,
+}) =>
+    (journey.templateId == TemplateId.weightLoss && !weightNumbersOptIn) ||
     journey.hideMetricDefault ||
     (membership?.hideMetric ?? false);
 
@@ -269,10 +277,11 @@ bool shareMetricHidden(
   Membership? membership, {
   required bool forceHideMetric,
   required bool hideWeight,
+  bool weightNumbersOptIn = false,
 }) =>
     forceHideMetric ||
     (hideWeight && isWeightMetric(journey)) ||
-    metricHiddenFor(journey, membership);
+    metricHiddenFor(journey, membership, weightNumbersOptIn: weightNumbersOptIn);
 
 /// S9: a public link can only be turned on for a finished (ended or
 /// archived) or retold (imported) journey.

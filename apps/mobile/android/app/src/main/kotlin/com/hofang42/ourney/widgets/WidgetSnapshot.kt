@@ -409,7 +409,9 @@ data class WidgetJourneyItem(
     val totalDays: Int?,
     val currentStreak: Int,
     val bestStreak: Int,
+    val showStreak: Boolean = true,
     val checkedInToday: Boolean,
+    val streakCheckedInToday: Boolean = checkedInToday,
     val atRisk: Boolean,
     val eveningCueAtUtc: String?,
     val streakAlertAtUtc: String?,
@@ -464,7 +466,7 @@ data class WidgetJourneyItem(
         if (midnightMs != null && nowEpochMs >= midnightMs) {
             val zone = resolveZoneId(timezone, utcOffsetMinutes)
             val daysPassed = extraDaysPassed(midnightMs, nowEpochMs, zone)
-            val survivedFirstRollover = daysPassed == 1 && checkedInToday
+            val survivedFirstRollover = daysPassed == 1 && streakCheckedInToday
             val newStreak = if (survivedFirstRollover) currentStreak else 0
             val newAtRisk = newStreak > 0
             val rawNewDay = dayNumber + daysPassed
@@ -475,6 +477,7 @@ data class WidgetJourneyItem(
                 dayNumber = newDayNumber,
                 currentStreak = newStreak,
                 checkedInToday = false,
+                streakCheckedInToday = false,
                 atRisk = newAtRisk,
                 eveningCueAtUtc = shiftIsoUtcByDays(eveningCueAtUtc, daysPassed, zone),
                 streakAlertAtUtc = shiftIsoUtcByDays(streakAlertAtUtc, daysPassed, zone),
@@ -664,6 +667,8 @@ data class WidgetJourneyItem(
                 totalDays = obj.optPositiveIntOrNull("totalDays"),
                 currentStreak = obj.optIntCompat("currentStreak", 0),
                 bestStreak = obj.optIntCompat("bestStreak", 0),
+                streakCheckedInToday = obj.optBooleanCompat("streakCheckedInToday", obj.optBooleanCompat("checkedInToday", false)),
+                showStreak = obj.optBooleanCompat("showStreak", true),
                 checkedInToday = obj.optBooleanCompat("checkedInToday", false),
                 atRisk = obj.optBooleanCompat("atRisk", false),
                 eveningCueAtUtc = obj.optNullableString("eveningCueAtUtc"),
@@ -1084,7 +1089,20 @@ private fun JSONObject.optPositiveIntOrNull(key: String): Int? {
 
 private fun JSONObject.optBooleanCompat(key: String, fallback: Boolean): Boolean {
     if (!has(key) || isNull(key)) return fallback
-    return optBoolean(key, fallback)
+    return when (val value = opt(key)) {
+        is Boolean -> value
+        is Number -> when (value.toDouble()) {
+            0.0 -> false
+            1.0 -> true
+            else -> fallback
+        }
+        is String -> when (value.lowercase()) {
+            "true", "1" -> true
+            "false", "0" -> false
+            else -> fallback
+        }
+        else -> fallback
+    }
 }
 
 private fun JSONObject.optObjectOrNull(key: String): JSONObject? {

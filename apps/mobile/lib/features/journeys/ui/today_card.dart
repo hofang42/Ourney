@@ -148,10 +148,13 @@ class TodayCard extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                const OurneyIcon(name: 'flame', size: 17),
+                if (progress.showStreak)
+                  const OurneyIcon(name: 'flame', size: 17),
                 const SizedBox(width: 5),
                 Text(
-                  '${progress.summary.current}',
+                  progress.showStreak
+                      ? '${progress.summary.current}'
+                      : '${progress.checkInsByDate.length}',
                   style: UiText.body(
                     size: 12,
                     weight: FontWeight.w700,
@@ -162,7 +165,9 @@ class TodayCard extends ConsumerWidget {
                 const SizedBox(width: 5),
                 Flexible(
                   child: Text(
-                    l10n.journeys_streakWord,
+                    progress.showStreak
+                        ? l10n.journeys_streakWord
+                        : l10n.journeys_daysUnit,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: UiText.body(

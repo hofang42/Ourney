@@ -72,11 +72,13 @@ public struct CheckInLiveActivity: Widget {
 
         DynamicIslandExpandedRegion(.trailing) {
           HStack(spacing: 6) {
-            HStack(spacing: 3) {
-              OurneyIconView(name: "flame", size: 17, ink: OurneyWidgetTheme.cameraDark.ink)
-              Text("\(state.currentStreak)")
-                .font(OurneyWidgetFont.display(16, weight: .bold))
-                .foregroundColor(flameNumeralColor)
+            if state.currentStreak > 0 {
+              HStack(spacing: 3) {
+                OurneyIconView(name: "flame", size: 17, ink: OurneyWidgetTheme.cameraDark.ink)
+                Text("\(state.currentStreak)")
+                  .font(OurneyWidgetFont.display(16, weight: .bold))
+                  .foregroundColor(flameNumeralColor)
+              }
             }
 
             LiveActivityDismissButton(locale: state.locale)
@@ -154,12 +156,14 @@ public struct CheckInLiveActivity: Widget {
         }
       } compactLeading: {
         // MARK: Compact Leading (Flame + Streak Count)
-        HStack(spacing: 4) {
-          OurneyIconView(name: "flame", size: 16, ink: OurneyWidgetTheme.cameraDark.ink)
-          Text("\(state.currentStreak)")
-            .font(OurneyWidgetFont.display(14, weight: .bold))
-            .foregroundColor(flameNumeralColor)
-            .lineLimit(1)
+        if state.currentStreak > 0 {
+          HStack(spacing: 4) {
+            OurneyIconView(name: "flame", size: 16, ink: OurneyWidgetTheme.cameraDark.ink)
+            Text("\(state.currentStreak)")
+              .font(OurneyWidgetFont.display(14, weight: .bold))
+              .foregroundColor(flameNumeralColor)
+              .lineLimit(1)
+          }
         }
       } compactTrailing: {
         // MARK: Compact Trailing (Calm Static Status)
@@ -251,23 +255,25 @@ private struct CheckInLockScreenBannerView: View {
 
         Spacer(minLength: 4)
 
-        // Streak pill
-        HStack(spacing: 3) {
-          OurneyIconView(name: "flame", size: 16, ink: dark.ink)
-          Text("\(state.currentStreak)")
-            .font(OurneyWidgetFont.display(15, weight: .bold))
-            .foregroundColor(flameColor)
+        // Hide the entire pill, including its decoration, for a zero streak.
+        if state.currentStreak > 0 {
+          HStack(spacing: 3) {
+            OurneyIconView(name: "flame", size: 16, ink: dark.ink)
+            Text("\(state.currentStreak)")
+              .font(OurneyWidgetFont.display(15, weight: .bold))
+              .foregroundColor(flameColor)
+          }
+          .padding(.horizontal, 8)
+          .padding(.vertical, 4)
+          .background(
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+              .fill(dark.surface)
+          )
+          .overlay(
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+              .strokeBorder(dark.outline, lineWidth: 1.2)
+          )
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(
-          RoundedRectangle(cornerRadius: 9, style: .continuous)
-            .fill(dark.surface)
-        )
-        .overlay(
-          RoundedRectangle(cornerRadius: 9, style: .continuous)
-            .strokeBorder(dark.outline, lineWidth: 1.2)
-        )
 
         LiveActivityDismissButton(locale: state.locale)
       }

@@ -361,6 +361,7 @@ class UiJourneyCard extends StatelessWidget {
     required this.snapLabel,
     this.dayLabel,
     this.streakLabel,
+    this.showStreak = true,
     super.key,
   });
 
@@ -385,6 +386,7 @@ class UiJourneyCard extends StatelessWidget {
   /// Localized `Day N/M` text and `N-day streak` spoken label.
   final String? dayLabel;
   final String? streakLabel;
+  final bool showStreak;
 
   @override
   Widget build(BuildContext context) {
@@ -392,7 +394,7 @@ class UiJourneyCard extends StatelessWidget {
     final dayText = dayLabel ?? '$day/$totalDays';
     final progress = totalDays <= 0 ? 0.0 : (day / totalDays).clamp(0.0, 1.0);
     final label =
-        '$title, $dayText, ${streakLabel ?? '$streak'}'
+        '$title, $dayText${showStreak ? ', ${streakLabel ?? '$streak'}' : ''}'
         '${subtitle == null ? '' : ', $subtitle'}';
     final showSnap = !todayDone;
     final body = ExcludeSemantics(
@@ -437,7 +439,7 @@ class UiJourneyCard extends StatelessWidget {
                       runSpacing: 6,
                       children: [
                         _Chip(label: dayText),
-                        _Chip(label: '$streak', icon: 'flame'),
+                        if (showStreak) _Chip(label: '$streak', icon: 'flame'),
                       ],
                     ),
                   ],

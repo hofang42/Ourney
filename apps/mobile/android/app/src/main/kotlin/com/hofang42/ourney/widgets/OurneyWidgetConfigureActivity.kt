@@ -192,7 +192,9 @@ class OurneyWidgetConfigureActivity : Activity() {
                 } else {
                     l10n.getString(R.string.widget_day_only, journey.dayNumber)
                 }
-                val streakPart = l10n.getString(R.string.widget_streak_days, journey.currentStreak)
+                val streakPart = if (journey.showStreak) {
+                    l10n.getString(R.string.widget_streak_days, journey.currentStreak)
+                } else null
                 val statusPart = if (journey.checkedInToday) {
                     l10n.getString(R.string.widget_checked_in)
                 } else {
@@ -202,7 +204,7 @@ class OurneyWidgetConfigureActivity : Activity() {
                     PickerOption(
                         id = journey.id,
                         title = journey.title,
-                        subtitle = "$dayPart · $streakPart · $statusPart",
+                        subtitle = listOfNotNull(dayPart, streakPart, statusPart).joinToString(" · "),
                         iconRes = OurneyGlanceTheme.stickerIconRes(journey.typeIcon),
                         badgeBgColor = skinPalette.fill,
                         badgeOutlineColor = skinPalette.outline,

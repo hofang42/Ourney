@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/journeys/l10n/generated/journeys_localizations.dart';
@@ -42,14 +41,6 @@ Widget _all(String skin) => Column(
   children: [
     JourneyHomeAttendance(done: 3, total: 4),
     const SizedBox(height: 8),
-    JourneyHomeChart(
-      skin: skin,
-      values: const [65.2, 64.1, 63.4, 62.0],
-      accent: Colors.green,
-      unit: 'kg',
-      maskable: skin == 'quiet',
-    ),
-    const SizedBox(height: 8),
     JourneyHomeMilestones(
       day: 14,
       total: 30,
@@ -67,62 +58,6 @@ void main() {
     expect(homeMilestoneDays(14), [7, 14]);
     expect(homeMilestoneDays(7), [7]);
     expect(homeMilestoneDays(null), [7, 14, 30]);
-  });
-
-  testWidgets('quiet chart masks numbers until held', (tester) async {
-    await tester.pumpWidget(_host(_all('quiet')));
-    expect(find.text('••,•'), findsNWidgets(2));
-    final g = await tester.startGesture(
-      tester.getCenter(_k('journey-chart-hold')),
-    );
-    await tester.pump();
-    expect(find.text('65.2 kg'), findsOneWidget);
-    expect(find.text('62 kg'), findsOneWidget);
-    await g.up();
-    await tester.pump();
-    expect(find.text('••,•'), findsNWidgets(2));
-
-    // F-40: Screen-reader SemanticsAction.tap toggles reveal on and off.
-    final handle = tester.ensureSemantics();
-    final holdNode = tester.getSemantics(_k('journey-chart-hold'));
-    expect(holdNode.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
-    // ignore: deprecated_member_use
-    tester.binding.pipelineOwner.semanticsOwner!.performAction(
-      holdNode.id,
-      SemanticsAction.tap,
-    );
-    await tester.pump();
-    expect(find.text('65.2 kg'), findsOneWidget);
-    expect(find.text('62 kg'), findsOneWidget);
-    // ignore: deprecated_member_use
-    tester.binding.pipelineOwner.semanticsOwner!.performAction(
-      holdNode.id,
-      SemanticsAction.tap,
-    );
-    await tester.pump();
-    expect(find.text('••,•'), findsNWidgets(2));
-    handle.dispose();
-  });
-
-  testWidgets('flexer sparkline shows values and no hold button', (
-    tester,
-  ) async {
-    await tester.pumpWidget(_host(_all('flexer')));
-    expect(_k('journey-chart-hold'), findsNothing);
-    expect(find.text('65.2 kg'), findsOneWidget);
-  });
-
-  testWidgets('chart hides with fewer than two values', (tester) async {
-    await tester.pumpWidget(
-      _host(
-        const JourneyHomeChart(
-          skin: 'quiet',
-          values: [60],
-          accent: Colors.green,
-        ),
-      ),
-    );
-    expect(_k('journey-home-chart-quiet'), findsNothing);
   });
 
   testWidgets('actions fire; squad row only when provided', (tester) async {

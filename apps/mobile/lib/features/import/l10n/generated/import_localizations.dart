@@ -473,7 +473,7 @@ abstract class ImportL10n {
   /// Retell a past journey flow.
   ///
   /// In vi, this message translates to:
-  /// **'Giữ hành trình mở để bạn thêm ảnh mới. Chuỗi ngày bắt đầu từ ảnh chụp thật đầu tiên; ảnh kể lại không được tính.'**
+  /// **'Giữ hành trình mở để bạn check-in tiếp. Chuỗi ngày chỉ tính các check-in mới, ảnh kể lại không được tính.'**
   String get import_continueBody;
 
   /// Retell a past journey flow.
@@ -827,8 +827,8 @@ abstract class ImportL10n {
   /// No description provided for @import_captionEdit.
   ///
   /// In vi, this message translates to:
-  /// **'Sửa chú thích cho ảnh ngày {date}'**
-  String import_captionEdit(Object date);
+  /// **'Sửa chú thích cho ảnh ngày {date}: {caption}'**
+  String import_captionEdit(Object caption, Object date);
 }
 
 class _ImportL10nDelegate extends LocalizationsDelegate<ImportL10n> {
