@@ -167,11 +167,21 @@ WrappedBeat? _signatureBeat(
       if (stats.minutesTotal > 0) {
         kind = WrappedSignatureKind.minutes;
         lines.add(
-          l10n.journeys_wrapped_sigSquadTime(
-            stats.minutesTotal ~/ 60,
-            stats.minutesTotal % 60,
-            stats.minutesSessions,
-          ),
+          stats.minutesTotal < 60
+              ? l10n.journeys_wrapped_sigSquadMinutesOnly(
+                  stats.minutesTotal,
+                  stats.minutesSessions,
+                )
+              : stats.minutesTotal % 60 == 0
+              ? l10n.journeys_wrapped_sigSquadHoursOnly(
+                  stats.minutesTotal ~/ 60,
+                  stats.minutesSessions,
+                )
+              : l10n.journeys_wrapped_sigSquadTime(
+                  stats.minutesTotal ~/ 60,
+                  stats.minutesTotal % 60,
+                  stats.minutesSessions,
+                ),
         );
         if (stats.minutesLongest case final longest?) {
           lines.add(
@@ -227,6 +237,9 @@ WrappedBeat? _signatureBeat(
               stats.runSessions == 0 ? stats.days : stats.runSessions,
             ),
           );
+          if (stats.pace case final pace?) {
+            lines.add(l10n.journeys_wrapped_sigFlexerAveragePace(pace));
+          }
           if (stats.fastestPace case final pace?) {
             lines.add(
               l10n.journeys_wrapped_sigFlexerPace(pace.value, date(pace.date)),
@@ -236,11 +249,21 @@ WrappedBeat? _signatureBeat(
       } else if (stats.minutesTotal > 0) {
         kind = WrappedSignatureKind.minutes;
         lines.add(
-          l10n.journeys_wrapped_sigFlexerMinutes(
-            stats.minutesSessions,
-            stats.minutesTotal ~/ 60,
-            stats.minutesTotal % 60,
-          ),
+          stats.minutesTotal < 60
+              ? l10n.journeys_wrapped_sigFlexerMinutesOnly(
+                  stats.minutesSessions,
+                  stats.minutesTotal,
+                )
+              : stats.minutesTotal % 60 == 0
+              ? l10n.journeys_wrapped_sigFlexerHoursOnly(
+                  stats.minutesSessions,
+                  stats.minutesTotal ~/ 60,
+                )
+              : l10n.journeys_wrapped_sigFlexerMinutes(
+                  stats.minutesSessions,
+                  stats.minutesTotal ~/ 60,
+                  stats.minutesTotal % 60,
+                ),
         );
       }
     case PersonaSkinId.minimalistHabit:
@@ -259,12 +282,10 @@ WrappedBeat? _signatureBeat(
         );
       }
   }
-  if (journey.origin != JourneyOrigin.imported && (stats.streak ?? 0) >= 2) {
+  if ((stats.streak ?? 0) >= 2) {
     lines.add(l10n.journeys_wrapped_sigLongestStreak(stats.streak!));
   }
-  if (reactionCount > 0 &&
-      (skin == PersonaSkinId.accountabilitySquad ||
-          skin == PersonaSkinId.coupleRituals)) {
+  if (reactionCount > 0 && (journey.kind == JourneyKind.group)) {
     lines.add(l10n.journeys_wrapped_sigReactions(reactionCount));
   }
   if (lines.isEmpty) return null;

@@ -205,7 +205,7 @@ void main() {
     expect(s.coupleFiveHeartDishes, 3);
   });
 
-  test('imported journeys have no streak', () {
+  test('imported journeys restart their streak from live check-ins', () {
     final base = testJourney();
     final j = Journey(
       id: base.id,
@@ -224,6 +224,22 @@ void main() {
     expect(
       statsFor([
         for (var i = 0; i < 3; i++) testCheckIn(j.id, j.startDate.addDays(i)),
+      ], journey: j).streak,
+      3,
+    );
+    expect(
+      statsFor([
+        for (var i = 0; i < 3; i++)
+          CheckIn(
+            id: 'library-$i',
+            journeyId: j.id,
+            userId: 'u1',
+            localDate: j.startDate.addDays(i),
+            capturedAt: DateTime.utc(2026, 10, 10 + i),
+            photoPath: 'library/$i.jpg',
+            thumbPath: 'library/${i}_t.jpg',
+            fromLibrary: true,
+          ),
       ], journey: j).streak,
       isNull,
     );

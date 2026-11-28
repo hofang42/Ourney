@@ -227,7 +227,7 @@ void main() {
     );
     expect(card.headline, ShareCardHeadline.checkedIn);
     expect(card.number, 4);
-    expect(WrappedStats.from(p).streak, isNull);
+    expect(WrappedStats.from(p).streak, 1);
   });
   testWidgets('retold library check-in success has no zero flame', (
     tester,

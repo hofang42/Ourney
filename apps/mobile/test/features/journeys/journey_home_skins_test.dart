@@ -118,7 +118,7 @@ void main() {
       expect(_key('journey-couple-pair'), findsOneWidget);
       expect(find.text('An'), findsWidgets);
       expect(find.text('Binh'), findsWidgets);
-      expect(find.text('30 DAYS COOKING FOR EACH OTHER'), findsOneWidget);
+      expect(find.text('7 DAYS COOKING FOR EACH OTHER'), findsOneWidget);
       expect(find.text('waiting for Binh'), findsOneWidget);
     });
 

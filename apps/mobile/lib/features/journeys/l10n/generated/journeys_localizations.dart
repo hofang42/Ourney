@@ -2657,7 +2657,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_wrapped_eyebrowSignature.
   ///
   /// In vi, this message translates to:
-  /// **'DẤU ẤN CỦA CHẶNG'**
+  /// **'DẤU ẤN'**
   String get journeys_wrapped_eyebrowSignature;
 
   /// No description provided for @journeys_wrapped_sigQuietWeight.
@@ -2777,13 +2777,13 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_wrapped_sigReactions.
   ///
   /// In vi, this message translates to:
-  /// **'{n} lượt bày tỏ cảm xúc'**
+  /// **'{n} lượt thả cảm xúc'**
   String journeys_wrapped_sigReactions(int n);
 
   /// No description provided for @journeys_wrapped_eyebrowNote.
   ///
   /// In vi, this message translates to:
-  /// **'BẠN ĐÃ VIẾT · {date}'**
+  /// **'LỜI NHẮN · {date}'**
   String journeys_wrapped_eyebrowNote(String date);
 
   /// No description provided for @journeys_wrapped_eyebrowFinish.
@@ -3637,6 +3637,36 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'{count, plural, other{{count} ngày có ảnh}}'**
   String journeys_wrappedPhotoDays(int count);
+
+  /// No description provided for @journeys_wrapped_sigSquadMinutesOnly.
+  ///
+  /// In vi, this message translates to:
+  /// **'{minutes} phút học qua {n} lần check-in'**
+  String journeys_wrapped_sigSquadMinutesOnly(int minutes, int n);
+
+  /// No description provided for @journeys_wrapped_sigSquadHoursOnly.
+  ///
+  /// In vi, this message translates to:
+  /// **'{hours} giờ học qua {n} lần check-in'**
+  String journeys_wrapped_sigSquadHoursOnly(int hours, int n);
+
+  /// No description provided for @journeys_wrapped_sigFlexerMinutesOnly.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} buổi tập, tổng {minutes} phút'**
+  String journeys_wrapped_sigFlexerMinutesOnly(int n, int minutes);
+
+  /// No description provided for @journeys_wrapped_sigFlexerHoursOnly.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} buổi tập, tổng {hours} giờ'**
+  String journeys_wrapped_sigFlexerHoursOnly(int n, int hours);
+
+  /// No description provided for @journeys_wrapped_sigFlexerAveragePace.
+  ///
+  /// In vi, this message translates to:
+  /// **'Pace trung bình {pace}/km'**
+  String journeys_wrapped_sigFlexerAveragePace(String pace);
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

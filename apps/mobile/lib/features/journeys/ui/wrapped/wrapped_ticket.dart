@@ -45,13 +45,9 @@ class _WrappedTicketState extends State<WrappedTicket> {
       _stamped = true;
       _settled = reduced;
     });
-    if (reduced) {
-      unawaited(UiHaptics.milestoneSuccess());
-      return;
-    }
+    if (reduced) return;
     _settleTimer = Timer(_stampDelay + _stampDuration, () {
       setState(() => _settled = true);
-      unawaited(UiHaptics.milestoneSuccess());
     });
   }
 
@@ -85,120 +81,131 @@ class _WrappedTicketState extends State<WrappedTicket> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            ExcludeSemantics(
-              child: TicketPaper(
-                key: const ValueKey('wrapped-finish-ticket'),
-                radius: UiRadius.input,
-                seam: TicketSeam.bottom,
-                shadow: widget.skin == PersonaSkinId.quietTransformer
-                    ? UiShadow.tiny
-                    : UiShadow.large,
-                grid: widget.skin == PersonaSkinId.minimalistHabit,
-                top: ExcludeSemantics(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (photos.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            child: uiJourneyGlyph(
-                              journey.emoji,
-                              journey.templateId,
-                              size: 56,
-                            ),
-                          )
-                        else
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Flexible(child: _photo(photos.first)),
-                              if (photos.length > 1) ...[
-                                const SizedBox(width: 10),
-                                Flexible(child: _photo(photos.last)),
+            Semantics(
+              key: const ValueKey('wrapped-finish-result'),
+              liveRegion: true,
+              label: [
+                if (_stamped)
+                  l10n.journeys_wrapped_finishStamp(
+                    formatWrappedDate(end, l10n.localeName),
+                  ),
+                if (_settled) l10n.journeys_wrapped_finishSlogan,
+              ].join('. '),
+              child: ExcludeSemantics(
+                child: TicketPaper(
+                  key: const ValueKey('wrapped-finish-ticket'),
+                  radius: UiRadius.input,
+                  seam: TicketSeam.bottom,
+                  shadow: widget.skin == PersonaSkinId.quietTransformer
+                      ? UiShadow.tiny
+                      : UiShadow.large,
+                  grid: widget.skin == PersonaSkinId.minimalistHabit,
+                  top: ExcludeSemantics(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (photos.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: uiJourneyGlyph(
+                                journey.emoji,
+                                journey.templateId,
+                                size: 56,
+                              ),
+                            )
+                          else
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Flexible(child: _photo(photos.first)),
+                                if (photos.length > 1) ...[
+                                  const SizedBox(width: 10),
+                                  Flexible(child: _photo(photos.last)),
+                                ],
                               ],
-                            ],
+                            ),
+                          const SizedBox(height: 12),
+                          Text(
+                            journey.title,
+                            key: const ValueKey('wrapped-headline'),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: UiText.heading(
+                              font: font,
+                              size: 26,
+                              height: 1.3,
+                              color: ui.ink,
+                            ),
                           ),
-                        const SizedBox(height: 12),
+                        ],
+                      ),
+                    ),
+                  ),
+                  stub: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (stats.days > 0)
                         Text(
-                          journey.title,
-                          key: const ValueKey('wrapped-headline'),
+                          l10n.journeys_wrapped_finishCount(
+                            stats.days,
+                            stats.moments,
+                          ),
+                          textAlign: TextAlign.center,
+                          style: UiText.body(
+                            size: 15,
+                            height: 1.35,
+                            weight: FontWeight.w800,
+                            color: ui.ink,
+                          ),
+                        ),
+                      if (trophy.isNotEmpty)
+                        Text(
+                          l10n.journeys_wrapped_finishTrophy(trophy),
                           textAlign: TextAlign.center,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: UiText.heading(
-                            font: font,
-                            size: 26,
-                            height: 1.3,
+                          style: UiText.body(
+                            size: 14,
+                            height: 1.35,
+                            color: ui.inkMuted,
+                          ),
+                        ),
+                      if (_stamped) ...[
+                        const SizedBox(height: 12),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: UiStamp(
+                            l10n.journeys_wrapped_finishStamp(
+                              formatWrappedDate(end, l10n.localeName),
+                            ),
+                            key: const ValueKey('wrapped-finish-stamp'),
+                            color: ui.accent,
+                            animate: true,
+                            haptics: !UiMotion.reduced(context),
+                            skinId: uiSkinIdFor(widget.skin),
+                            delay: _stampDelay,
+                            duration: _stampDuration,
+                          ),
+                        ),
+                      ],
+                      if (_settled) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          l10n.journeys_wrapped_finishSlogan,
+                          textAlign: TextAlign.center,
+                          style: UiText.body(
+                            size: 14,
+                            height: 1.35,
                             color: ui.ink,
                           ),
                         ),
                       ],
-                    ),
+                    ],
                   ),
-                ),
-                stub: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (stats.days > 0)
-                      Text(
-                        l10n.journeys_wrapped_finishCount(
-                          stats.days,
-                          stats.moments,
-                        ),
-                        textAlign: TextAlign.center,
-                        style: UiText.body(
-                          size: 15,
-                          height: 1.35,
-                          weight: FontWeight.w800,
-                          color: ui.ink,
-                        ),
-                      ),
-                    if (trophy.isNotEmpty)
-                      Text(
-                        l10n.journeys_wrapped_finishTrophy(trophy),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: UiText.body(
-                          size: 14,
-                          height: 1.35,
-                          color: ui.inkMuted,
-                        ),
-                      ),
-                    if (_stamped) ...[
-                      const SizedBox(height: 12),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: UiStamp(
-                          l10n.journeys_wrapped_finishStamp(
-                            formatWrappedDate(end, l10n.localeName),
-                          ),
-                          key: const ValueKey('wrapped-finish-stamp'),
-                          color: ui.accent,
-                          animate: true,
-                          haptics: true,
-                          skinId: uiSkinIdFor(widget.skin),
-                          delay: _stampDelay,
-                          duration: _stampDuration,
-                        ),
-                      ),
-                    ],
-                    if (_settled) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        l10n.journeys_wrapped_finishSlogan,
-                        textAlign: TextAlign.center,
-                        style: UiText.body(
-                          size: 14,
-                          height: 1.35,
-                          color: ui.ink,
-                        ),
-                      ),
-                    ],
-                  ],
                 ),
               ),
             ),
@@ -243,7 +250,12 @@ class _WrappedTicketState extends State<WrappedTicket> {
                 borderRadius: BorderRadius.circular(UiRadius.thumb),
               ),
               clipBehavior: Clip.antiAlias,
-              child: WrappedPhoto(checkIn: checkIn, blur: widget.blurPhotos),
+              child: WrappedPhoto(
+                checkIn: checkIn,
+                blur: widget.blurPhotos,
+                thumbnail: false,
+                cacheWidth: 900,
+              ),
             ),
           ),
           const SizedBox(height: 5),

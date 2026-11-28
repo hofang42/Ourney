@@ -53,10 +53,12 @@ class WrappedVisual extends StatelessWidget {
         ],
         blur: blurPhotos,
       ),
-      PersonaSkinId.accountabilitySquad => const OurneyIcon(
-        name: 'trophy',
-        size: 54,
-        active: true,
+      PersonaSkinId.accountabilitySquad => const Center(
+        child: SizedBox.square(
+          key: ValueKey('wrapped-summary-trophy'),
+          dimension: 54,
+          child: OurneyIcon(name: 'trophy', size: 54, active: true),
+        ),
       ),
       PersonaSkinId.memoryCollectors => _Film(
         key: const ValueKey('wrapped-memory-film'),
@@ -189,12 +191,14 @@ class WrappedPhoto extends StatelessWidget {
     required this.checkIn,
     required this.blur,
     this.cacheWidth,
+    this.thumbnail = true,
     super.key,
   });
 
   final CheckIn checkIn;
   final bool blur;
   final int? cacheWidth;
+  final bool thumbnail;
 
   @override
   Widget build(BuildContext context) {
@@ -206,6 +210,7 @@ class WrappedPhoto extends StatelessWidget {
           key: ValueKey(checkIn.id),
           checkIn: checkIn,
           cacheWidth: cacheWidth,
+          thumbnail: thumbnail,
           fallback: const SizedBox.shrink(),
         ),
       ),
@@ -214,10 +219,17 @@ class WrappedPhoto extends StatelessWidget {
 }
 
 class WrappedCurve extends StatefulWidget {
-  const WrappedCurve({required this.values, this.smooth = false, super.key});
+  const WrappedCurve({
+    required this.values,
+    this.smooth = false,
+    this.paused = false,
+    super.key,
+  });
 
   final List<double> values;
   final bool smooth;
+
+  final bool paused;
 
   @override
   State<WrappedCurve> createState() => _CurveState();
@@ -240,11 +252,23 @@ class _CurveState extends State<WrappedCurve>
         final ctrl = AnimationController(vsync: this, duration: _kDuration);
         _revealCtrl = ctrl;
         _curved = CurvedAnimation(parent: ctrl, curve: UiCurves.easeOutStrong);
-        ctrl.forward(from: 0.0);
+        if (!widget.paused) ctrl.forward(from: 0.0);
       }
     } else if (UiMotion.reduced(context) &&
         (_revealCtrl?.isAnimating ?? false)) {
       _revealCtrl?.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant WrappedCurve oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final ctrl = _revealCtrl;
+    if (ctrl == null || ctrl.isCompleted || UiMotion.reduced(context)) return;
+    if (widget.paused) {
+      ctrl.stop();
+    } else if (!ctrl.isAnimating) {
+      ctrl.forward();
     }
   }
 
@@ -379,9 +403,11 @@ class _CurvePainter extends CustomPainter {
 }
 
 class WrappedBars extends StatefulWidget {
-  const WrappedBars({required this.values, super.key});
+  const WrappedBars({required this.values, this.paused = false, super.key});
 
   final Map<LocalDate, num> values;
+
+  final bool paused;
 
   @override
   State<WrappedBars> createState() => _BarsState();
@@ -402,10 +428,22 @@ class _BarsState extends State<WrappedBars>
       if (!UiMotion.reduced(context)) {
         final ctrl = AnimationController(vsync: this, duration: _kDuration);
         _ctrl = ctrl;
-        ctrl.forward(from: 0.0);
+        if (!widget.paused) ctrl.forward(from: 0.0);
       }
     } else if (UiMotion.reduced(context) && (_ctrl?.isAnimating ?? false)) {
       _ctrl?.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant WrappedBars oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final ctrl = _ctrl;
+    if (ctrl == null || ctrl.isCompleted || UiMotion.reduced(context)) return;
+    if (widget.paused) {
+      ctrl.stop();
+    } else if (!ctrl.isAnimating) {
+      ctrl.forward();
     }
   }
 
@@ -531,10 +569,17 @@ class _BarsState extends State<WrappedBars>
 }
 
 class WrappedChain extends StatefulWidget {
-  const WrappedChain({required this.days, required this.start, super.key});
+  const WrappedChain({
+    required this.days,
+    required this.start,
+    this.paused = false,
+    super.key,
+  });
 
   final List<bool> days;
   final LocalDate? start;
+
+  final bool paused;
 
   @override
   State<WrappedChain> createState() => _ChainState();
@@ -555,10 +600,22 @@ class _ChainState extends State<WrappedChain>
       if (!UiMotion.reduced(context)) {
         final ctrl = AnimationController(vsync: this, duration: _kDuration);
         _ctrl = ctrl;
-        ctrl.forward(from: 0.0);
+        if (!widget.paused) ctrl.forward(from: 0.0);
       }
     } else if (UiMotion.reduced(context) && (_ctrl?.isAnimating ?? false)) {
       _ctrl?.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant WrappedChain oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final ctrl = _ctrl;
+    if (ctrl == null || ctrl.isCompleted || UiMotion.reduced(context)) return;
+    if (widget.paused) {
+      ctrl.stop();
+    } else if (!ctrl.isAnimating) {
+      ctrl.forward();
     }
   }
 

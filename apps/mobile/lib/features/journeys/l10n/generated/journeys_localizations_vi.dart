@@ -1451,7 +1451,7 @@ class JourneysL10nVi extends JourneysL10n {
   }
 
   @override
-  String get journeys_wrapped_eyebrowSignature => 'DẤU ẤN CỦA CHẶNG';
+  String get journeys_wrapped_eyebrowSignature => 'DẤU ẤN';
 
   @override
   String journeys_wrapped_sigQuietWeight(int n) {
@@ -1546,12 +1546,12 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String journeys_wrapped_sigReactions(int n) {
-    return '$n lượt bày tỏ cảm xúc';
+    return '$n lượt thả cảm xúc';
   }
 
   @override
   String journeys_wrapped_eyebrowNote(String date) {
-    return 'BẠN ĐÃ VIẾT · $date';
+    return 'LỜI NHẮN · $date';
   }
 
   @override
@@ -2126,5 +2126,30 @@ class JourneysL10nVi extends JourneysL10n {
       other: '$count ngày có ảnh',
     );
     return '$_temp0';
+  }
+
+  @override
+  String journeys_wrapped_sigSquadMinutesOnly(int minutes, int n) {
+    return '$minutes phút học qua $n lần check-in';
+  }
+
+  @override
+  String journeys_wrapped_sigSquadHoursOnly(int hours, int n) {
+    return '$hours giờ học qua $n lần check-in';
+  }
+
+  @override
+  String journeys_wrapped_sigFlexerMinutesOnly(int n, int minutes) {
+    return '$n buổi tập, tổng $minutes phút';
+  }
+
+  @override
+  String journeys_wrapped_sigFlexerHoursOnly(int n, int hours) {
+    return '$n buổi tập, tổng $hours giờ';
+  }
+
+  @override
+  String journeys_wrapped_sigFlexerAveragePace(String pace) {
+    return 'Pace trung bình $pace/km';
   }
 }

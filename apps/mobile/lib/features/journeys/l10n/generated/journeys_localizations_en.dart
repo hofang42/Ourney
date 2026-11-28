@@ -2331,4 +2331,53 @@ class JourneysL10nEn extends JourneysL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String journeys_wrapped_sigSquadMinutesOnly(int minutes, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n check-ins',
+      one: '1 check-in',
+    );
+    return '$minutes min of study over $_temp0';
+  }
+
+  @override
+  String journeys_wrapped_sigSquadHoursOnly(int hours, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n check-ins',
+      one: '1 check-in',
+    );
+    return '$hours h of study over $_temp0';
+  }
+
+  @override
+  String journeys_wrapped_sigFlexerMinutesOnly(int n, int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n sessions',
+      one: '1 session',
+    );
+    return '$_temp0, $minutes min in total';
+  }
+
+  @override
+  String journeys_wrapped_sigFlexerHoursOnly(int n, int hours) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n sessions',
+      one: '1 session',
+    );
+    return '$_temp0, $hours h in total';
+  }
+
+  @override
+  String journeys_wrapped_sigFlexerAveragePace(String pace) {
+    return 'Average pace $pace/km';
+  }
 }

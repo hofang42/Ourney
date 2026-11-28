@@ -52,15 +52,20 @@ class _WrappedBeatViewState extends State<WrappedBeatView> {
       color: ui.ink,
       height: 1.35,
     );
-    Widget text(String value, {TextStyle? style, int lines = 4, Key? key}) =>
-        Text(
-          value,
-          key: key,
-          textAlign: TextAlign.center,
-          maxLines: lines,
-          overflow: TextOverflow.ellipsis,
-          style: style ?? UiText.body(color: ui.ink, height: 1.4),
-        );
+    Widget text(
+      String value, {
+      TextStyle? style,
+      int lines = 4,
+      TextAlign align = TextAlign.center,
+      Key? key,
+    }) => Text(
+      value,
+      key: key,
+      textAlign: align,
+      maxLines: lines,
+      overflow: TextOverflow.ellipsis,
+      style: style ?? UiText.body(color: ui.ink, height: 1.4),
+    );
     Widget photos(List<CheckIn> list) => Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,7 +83,8 @@ class _WrappedBeatViewState extends State<WrappedBeatView> {
                     child: WrappedPhoto(
                       checkIn: photo,
                       blur: w.blurPhotos,
-                      cacheWidth: 600,
+                      cacheWidth: 900,
+                      thumbnail: false,
                     ),
                   ),
                 ),
@@ -95,6 +101,7 @@ class _WrappedBeatViewState extends State<WrappedBeatView> {
           child: TicketPaper(
             radius: 18,
             seam: TicketSeam.bottom,
+            stub: beat.sub == null ? null : text(beat.sub!, lines: 6),
             top: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -102,19 +109,15 @@ class _WrappedBeatViewState extends State<WrappedBeatView> {
                   uiJourneyGlyph(
                     w.journey.emoji,
                     w.journey.templateId,
-                    size: 48,
+                    size: 80,
                   ),
                   const SizedBox(height: 16),
                   text(
                     beat.headline,
-                    style: heading,
+                    style: heading.copyWith(fontSize: 34),
                     lines: 3,
                     key: const ValueKey('wrapped-headline'),
                   ),
-                  if (beat.sub != null) ...[
-                    const SizedBox(height: 16),
-                    text(beat.sub!, lines: 6),
-                  ],
                 ],
               ),
             ),
@@ -169,6 +172,7 @@ class _WrappedBeatViewState extends State<WrappedBeatView> {
                   beat.headline,
                   style: UiText.body(size: 20, color: ui.ink, height: 1.4),
                   lines: 12,
+                  align: TextAlign.left,
                   key: const ValueKey('wrapped-headline'),
                 ),
               ),
@@ -188,12 +192,18 @@ class _WrappedBeatViewState extends State<WrappedBeatView> {
           WrappedSignatureKind.weight => WrappedCurve(
             values: stats.weightsDownsampled,
             smooth: true,
+            paused: w.paused,
           ),
           WrappedSignatureKind.minutes => WrappedBars(
             values: stats.minutesPerDay,
+            paused: w.paused,
           ),
-          WrappedSignatureKind.run => WrappedBars(values: stats.kmPerDay),
+          WrappedSignatureKind.run => WrappedBars(
+            values: stats.kmPerDay,
+            paused: w.paused,
+          ),
           WrappedSignatureKind.habit => WrappedChain(
+            paused: w.paused,
             days: stats.chainDays,
             start: stats.memberStart,
           ),
@@ -272,11 +282,9 @@ class _WrappedBeatViewState extends State<WrappedBeatView> {
                 children: [
                   if (beat.id != 'finish')
                     MediaQuery(
-                      data: MediaQuery.of(context).copyWith(
-                        disableAnimations:
-                            UiMotion.reduced(context) ||
-                            (w.paused && beat.id == 'signature'),
-                      ),
+                      data: MediaQuery.of(
+                        context,
+                      ).copyWith(disableAnimations: UiMotion.reduced(context)),
                       child: RepaintBoundary(child: visual),
                     ),
                   if (beat.id != 'open' &&
@@ -305,7 +313,7 @@ class _WrappedBeatViewState extends State<WrappedBeatView> {
           if (beat.signatureKind == WrappedSignatureKind.weight && !_showKg)
             Padding(
               padding: const EdgeInsets.only(top: 16),
-              child: UiButton(
+              child: UiChip(
                 key: const ValueKey('wrapped-show-kg'),
                 label: l.journeys_wrapped_showKg,
                 onPressed: () => setState(() => _showKg = true),
@@ -314,7 +322,7 @@ class _WrappedBeatViewState extends State<WrappedBeatView> {
           if (showPhotos)
             Padding(
               padding: const EdgeInsets.only(top: 16),
-              child: UiButton(
+              child: UiChip(
                 key: const ValueKey('wrapped-show-photos'),
                 label: l.journeys_wrapped_showPhotos,
                 onPressed: w.onShowPhotos,

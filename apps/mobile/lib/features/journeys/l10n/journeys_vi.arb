@@ -1233,7 +1233,7 @@
       }
     }
   },
-  "journeys_wrapped_eyebrowSignature": "DẤU ẤN CỦA CHẶNG",
+  "journeys_wrapped_eyebrowSignature": "DẤU ẤN",
   "journeys_wrapped_sigQuietWeight": "{n} lần bạn ghi cân nặng",
   "@journeys_wrapped_sigQuietWeight": {
     "placeholders": {
@@ -1417,7 +1417,7 @@
       }
     }
   },
-  "journeys_wrapped_sigReactions": "{n} lượt bày tỏ cảm xúc",
+  "journeys_wrapped_sigReactions": "{n} lượt thả cảm xúc",
   "@journeys_wrapped_sigReactions": {
     "placeholders": {
       "n": {
@@ -1425,7 +1425,7 @@
       }
     }
   },
-  "journeys_wrapped_eyebrowNote": "BẠN ĐÃ VIẾT · {date}",
+  "journeys_wrapped_eyebrowNote": "LỜI NHẮN · {date}",
   "@journeys_wrapped_eyebrowNote": {
     "placeholders": {
       "date": {
@@ -2141,6 +2141,58 @@
     "placeholders": {
       "count": {
         "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigSquadMinutesOnly": "{minutes} phút học qua {n} lần check-in",
+  "@journeys_wrapped_sigSquadMinutesOnly": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigSquadHoursOnly": "{hours} giờ học qua {n} lần check-in",
+  "@journeys_wrapped_sigSquadHoursOnly": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigFlexerMinutesOnly": "{n} buổi tập, tổng {minutes} phút",
+  "@journeys_wrapped_sigFlexerMinutesOnly": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigFlexerHoursOnly": "{n} buổi tập, tổng {hours} giờ",
+  "@journeys_wrapped_sigFlexerHoursOnly": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigFlexerAveragePace": "Pace trung bình {pace}/km",
+  "@journeys_wrapped_sigFlexerAveragePace": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
       }
     }
   }

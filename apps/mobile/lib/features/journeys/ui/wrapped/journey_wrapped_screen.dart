@@ -169,10 +169,7 @@ class JourneyWrappedScreen extends ConsumerWidget {
       now: ref.watch(journeysNowProvider),
       couple: ref.watch(groupDailySnapshotProvider(journey)),
     );
-    final skin = personaSkinOf(journey);
-    final reactions =
-        skin == PersonaSkinId.accountabilitySquad ||
-            skin == PersonaSkinId.coupleRituals
+    final reactions = journey.kind == JourneyKind.group
         ? ref.watch(journeyReactionCountProvider(journey.id)).asData?.value
         : null;
     return _WrappedBody(
@@ -685,16 +682,18 @@ class _Story extends StatelessWidget {
         child: SingleChildScrollView(
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: c.maxHeight),
-            child: WrappedBeatView(
-              key: ValueKey('wrapped-beat-${beat.id}'),
-              journey: journey,
-              skin: skin,
-              stats: stats,
-              beat: beat,
-              paused: paused,
-              blurPhotos: blurPhotos,
-              onShowPhotos: onShowPhotos,
-              onNext: () => onTapSide(true),
+            child: Center(
+              child: WrappedBeatView(
+                key: ValueKey('wrapped-beat-${beat.id}'),
+                journey: journey,
+                skin: skin,
+                stats: stats,
+                beat: beat,
+                paused: paused,
+                blurPhotos: blurPhotos,
+                onShowPhotos: onShowPhotos,
+                onNext: () => onTapSide(true),
+              ),
             ),
           ),
         ),

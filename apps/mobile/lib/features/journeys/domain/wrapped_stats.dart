@@ -196,14 +196,13 @@ class WrappedStats {
             partner: partnerCount,
           )
         : null;
-    final coupleDate = coupleDates.lastOrNull ?? dates.lastOrNull ?? progress.today;
+    final coupleDate =
+        coupleDates.lastOrNull ?? dates.lastOrNull ?? progress.today;
     return WrappedStats(
       days: dates.length,
       moments: moments,
       total: total,
-      streak: progress.journey.origin == JourneyOrigin.imported
-          ? null
-          : progress.summary.best,
+      streak: progress.showStreak ? progress.summary.best : null,
       totalKm: runStats.totalKm,
       photos: List.unmodifiable(photos),
       lastCaption: captions.lastOrNull?.value,

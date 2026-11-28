@@ -18,6 +18,7 @@ class JourneyHomeSkinHeader extends ConsumerWidget {
     required this.journey,
     required this.skin,
     required this.day,
+    required this.elapsedDays,
     required this.streak,
     this.showStreak = true,
     required this.stats,
@@ -29,6 +30,7 @@ class JourneyHomeSkinHeader extends ConsumerWidget {
   final Journey journey;
   final PersonaSkinId skin;
   final int day;
+  final int elapsedDays;
   final int streak;
   final WrappedStats stats;
   final bool showStreak;
@@ -58,7 +60,7 @@ class JourneyHomeSkinHeader extends ConsumerWidget {
         journey: journey,
         streak: streak,
         showStreak: showStreak,
-        total: journey.durationDays ?? stats.total,
+        total: elapsedDays,
       ),
       PersonaSkinId.minimalistHabit => _Month(journeyId: journey.id),
     };

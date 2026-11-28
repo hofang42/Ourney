@@ -1616,5 +1616,57 @@
         "type": "int"
       }
     }
+  },
+  "journeys_wrapped_sigSquadMinutesOnly": "{minutes} min of study over {n, plural, =1{1 check-in} other{{n} check-ins}}",
+  "@journeys_wrapped_sigSquadMinutesOnly": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigSquadHoursOnly": "{hours} h of study over {n, plural, =1{1 check-in} other{{n} check-ins}}",
+  "@journeys_wrapped_sigSquadHoursOnly": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigFlexerMinutesOnly": "{n, plural, =1{1 session} other{{n} sessions}}, {minutes} min in total",
+  "@journeys_wrapped_sigFlexerMinutesOnly": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigFlexerHoursOnly": "{n, plural, =1{1 session} other{{n} sessions}}, {hours} h in total",
+  "@journeys_wrapped_sigFlexerHoursOnly": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigFlexerAveragePace": "Average pace {pace}/km",
+  "@journeys_wrapped_sigFlexerAveragePace": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      }
+    }
   }
 }

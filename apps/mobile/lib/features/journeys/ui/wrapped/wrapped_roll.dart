@@ -143,7 +143,7 @@ class _WrappedRollState extends State<WrappedRoll>
           child: wall,
           builder: (context, child) {
             if (animation.isCompleted) return child!;
-            final ms = animation.value * (deckMs + _settleMs);
+            final ms = (animation.value * (deckMs + _settleMs)).roundToDouble();
             final settle = UiCurves.easeInOutStrong.transform(
               ((ms - deckMs) / _settleMs).clamp(0.0, 1.0),
             );

@@ -233,6 +233,7 @@ void main() {
       (tester) async {
         final j = testJourney(
           status: JourneyStatus.ended,
+          kind: JourneyKind.group,
           templateId: TemplateId.englishDaily,
         );
         final count = Completer<int?>();
