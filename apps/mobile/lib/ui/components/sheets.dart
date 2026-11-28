@@ -16,12 +16,16 @@ class UiSheet extends StatelessWidget {
   const UiSheet({
     required this.child,
     this.showGrabber = true,
+    this.compact = false,
     this.accent,
     super.key,
   });
 
   final Widget child;
   final bool showGrabber;
+
+  /// Sizes short pickers to their content instead of the default minimum.
+  final bool compact;
 
   /// Top hard-shadow color (`--accent`). Defaults to `context.ui.accent`.
   final Color? accent;
@@ -54,7 +58,7 @@ class UiSheet extends StatelessWidget {
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: UiSpace.maxContent(width) + 40,
-          minHeight: math.min(minHeight, mq.size.height * 0.92),
+          minHeight: compact ? 0 : math.min(minHeight, mq.size.height * 0.92),
           maxHeight: mq.size.height * 0.92,
         ),
         // A non-uniform border cannot follow a radius, so the 2dp outline is
@@ -86,7 +90,9 @@ class UiSheet extends StatelessWidget {
                   // Grabber (12 + 5 + 24) or plain 41: 43dp with the outline.
                   showGrabber ? 12 : topPadding - UiBorder.standard,
                   UiSpace.xl,
-                  28 + mq.viewPadding.bottom + mq.viewInsets.bottom,
+                  (compact ? UiSpace.md : 28) +
+                      mq.viewPadding.bottom +
+                      mq.viewInsets.bottom,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -138,6 +144,7 @@ Future<T?> showUiSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   bool dismissible = true,
+  bool compact = false,
   bool useRootNavigator = true,
   Color? accent,
 }) {
@@ -161,7 +168,8 @@ Future<T?> showUiSheet<T>({
       curve: UiCurves.drawer,
       reverseCurve: UiCurves.easeOutStrong,
     ),
-    builder: (context) => UiSheet(accent: accent, child: builder(context)),
+    builder: (context) =>
+        UiSheet(accent: accent, compact: compact, child: builder(context)),
   );
 }
 
