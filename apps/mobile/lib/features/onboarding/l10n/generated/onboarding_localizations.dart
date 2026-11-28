@@ -305,13 +305,13 @@ abstract class OnboardingL10n {
   /// Splash tagline 1 (rotates with 2 and 3).
   ///
   /// In vi, this message translates to:
-  /// **'chụp một tấm.'**
+  /// **'Góp tấm hình,'**
   String get onboarding_splashTagline1;
 
   /// Splash tagline 2.
   ///
   /// In vi, this message translates to:
-  /// **'giữ một chuỗi.'**
+  /// **'giữ nhịp mình'**
   String get onboarding_splashTagline2;
 
   /// Splash tagline 3.

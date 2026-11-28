@@ -151,11 +151,11 @@
   "@onboarding_quizStart": {
     "description": "Quiz final button."
   },
-  "onboarding_splashTagline1": "chụp một tấm.",
+  "onboarding_splashTagline1": "Góp tấm hình,",
   "@onboarding_splashTagline1": {
     "description": "Splash tagline 1 (rotates with 2 and 3)."
   },
-  "onboarding_splashTagline2": "giữ một chuỗi.",
+  "onboarding_splashTagline2": "giữ nhịp mình",
   "@onboarding_splashTagline2": {
     "description": "Splash tagline 2."
   },

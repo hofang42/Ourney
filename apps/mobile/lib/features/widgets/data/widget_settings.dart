@@ -1,7 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../app/providers.dart';
 import '../../journeys/data/journeys_providers.dart' show journeysListProvider;
@@ -29,32 +28,48 @@ abstract final class WidgetPrefs {
   /// reopening the app later that evening does not re-spawn the Live Activity (§6.2).
   static const dismissedWindowKey = 'widgets.dismissedWindowKey';
 
-  /// Legacy v1 default journey selection key — deleted one-time on read and on
-  /// account reset so stale values from earlier builds never pin silently.
+  /// Legacy v1 default journey selection key — deleted one-time on upgrade and
+  /// on account reset so stale values from earlier builds never pin silently.
   static const legacyDefaultJourneyIdV1 = 'widgets.defaultJourneyId';
 
-  /// Legacy v1 default squad selection key — deleted one-time on read and on
-  /// account reset.
+  /// Legacy v1 default squad selection key — deleted one-time on upgrade and
+  /// on account reset.
   static const legacyDefaultSquadIdV1 = 'widgets.defaultSquadId';
 
-  /// Account-scoped default journey selection for `Today`, `Streak`, and
-  /// `LockScreen` widgets (`null` = Automatic / `"Tự động"`).
+  /// Legacy v2 default journey selection key — deleted one-time on upgrade and
+  /// on account reset now that per-widget selection lives on each widget itself.
   static const defaultJourneyId = 'widgets.defaultJourneyId.v2';
 
-  /// Account-scoped default squad/couple selection for the `Squad` widget
-  /// (`null` = Automatic / `"Tự động"`).
+  /// Legacy v2 default squad selection key — deleted one-time on upgrade and
+  /// on account reset now that per-widget selection lives on each widget itself.
   static const defaultSquadId = 'widgets.defaultSquadId.v2';
+
+  static const List<String> legacyDefaultSelectionKeys = [
+    defaultJourneyId,
+    defaultSquadId,
+    legacyDefaultJourneyIdV1,
+    legacyDefaultSquadIdV1,
+  ];
 
   static const List<String> accountKeys = [
     photoMode,
     redactLockScreenTitles,
     liveActivityEnabled,
-    defaultJourneyId,
-    defaultSquadId,
-    legacyDefaultJourneyIdV1,
-    legacyDefaultSquadIdV1,
+    ...legacyDefaultSelectionKeys,
     dismissedWindowKey,
   ];
+
+  /// One-time removes legacy v1 and v2 global default widget selection keys so
+  /// upgrading users never have widgets pinned silently from older builds.
+  static Future<void> clearLegacyDefaultSelectionKeys(
+    SharedPreferencesWithCache prefs,
+  ) async {
+    for (final key in legacyDefaultSelectionKeys) {
+      if (prefs.containsKey(key)) {
+        await prefs.remove(key);
+      }
+    }
+  }
 }
 
 class WidgetPhotoModeController extends Notifier<WidgetPhotoMode> {
@@ -164,74 +179,6 @@ class DismissedLiveWindowKeyController extends Notifier<String?> {
 final dismissedLiveWindowKeyProvider =
     NotifierProvider<DismissedLiveWindowKeyController, String?>(
       DismissedLiveWindowKeyController.new,
-    );
-
-class DefaultWidgetJourneyIdController extends Notifier<String?> {
-  static String? _normalize(String? raw) {
-    final trimmed = raw?.trim();
-    if (trimmed == null || trimmed.isEmpty || trimmed == 'auto') return null;
-    return trimmed;
-  }
-
-  @override
-  String? build() {
-    final prefs = ref.watch(sharedPreferencesProvider);
-    if (prefs.containsKey(WidgetPrefs.legacyDefaultJourneyIdV1)) {
-      unawaited(prefs.remove(WidgetPrefs.legacyDefaultJourneyIdV1));
-    }
-    final raw = prefs.getString(WidgetPrefs.defaultJourneyId);
-    return _normalize(raw);
-  }
-
-  Future<void> set(String? journeyId) async {
-    final normalized = _normalize(journeyId);
-    state = normalized;
-    final prefs = ref.read(sharedPreferencesProvider);
-    if (normalized == null) {
-      await prefs.remove(WidgetPrefs.defaultJourneyId);
-    } else {
-      await prefs.setString(WidgetPrefs.defaultJourneyId, normalized);
-    }
-  }
-}
-
-final defaultWidgetJourneyIdProvider =
-    NotifierProvider<DefaultWidgetJourneyIdController, String?>(
-      DefaultWidgetJourneyIdController.new,
-    );
-
-class DefaultWidgetSquadIdController extends Notifier<String?> {
-  static String? _normalize(String? raw) {
-    final trimmed = raw?.trim();
-    if (trimmed == null || trimmed.isEmpty || trimmed == 'auto') return null;
-    return trimmed;
-  }
-
-  @override
-  String? build() {
-    final prefs = ref.watch(sharedPreferencesProvider);
-    if (prefs.containsKey(WidgetPrefs.legacyDefaultSquadIdV1)) {
-      unawaited(prefs.remove(WidgetPrefs.legacyDefaultSquadIdV1));
-    }
-    final raw = prefs.getString(WidgetPrefs.defaultSquadId);
-    return _normalize(raw);
-  }
-
-  Future<void> set(String? squadJourneyId) async {
-    final normalized = _normalize(squadJourneyId);
-    state = normalized;
-    final prefs = ref.read(sharedPreferencesProvider);
-    if (normalized == null) {
-      await prefs.remove(WidgetPrefs.defaultSquadId);
-    } else {
-      await prefs.setString(WidgetPrefs.defaultSquadId, normalized);
-    }
-  }
-}
-
-final defaultWidgetSquadIdProvider =
-    NotifierProvider<DefaultWidgetSquadIdController, String?>(
-      DefaultWidgetSquadIdController.new,
     );
 
 /// Platform capabilities for widgets, Live Activities, and App Group sync.

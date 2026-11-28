@@ -57,6 +57,10 @@
 		7D0B00672F10000100000001 /* WidgetTimelineProviders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B006A2F10000100000001 /* WidgetTimelineProviders.swift */; };
 		7D0B00692F10000100000001 /* WidgetTimelineProviders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B006A2F10000100000001 /* WidgetTimelineProviders.swift */; };
 		7D0B006B2F10000100000001 /* WidgetTimelineProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B006C2F10000100000001 /* WidgetTimelineProviderTests.swift */; };
+		7D0B006E2F10000100000001 /* WidgetConfigIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B006D2F10000100000001 /* WidgetConfigIntents.swift */; };
+		7D0B006F2F10000100000001 /* WidgetConfigIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B006D2F10000100000001 /* WidgetConfigIntents.swift */; };
+		7D0B00712F10000100000001 /* ConfigurableWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00702F10000100000001 /* ConfigurableWidgets.swift */; };
+		7D0B00722F10000100000001 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7D0B000F2F10000100000001 /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -154,6 +158,8 @@
 		7D0B00682F10000100000001 /* WidgetDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDiagnostics.swift; sourceTree = "<group>"; };
 		7D0B006A2F10000100000001 /* WidgetTimelineProviders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetTimelineProviders.swift; sourceTree = "<group>"; };
 		7D0B006C2F10000100000001 /* WidgetTimelineProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetTimelineProviderTests.swift; sourceTree = "<group>"; };
+		7D0B006D2F10000100000001 /* WidgetConfigIntents.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WidgetConfigIntents.swift; sourceTree = "<group>"; };
+		7D0B00702F10000100000001 /* ConfigurableWidgets.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Views/ConfigurableWidgets.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -199,6 +205,7 @@
 				7D0B00632F10000100000001 /* WidgetAppGroup.swift */,
 				7D0B00682F10000100000001 /* WidgetDiagnostics.swift */,
 				7D0B006A2F10000100000001 /* WidgetTimelineProviders.swift */,
+				7D0B006D2F10000100000001 /* WidgetConfigIntents.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -215,6 +222,7 @@
 				7D0B000A2F10000100000001 /* StreakWidget.swift */,
 				7D0B000B2F10000100000001 /* SquadWidget.swift */,
 				7D0B000C2F10000100000001 /* LockScreenWidget.swift */,
+				7D0B00702F10000100000001 /* ConfigurableWidgets.swift */,
 				7D0B000D2F10000100000001 /* CheckInLiveActivity.swift */,
 				7D0B000E2F10000100000001 /* WidgetIntents.swift */,
 				7D0B000F2F10000100000001 /* Localizable.xcstrings */,
@@ -435,6 +443,7 @@
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 				7C0A00012F00000100000004 /* InfoPlist.strings in Resources */,
 				7C0A00012F00000100000006 /* PrivacyInfo.xcprivacy in Resources */,
+				7D0B00722F10000100000001 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -496,6 +505,7 @@
 				7D0B00612F10000100000001 /* WidgetAppGroup.swift in Sources */,
 				7D0B00662F10000100000001 /* WidgetDiagnostics.swift in Sources */,
 				7D0B00692F10000100000001 /* WidgetTimelineProviders.swift in Sources */,
+				7D0B006F2F10000100000001 /* WidgetConfigIntents.swift in Sources */,
 				7D0B00292F10000100000001 /* OurneyWidgetTokens.swift in Sources */,
 				7D0B002A2F10000100000001 /* OurneyWidgetIcons.swift in Sources */,
 				7D0B002B2F10000100000001 /* WidgetL10n.swift in Sources */,
@@ -503,6 +513,7 @@
 				7D0B002D2F10000100000001 /* StreakWidget.swift in Sources */,
 				7D0B002E2F10000100000001 /* SquadWidget.swift in Sources */,
 				7D0B002F2F10000100000001 /* LockScreenWidget.swift in Sources */,
+				7D0B00712F10000100000001 /* ConfigurableWidgets.swift in Sources */,
 				7D0B00302F10000100000001 /* CheckInLiveActivity.swift in Sources */,
 				7D0B00312F10000100000001 /* WidgetIntents.swift in Sources */,
 			);
@@ -521,6 +532,7 @@
 				7D0B00602F10000100000001 /* WidgetAppGroup.swift in Sources */,
 				7D0B00652F10000100000001 /* WidgetDiagnostics.swift in Sources */,
 				7D0B00672F10000100000001 /* WidgetTimelineProviders.swift in Sources */,
+				7D0B006E2F10000100000001 /* WidgetConfigIntents.swift in Sources */,
 				7D0B004B2F10000100000001 /* WidgetIntents.swift in Sources */,
 				7D0B004D2F10000100000001 /* WidgetL10n.swift in Sources */,
 			);
@@ -631,6 +643,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				ENABLE_APPINTENTS_DEPLOYMENT_AWARE_PROCESSING = NO;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -712,6 +725,7 @@
 				CODE_SIGN_ENTITLEMENTS = OurneyWidgets/OurneyWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				ENABLE_APPINTENTS_DEPLOYMENT_AWARE_PROCESSING = NO;
 				ENABLE_BITCODE = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = OurneyWidgets/Info.plist;
@@ -743,6 +757,7 @@
 				CODE_SIGN_ENTITLEMENTS = OurneyWidgets/OurneyWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				ENABLE_APPINTENTS_DEPLOYMENT_AWARE_PROCESSING = NO;
 				ENABLE_BITCODE = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = OurneyWidgets/Info.plist;
@@ -774,6 +789,7 @@
 				CODE_SIGN_ENTITLEMENTS = OurneyWidgets/OurneyWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				ENABLE_APPINTENTS_DEPLOYMENT_AWARE_PROCESSING = NO;
 				ENABLE_BITCODE = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = OurneyWidgets/Info.plist;
@@ -916,6 +932,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				ENABLE_APPINTENTS_DEPLOYMENT_AWARE_PROCESSING = NO;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -949,6 +966,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				ENABLE_APPINTENTS_DEPLOYMENT_AWARE_PROCESSING = NO;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

@@ -1,3 +1,6 @@
+@Timeout(Duration(seconds: 30))
+library;
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -154,212 +157,206 @@ void main() {
   // 2026-11-24 14:05 UTC == 21:05 ICT (inside evening window).
   final fixedNow = DateTime.utc(2026, 11, 24, 14, 5);
 
-  test(
-    'coalesces rapid scheduleSync calls, suppresses duplicate SHA-256 syncs, '
-    'consumes native state.json, and calls clearAll() on resetAccountLocalState (§4.5, §8.3)',
-    () async {
-      final prefs = await testPrefs({
-        WidgetPrefs.photoMode: 'smart',
-        WidgetPrefs.liveActivityEnabled: true,
-      });
-      final fakeBridge = FakeWidgetBridgeGateway();
-      final thumbPreparer = _NoOpThumbPreparer();
-      final journey = Journey(
-        id: journeyId,
-        ownerId: 'user-a',
-        kind: JourneyKind.solo,
-        templateId: TemplateId.englishDaily,
-        title: 'Tự học IELTS 30 ngày',
-        emoji: '',
-        startDate: const LocalDate(2026, 11, 10),
-        durationDays: 30,
-        timezone: 'Asia/Ho_Chi_Minh',
-        visibility: JourneyVisibility.private,
-        status: JourneyStatus.active,
-      );
-      final checkInRepo = FakeReminderCheckInRepository()
-        ..byJourney[journeyId] = [
-          CheckIn(
-            id: 'c-yesterday',
-            journeyId: journeyId,
-            userId: 'user-a',
-            localDate: const LocalDate(2026, 11, 23),
-            capturedAt: DateTime.utc(2026, 11, 23, 10),
-            photoPath: 'checkins/j1/u1/c1.jpg',
-            thumbPath: 'checkins/j1/u1/c1_t.jpg',
-          ),
-        ];
+  test('coalesces rapid scheduleSync calls, suppresses duplicate SHA-256 syncs, '
+      'consumes native state.json, and calls clearAll() on resetAccountLocalState (§4.5, §8.3)', () async {
+    final prefs = await testPrefs({
+      WidgetPrefs.photoMode: 'smart',
+      WidgetPrefs.liveActivityEnabled: true,
+    });
+    final fakeBridge = FakeWidgetBridgeGateway();
+    final thumbPreparer = _NoOpThumbPreparer();
+    final journey = Journey(
+      id: journeyId,
+      ownerId: 'user-a',
+      kind: JourneyKind.solo,
+      templateId: TemplateId.englishDaily,
+      title: 'Tự học IELTS 30 ngày',
+      emoji: '',
+      startDate: const LocalDate(2026, 11, 10),
+      durationDays: 30,
+      timezone: 'Asia/Ho_Chi_Minh',
+      visibility: JourneyVisibility.private,
+      status: JourneyStatus.active,
+    );
+    final checkInRepo = FakeReminderCheckInRepository()
+      ..byJourney[journeyId] = [
+        CheckIn(
+          id: 'c-yesterday',
+          journeyId: journeyId,
+          userId: 'user-a',
+          localDate: const LocalDate(2026, 11, 23),
+          capturedAt: DateTime.utc(2026, 11, 23, 10),
+          photoPath: 'checkins/j1/u1/c1.jpg',
+          thumbPath: 'checkins/j1/u1/c1_t.jpg',
+        ),
+      ];
 
-      final container = ProviderContainer(
-        overrides: [
-          appConfigProvider.overrideWithValue(testBackendConfig),
-          sharedPreferencesProvider.overrideWithValue(prefs),
-          supabaseClientProvider.overrideWithValue(null),
-          currentUserIdProvider.overrideWith(_SignedInUser.new),
-          widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
-          widgetThumbPreparerProvider.overrideWithValue(thumbPreparer),
-          journeyRepositoryProvider.overrideWithValue(
-            FakeReminderJourneyRepository([journey]),
-          ),
-          checkInRepositoryProvider.overrideWithValue(checkInRepo),
-          notificationGatewayProvider.overrideWithValue(
-            FakeNotificationGateway(granted: true),
-          ),
-          reminderDeviceTimezoneProvider.overrideWith(
-            (ref) async => 'Asia/Ho_Chi_Minh',
-          ),
-          journeysClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
-          remindersClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
-          widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
-        ],
-      );
-      addTearDown(container.dispose);
-      container.listen(accountSessionResetProvider, (_, _) {});
+    final container = ProviderContainer(
+      overrides: [
+        appConfigProvider.overrideWithValue(testBackendConfig),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        supabaseClientProvider.overrideWithValue(null),
+        currentUserIdProvider.overrideWith(_SignedInUser.new),
+        widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
+        widgetThumbPreparerProvider.overrideWithValue(thumbPreparer),
+        journeyRepositoryProvider.overrideWithValue(
+          FakeReminderJourneyRepository([journey]),
+        ),
+        checkInRepositoryProvider.overrideWithValue(checkInRepo),
+        notificationGatewayProvider.overrideWithValue(
+          FakeNotificationGateway(granted: true),
+        ),
+        reminderDeviceTimezoneProvider.overrideWith(
+          (ref) async => 'Asia/Ho_Chi_Minh',
+        ),
+        journeysClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+        remindersClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+        widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+      ],
+    );
+    addTearDown(container.dispose);
+    container.listen(accountSessionResetProvider, (_, _) {});
 
-      final controller = container.read(widgetSyncControllerProvider);
+    final controller = container.read(widgetSyncControllerProvider);
 
-      // 1. Rapidly schedule 5 syncs inside the 250ms window -> coalesced to 1!
-      for (var i = 0; i < 5; i++) {
-        controller.scheduleSync();
-      }
-      expect(fakeBridge.snapshotSyncs, isEmpty);
-      await Future<void>.delayed(const Duration(milliseconds: 320));
-      await pumpEventQueue();
-      expect(fakeBridge.snapshotSyncs, hasLength(1));
-      expect(fakeBridge.liveActivitySyncs, hasLength(1));
-      expect(fakeBridge.liveActivitySyncs.single, isNotNull);
+    // 1. Rapidly schedule 5 syncs inside the 250ms window -> coalesced to 1!
+    for (var i = 0; i < 5; i++) {
+      controller.scheduleSync();
+    }
+    expect(fakeBridge.snapshotSyncs, isEmpty);
+    await Future<void>.delayed(const Duration(milliseconds: 320));
+    await pumpEventQueue();
+    expect(fakeBridge.snapshotSyncs, hasLength(1));
+    expect(fakeBridge.liveActivitySyncs, hasLength(1));
+    expect(fakeBridge.liveActivitySyncs.single, isNotNull);
 
-      final firstJson =
-          jsonDecode(fakeBridge.snapshotSyncs.single.snapshotJson)
-              as Map<String, Object?>;
-      expect(firstJson['schemaVersion'], 1);
-      expect(firstJson['authState'], 'ready');
+    final firstJson = jsonDecode(
+      fakeBridge.snapshotSyncs.single.snapshotJson,
+    ) as Map<String, Object?>;
+    expect(firstJson['schemaVersion'], 1);
+    expect(firstJson['authState'], 'ready');
 
-      // 2. Calling syncNow() again when nothing changed -> 0 platform channel calls!
-      await controller.syncNow();
-      expect(
-        fakeBridge.snapshotSyncs,
-        hasLength(1),
-        reason: 'SHA-256 digest deduplication must suppress identical snapshot',
-      );
-      expect(
-        fakeBridge.liveActivitySyncs,
-        hasLength(1),
-        reason: 'SHA-256 digest deduplication must suppress identical live activity',
-      );
+    // 2. Calling syncNow() again when nothing changed -> 0 platform channel calls!
+    await controller.syncNow();
+    expect(
+      fakeBridge.snapshotSyncs,
+      hasLength(1),
+      reason: 'SHA-256 digest deduplication must suppress identical snapshot',
+    );
+    expect(
+      fakeBridge.liveActivitySyncs,
+      hasLength(1),
+      reason:
+          'SHA-256 digest deduplication must suppress identical live activity',
+    );
 
-      // 3. Changing photoMode -> produces a new digest and triggers sync #2.
-      await container
-          .read(widgetPhotoModeProvider.notifier)
-          .set(WidgetPhotoMode.blurred);
-      await controller.syncNow();
-      expect(fakeBridge.snapshotSyncs, hasLength(2));
+    // 3. Changing photoMode -> produces a new digest and triggers sync #2.
+    await container
+        .read(widgetPhotoModeProvider.notifier)
+        .set(WidgetPhotoMode.blurred);
+    await controller.syncNow();
+    expect(fakeBridge.snapshotSyncs, hasLength(2));
 
-      // 4. Native state.json reports dismissedWindowKey -> suppresses Live Activity.
-      fakeBridge.pendingWidgetState = {
-        'dismissedWindowKey': '2026-11-24:$journeyId',
-      };
-      await controller.syncNow(consumeNativeState: true);
-      expect(
-        container.read(dismissedLiveWindowKeyProvider),
-        '2026-11-24:$journeyId',
-      );
-      expect(fakeBridge.liveActivitySyncs.last, isNull);
+    // 4. Native state.json reports dismissedWindowKey -> suppresses Live Activity.
+    fakeBridge.pendingWidgetState = {
+      'dismissedWindowKey': '2026-11-24:$journeyId',
+    };
+    await controller.syncNow(consumeNativeState: true);
+    expect(
+      container.read(dismissedLiveWindowKeyProvider),
+      '2026-11-24:$journeyId',
+    );
+    expect(fakeBridge.liveActivitySyncs.last, isNull);
 
-      // 5. Sign-out triggers resetAccountLocalState -> wipes prefs, calls clearAll(),
-      // and writes an authState: 'signedOut' snapshot so widgets render SignedOut (P1-1).
-      (container.read(currentUserIdProvider.notifier) as _SignedInUser)
-          .signOut();
-      await pumpEventQueue();
+    // 5. Sign-out triggers resetAccountLocalState -> wipes prefs, calls clearAll(),
+    // and writes an authState: 'signedOut' snapshot so widgets render SignedOut (P1-1).
+    (container.read(currentUserIdProvider.notifier) as _SignedInUser).signOut();
+    await pumpEventQueue();
 
-      expect(fakeBridge.clearAllCount, greaterThanOrEqualTo(1));
-      expect(thumbPreparer.clearCacheCount, greaterThanOrEqualTo(1));
-      expect(container.read(widgetPhotoModeProvider), WidgetPhotoMode.smart);
-      expect(container.read(dismissedLiveWindowKeyProvider), isNull);
-      final signedOutJson =
-          jsonDecode(fakeBridge.snapshotSyncs.last.snapshotJson)
-              as Map<String, Object?>;
-      expect(signedOutJson['authState'], 'signedOut');
-      expect(signedOutJson['journeys'] as List<Object?>, isEmpty);
-      expect(signedOutJson['squads'] as List<Object?>, isEmpty);
-    },
-  );
+    expect(fakeBridge.clearAllCount, greaterThanOrEqualTo(1));
+    expect(thumbPreparer.clearCacheCount, greaterThanOrEqualTo(1));
+    expect(container.read(widgetPhotoModeProvider), WidgetPhotoMode.smart);
+    expect(container.read(dismissedLiveWindowKeyProvider), isNull);
+    final signedOutJson = jsonDecode(
+      fakeBridge.snapshotSyncs.last.snapshotJson,
+    ) as Map<String, Object?>;
+    expect(signedOutJson['authState'], 'signedOut');
+    expect(signedOutJson['journeys'] as List<Object?>, isEmpty);
+    expect(signedOutJson['squads'] as List<Object?>, isEmpty);
+  });
 
-  test(
-    'resolves device English locale when localeOverrideProvider is null and '
-    'awaits reminderDeviceTimezoneProvider on cold start (P1-2)',
-    () async {
-      TestWidgetsFlutterBinding.ensureInitialized();
-      final binding = TestWidgetsFlutterBinding.instance;
-      binding.platformDispatcher.localeTestValue = const Locale('en', 'US');
-      addTearDown(binding.platformDispatcher.clearLocaleTestValue);
+  test('resolves device English locale when localeOverrideProvider is null and '
+      'awaits reminderDeviceTimezoneProvider on cold start (P1-2)', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final binding = TestWidgetsFlutterBinding.instance;
+    binding.platformDispatcher.localeTestValue = const Locale('en', 'US');
+    addTearDown(binding.platformDispatcher.clearLocaleTestValue);
 
-      final prefs = await testPrefs();
-      final fakeBridge = FakeWidgetBridgeGateway();
-      final thumbPreparer = _NoOpThumbPreparer();
-      final journey = Journey(
-        id: journeyId,
-        ownerId: 'user-a',
-        kind: JourneyKind.solo,
-        templateId: TemplateId.englishDaily,
-        title: 'Daily English',
-        emoji: '',
-        startDate: const LocalDate(2026, 11, 10),
-        durationDays: 30,
-        timezone: 'Asia/Ho_Chi_Minh',
-        visibility: JourneyVisibility.private,
-        status: JourneyStatus.active,
-      );
+    final prefs = await testPrefs();
+    final fakeBridge = FakeWidgetBridgeGateway();
+    final thumbPreparer = _NoOpThumbPreparer();
+    final journey = Journey(
+      id: journeyId,
+      ownerId: 'user-a',
+      kind: JourneyKind.solo,
+      templateId: TemplateId.englishDaily,
+      title: 'Daily English',
+      emoji: '',
+      startDate: const LocalDate(2026, 11, 10),
+      durationDays: 30,
+      timezone: 'Asia/Ho_Chi_Minh',
+      visibility: JourneyVisibility.private,
+      status: JourneyStatus.active,
+    );
 
-      final container = ProviderContainer(
-        overrides: [
-          appConfigProvider.overrideWithValue(testBackendConfig),
-          sharedPreferencesProvider.overrideWithValue(prefs),
-          supabaseClientProvider.overrideWithValue(null),
-          currentUserIdProvider.overrideWith(_SignedInUser.new),
-          widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
-          widgetThumbPreparerProvider.overrideWithValue(thumbPreparer),
-          journeyRepositoryProvider.overrideWithValue(
-            FakeReminderJourneyRepository([journey]),
-          ),
-          checkInRepositoryProvider.overrideWithValue(
-            FakeReminderCheckInRepository(),
-          ),
-          notificationGatewayProvider.overrideWithValue(
-            FakeNotificationGateway(granted: true),
-          ),
-          reminderDeviceTimezoneProvider.overrideWith((ref) async {
-            await Future<void>.delayed(const Duration(milliseconds: 10));
-            return 'America/New_York';
-          }),
-          journeysClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
-          remindersClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
-          widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
-        ],
-      );
-      addTearDown(container.dispose);
+    final container = ProviderContainer(
+      overrides: [
+        appConfigProvider.overrideWithValue(testBackendConfig),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        supabaseClientProvider.overrideWithValue(null),
+        currentUserIdProvider.overrideWith(_SignedInUser.new),
+        widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
+        widgetThumbPreparerProvider.overrideWithValue(thumbPreparer),
+        journeyRepositoryProvider.overrideWithValue(
+          FakeReminderJourneyRepository([journey]),
+        ),
+        checkInRepositoryProvider.overrideWithValue(
+          FakeReminderCheckInRepository(),
+        ),
+        notificationGatewayProvider.overrideWithValue(
+          FakeNotificationGateway(granted: true),
+        ),
+        reminderDeviceTimezoneProvider.overrideWith((ref) async {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+          return 'America/New_York';
+        }),
+        journeysClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+        remindersClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+        widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+      ],
+    );
+    addTearDown(container.dispose);
 
-      final controller = container.read(widgetSyncControllerProvider);
-      await controller.syncNow();
+    final controller = container.read(widgetSyncControllerProvider);
+    await controller.syncNow();
 
-      expect(fakeBridge.snapshotSyncs, hasLength(1));
-      final snapJson =
-          jsonDecode(fakeBridge.snapshotSyncs.single.snapshotJson)
-              as Map<String, Object?>;
-      expect(snapJson['locale'], 'en');
+    expect(fakeBridge.snapshotSyncs, hasLength(1));
+    final snapJson = jsonDecode(
+      fakeBridge.snapshotSyncs.single.snapshotJson,
+    ) as Map<String, Object?>;
+    expect(snapJson['locale'], 'en');
 
-      // Explicit Vietnamese override wins over English device locale.
-      await container
-          .read(localeOverrideProvider.notifier)
-          .set(const Locale('vi'));
-      await controller.syncNow();
-      expect(fakeBridge.snapshotSyncs, hasLength(2));
-      final viJson =
-          jsonDecode(fakeBridge.snapshotSyncs.last.snapshotJson)
-              as Map<String, Object?>;
-      expect(viJson['locale'], 'vi');
-    },
-  );
+    // Explicit Vietnamese override wins over English device locale.
+    await container
+        .read(localeOverrideProvider.notifier)
+        .set(const Locale('vi'));
+    await controller.syncNow();
+    expect(fakeBridge.snapshotSyncs, hasLength(2));
+    final viJson = jsonDecode(
+      fakeBridge.snapshotSyncs.last.snapshotJson,
+    ) as Map<String, Object?>;
+    expect(viJson['locale'], 'vi');
+  });
 
   testWidgets(
     'WidgetLifecycleHook triggers sync on block/unblock, membership.blurMedia toggle, and check-in delete/import (P1-5)',
@@ -439,19 +436,17 @@ void main() {
           journeysClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
           remindersClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
           widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
-          groupBlockedIdsProvider.overrideWith((ref) => blockedController.stream),
-          myMembershipProvider(journeyId).overrideWith(
-            (ref) => membershipController.stream,
+          groupBlockedIdsProvider.overrideWith(
+            (ref) => blockedController.stream,
           ),
-          myCheckInsProvider(journeyId).overrideWith(
-            (ref) => checkInsController.stream,
-          ),
-          groupTodayProvider(journeyId).overrideWith(
-            (ref) => Stream.value([friendMember]),
-          ),
-          groupCheckInsProvider(journeyId).overrideWith(
-            (ref) => Stream.value(const <CheckIn>[]),
-          ),
+          myMembershipProvider(journeyId)
+              .overrideWith((ref) => membershipController.stream),
+          myCheckInsProvider(journeyId)
+              .overrideWith((ref) => checkInsController.stream),
+          groupTodayProvider(journeyId)
+              .overrideWith((ref) => Stream.value([friendMember])),
+          groupCheckInsProvider(journeyId)
+              .overrideWith((ref) => Stream.value(const <CheckIn>[])),
         ],
       );
       addTearDown(container.dispose);
@@ -551,142 +546,98 @@ void main() {
 
     tearDown(() {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(MethodChannelWidgetBridgeGateway.channel, null);
+          .setMockMethodCallHandler(
+            MethodChannelWidgetBridgeGateway.channel,
+            null,
+          );
       debugDefaultTargetPlatformOverride = null;
     });
 
-    test(
-      'returns false / null / WidgetCapabilities.unsupported on MissingPluginException',
-      () async {
-        debugDefaultTargetPlatformOverride = TargetPlatform.android;
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-            .setMockMethodCallHandler(
-              MethodChannelWidgetBridgeGateway.channel,
-              (call) async => throw MissingPluginException('no handler'),
-            );
-
-        expect(
-          await gateway.syncSnapshot(snapshotJson: '{}', thumbs: const []),
-          isFalse,
-        );
-        expect(await gateway.syncLiveActivity(const {'a': 1}), isFalse);
-        expect(await gateway.clearAll(), isFalse);
-        expect(await gateway.consumeWidgetState(), isNull);
-        expect(
-          await gateway.getCapabilities(),
-          WidgetCapabilities.unsupported,
-        );
-        expect(await gateway.getPlacedWidgets(), isEmpty);
-        expect(
-          await gateway.setWidgetSelection(
-            appWidgetId: 101,
-            selectedId: 'j-1',
-          ),
-          isFalse,
-        );
-      },
-    );
-
-    test('invokes channel methods and parses responses on Android/iOS', () async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-      final calls = <MethodCall>[];
+    test('returns false / null / WidgetCapabilities.unsupported on MissingPluginException', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
             MethodChannelWidgetBridgeGateway.channel,
-            (call) async {
-              calls.add(call);
-              return switch (call.method) {
-                'syncSnapshot' => true,
-                'syncLiveActivity' => true,
-                'clearAll' => true,
-                'consumeWidgetState' => <Object?, Object?>{
-                  'dismissedWindowKey': '2026-11-24:j1',
-                  42: 'ignored-non-string-key',
-                },
-                'getCapabilities' => <Object?, Object?>{
-                  'widgets': true,
-                  'liveActivity': true,
-                  'promotedLiveUpdates': false,
-                  'appGroup': false,
-                },
-                'getPlacedWidgets' => <Object?>[
-                  <Object?, Object?>{
-                    'appWidgetId': 11,
-                    'kind': 'today',
-                    'selectedId': 'auto',
-                  },
-                  <Object?, Object?>{
-                    'appWidgetId': 12,
-                    'kind': 'squad',
-                    'selectedId': 'j-squad-1',
-                  },
-                ],
-                'setWidgetSelection' => true,
-                _ => null,
-              };
-            },
+            (call) async => throw MissingPluginException('no handler'),
           );
 
-      const thumb = WidgetThumbPayload(
-        id: 'abc.jpg',
-        sourcePath: '/tmp/abc.jpg',
-        maxSide: 320,
-        blur: false,
-      );
       expect(
-        await gateway.syncSnapshot(snapshotJson: '{"ok":true}', thumbs: [thumb]),
-        isTrue,
-      );
-      expect(await gateway.syncLiveActivity(null), isTrue);
-      expect(await gateway.clearAll(), isTrue);
-      expect(await gateway.consumeWidgetState(), {
-        'dismissedWindowKey': '2026-11-24:j1',
-      });
-      expect(
-        await gateway.getCapabilities(),
-        const WidgetCapabilities(
-          widgets: true,
-          liveActivity: true,
-          promotedLiveUpdates: false,
-          appGroup: false,
-        ),
-      );
-      // On iOS, getPlacedWidgets and setWidgetSelection short-circuit locally.
-      expect(await gateway.getPlacedWidgets(), isEmpty);
-      expect(
-        await gateway.setWidgetSelection(appWidgetId: 11, selectedId: 'j-1'),
+        await gateway.syncSnapshot(snapshotJson: '{}', thumbs: const []),
         isFalse,
       );
-
-      // On Android, getPlacedWidgets and setWidgetSelection invoke the native channel.
-      debugDefaultTargetPlatformOverride = TargetPlatform.android;
-      final placed = await gateway.getPlacedWidgets();
-      expect(placed, const [
-        PlacedWidgetInfo(
-          appWidgetId: 11,
-          kind: PlacedWidgetKind.today,
-          selectedId: 'auto',
-        ),
-        PlacedWidgetInfo(
-          appWidgetId: 12,
-          kind: PlacedWidgetKind.squad,
-          selectedId: 'j-squad-1',
-        ),
-      ]);
-      expect(
-        await gateway.setWidgetSelection(appWidgetId: 11, selectedId: 'j-2'),
-        isTrue,
-      );
-      expect(calls.map((c) => c.method).toList(), [
-        'syncSnapshot',
-        'syncLiveActivity',
-        'clearAll',
-        'consumeWidgetState',
-        'getCapabilities',
-        'getPlacedWidgets',
-        'setWidgetSelection',
-      ]);
+      expect(await gateway.syncLiveActivity(const {'a': 1}), isFalse);
+      expect(await gateway.clearAll(), isFalse);
+      expect(await gateway.consumeWidgetState(), isNull);
+      expect(await gateway.getCapabilities(), WidgetCapabilities.unsupported);
     });
+
+    test(
+      'invokes channel methods and parses responses on Android/iOS',
+      () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        final calls = <MethodCall>[];
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+              MethodChannelWidgetBridgeGateway.channel,
+              (call) async {
+                calls.add(call);
+                return switch (call.method) {
+                  'syncSnapshot' => true,
+                  'syncLiveActivity' => true,
+                  'clearAll' => true,
+                  'consumeWidgetState' => <Object?, Object?>{
+                    'dismissedWindowKey': '2026-11-24:j1',
+                    42: 'ignored-non-string-key',
+                  },
+                  'getCapabilities' => <Object?, Object?>{
+                    'widgets': true,
+                    'liveActivity': true,
+                    'promotedLiveUpdates': false,
+                    'configurableWidgets': true,
+                    'appGroup': false,
+                  },
+                  _ => null,
+                };
+              },
+            );
+
+        const thumb = WidgetThumbPayload(
+          id: 'abc.jpg',
+          sourcePath: '/tmp/abc.jpg',
+          maxSide: 320,
+          blur: false,
+        );
+        expect(
+          await gateway.syncSnapshot(
+            snapshotJson: '{"ok":true}',
+            thumbs: [thumb],
+          ),
+          isTrue,
+        );
+        expect(await gateway.syncLiveActivity(null), isTrue);
+        expect(await gateway.clearAll(), isTrue);
+        expect(await gateway.consumeWidgetState(), {
+          'dismissedWindowKey': '2026-11-24:j1',
+        });
+        expect(
+          await gateway.getCapabilities(),
+          const WidgetCapabilities(
+            widgets: true,
+            liveActivity: true,
+            promotedLiveUpdates: false,
+            configurableWidgets: true,
+            appGroup: false,
+          ),
+        );
+        expect(calls.map((c) => c.method).toList(), [
+          'syncSnapshot',
+          'syncLiveActivity',
+          'clearAll',
+          'consumeWidgetState',
+          'getCapabilities',
+        ]);
+      },
+    );
 
     test('short-circuits on unsupported desktop platforms', () async {
       debugDefaultTargetPlatformOverride = TargetPlatform.windows;
@@ -703,7 +654,9 @@ void main() {
     late ProviderContainer container;
 
     setUp(() {
-      tempRoot = Directory.systemTemp.createTempSync('ourney_widget_thumb_test_');
+      tempRoot = Directory.systemTemp.createTempSync(
+        'ourney_widget_thumb_test_',
+      );
       container = ProviderContainer();
     });
 
@@ -714,83 +667,88 @@ void main() {
       }
     });
 
-    test(
-      'fails closed when blur fails (never leaks raw unblurred sourcePath) and sets blur: false on pre-blurred payload',
-      () async {
-        final rawFile = File(p.join(tempRoot.path, 'raw_secret.jpg'))
-          ..writeAsBytesSync([1, 2, 3, 4]);
+    test('fails closed when blur fails (never leaks raw unblurred sourcePath) and sets blur: false on pre-blurred payload', () async {
+      final rawFile = File(p.join(tempRoot.path, 'raw_secret.jpg'))
+        ..writeAsBytesSync([1, 2, 3, 4]);
 
-        final blurReq = WidgetThumbRequest(
-          id: 'blurred_1234.jpg',
-          storagePath: rawFile.path,
-          localFilePath: rawFile.path,
-          maxSide: 320,
-          blur: true,
-        );
+      final blurReq = WidgetThumbRequest(
+        id: 'blurred_1234.jpg',
+        storagePath: rawFile.path,
+        localFilePath: rawFile.path,
+        maxSide: 320,
+        blur: true,
+      );
 
-        // 1. When blurRenderer returns null (failure), prepare() MUST fail closed (empty list).
-        final failingPreparer = LocalWidgetThumbPreparer(
-          container.read( Provider((ref) => ref) ),
-          tempDirProvider: () async => tempRoot,
-          blurRenderer: ({
-            required sourcePath,
-            required targetPath,
-            required maxSide,
-          }) async => null,
-        );
-        final failedResult = await failingPreparer.prepare([blurReq]);
-        expect(failedResult, isEmpty);
+      // 1. When blurRenderer returns null (failure), prepare() MUST fail closed (empty list).
+      final failingPreparer = LocalWidgetThumbPreparer(
+        container.read(Provider((ref) => ref)),
+        tempDirProvider: () async => tempRoot,
+        blurRenderer: ({
+          required sourcePath,
+          required targetPath,
+          required maxSide,
+        }) async => null,
+      );
+      final failedResult = await failingPreparer.prepare([blurReq]);
+      expect(failedResult, isEmpty);
 
-        // 2. When enableNativeTransforms is false and no blurRenderer is given, also fails closed.
-        final disabledPreparer = LocalWidgetThumbPreparer(
-          container.read(Provider((ref) => ref)),
-          tempDirProvider: () async => tempRoot,
-          enableNativeTransforms: false,
-        );
-        expect(await disabledPreparer.prepare([blurReq]), isEmpty);
+      // 2. When enableNativeTransforms is false and no blurRenderer is given, also fails closed.
+      final disabledPreparer = LocalWidgetThumbPreparer(
+        container.read(Provider((ref) => ref)),
+        tempDirProvider: () async => tempRoot,
+        enableNativeTransforms: false,
+      );
+      expect(await disabledPreparer.prepare([blurReq]), isEmpty);
 
-        // 3. When blurRenderer succeeds, emits blurred targetPath with blur: false (no double-blur)
-        // and reuses cached file on subsequent call + prunes orphans.
-        var blurCalls = 0;
-        final orphanFile = File(
-          p.join(tempRoot.path, kWidgetThumbsTempDirName, 'stale_orphan.jpg'),
-        )..createSync(recursive: true)..writeAsBytesSync([9, 9]);
+      // 3. When blurRenderer succeeds, emits blurred targetPath with blur: false (no double-blur)
+      // and reuses cached file on subsequent call + prunes orphans.
+      var blurCalls = 0;
+      final orphanFile =
+          File(
+              p.join(
+                tempRoot.path,
+                kWidgetThumbsTempDirName,
+                'stale_orphan.jpg',
+              ),
+            )
+            ..createSync(recursive: true)
+            ..writeAsBytesSync([9, 9]);
 
-        final workingPreparer = LocalWidgetThumbPreparer(
-          container.read(Provider((ref) => ref)),
-          tempDirProvider: () async => tempRoot,
-          blurRenderer: ({
-            required sourcePath,
-            required targetPath,
-            required maxSide,
-          }) async {
-            blurCalls++;
-            final f = File(targetPath)..writeAsBytesSync([7, 8, 9]);
-            return f.path;
-          },
-        );
+      final workingPreparer = LocalWidgetThumbPreparer(
+        container.read(Provider((ref) => ref)),
+        tempDirProvider: () async => tempRoot,
+        blurRenderer:
+            ({
+              required sourcePath,
+              required targetPath,
+              required maxSide,
+            }) async {
+              blurCalls++;
+              final f = File(targetPath)..writeAsBytesSync([7, 8, 9]);
+              return f.path;
+            },
+      );
 
-        final firstPass = await workingPreparer.prepare([blurReq]);
-        expect(firstPass, hasLength(1));
-        expect(firstPass.single.id, 'blurred_1234.jpg');
-        expect(firstPass.single.sourcePath, isNot(rawFile.path));
-        expect(firstPass.single.blur, isFalse);
-        expect(blurCalls, 1);
-        expect(orphanFile.existsSync(), isFalse);
+      final firstPass = await workingPreparer.prepare([blurReq]);
+      expect(firstPass, hasLength(1));
+      expect(firstPass.single.id, 'blurred_1234.jpg');
+      expect(firstPass.single.sourcePath, isNot(rawFile.path));
+      expect(firstPass.single.blur, isFalse);
+      expect(blurCalls, 1);
+      expect(orphanFile.existsSync(), isFalse);
 
-        // Second pass hits the cached file in <temp>/widget_thumbs/ without calling blurRenderer.
-        final secondPass = await workingPreparer.prepare([blurReq]);
-        expect(secondPass, hasLength(1));
-        expect(blurCalls, 1);
+      // Second pass hits the cached file in <temp>/widget_thumbs/ without calling blurRenderer.
+      final secondPass = await workingPreparer.prepare([blurReq]);
+      expect(secondPass, hasLength(1));
+      expect(blurCalls, 1);
 
-        // clearCache() removes <temp>/widget_thumbs/.
-        await workingPreparer.clearCache();
-        expect(
-          Directory(p.join(tempRoot.path, kWidgetThumbsTempDirName)).existsSync(),
-          isFalse,
-        );
-      },
-    );
+      // clearCache() removes <temp>/widget_thumbs/.
+      await workingPreparer.clearCache();
+      expect(
+        Directory(p.join(tempRoot.path, kWidgetThumbsTempDirName)).existsSync(),
+        isFalse,
+      );
+    });
   });
 
   group('Batch 1 P0 Sync Fixes (Ranks 1, 3, 4)', () {
@@ -830,10 +788,10 @@ void main() {
         );
 
         late ProviderContainer container;
-        final authGatedRepo = _AuthGatedJourneyRepository(
-          [j1, j2],
-          () => container.read(currentUserIdProvider),
-        );
+        final authGatedRepo = _AuthGatedJourneyRepository([
+          j1,
+          j2,
+        ], () => container.read(currentUserIdProvider));
 
         container = ProviderContainer(
           overrides: [
@@ -856,12 +814,10 @@ void main() {
             journeysClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
             remindersClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
             widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
-            groupTodayProvider(j2.id).overrideWith(
-              (ref) => Stream.value(const <MemberToday>[]),
-            ),
-            groupCheckInsProvider(j2.id).overrideWith(
-              (ref) => Stream.value(const <CheckIn>[]),
-            ),
+            groupTodayProvider(j2.id)
+                .overrideWith((ref) => Stream.value(const <MemberToday>[])),
+            groupCheckInsProvider(j2.id)
+                .overrideWith((ref) => Stream.value(const <CheckIn>[])),
           ],
         );
         addTearDown(container.dispose);
@@ -890,17 +846,17 @@ void main() {
         expect(container.read(journeysListProvider).value, isEmpty);
         expect(fakeBridge.clearAllCount, greaterThanOrEqualTo(1));
         expect(fakeBridge.snapshotSyncs, hasLength(1));
-        final preLoginJson =
-            jsonDecode(fakeBridge.snapshotSyncs.single.snapshotJson)
-                as Map<String, Object?>;
+        final preLoginJson = jsonDecode(
+          fakeBridge.snapshotSyncs.single.snapshotJson,
+        ) as Map<String, Object?>;
         expect(preLoginJson['authState'], 'signedOut');
         expect(preLoginJson['journeys'] as List<Object?>, isEmpty);
 
         // Now sign in as 'user-a' -> journeysListProvider & pinnedJourneyIdsProvider
         // must automatically rebuild and sync both active journeys to snapshot_v1.json!
-        (container.read(currentUserIdProvider.notifier)
-                as _SignedOutThenSignInUser)
-            .signIn('user-a');
+        (container.read(
+          currentUserIdProvider.notifier,
+        ) as _SignedOutThenSignInUser).signIn('user-a');
         await tester.pump();
         await tester.pump();
 
@@ -911,9 +867,9 @@ void main() {
         );
         expect(fakeBridge.snapshotSyncs.length, greaterThanOrEqualTo(2));
 
-        final latestJson =
-            jsonDecode(fakeBridge.snapshotSyncs.last.snapshotJson)
-                as Map<String, Object?>;
+        final latestJson = jsonDecode(
+          fakeBridge.snapshotSyncs.last.snapshotJson,
+        ) as Map<String, Object?>;
         expect(latestJson['authState'], 'ready');
         final syncedJourneys = latestJson['journeys'] as List<Object?>;
         expect(syncedJourneys, hasLength(2));
@@ -922,302 +878,328 @@ void main() {
       },
     );
 
+    test('Rank 3 & P2-2: stalled groupRepository.watchToday RPC times out cleanly, '
+        'cancels its StreamSubscription immediately, and writes snapshot using local fallback', () async {
+      final prefs = await testPrefs();
+      final fakeBridge = FakeWidgetBridgeGateway();
+      final thumbPreparer = _NoOpThumbPreparer();
+      final stalledGroups = _StalledGroupRepository();
+
+      final soloJ = Journey(
+        id: 'j-solo-fast',
+        ownerId: 'user-a',
+        kind: JourneyKind.solo,
+        templateId: TemplateId.englishDaily,
+        title: 'Fast Solo',
+        emoji: '',
+        startDate: const LocalDate(2026, 11, 10),
+        durationDays: 30,
+        timezone: 'Asia/Ho_Chi_Minh',
+        visibility: JourneyVisibility.private,
+        status: JourneyStatus.active,
+      );
+      final groupJ = Journey(
+        id: 'j-group-stalled',
+        ownerId: 'user-a',
+        kind: JourneyKind.group,
+        templateId: TemplateId.workout30,
+        title: 'Offline Cellular Squad',
+        emoji: '',
+        startDate: const LocalDate(2026, 11, 10),
+        durationDays: 30,
+        timezone: 'Asia/Ho_Chi_Minh',
+        visibility: JourneyVisibility.group,
+        status: JourneyStatus.active,
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          appConfigProvider.overrideWithValue(testBackendConfig),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          supabaseClientProvider.overrideWithValue(null),
+          currentUserIdProvider.overrideWith(_SignedInUser.new),
+          widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
+          widgetThumbPreparerProvider.overrideWithValue(thumbPreparer),
+          journeyRepositoryProvider.overrideWithValue(
+            FakeReminderJourneyRepository([soloJ, groupJ]),
+          ),
+          checkInRepositoryProvider.overrideWithValue(
+            FakeReminderCheckInRepository(),
+          ),
+          groupRepositoryProvider.overrideWithValue(stalledGroups),
+          notificationGatewayProvider.overrideWithValue(
+            FakeNotificationGateway(granted: true),
+          ),
+          reminderDeviceTimezoneProvider.overrideWith(
+            (ref) async => 'Asia/Ho_Chi_Minh',
+          ),
+          journeysClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+          remindersClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+          widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final sw = Stopwatch()..start();
+      await container.read(widgetSyncControllerProvider).syncNow();
+      sw.stop();
+
+      expect(
+        sw.elapsedMilliseconds,
+        lessThan(2500),
+        reason: 'Stalled group_today RPC must time out at 1200ms, not 30s',
+      );
+      expect(
+        stalledGroups.activeWatchTodaySubscriptions,
+        0,
+        reason: 'Timed-out watchToday stream subscription must be cancelled',
+      );
+      expect(stalledGroups.cancelCount, greaterThanOrEqualTo(1));
+      expect(fakeBridge.snapshotSyncs, hasLength(1));
+      final decoded = jsonDecode(
+        fakeBridge.snapshotSyncs.single.snapshotJson,
+      ) as Map<String, Object?>;
+      expect(decoded['journeys'] as List<Object?>, hasLength(2));
+      expect(decoded['squads'] as List<Object?>, hasLength(1));
+    });
+
+    test('P2-1: clearAll() during an in-flight syncNow() aborts the stale sync '
+        'before it can re-poison _lastSnapshotDigest', () async {
+      final prefs = await testPrefs();
+      final fakeBridge = FakeWidgetBridgeGateway();
+      final gate = Completer<void>();
+      final gatedThumbPreparer = _GatedThumbPreparer(gate.future);
+
+      final journey = Journey(
+        id: journeyId,
+        ownerId: 'user-a',
+        kind: JourneyKind.solo,
+        templateId: TemplateId.englishDaily,
+        title: 'In-Flight Clear Race',
+        emoji: '',
+        startDate: const LocalDate(2026, 11, 10),
+        durationDays: 30,
+        timezone: 'Asia/Ho_Chi_Minh',
+        visibility: JourneyVisibility.private,
+        status: JourneyStatus.active,
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          appConfigProvider.overrideWithValue(testBackendConfig),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          supabaseClientProvider.overrideWithValue(null),
+          currentUserIdProvider.overrideWith(_SignedInUser.new),
+          widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
+          widgetThumbPreparerProvider.overrideWithValue(gatedThumbPreparer),
+          journeyRepositoryProvider.overrideWithValue(
+            FakeReminderJourneyRepository([journey]),
+          ),
+          checkInRepositoryProvider.overrideWithValue(
+            FakeReminderCheckInRepository(),
+          ),
+          notificationGatewayProvider.overrideWithValue(
+            FakeNotificationGateway(granted: true),
+          ),
+          reminderDeviceTimezoneProvider.overrideWith(
+            (ref) async => 'Asia/Ho_Chi_Minh',
+          ),
+          journeysClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+          remindersClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+          widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final controller = container.read(widgetSyncControllerProvider);
+
+      // Start sync #1, which suspends inside _thumbPreparer.prepare.
+      final inFlightSync = controller.syncNow();
+      await pumpEventQueue();
+      expect(gatedThumbPreparer.prepareCalls, 1);
+
+      // Call clearAll() while sync #1 is still suspended (simulating account reset).
+      final clearFuture = controller.clearAll();
+      gate.complete();
+      await Future.wait([inFlightSync, clearFuture]);
+
+      // Stale sync #1 must have been aborted before calling syncSnapshot.
+      expect(fakeBridge.snapshotSyncs, isEmpty);
+      expect(fakeBridge.clearAllCount, 1);
+
+      // A subsequent non-forced syncNow() with the same journey data must NOT be
+      // suppressed by a poisoned digest from sync #1.
+      await controller.syncNow();
+      expect(fakeBridge.snapshotSyncs, hasLength(1));
+    });
+
+    test('Rank 4: failed syncSnapshot / syncLiveActivity (returning false) does not '
+        'cache digest and retries on the next syncNow()', () async {
+      final prefs = await testPrefs();
+      final fakeBridge = FakeWidgetBridgeGateway()
+        ..nextSyncSnapshotResult = false
+        ..nextSyncLiveActivityResult = false;
+      final thumbPreparer = _NoOpThumbPreparer();
+
+      final journey = Journey(
+        id: journeyId,
+        ownerId: 'user-a',
+        kind: JourneyKind.solo,
+        templateId: TemplateId.englishDaily,
+        title: 'Retry Digest Test',
+        emoji: '',
+        startDate: const LocalDate(2026, 11, 10),
+        durationDays: 30,
+        timezone: 'Asia/Ho_Chi_Minh',
+        visibility: JourneyVisibility.private,
+        status: JourneyStatus.active,
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          appConfigProvider.overrideWithValue(testBackendConfig),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          supabaseClientProvider.overrideWithValue(null),
+          currentUserIdProvider.overrideWith(_SignedInUser.new),
+          widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
+          widgetThumbPreparerProvider.overrideWithValue(thumbPreparer),
+          journeyRepositoryProvider.overrideWithValue(
+            FakeReminderJourneyRepository([journey]),
+          ),
+          checkInRepositoryProvider.overrideWithValue(
+            FakeReminderCheckInRepository(),
+          ),
+          notificationGatewayProvider.overrideWithValue(
+            FakeNotificationGateway(granted: true),
+          ),
+          reminderDeviceTimezoneProvider.overrideWith(
+            (ref) async => 'Asia/Ho_Chi_Minh',
+          ),
+          journeysClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+          remindersClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+          widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final controller = container.read(widgetSyncControllerProvider);
+
+      // Attempt #1: native bridge returns false -> digest must NOT be cached.
+      await controller.syncNow();
+      expect(fakeBridge.snapshotSyncs, hasLength(1));
+      expect(fakeBridge.liveActivitySyncs, hasLength(1));
+
+      // Attempt #2: native bridge now succeeds -> identical payload IS resent!
+      fakeBridge
+        ..nextSyncSnapshotResult = true
+        ..nextSyncLiveActivityResult = true;
+      await controller.syncNow();
+      expect(
+        fakeBridge.snapshotSyncs,
+        hasLength(2),
+        reason: 'Must retry identical snapshot after failed attempt #1',
+      );
+      expect(
+        fakeBridge.liveActivitySyncs,
+        hasLength(2),
+        reason: 'Must retry identical live activity after failed attempt #1',
+      );
+
+      // Attempt #3: nothing changed and attempt #2 succeeded -> deduplicated!
+      await controller.syncNow();
+      expect(fakeBridge.snapshotSyncs, hasLength(2));
+      expect(fakeBridge.liveActivitySyncs, hasLength(2));
+
+      // Attempt #4: force: true (e.g. AppLifecycleState.resumed) -> resends to heal disk!
+      controller.scheduleCoalescedMicrotaskSync(
+        consumeNativeState: true,
+        force: true,
+      );
+      await pumpEventQueue();
+      expect(fakeBridge.snapshotSyncs, hasLength(3));
+    });
+
     test(
-      'Rank 3 & P2-2: stalled groupRepository.watchToday RPC times out cleanly, '
-      'cancels its StreamSubscription immediately, and writes snapshot using local fallback',
+      'syncNow removes legacy selection keys before publishing a snapshot',
       () async {
-        final prefs = await testPrefs();
-        final fakeBridge = FakeWidgetBridgeGateway();
-        final thumbPreparer = _NoOpThumbPreparer();
-        final stalledGroups = _StalledGroupRepository();
-
-        final soloJ = Journey(
-          id: 'j-solo-fast',
-          ownerId: 'user-a',
-          kind: JourneyKind.solo,
-          templateId: TemplateId.englishDaily,
-          title: 'Fast Solo',
-          emoji: '',
-          startDate: const LocalDate(2026, 11, 10),
-          durationDays: 30,
-          timezone: 'Asia/Ho_Chi_Minh',
-          visibility: JourneyVisibility.private,
-          status: JourneyStatus.active,
-        );
-        final groupJ = Journey(
-          id: 'j-group-stalled',
-          ownerId: 'user-a',
-          kind: JourneyKind.group,
-          templateId: TemplateId.workout30,
-          title: 'Offline Cellular Squad',
-          emoji: '',
-          startDate: const LocalDate(2026, 11, 10),
-          durationDays: 30,
-          timezone: 'Asia/Ho_Chi_Minh',
-          visibility: JourneyVisibility.group,
-          status: JourneyStatus.active,
-        );
-
+        final prefs = await testPrefs({
+          'widgets.defaultJourneyId.v2': 'legacy-journey',
+          'widgets.defaultSquadId.v2': 'legacy-squad',
+        });
+        final bridge = FakeWidgetBridgeGateway();
         final container = ProviderContainer(
           overrides: [
             appConfigProvider.overrideWithValue(testBackendConfig),
             sharedPreferencesProvider.overrideWithValue(prefs),
             supabaseClientProvider.overrideWithValue(null),
             currentUserIdProvider.overrideWith(_SignedInUser.new),
-            widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
-            widgetThumbPreparerProvider.overrideWithValue(thumbPreparer),
+            widgetBridgeGatewayProvider.overrideWithValue(bridge),
+            widgetThumbPreparerProvider.overrideWithValue(_NoOpThumbPreparer()),
             journeyRepositoryProvider.overrideWithValue(
-              FakeReminderJourneyRepository([soloJ, groupJ]),
+              FakeReminderJourneyRepository([]),
             ),
             checkInRepositoryProvider.overrideWithValue(
               FakeReminderCheckInRepository(),
             ),
-            groupRepositoryProvider.overrideWithValue(stalledGroups),
             notificationGatewayProvider.overrideWithValue(
               FakeNotificationGateway(granted: true),
             ),
             reminderDeviceTimezoneProvider.overrideWith(
               (ref) async => 'Asia/Ho_Chi_Minh',
             ),
-            journeysClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
-            remindersClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
             widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
           ],
         );
         addTearDown(container.dispose);
 
-        final sw = Stopwatch()..start();
         await container.read(widgetSyncControllerProvider).syncNow();
-        sw.stop();
 
-        expect(
-          sw.elapsedMilliseconds,
-          lessThan(2500),
-          reason: 'Stalled group_today RPC must time out at 1200ms, not 30s',
-        );
-        expect(
-          stalledGroups.activeWatchTodaySubscriptions,
-          0,
-          reason: 'Timed-out watchToday stream subscription must be cancelled',
-        );
-        expect(stalledGroups.cancelCount, greaterThanOrEqualTo(1));
-        expect(fakeBridge.snapshotSyncs, hasLength(1));
-        final decoded =
-            jsonDecode(fakeBridge.snapshotSyncs.single.snapshotJson)
-                as Map<String, Object?>;
-        expect(decoded['journeys'] as List<Object?>, hasLength(2));
-        expect(decoded['squads'] as List<Object?>, hasLength(1));
+        expect(prefs.containsKey('widgets.defaultJourneyId.v2'), isFalse);
+        expect(prefs.containsKey('widgets.defaultSquadId.v2'), isFalse);
+        expect(bridge.snapshotSyncs, hasLength(1));
+        final snapshot = jsonDecode(
+          bridge.snapshotSyncs.single.snapshotJson,
+        ) as Map<String, dynamic>;
+        expect(snapshot.containsKey('defaultJourneyId'), isFalse);
+        expect(snapshot.containsKey('defaultSquadId'), isFalse);
       },
+      timeout: const Timeout(Duration(seconds: 30)),
     );
 
     test(
-      'P2-1: clearAll() during an in-flight syncNow() aborts the stale sync '
-      'before it can re-poison _lastSnapshotDigest',
-      () async {
-        final prefs = await testPrefs();
-        final fakeBridge = FakeWidgetBridgeGateway();
-        final gate = Completer<void>();
-        final gatedThumbPreparer = _GatedThumbPreparer(gate.future);
-
-        final journey = Journey(
-          id: journeyId,
-          ownerId: 'user-a',
-          kind: JourneyKind.solo,
-          templateId: TemplateId.englishDaily,
-          title: 'In-Flight Clear Race',
-          emoji: '',
-          startDate: const LocalDate(2026, 11, 10),
-          durationDays: 30,
-          timezone: 'Asia/Ho_Chi_Minh',
-          visibility: JourneyVisibility.private,
-          status: JourneyStatus.active,
+      'configurableWidgets defaults false when the native key is absent',
+      () {
+        expect(
+          WidgetCapabilities.fromMap({'widgets': true}).configurableWidgets,
+          isFalse,
         );
-
-        final container = ProviderContainer(
-          overrides: [
-            appConfigProvider.overrideWithValue(testBackendConfig),
-            sharedPreferencesProvider.overrideWithValue(prefs),
-            supabaseClientProvider.overrideWithValue(null),
-            currentUserIdProvider.overrideWith(_SignedInUser.new),
-            widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
-            widgetThumbPreparerProvider.overrideWithValue(gatedThumbPreparer),
-            journeyRepositoryProvider.overrideWithValue(
-              FakeReminderJourneyRepository([journey]),
-            ),
-            checkInRepositoryProvider.overrideWithValue(
-              FakeReminderCheckInRepository(),
-            ),
-            notificationGatewayProvider.overrideWithValue(
-              FakeNotificationGateway(granted: true),
-            ),
-            reminderDeviceTimezoneProvider.overrideWith(
-              (ref) async => 'Asia/Ho_Chi_Minh',
-            ),
-            journeysClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
-            remindersClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
-            widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
-          ],
+        expect(WidgetCapabilities.fromMap(null).configurableWidgets, isFalse);
+        expect(
+          WidgetCapabilities.fromMap({'configurableWidgets': false})
+              .configurableWidgets,
+          isFalse,
         );
-        addTearDown(container.dispose);
-
-        final controller = container.read(widgetSyncControllerProvider);
-
-        // Start sync #1, which suspends inside _thumbPreparer.prepare.
-        final inFlightSync = controller.syncNow();
-        await pumpEventQueue();
-        expect(gatedThumbPreparer.prepareCalls, 1);
-
-        // Call clearAll() while sync #1 is still suspended (simulating account reset).
-        final clearFuture = controller.clearAll();
-        gate.complete();
-        await Future.wait([inFlightSync, clearFuture]);
-
-        // Stale sync #1 must have been aborted before calling syncSnapshot.
-        expect(fakeBridge.snapshotSyncs, isEmpty);
-        expect(fakeBridge.clearAllCount, 1);
-
-        // A subsequent non-forced syncNow() with the same journey data must NOT be
-        // suppressed by a poisoned digest from sync #1.
-        await controller.syncNow();
-        expect(fakeBridge.snapshotSyncs, hasLength(1));
       },
+      timeout: const Timeout(Duration(seconds: 5)),
     );
 
     test(
-      'Rank 4: failed syncSnapshot / syncLiveActivity (returning false) does not '
-      'cache digest and retries on the next syncNow()',
-      () async {
-        final prefs = await testPrefs();
-        final fakeBridge = FakeWidgetBridgeGateway()
-          ..nextSyncSnapshotResult = false
-          ..nextSyncLiveActivityResult = false;
-        final thumbPreparer = _NoOpThumbPreparer();
-
-        final journey = Journey(
-          id: journeyId,
-          ownerId: 'user-a',
-          kind: JourneyKind.solo,
-          templateId: TemplateId.englishDaily,
-          title: 'Retry Digest Test',
-          emoji: '',
-          startDate: const LocalDate(2026, 11, 10),
-          durationDays: 30,
-          timezone: 'Asia/Ho_Chi_Minh',
-          visibility: JourneyVisibility.private,
-          status: JourneyStatus.active,
-        );
-
-        final container = ProviderContainer(
-          overrides: [
-            appConfigProvider.overrideWithValue(testBackendConfig),
-            sharedPreferencesProvider.overrideWithValue(prefs),
-            supabaseClientProvider.overrideWithValue(null),
-            currentUserIdProvider.overrideWith(_SignedInUser.new),
-            widgetBridgeGatewayProvider.overrideWithValue(fakeBridge),
-            widgetThumbPreparerProvider.overrideWithValue(thumbPreparer),
-            journeyRepositoryProvider.overrideWithValue(
-              FakeReminderJourneyRepository([journey]),
-            ),
-            checkInRepositoryProvider.overrideWithValue(
-              FakeReminderCheckInRepository(),
-            ),
-            notificationGatewayProvider.overrideWithValue(
-              FakeNotificationGateway(granted: true),
-            ),
-            reminderDeviceTimezoneProvider.overrideWith(
-              (ref) async => 'Asia/Ho_Chi_Minh',
-            ),
-            journeysClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
-            remindersClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
-            widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
-          ],
-        );
-        addTearDown(container.dispose);
-
-        final controller = container.read(widgetSyncControllerProvider);
-
-        // Attempt #1: native bridge returns false -> digest must NOT be cached.
-        await controller.syncNow();
-        expect(fakeBridge.snapshotSyncs, hasLength(1));
-        expect(fakeBridge.liveActivitySyncs, hasLength(1));
-
-        // Attempt #2: native bridge now succeeds -> identical payload IS resent!
-        fakeBridge
-          ..nextSyncSnapshotResult = true
-          ..nextSyncLiveActivityResult = true;
-        await controller.syncNow();
-        expect(
-          fakeBridge.snapshotSyncs,
-          hasLength(2),
-          reason: 'Must retry identical snapshot after failed attempt #1',
-        );
-        expect(
-          fakeBridge.liveActivitySyncs,
-          hasLength(2),
-          reason: 'Must retry identical live activity after failed attempt #1',
-        );
-
-        // Attempt #3: nothing changed and attempt #2 succeeded -> deduplicated!
-        await controller.syncNow();
-        expect(fakeBridge.snapshotSyncs, hasLength(2));
-        expect(fakeBridge.liveActivitySyncs, hasLength(2));
-
-        // Attempt #4: force: true (e.g. AppLifecycleState.resumed) -> resends to heal disk!
-        controller.scheduleCoalescedMicrotaskSync(
-          consumeNativeState: true,
-          force: true,
-        );
-        await pumpEventQueue();
-        expect(fakeBridge.snapshotSyncs, hasLength(3));
-      },
-    );
-
-    test(
-      'defaultWidgetJourneyIdProvider and defaultWidgetSquadIdProvider use .v2 keys '
-      'and one-time delete legacy v1 keys so old values never pin silently',
+      'WidgetPrefs.clearLegacyDefaultSelectionKeys one-time deletes both v1 and v2 '
+      'default widget selection keys so old values never pin silently',
       () async {
         final prefs = await testPrefs();
         await prefs.setString('widgets.defaultJourneyId', 'legacy-pinned-j1');
         await prefs.setString('widgets.defaultSquadId', 'legacy-pinned-s1');
+        await prefs.setString('widgets.defaultJourneyId.v2', 'legacy-v2-j1');
+        await prefs.setString('widgets.defaultSquadId.v2', 'legacy-v2-s1');
 
         expect(WidgetPrefs.defaultJourneyId, 'widgets.defaultJourneyId.v2');
         expect(WidgetPrefs.defaultSquadId, 'widgets.defaultSquadId.v2');
 
-        final container = ProviderContainer(
-          overrides: [
-            sharedPreferencesProvider.overrideWithValue(prefs),
-          ],
-        );
-        addTearDown(container.dispose);
-
-        // Reading the providers must return null (Automatic) and delete the legacy v1 keys.
-        expect(container.read(defaultWidgetJourneyIdProvider), isNull);
-        expect(container.read(defaultWidgetSquadIdProvider), isNull);
-        await pumpEventQueue();
+        await WidgetPrefs.clearLegacyDefaultSelectionKeys(prefs);
 
         expect(prefs.containsKey('widgets.defaultJourneyId'), isFalse);
         expect(prefs.containsKey('widgets.defaultSquadId'), isFalse);
-
-        // Setting a new v2 selection persists under the .v2 keys and clears on 'auto' / null.
-        await container
-            .read(defaultWidgetJourneyIdProvider.notifier)
-            .set('j-v2-selected');
-        await container
-            .read(defaultWidgetSquadIdProvider.notifier)
-            .set('s-v2-selected');
-        expect(
-          prefs.getString('widgets.defaultJourneyId.v2'),
-          'j-v2-selected',
-        );
-        expect(
-          prefs.getString('widgets.defaultSquadId.v2'),
-          's-v2-selected',
-        );
-
-        await container
-            .read(defaultWidgetJourneyIdProvider.notifier)
-            .set('auto');
-        await container.read(defaultWidgetSquadIdProvider.notifier).set(null);
         expect(prefs.containsKey('widgets.defaultJourneyId.v2'), isFalse);
         expect(prefs.containsKey('widgets.defaultSquadId.v2'), isFalse);
       },

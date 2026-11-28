@@ -34,6 +34,7 @@ import '../../../share_card/domain/share_card_content.dart'
 import '../../../sharing/data/sharing_providers.dart' show shareStateProvider;
 import '../../data/journeys_providers.dart';
 import '../../domain/journey_progress.dart';
+import '../../domain/journey_title.dart';
 import '../../domain/wrapped_story.dart';
 import '../../journeys_paths.dart';
 import '../../l10n/generated/journeys_localizations.dart';
@@ -317,82 +318,91 @@ class _WrappedBodyState extends State<_WrappedBody>
             key: const ValueKey('journey-wrapped'),
             padTop: 0,
             scroll: false,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                UiBackHeader(
-                  // U4: the arrow steps back a page; only the close button
-                  // leaves the screen.
-                  onBack: () => _page > 0
-                      ? _move(-1, pages.length)
-                      : _close(context, j.id),
-                  backLabel: l10n.journeys_back,
-                  title: l10n.journeys_wrapped_title,
-                  bordered: false,
-                  trailing: UiIconButton(
-                    key: const ValueKey('wrapped-close'),
-                    glyph: const OurneyIcon(
-                      name: 'close',
-                      size: 22,
-                      flat: true,
+            child: Semantics(
+              namesRoute: true,
+              scopesRoute: true,
+              label: l10n.journeys_wrapped_title,
+              container: true,
+              explicitChildNodes: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  UiBackHeader(
+                    // U4: the arrow steps back a page; only the close button
+                    // leaves the screen.
+                    onBack: () => _page > 0
+                        ? _move(-1, pages.length)
+                        : _close(context, j.id),
+                    backLabel: l10n.journeys_back,
+                    title: null,
+                    bordered: false,
+                    trailing: UiIconButton(
+                      key: const ValueKey('wrapped-close'),
+                      glyph: const OurneyIcon(
+                        name: 'close',
+                        size: 22,
+                        flat: true,
+                      ),
+                      label: l10n.journeys_wrapped_close,
+                      onPressed: () => _close(context, j.id),
                     ),
-                    label: l10n.journeys_wrapped_close,
-                    onPressed: () => _close(context, j.id),
                   ),
-                ),
-                _Segments(
-                  // One extra segment for the summary page (U4).
-                  count: pages.length + 1,
-                  selected: _page.clamp(0, pages.length),
-                  progress: _segmentCtrl,
-                  animateActive: !reduced && !summary,
-                  labelOf: l10n.journeys_wrapped_step,
-                  onTap: (i) => _jumpTo(i, pages.length),
-                ),
-                const SizedBox(height: UiSpace.lg),
-                Expanded(
-                  child: UiDirectionalSwitcher(
-                    step: _page,
-                    direction: _direction,
-                    duration: UiMotion.medium,
-                    alignment: Alignment.center,
-                    child: summary
-                        ? _Summary(
-                            key: const ValueKey('wrapped-page-summary'),
-                            journey: j,
-                            skin: skin,
-                            stats: widget.stats,
-                            ratio: _ratio,
-                            hideKg: _hideKg,
-                            hideBrand: _hideBrand,
-                            onRatio: (r) {
-                              if (_ratio != r) {
-                                unawaited(UiHaptics.selection());
-                                setState(() => _ratio = r);
-                              }
-                            },
-                            onHideKg: () => setState(() => _hideKg = !_hideKg),
-                            onHideBrand: (v) => setState(() => _hideBrand = v),
-                          )
-                        : _Story(
-                            key: ValueKey('wrapped-page-$_page'),
-                            skin: skin,
-                            stats: widget.stats,
-                            page: _page,
-                            headline: pages[_page],
-                            footnote:
-                                skin == PersonaSkinId.memoryCollectors &&
-                                    _page == pages.length - 1
-                                ? l10n.journeys_wrapped_memoryEnd
-                                : null,
-                            color: ui.ink,
-                            onTapSide: (forward) =>
-                                _move(forward ? 1 : -1, pages.length),
-                            onHoldChanged: _setHolding,
-                          ),
+                  _Segments(
+                    // One extra segment for the summary page (U4).
+                    count: pages.length + 1,
+                    selected: _page.clamp(0, pages.length),
+                    progress: _segmentCtrl,
+                    animateActive: !reduced && !summary,
+                    labelOf: l10n.journeys_wrapped_step,
+                    onTap: (i) => _jumpTo(i, pages.length),
                   ),
-                ),
-              ],
+                  const SizedBox(height: UiSpace.lg),
+                  Expanded(
+                    child: UiDirectionalSwitcher(
+                      step: _page,
+                      direction: _direction,
+                      duration: UiMotion.medium,
+                      alignment: Alignment.center,
+                      child: summary
+                          ? _Summary(
+                              key: const ValueKey('wrapped-page-summary'),
+                              journey: j,
+                              skin: skin,
+                              stats: widget.stats,
+                              ratio: _ratio,
+                              hideKg: _hideKg,
+                              hideBrand: _hideBrand,
+                              onRatio: (r) {
+                                if (_ratio != r) {
+                                  unawaited(UiHaptics.selection());
+                                  setState(() => _ratio = r);
+                                }
+                              },
+                              onHideKg: () =>
+                                  setState(() => _hideKg = !_hideKg),
+                              onHideBrand: (v) =>
+                                  setState(() => _hideBrand = v),
+                            )
+                          : _Story(
+                              key: ValueKey('wrapped-page-$_page'),
+                              skin: skin,
+                              stats: widget.stats,
+                              page: _page,
+                              headline: pages[_page],
+                              footnote:
+                                  skin == PersonaSkinId.memoryCollectors &&
+                                      _page == pages.length - 1
+                                  ? l10n.journeys_wrapped_memoryEnd
+                                  : null,
+                              color: ui.ink,
+                              onTapSide: (forward) =>
+                                  _move(forward ? 1 : -1, pages.length),
+                              onHoldChanged: _setHolding,
+                            ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -784,6 +794,7 @@ class _SummaryState extends ConsumerState<_Summary> {
       }
     }
 
+    final summaryTitle = wrappedSummaryTitle(l10n, journey, skin, stats);
     return SingleChildScrollView(
       key: const ValueKey('wrapped-summary'),
       child: Column(
@@ -869,7 +880,9 @@ class _SummaryState extends ConsumerState<_Summary> {
                                 ),
                               ),
                               Text(
-                                wrappedSummaryTitle(l10n, journey, skin, stats),
+                                skin == PersonaSkinId.memoryCollectors
+                                    ? keepNumberWithUnit(summaryTitle)
+                                    : summaryTitle,
                                 key: const ValueKey('wrapped-summary-title'),
                                 textAlign: TextAlign.center,
                                 maxLines: 3,
