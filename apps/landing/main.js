@@ -201,11 +201,11 @@
       footer_support: 'hỗ trợ',
       doc_home: 'về trang chủ',
       doc_privacy_title: 'ourney · chính sách riêng tư',
-      doc_privacy_desc: 'Chính sách riêng tư của Ourney: chúng mình lưu gì, ai thấy được, và cách xoá dữ liệu.',
+      doc_privacy_desc: 'Ourney lưu dữ liệu gì, ai xem được và cách xóa tài khoản cùng dữ liệu của bạn.',
       doc_terms_title: 'ourney · điều khoản sử dụng',
-      doc_terms_desc: 'Điều khoản sử dụng Ourney, gồm quy định không dung thứ nội dung phản cảm, báo cáo và chặn.',
+      doc_terms_desc: 'Điều khoản sử dụng Ourney: nội dung không được đăng, quyền với nội dung của bạn, báo cáo và chặn.',
       doc_support_title: 'ourney · hỗ trợ',
-      doc_support_desc: 'Cần giúp đỡ với Ourney? Viết cho support@ourney.tech. Báo cáo nội dung được xem xét trong vòng 24 giờ.'
+      doc_support_desc: 'Liên hệ Ourney qua support@ourney.tech. Báo cáo nội dung được xem xét trong vòng 24 giờ.'
     },
     en: {
       title: 'Ourney · One photo at a time, at your own pace',
@@ -400,11 +400,11 @@
       footer_support: 'support',
       doc_home: 'back to home',
       doc_privacy_title: 'ourney · privacy policy',
-      doc_privacy_desc: 'Ourney privacy policy: what we store, who can see it, and how to delete your data.',
+      doc_privacy_desc: 'What Ourney stores, who can see it, and how to delete your account and data.',
       doc_terms_title: 'ourney · terms of use',
-      doc_terms_desc: 'Ourney terms of use, including zero tolerance for objectionable content, reporting and blocking.',
+      doc_terms_desc: 'Ourney terms of use: what you may not post, your rights to your content, reporting and blocking.',
       doc_support_title: 'ourney · support',
-      doc_support_desc: 'Need help with Ourney? Write to support@ourney.tech. Content reports are reviewed within 24 hours.'
+      doc_support_desc: 'Contact Ourney at support@ourney.tech. Content reports are reviewed within 24 hours.'
     }
   };
 
@@ -1491,6 +1491,10 @@
     document.querySelectorAll('[data-home-link]').forEach((el) => {
       el.setAttribute('href', curLang === 'en' ? '/?lang=en' : '/');
     });
+    document.querySelectorAll('[data-doc-link]').forEach((el) => {
+      const base = el.getAttribute('href').split('?')[0];
+      el.setAttribute('href', curLang === 'en' ? base + '?lang=en' : base);
+    });
 
     renderHeroCycle(curHeroCycle);
     applyJourneyTab(curTab, false, false);
@@ -1512,6 +1516,37 @@
       } catch (e) {}
     }
   };
+
+  /* Support page: copy the support address (the button stays hidden without JS) */
+  document.querySelectorAll('[data-copy-email]').forEach((btn) => {
+    const card = btn.closest('.doc-contact');
+    const ok = card && card.querySelector('[data-copy-ok]');
+    const fail = card && card.querySelector('[data-copy-fail]');
+    const email = card && card.querySelector('.doc-email');
+    let hideTimer = 0;
+    const show = (good) => {
+      clearTimeout(hideTimer);
+      if (ok) ok.hidden = !good;
+      if (fail) fail.hidden = good;
+      if (good) hideTimer = setTimeout(() => { if (ok) ok.hidden = true; }, 4000);
+    };
+    btn.hidden = false;
+    btn.addEventListener('click', () => {
+      const text = btn.dataset.copyEmail;
+      const done = () => show(true);
+      const selectFallback = () => {
+        try {
+          if (email) getSelection().selectAllChildren(email);
+        } catch (e) {}
+        show(false);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, selectFallback);
+      } else {
+        selectFallback();
+      }
+    });
+  });
 
   const langToggle = $('lang-toggle');
   if (langToggle) {
