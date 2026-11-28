@@ -116,7 +116,7 @@ export function confirmationEmail(lang: Lang): { subject: string; text: string; 
         "Thanks for signing up to try Ourney early. You're on the beta list for iOS and Android.",
         "We'll email you the invite as soon as the first beta wave opens. Until then, there's nothing else you need to do.",
       ],
-      sign: "One photo a day. Keep the streak. Go together.",
+      sign: "One photo at a time, at your own pace",
       team: "The Ourney team",
       foot: "You got this email because this address was entered on ourney.tech. If it wasn't you, just ignore it and we won't email you again.",
     }
@@ -127,7 +127,7 @@ export function confirmationEmail(lang: Lang): { subject: string; text: string; 
         "Cảm ơn bạn đã đăng ký dùng trước Ourney. Tụi mình đã ghi tên bạn vào danh sách beta cho iOS và Android.",
         "Khi đợt beta đầu tiên mở, tụi mình sẽ gửi lời mời qua email này. Từ giờ tới lúc đó bạn không cần làm gì thêm.",
       ],
-      sign: "Chụp một tấm. Giữ một chuỗi. Đi cùng nhau.",
+      sign: "Góp tấm hình, giữ nhịp mình",
       team: "Đội ngũ Ourney",
       foot: "Bạn nhận được email này vì địa chỉ này vừa được nhập trên ourney.tech. Nếu không phải bạn, cứ bỏ qua, tụi mình sẽ không gửi thêm.",
     };

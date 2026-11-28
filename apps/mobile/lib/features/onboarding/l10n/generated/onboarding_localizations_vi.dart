@@ -120,10 +120,10 @@ class OnboardingL10nVi extends OnboardingL10n {
   String get onboarding_quizStart => 'Bắt đầu thôi';
 
   @override
-  String get onboarding_splashTagline1 => 'chụp một tấm.';
+  String get onboarding_splashTagline1 => 'Góp tấm hình,';
 
   @override
-  String get onboarding_splashTagline2 => 'giữ một chuỗi.';
+  String get onboarding_splashTagline2 => 'giữ nhịp mình';
 
   @override
   String get onboarding_splashTagline3 => 'đi cùng nhau.';

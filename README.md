@@ -2,7 +2,7 @@
 
 # Ourney
 
-**chụp một tấm. giữ một chuỗi. đi cùng nhau.**
+**Góp tấm hình, giữ nhịp mình**
 
 Nhật ký ảnh hằng ngày cho những việc bạn muốn làm đều — một mình, cùng nhóm bạn nhỏ hoặc chỉ hai người.
 
