@@ -1682,7 +1682,6 @@
   "journeys_dayEditCaption": "Edit caption",
   "journeys_captionSheetTitle": "Caption",
   "journeys_captionSave": "Save",
-  "journeys_captionClear": "Keep photo only",
   "journeys_captionContentPolicy": "Some words in this caption aren't allowed. Change a few words, or keep just the photo.",
   "journeys_captionOffline": "You need a connection to edit this caption. Your text is still here.",
   "journeys_captionPublicHint": "The caption will show on your share page.",

@@ -3704,12 +3704,6 @@ abstract class JourneysL10n {
   /// **'Lưu'**
   String get journeys_captionSave;
 
-  /// No description provided for @journeys_captionClear.
-  ///
-  /// In vi, this message translates to:
-  /// **'Chỉ giữ ảnh'**
-  String get journeys_captionClear;
-
   /// No description provided for @journeys_captionContentPolicy.
   ///
   /// In vi, this message translates to:

@@ -256,8 +256,6 @@ class DayCaptionSlot extends StatelessWidget {
             Text(
               caption!,
               key: const ValueKey('journey-day-caption'),
-              maxLines: 6,
-              overflow: TextOverflow.ellipsis,
               style: UiText.body(size: 16, height: 1.45, color: context.ui.ink),
             ),
           if (onEdit != null)

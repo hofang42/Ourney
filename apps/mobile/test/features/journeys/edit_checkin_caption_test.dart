@@ -116,7 +116,53 @@ void main() {
     }, timeout: viewerTimeout);
   }
 
-  for (final code in [OurneyErrorCode.ended, OurneyErrorCode.forbidden]) {
+  testWidgets('a caption with many lines is shown in full', (tester) async {
+    final lines = [for (var i = 1; i <= 10; i++) 'Dòng $i'].join('\n');
+    final photo = viewerPhoto(caption: lines);
+    await pumpDayViewer(tester, photos: [photo], size: const Size(360, 780));
+    final text = tester.widget<Text>(key('journey-day-caption'));
+    expect(text.data, lines);
+    expect(text.maxLines, isNull);
+    expect(text.overflow, isNull);
+    expect(tester.takeException(), isNull);
+  }, timeout: viewerTimeout);
+
+  testWidgets('no-op saves close without writing', (tester) async {
+    final captioned = viewerPhoto(caption: 'Before');
+    final repo = CaptionRepository([captioned]);
+    await pumpDayViewer(tester, photos: [captioned], repository: repo);
+    await tap(tester, 'journey-day-edit-caption');
+    await tester.enterText(key('edit-checkin-caption-field'), '  Before  ');
+    await tap(tester, 'edit-checkin-caption-save');
+    expect(key('edit-checkin-caption-sheet'), findsNothing);
+    expect(repo.captions, isEmpty);
+    expect(tester.takeException(), isNull);
+  }, timeout: viewerTimeout);
+
+  testWidgets('keep photo only on a photo that never had a caption is a no-op', (
+    tester,
+  ) async {
+    final photo = viewerPhoto();
+    final repo = CaptionRepository([photo]);
+    await pumpDayViewer(tester, photos: [photo], repository: repo);
+    await tap(tester, 'journey-day-add-caption');
+    await tester.enterText(key('edit-checkin-caption-field'), 'Draft');
+    await tester.pump();
+    await tap(tester, 'edit-checkin-caption-clear');
+    expect(key('edit-checkin-caption-sheet'), findsNothing);
+    await tap(tester, 'journey-day-add-caption');
+    await tap(tester, 'edit-checkin-caption-save');
+    expect(key('edit-checkin-caption-sheet'), findsNothing);
+    expect(repo.captions, isEmpty);
+    expect(tester.takeException(), isNull);
+  }, timeout: viewerTimeout);
+
+  for (final code in [
+    OurneyErrorCode.ended,
+    OurneyErrorCode.forbidden,
+    OurneyErrorCode.notFound,
+    OurneyErrorCode.invalidCapturedAt,
+  ]) {
     testWidgets('$code closes a stale editor and keeps the viewer', (
       tester,
     ) async {

@@ -2174,9 +2174,6 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_captionSave => 'Lưu';
 
   @override
-  String get journeys_captionClear => 'Chỉ giữ ảnh';
-
-  @override
   String get journeys_captionContentPolicy =>
       'Chú thích này có từ chưa phù hợp. Bạn sửa lại vài chữ, hoặc chỉ giữ ảnh.';
 

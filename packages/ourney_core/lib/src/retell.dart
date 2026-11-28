@@ -25,7 +25,12 @@ bool canEditCheckInCaption({
   if (j.status == JourneyStatus.active) {
     return end == null || !c.localDate.isAfter(end);
   }
-  return j.origin == JourneyOrigin.imported && j.ownerId == me && end != null;
+  // The server checks an ended retold journey's photo against its date range.
+  return j.origin == JourneyOrigin.imported &&
+      j.ownerId == me &&
+      end != null &&
+      !c.localDate.isBefore(j.startDate) &&
+      !c.localDate.isAfter(end);
 }
 
 /// Retold journeys count only photos taken in the app toward streaks (S12).

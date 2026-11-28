@@ -203,6 +203,21 @@ class Outbox {
           ))
           .go();
 
+  /// Whether [entityKey] has a live (not dead) item of [kind].
+  Future<bool> hasLive(String entityKey, OutboxKind kind) async {
+    final row =
+        await (_db.select(_db.uploadQueue)
+              ..where(
+                (t) =>
+                    t.entityKey.equals(entityKey) &
+                    t.kind.equals(kind.wire) &
+                    t.dead.equals(false),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    return row != null;
+  }
+
   /// Clears the delay of the live items of [entityKey].
   Future<void> makeDue(String entityKey) =>
       (_db.update(

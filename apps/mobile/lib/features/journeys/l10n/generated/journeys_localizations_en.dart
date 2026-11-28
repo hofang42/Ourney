@@ -2409,9 +2409,6 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_captionSave => 'Save';
 
   @override
-  String get journeys_captionClear => 'Keep photo only';
-
-  @override
   String get journeys_captionContentPolicy =>
       'Some words in this caption aren\'t allowed. Change a few words, or keep just the photo.';
 

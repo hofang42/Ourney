@@ -201,12 +201,18 @@ class DataCheckInRepository implements CheckInRepository {
           if (current.uploaded) return null;
           final updated = await _writeCaption(checkInId, me, value);
           final key = checkInKey(checkInId);
-          await queue.cancel(
-            key,
-            kind: OutboxKind.upsertCheckIn,
-            includeDead: true,
-          );
-          await queue.enqueue(OutboxKind.upsertCheckIn, key, {'id': checkInId});
+          // A live upload reads the row when it runs, so it keeps its place
+          // in the FIFO queue; only a dead or missing one is queued again.
+          if (!await queue.hasLive(key, OutboxKind.upsertCheckIn)) {
+            await queue.cancel(
+              key,
+              kind: OutboxKind.upsertCheckIn,
+              includeDead: true,
+            );
+            await queue.enqueue(OutboxKind.upsertCheckIn, key, {
+              'id': checkInId,
+            });
+          }
           return updated;
         }),
       );

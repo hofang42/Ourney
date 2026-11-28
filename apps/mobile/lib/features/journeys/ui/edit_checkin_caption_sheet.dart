@@ -63,6 +63,11 @@ class _EditCheckInCaptionSheetState
 
   Future<void> _save({bool clear = false}) async {
     if (_saving) return;
+    final next = clear ? null : normalizeCaption(_controller.text);
+    if (next == normalizeCaption(widget.checkIn.caption)) {
+      Navigator.of(context).pop();
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;
@@ -77,7 +82,11 @@ class _EditCheckInCaptionSheetState
       if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
       final cause = rootError(error);
       final code = cause is OurneyException ? cause.error : null;
-      if (code == OurneyErrorCode.ended || code == OurneyErrorCode.forbidden) {
+      // Errors the user can't fix by editing the text close the sheet.
+      if (code == OurneyErrorCode.ended ||
+          code == OurneyErrorCode.forbidden ||
+          code == OurneyErrorCode.notFound ||
+          code == OurneyErrorCode.invalidCapturedAt) {
         showUiToast(context, AppLocalizations.of(context).common_errorGeneric);
         Navigator.of(context).pop();
         return;
@@ -196,7 +205,7 @@ class _EditCheckInCaptionSheetState
               normalizeCaption(_controller.text) != null)
             UiButton.ghost(
               key: const ValueKey('edit-checkin-caption-clear'),
-              label: l10n.journeys_captionClear,
+              label: l10n.journeys_keepPhotoOnly,
               onPressed: _saving ? null : () => _save(clear: true),
             ),
         ],

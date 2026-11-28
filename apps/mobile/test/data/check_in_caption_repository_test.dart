@@ -140,20 +140,27 @@ void main() {
       throwsA(isA<OurneyException>().having((e) => e.error, 'error', code));
 
   test(
-    'pending edit replaces the queued write and uploads the new caption',
+    'pending edit keeps the live queued write in place and uploads the new '
+    'caption',
     () async {
       useRemote(remote);
       await seed();
       queue.setPaused(true);
       final originalId = await enqueue();
+      // Queued after the upload and dependent on it (a reaction on the row).
+      final laterId = await queue.enqueue(
+        OutboxKind.react,
+        'reaction:$_photoId',
+        {'checkInId': _photoId},
+      );
 
       final saved = await repository.updateCaption(_photoId, '  Bữa tối  ');
 
       expect(saved.caption, 'Bữa tối');
       expect(saved.uploaded, isFalse);
-      final replacement = (await queue.pendingRows()).single;
-      expect(replacement.id, isNot(originalId));
-      expect(replacement.entityKey, checkInKey(_photoId));
+      final rows = await queue.pendingRows();
+      expect([for (final r in rows) r.id], [originalId, laterId]);
+      await queue.cancel('reaction:$_photoId');
       queue.setPaused(false);
       await queue.flush();
       expect(pushedCaption(), 'Bữa tối');
@@ -178,6 +185,22 @@ void main() {
 
       expect(await queue.watchDead().first, isEmpty);
       expect(pushedCaption(), 'Revised');
+    },
+    timeout: _timeout,
+  );
+
+  test(
+    'a pending row with no queued write gets one',
+    () async {
+      useRemote(remote);
+      await seed();
+      queue.setPaused(true);
+
+      await repository.updateCaption(_photoId, 'Revised');
+
+      final row = (await queue.pendingRows()).single;
+      expect(row.entityKey, checkInKey(_photoId));
+      expect(row.kind, OutboxKind.upsertCheckIn.wire);
     },
     timeout: _timeout,
   );

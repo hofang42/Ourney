@@ -434,7 +434,7 @@ class OurneyException implements Exception {
 /// A profile write failed because another account owns the requested handle.
 class ProfileUsernameTakenException extends OurneyException {
   const ProfileUsernameTakenException([String? detail])
-      : super(OurneyErrorCode.invalid, detail);
+    : super(OurneyErrorCode.invalid, detail);
 }
 
 class GroupException extends OurneyException {

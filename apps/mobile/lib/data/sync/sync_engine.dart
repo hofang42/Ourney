@@ -720,13 +720,27 @@ class SyncEngine {
       // A pending caption edit can outlive a partially committed legacy upload.
       // Replay only the caption to preserve the attachment's immutable path.
       check();
-      final updated = await remote.update(
-        'check_ins',
-        {'caption': row.caption},
-        match: {'id': id},
-      );
-      if (updated.isEmpty) {
-        throw const OurneyException(OurneyErrorCode.forbidden);
+      try {
+        final updated = await remote.update(
+          'check_ins',
+          {'caption': row.caption},
+          match: {'id': id},
+        );
+        if (updated.isEmpty) {
+          throw const OurneyException(OurneyErrorCode.forbidden);
+        }
+      } on OurneyException catch (e) {
+        // A refused edit (policy, or moderated meanwhile) must not kill the
+        // rest of the replay; the edit is dropped and the server caption kept.
+        if (e.error != OurneyErrorCode.contentPolicy &&
+            e.error != OurneyErrorCode.forbidden) {
+          rethrow;
+        }
+        debugPrint('sync: caption replay for $id refused (${e.error.name})');
+        check();
+        await (db.update(db.checkIns)..where((t) => t.id.equals(id))).write(
+          CheckInsCompanion(caption: Value(committed['caption'] as String?)),
+        );
       }
     }
 

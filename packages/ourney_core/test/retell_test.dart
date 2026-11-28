@@ -149,6 +149,14 @@ void main() {
           isFalse,
         );
       });
+
+      test('${status.name}: imported photo must fall in the journey range', () {
+        final retold = journey(status: status, durationDays: 3);
+        expect(canEdit(retold, photo(19), member()), isFalse);
+        expect(canEdit(retold, photo(20), member()), isTrue);
+        expect(canEdit(retold, photo(22), member()), isTrue);
+        expect(canEdit(retold, photo(23), member()), isFalse);
+      });
     }
   });
 }
