@@ -142,7 +142,7 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
     final capabilities = ref.watch(widgetCapabilitiesProvider).asData?.value;
     final configurableWidgets = capabilities?.configurableWidgets == true;
     final showJourneyPicker =
-        isIOS && capabilities?.configurableWidgets == false;
+        isIOS && capabilities?.widgetConfigMode == 'static';
     final defaultJourneyId = showJourneyPicker
         ? ref.watch(defaultWidgetJourneyIdProvider)
         : null;

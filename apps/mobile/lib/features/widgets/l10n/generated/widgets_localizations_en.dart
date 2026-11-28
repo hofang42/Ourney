@@ -231,7 +231,7 @@ class WidgetsL10nEn extends WidgetsL10n {
 
   @override
   String get widgets_autoTodaySubtitle =>
-      'Prioritizes your next unchecked journey today';
+      'Prioritizes the journey that still needs today\'s check-in';
 
   @override
   String get widgets_autoSquadSubtitle =>

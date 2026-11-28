@@ -568,7 +568,7 @@ abstract final class WidgetSnapshotBuilder {
     String? currentUserId,
     String? dismissedWindowKey,
     TargetPlatform? platform,
-    bool? configurableWidgets,
+    String? widgetConfigMode,
     String? defaultJourneyId,
     String? defaultSquadId,
   }) {
@@ -1028,7 +1028,7 @@ abstract final class WidgetSnapshotBuilder {
     );
 
     final useGlobalDefaults =
-        platform == TargetPlatform.iOS && configurableWidgets == false;
+        platform == TargetPlatform.iOS && widgetConfigMode == 'static';
     final journeyId = defaultJourneyId?.trim();
     final squadId = defaultSquadId?.trim();
 

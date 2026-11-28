@@ -54,6 +54,7 @@ class WidgetCapabilities {
     required this.promotedLiveUpdates,
     required this.appGroup,
     this.configurableWidgets = false,
+    this.widgetConfigMode,
   });
 
   static const unsupported = WidgetCapabilities(
@@ -71,6 +72,9 @@ class WidgetCapabilities {
       promotedLiveUpdates: raw['promotedLiveUpdates'] == true,
       appGroup: (raw['appGroupAvailable'] ?? raw['appGroup']) == true,
       configurableWidgets: raw['configurableWidgets'] == true,
+      widgetConfigMode: raw['widgetConfigMode'] is String
+          ? raw['widgetConfigMode'] as String
+          : null,
     );
   }
 
@@ -79,6 +83,7 @@ class WidgetCapabilities {
   final bool promotedLiveUpdates;
   final bool appGroup;
   final bool configurableWidgets;
+  final String? widgetConfigMode;
 
   @override
   bool operator ==(Object other) =>
@@ -87,7 +92,8 @@ class WidgetCapabilities {
       other.liveActivity == liveActivity &&
       other.promotedLiveUpdates == promotedLiveUpdates &&
       other.appGroup == appGroup &&
-      other.configurableWidgets == configurableWidgets;
+      other.configurableWidgets == configurableWidgets &&
+      other.widgetConfigMode == widgetConfigMode;
 
   @override
   int get hashCode => Object.hash(
@@ -96,6 +102,7 @@ class WidgetCapabilities {
     promotedLiveUpdates,
     appGroup,
     configurableWidgets,
+    widgetConfigMode,
   );
 }
 

@@ -230,7 +230,8 @@ class WidgetsL10nVi extends WidgetsL10n {
   String get widgets_autoOptionTitle => 'Tự động';
 
   @override
-  String get widgets_autoTodaySubtitle => 'Ưu tiên hành trình cần chụp hôm nay';
+  String get widgets_autoTodaySubtitle =>
+      'Ưu tiên hành trình cần check-in hôm nay';
 
   @override
   String get widgets_autoSquadSubtitle =>
@@ -241,5 +242,5 @@ class WidgetsL10nVi extends WidgetsL10n {
 
   @override
   String get widgets_setupStep3BodyJourneyPicker =>
-      'Muốn đổi hành trình, chọn ở mục Hành trình trên tiện ích bên dưới.';
+      'Muốn đổi hành trình, chọn ở mục Đổi hành trình trên tiện ích bên dưới.';
 }

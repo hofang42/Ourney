@@ -107,7 +107,7 @@ void main() {
 
     WidgetSnapshot build({
       TargetPlatform platform = TargetPlatform.iOS,
-      bool? configurable = false,
+      String? mode = 'static',
       String journeyId = ' solo ',
       String squadId = ' squad ',
     }) => WidgetSnapshotBuilder.build(
@@ -115,7 +115,7 @@ void main() {
       authStatus: AuthStatus.signedIn,
       journeyInputs: journeys,
       platform: platform,
-      configurableWidgets: configurable,
+      widgetConfigMode: mode,
       defaultJourneyId: journeyId,
       defaultSquadId: squadId,
     );
@@ -131,8 +131,10 @@ void main() {
       () {
         for (final snapshot in [
           build(platform: TargetPlatform.android),
-          build(configurable: true),
-          build(configurable: null),
+          build(mode: 'configurable'),
+          build(mode: null),
+          build(mode: 'auto'),
+          build(mode: 'unknown'),
         ]) {
           expect(snapshot.defaultJourneyId, isNull);
           expect(snapshot.defaultSquadId, isNull);

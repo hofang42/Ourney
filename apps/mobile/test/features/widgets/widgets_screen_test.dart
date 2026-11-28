@@ -421,6 +421,7 @@ void main() {
                 'widgets': true,
                 'appGroup': true,
                 'configurableWidgets': configurable,
+                'widgetConfigMode': configurable ? 'configurable' : 'static',
               }),
             );
             final c = await pumpOurneyApp(
@@ -436,7 +437,7 @@ void main() {
               brightness,
             );
             final staticCopy = locale == 'vi'
-                ? 'Muốn đổi hành trình, chọn ở mục Hành trình trên tiện ích bên dưới.'
+                ? 'Muốn đổi hành trình, chọn ở mục Đổi hành trình trên tiện ích bên dưới.'
                 : 'To switch journeys, choose one in the widget journey section below.';
             final heading = locale == 'vi'
                 ? 'đổi hành trình trên tiện ích'
@@ -467,6 +468,39 @@ void main() {
     }
   }
 
+  for (final (index, capabilities) in [
+    WidgetCapabilities.unsupported,
+    WidgetCapabilities.fromMap({'widgets': true, 'configurableWidgets': false}),
+    WidgetCapabilities.fromMap({
+      'widgets': true,
+      'widgetConfigMode': 'unknown',
+    }),
+    WidgetCapabilities.fromMap({'widgets': true, 'widgetConfigMode': 42}),
+  ].indexed) {
+    testWidgets(
+      'iOS hides the picker for unconfirmed static mode case $index',
+      (tester) async {
+        final c = await pumpOurneyApp(
+          tester,
+          overrides: [
+            widgetBridgeGatewayProvider.overrideWithValue(
+              FakeWidgetBridgeGateway(capabilities: capabilities),
+            ),
+          ],
+        );
+        await goTo(tester, c, AppRoutes.widgets);
+        expect(byKey('widgets-ios-picker-card'), findsNothing);
+        expect(
+          find.textContaining('choose one in the widget journey section'),
+          findsNothing,
+        );
+        expect(find.textContaining('chọn ở mục Đổi hành trình'), findsNothing);
+      },
+      variant: const TargetPlatformVariant({TargetPlatform.iOS}),
+      timeout: const Timeout(Duration(seconds: 30)),
+    );
+  }
+
   testWidgets('iOS leaves the picker hidden while capabilities load', (
     tester,
   ) async {
@@ -486,6 +520,7 @@ void main() {
         liveActivity: true,
         promotedLiveUpdates: false,
         appGroup: true,
+        widgetConfigMode: 'static',
       ),
     );
     await pumpAppFrames(tester);
@@ -501,6 +536,7 @@ void main() {
           liveActivity: true,
           promotedLiveUpdates: false,
           appGroup: true,
+          widgetConfigMode: 'static',
         ),
       );
       final journeys = FakeJourneyRepository(

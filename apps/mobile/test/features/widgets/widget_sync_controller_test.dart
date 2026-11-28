@@ -1119,13 +1119,15 @@ void main() {
       expect(fakeBridge.snapshotSyncs, hasLength(3));
     });
 
-    for (final (platform, configurable, expectedId) in [
-      (TargetPlatform.iOS, false, 'j1'),
-      (TargetPlatform.iOS, true, null),
-      (TargetPlatform.android, false, null),
+    for (final (platform, mode, expectedId) in [
+      (TargetPlatform.iOS, 'static', 'j1'),
+      (TargetPlatform.iOS, 'configurable', null),
+      (TargetPlatform.iOS, null, null),
+      (TargetPlatform.iOS, 'unknown', null),
+      (TargetPlatform.android, 'static', null),
     ]) {
       test(
-        'syncNow on ${platform.name} with configurableWidgets=$configurable '
+        'syncNow on ${platform.name} with widgetConfigMode=$mode '
         'preserves v2 preferences and publishes default ID $expectedId',
         () async {
           debugDefaultTargetPlatformOverride = platform;
@@ -1137,13 +1139,16 @@ void main() {
             'widgets.defaultSquadId.v2': 'legacy-squad',
           });
           final bridge = FakeWidgetBridgeGateway(
-            capabilities: WidgetCapabilities(
-              widgets: true,
-              liveActivity: true,
-              promotedLiveUpdates: false,
-              appGroup: true,
-              configurableWidgets: configurable,
-            ),
+            capabilities: mode == null
+                ? WidgetCapabilities.unsupported
+                : WidgetCapabilities(
+                    widgets: true,
+                    liveActivity: true,
+                    promotedLiveUpdates: false,
+                    appGroup: true,
+                    configurableWidgets: mode == 'configurable',
+                    widgetConfigMode: mode,
+                  ),
           );
           final container = ProviderContainer(
             overrides: [
@@ -1188,6 +1193,33 @@ void main() {
         timeout: const Timeout(Duration(seconds: 30)),
       );
     }
+
+    test('widgetConfigMode parses explicitly and defaults to unknown', () {
+      expect(
+        WidgetCapabilities.fromMap({'widgetConfigMode': 'static'})
+            .widgetConfigMode,
+        'static',
+      );
+      expect(
+        WidgetCapabilities.fromMap({'widgetConfigMode': 'configurable'})
+            .widgetConfigMode,
+        'configurable',
+      );
+      expect(
+        WidgetCapabilities.fromMap({'widgetConfigMode': 42}).widgetConfigMode,
+        isNull,
+      );
+      expect(
+        WidgetCapabilities.fromMap({'widgets': true}).widgetConfigMode,
+        isNull,
+      );
+      expect(WidgetCapabilities.unsupported.widgetConfigMode, isNull);
+      expect(WidgetCapabilities.fromMap(null), WidgetCapabilities.unsupported);
+      expect(
+        WidgetCapabilities.fromMap({'widgetConfigMode': 'static'}),
+        isNot(WidgetCapabilities.unsupported),
+      );
+    });
 
     test(
       'configurableWidgets defaults false when the native key is absent',

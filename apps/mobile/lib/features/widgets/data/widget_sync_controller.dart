@@ -331,7 +331,7 @@ class WidgetSyncController {
         currentUserId: currentUserId,
         dismissedWindowKey: dismissedWindowKey,
         platform: platform,
-        configurableWidgets: capabilities?.configurableWidgets,
+        widgetConfigMode: capabilities?.widgetConfigMode,
         defaultJourneyId: defaultJourneyId,
         defaultSquadId: defaultSquadId,
       );

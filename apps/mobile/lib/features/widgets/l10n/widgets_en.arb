@@ -63,7 +63,7 @@
   "widgets_pickerSheetSquadTitle": "Switch squad",
   "widgets_pickerSheetSubtitle": "Choose a shared journey for widgets of this type, or leave it on Automatic.",
   "widgets_autoOptionTitle": "Automatic",
-  "widgets_autoTodaySubtitle": "Prioritizes your next unchecked journey today",
+  "widgets_autoTodaySubtitle": "Prioritizes the journey that still needs today's check-in",
   "widgets_autoSquadSubtitle": "Shows your active Squad or Couple journey",
   "widgets_changeAction": "Switch",
   "widgets_setupStep3BodyJourneyPicker": "To switch journeys, choose one in the widget journey section below."
