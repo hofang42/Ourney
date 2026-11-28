@@ -1,0 +1,25 @@
+# Email Worker for support@ourney.tech: forwards every message to the owner's
+# inbox, then sends one auto-reply per sender per 24h through Resend.
+# Deploy steps: README.md.
+name = "ourney-support-autoreply"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+
+# Secrets (never commit them; set with `npx wrangler secret put <NAME>`):
+#   FORWARD_TO      the verified Email Routing destination (owner's inbox)
+#   RESEND_API_KEY  a Resend key with sending access for ourney.tech
+[vars]
+SUPPORT_ADDRESS = "support@ourney.tech"
+OWN_DOMAIN = "ourney.tech"
+REPLY_FROM = "Ourney Support <support@ourney.tech>"
+# Resend's free tier is 100 emails/day, shared with Auth OTP, waitlist and
+# moderation mail. Auto-replies stop for the day after this many.
+DAILY_REPLY_CAP = "30"
+
+[[kv_namespaces]]
+binding = "AUTOREPLY_KV"
+# Paste the id printed by `npx wrangler kv namespace create AUTOREPLY_KV`.
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+[observability]
+enabled = true
