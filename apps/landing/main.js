@@ -194,7 +194,18 @@
       nf_eyebrow: '404 · không tìm thấy trang',
       nf_h1: 'lạc đường một nhịp',
       nf_lede: 'Trang bạn mở không tồn tại hoặc đã đổi địa chỉ. Quay về trang chủ Ourney nhé.',
-      nf_cta: 'về trang chủ ourney'
+      nf_cta: 'về trang chủ ourney',
+      footer_legal_aria: 'Pháp lý và hỗ trợ',
+      footer_privacy_policy: 'chính sách riêng tư',
+      footer_terms: 'điều khoản',
+      footer_support: 'hỗ trợ',
+      doc_home: 'về trang chủ',
+      doc_privacy_title: 'ourney · chính sách riêng tư',
+      doc_privacy_desc: 'Ourney lưu dữ liệu gì, ai xem được và cách xóa tài khoản cùng dữ liệu của bạn.',
+      doc_terms_title: 'ourney · điều khoản sử dụng',
+      doc_terms_desc: 'Điều khoản sử dụng Ourney: nội dung không được đăng, quyền với nội dung của bạn, báo cáo và chặn.',
+      doc_support_title: 'ourney · hỗ trợ',
+      doc_support_desc: 'Liên hệ Ourney qua support@ourney.tech. Báo cáo nội dung được xem xét trong vòng 24 giờ.'
     },
     en: {
       title: 'Ourney · One photo at a time, at your own pace',
@@ -382,7 +393,18 @@
       nf_eyebrow: '404 · page not found',
       nf_h1: 'off the trail for a beat',
       nf_lede: 'The page you opened doesn’t exist or has moved. Head back to the Ourney homepage.',
-      nf_cta: 'back to ourney home'
+      nf_cta: 'back to ourney home',
+      footer_legal_aria: 'Legal and support',
+      footer_privacy_policy: 'privacy policy',
+      footer_terms: 'terms',
+      footer_support: 'support',
+      doc_home: 'back to home',
+      doc_privacy_title: 'ourney · privacy policy',
+      doc_privacy_desc: 'What Ourney stores, who can see it, and how to delete your account and data.',
+      doc_terms_title: 'ourney · terms of use',
+      doc_terms_desc: 'Ourney terms of use: what you may not post, your rights to your content, reporting and blocking.',
+      doc_support_title: 'ourney · support',
+      doc_support_desc: 'Contact Ourney at support@ourney.tech. Content reports are reviewed within 24 hours.'
     }
   };
 
@@ -507,7 +529,8 @@
     else if (saved === 'en' || saved === 'vi') curLang = saved;
   } catch (e) {}
 
-  const is404 = Boolean(document.querySelector('.notfound-stage'));
+  const docPage = document.body ? document.body.dataset.doc || '' : '';
+  const isSubPage = Boolean(document.querySelector('.notfound-stage')) || Boolean(docPage);
   let curTab = 0;
   let curHeroCycle = 0;
 
@@ -778,7 +801,7 @@
     markIntroSeen();
   };
 
-  if (!is404 && !root.classList.contains('intro-seen') && !isReducedMotion()) {
+  if (!isSubPage && !root.classList.contains('intro-seen') && !isReducedMotion()) {
     const skipEvents = ['wheel', 'touchmove', 'pointerdown', 'keydown'];
     const disarmSkip = () => {
       skipEvents.forEach((ev) => removeEventListener(ev, skipIntro));
@@ -792,7 +815,7 @@
     skipEvents.forEach((ev) => addEventListener(ev, skipIntro, { once: true, passive: true }));
     setTimeout(disarmSkip, 1100);
     setTimeout(settleHero, 2020);
-  } else if (!is404) {
+  } else if (!isSubPage) {
     setTimeout(settleHero, 420);
   }
 
@@ -839,7 +862,7 @@
     checkinCard.addEventListener('pointerleave', () => { heroHovered = false; });
   }
 
-  if (!is404 && !isReducedMotion()) {
+  if (!isSubPage && !isReducedMotion()) {
     setInterval(() => {
       if (isReducedMotion() || !heroVisible || heroHovered || document.hidden) return;
       curHeroCycle = (curHeroCycle + 1) % 3;
@@ -1426,10 +1449,12 @@
     const dict = COPY[curLang];
     root.lang = curLang;
     root.dataset.lang = curLang;
-    document.title = (is404 && dict.nf_title) ? dict.nf_title : dict.title;
+    const pageTitle = docPage ? dict['doc_' + docPage + '_title'] : (isSubPage && dict.nf_title);
+    const pageDesc = docPage ? dict['doc_' + docPage + '_desc'] : (isSubPage && dict.nf_lede);
+    document.title = pageTitle || dict.title;
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.content = (is404 && dict.nf_lede) ? dict.nf_lede : dict.meta_desc;
-    if (!is404) {
+    if (metaDesc) metaDesc.content = pageDesc || dict.meta_desc;
+    if (!isSubPage) {
       const setAttr = (id, attr, val) => { const el = $(id); if (el && val) el.setAttribute(attr, val); };
       setAttr('link-canonical', 'href', dict.og_url);
       setAttr('meta-og-url', 'content', dict.og_url);
@@ -1466,6 +1491,10 @@
     document.querySelectorAll('[data-home-link]').forEach((el) => {
       el.setAttribute('href', curLang === 'en' ? '/?lang=en' : '/');
     });
+    document.querySelectorAll('[data-doc-link]').forEach((el) => {
+      const base = el.getAttribute('href').split('?')[0];
+      el.setAttribute('href', curLang === 'en' ? base + '?lang=en' : base);
+    });
 
     renderHeroCycle(curHeroCycle);
     applyJourneyTab(curTab, false, false);
@@ -1487,6 +1516,37 @@
       } catch (e) {}
     }
   };
+
+  /* Support page: copy the support address (the button stays hidden without JS) */
+  document.querySelectorAll('[data-copy-email]').forEach((btn) => {
+    const card = btn.closest('.doc-contact');
+    const ok = card && card.querySelector('[data-copy-ok]');
+    const fail = card && card.querySelector('[data-copy-fail]');
+    const email = card && card.querySelector('.doc-email');
+    let hideTimer = 0;
+    const show = (good) => {
+      clearTimeout(hideTimer);
+      if (ok) ok.hidden = !good;
+      if (fail) fail.hidden = good;
+      if (good) hideTimer = setTimeout(() => { if (ok) ok.hidden = true; }, 4000);
+    };
+    btn.hidden = false;
+    btn.addEventListener('click', () => {
+      const text = btn.dataset.copyEmail;
+      const done = () => show(true);
+      const selectFallback = () => {
+        try {
+          if (email) getSelection().selectAllChildren(email);
+        } catch (e) {}
+        show(false);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, selectFallback);
+      } else {
+        selectFallback();
+      }
+    });
+  });
 
   const langToggle = $('lang-toggle');
   if (langToggle) {

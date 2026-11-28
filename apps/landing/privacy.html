@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base href="/">
+  <title>ourney · chính sách riêng tư</title>
+  <meta name="description" content="Ourney lưu dữ liệu gì, ai xem được và cách xóa tài khoản cùng dữ liệu của bạn.">
+  <link rel="canonical" href="https://ourney.tech/privacy">
+  <meta name="theme-color" content="#FFF8EE" id="meta-theme-light" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1B1916" id="meta-theme-dark" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/svg+xml" href="/assets/brand/favicon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/brand/icon-192.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="/assets/brand/favicon-96x96.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/brand/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preload" href="/assets/fonts/SpaceGrotesk-Variable.woff2" as="font" type="font/woff2" crossorigin>
+  <script>
+    (function () {
+      var d = document.documentElement;
+      try {
+        if (sessionStorage.getItem('ourney-intro-seen') === '1') d.classList.add('intro-seen');
+        var t = localStorage.getItem('ourney-theme');
+        if (t === 'light' || t === 'dark') {
+          d.dataset.theme = t;
+          var m = t === 'dark' ? 'all' : 'not all';
+          var mo = new MutationObserver(function () {
+            var s = d.querySelectorAll('source.src-dark');
+            for (var i = 0; i < s.length; i++) if (s[i].media !== m) s[i].media = m;
+          });
+          mo.observe(d, { childList: true, subtree: true });
+          addEventListener('DOMContentLoaded', function () { mo.disconnect(); }, { once: true });
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body data-doc="privacy">
+  <a class="skip" href="#main" data-i18n="skip">Bỏ qua tới nội dung chính</a>
+
+  <header class="nav doc-nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="/" translate="no" aria-label="Ourney, về trang chủ" data-i18n-aria="nf_brand_aria" data-home-link>
+        <img src="/assets/brand/wordmark.svg" alt="ourney" width="122" height="45">
+      </a>
+      <nav class="nav-links" aria-label="Pháp lý và hỗ trợ" data-i18n-aria="footer_legal_aria">
+        <a href="/privacy" data-doc-link data-i18n="footer_privacy_policy" aria-current="page">chính sách riêng tư</a>
+        <a href="/terms" data-doc-link data-i18n="footer_terms">điều khoản</a>
+        <a href="/support" data-doc-link data-i18n="footer_support">hỗ trợ</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="lang-btn" id="lang-toggle" type="button" aria-label="Chuyển ngôn ngữ sang tiếng Anh" data-i18n-aria="nav_lang_aria">
+          <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5h10M9 3v2M6 5c.5 4 3 7 6 8M12 5c-.5 4-3 7-7 9M13 20l4-10 4 10M14.5 17h5"/>
+          </svg>
+          <span class="lang-pill" data-lang-opt="vi">VI</span>
+          <span class="lang-pill" data-lang-opt="en">EN</span>
+        </button>
+        <button class="icon-btn" id="theme-toggle" type="button" aria-label="Đổi giao diện sáng hoặc tối" data-i18n-aria="nav_theme_aria">
+          <svg class="tg-sun" viewBox="0 0 24 24" aria-hidden="true">
+            <g class="o-halo"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></g>
+            <g class="o-fill"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></g>
+          </svg>
+          <svg class="tg-moon" viewBox="0 0 24 24" aria-hidden="true">
+            <g class="o-halo"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/></g>
+            <g class="o-fill"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/></g>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="doc-stage">
+    <div class="wrap doc-wrap">
+      <article class="doc-grid" lang="vi" data-lang-block="vi">
+        <header class="doc-head">
+          <p class="eyebrow">dữ liệu của bạn</p>
+          <h1>chính sách riêng tư.</h1>
+          <p class="doc-meta">Cập nhật lần cuối: <time datetime="2026-10-16">16/10/2026</time></p>
+        </header>
+        <div class="doc-aside">
+          <nav class="card doc-toc" aria-label="Mục lục">
+            <p class="doc-toc-title">Trong trang này</p>
+            <ol>
+              <li><a href="#vi-luu-gi"><span class="doc-num" aria-hidden="true">1</span>Chúng mình lưu gì</a></li>
+              <li><a href="#vi-ai-thay"><span class="doc-num" aria-hidden="true">2</span>Ai thấy được</a></li>
+              <li><a href="#vi-khong-lam"><span class="doc-num" aria-hidden="true">3</span>Chúng mình không làm gì</a></li>
+              <li><a href="#vi-thong-bao"><span class="doc-num" aria-hidden="true">4</span>Thông báo</a></li>
+              <li><a href="#vi-xoa"><span class="doc-num" aria-hidden="true">5</span>Xóa dữ liệu</a></li>
+              <li><a href="#vi-lien-he"><span class="doc-num" aria-hidden="true">6</span>Liên hệ</a></li>
+            </ol>
+          </nav>
+        </div>
+        <div class="doc-main">
+          <section class="doc-section" id="vi-luu-gi">
+            <h2><span class="doc-num" aria-hidden="true">1</span>Chúng mình lưu gì</h2>
+            <ul class="doc-list">
+              <li><b>Đăng nhập:</b> email hoặc số điện thoại.</li>
+              <li><b>Hồ sơ:</b> tên hiển thị, username và ảnh đại diện.</li>
+              <li><b>Nội dung bạn tạo:</b> các hành trình; check-in gồm ảnh, chú thích, số liệu (ví dụ cân nặng) và thời điểm chụp; reaction.</li>
+              <li><b>An toàn:</b> các báo cáo bạn gửi và danh sách người bạn đã chặn.</li>
+            </ul>
+          </section>
+          <section class="doc-section" id="vi-ai-thay">
+            <h2><span class="doc-num" aria-hidden="true">2</span>Ai thấy được</h2>
+            <ul class="doc-list">
+              <li><b>Hành trình riêng tư:</b> chỉ bạn thấy.</li>
+              <li><b>Hành trình nhóm:</b> chỉ thành viên trong nhóm thấy.</li>
+              <li><b>Link công khai:</b> chỉ hiện những gì bạn bật. Bạn có thể ẩn số liệu hoặc làm mờ ảnh.</li>
+              <li><b>Chế độ chỉ trên máy:</b> dữ liệu không rời khỏi điện thoại của bạn.</li>
+            </ul>
+          </section>
+          <section class="doc-section" id="vi-khong-lam">
+            <h2><span class="doc-num" aria-hidden="true">3</span>Chúng mình không làm gì</h2>
+            <p>Chúng mình không bán dữ liệu của bạn và không chạy quảng cáo. Ảnh của bạn chỉ dùng để hiển thị trong Ourney, ngoài ra không dùng vào việc gì khác.</p>
+          </section>
+          <section class="doc-section" id="vi-thong-bao">
+            <h2><span class="doc-num" aria-hidden="true">4</span>Thông báo</h2>
+            <p>Lời nhắc check-in là thông báo cục bộ, do chính điện thoại của bạn lên lịch.</p>
+          </section>
+          <section class="doc-section" id="vi-xoa">
+            <h2><span class="doc-num" aria-hidden="true">5</span>Xóa dữ liệu</h2>
+            <p>Vào <span class="doc-path">Hồ sơ &gt; Cài đặt &gt; Xóa tài khoản</span>. Tài khoản, mọi check-in và ảnh của bạn trên máy chủ sẽ bị xóa vĩnh viễn.</p>
+            <p>Nếu bạn đang là chủ nhóm, quyền chủ nhóm sẽ chuyển cho thành viên vào nhóm sớm nhất.</p>
+          </section>
+          <section class="doc-section" id="vi-lien-he">
+            <h2><span class="doc-num" aria-hidden="true">6</span>Liên hệ</h2>
+            <p>Có câu hỏi về quyền riêng tư? Trong app, mở <span class="doc-path">Hồ sơ &gt; Cài đặt &gt; Liên hệ</span>, hoặc email cho chúng mình qua <a href="mailto:support@ourney.tech?subject=Ourney%20-%20h%E1%BB%97%20tr%E1%BB%A3" translate="no">support@ourney.tech</a>.</p>
+          </section>
+        </div>
+      </article>
+
+      <article class="doc-grid" lang="en" data-lang-block="en">
+        <header class="doc-head">
+          <p class="eyebrow">your data</p>
+          <h1>privacy policy.</h1>
+          <p class="doc-meta">Last updated: <time datetime="2026-10-16">October 16, 2026</time></p>
+        </header>
+        <div class="doc-aside">
+          <nav class="card doc-toc" aria-label="Contents">
+            <p class="doc-toc-title">On this page</p>
+            <ol>
+              <li><a href="#en-store"><span class="doc-num" aria-hidden="true">1</span>What we store</a></li>
+              <li><a href="#en-see"><span class="doc-num" aria-hidden="true">2</span>Who can see it</a></li>
+              <li><a href="#en-dont"><span class="doc-num" aria-hidden="true">3</span>What we don’t do</a></li>
+              <li><a href="#en-notifications"><span class="doc-num" aria-hidden="true">4</span>Notifications</a></li>
+              <li><a href="#en-delete"><span class="doc-num" aria-hidden="true">5</span>Deleting your data</a></li>
+              <li><a href="#en-contact"><span class="doc-num" aria-hidden="true">6</span>Contact</a></li>
+            </ol>
+          </nav>
+        </div>
+        <div class="doc-main">
+          <section class="doc-section" id="en-store">
+            <h2><span class="doc-num" aria-hidden="true">1</span>What we store</h2>
+            <ul class="doc-list">
+              <li><b>Sign-in:</b> your email or phone number.</li>
+              <li><b>Profile:</b> display name, username and avatar.</li>
+              <li><b>What you create:</b> your journeys; check-ins with their photo, caption, numbers (for example weight) and the time taken; reactions.</li>
+              <li><b>Safety:</b> the reports you send and your block list.</li>
+            </ul>
+          </section>
+          <section class="doc-section" id="en-see">
+            <h2><span class="doc-num" aria-hidden="true">2</span>Who can see it</h2>
+            <ul class="doc-list">
+              <li><b>Private journeys:</b> only you.</li>
+              <li><b>Squad journeys:</b> only members of that squad.</li>
+              <li><b>Public links:</b> only what you turn on. You can hide numbers or blur photos.</li>
+              <li><b>On-device mode:</b> your data never leaves your phone.</li>
+            </ul>
+          </section>
+          <section class="doc-section" id="en-dont">
+            <h2><span class="doc-num" aria-hidden="true">3</span>What we don’t do</h2>
+            <p>We don’t sell your data and we don’t show ads. Your photos are used only to show them in Ourney and for nothing else.</p>
+          </section>
+          <section class="doc-section" id="en-notifications">
+            <h2><span class="doc-num" aria-hidden="true">4</span>Notifications</h2>
+            <p>Check-in reminders are local notifications that your phone schedules itself.</p>
+          </section>
+          <section class="doc-section" id="en-delete">
+            <h2><span class="doc-num" aria-hidden="true">5</span>Deleting your data</h2>
+            <p>Go to <span class="doc-path">Profile &gt; Settings &gt; Delete account</span>. This permanently deletes your account and all your check-ins and photos from our servers.</p>
+            <p>If you own a squad, ownership passes to the member who joined earliest.</p>
+          </section>
+          <section class="doc-section" id="en-contact">
+            <h2><span class="doc-num" aria-hidden="true">6</span>Contact</h2>
+            <p>Questions about privacy? In the app, open <span class="doc-path">Profile &gt; Settings &gt; Contact</span>, or email us at <a href="mailto:support@ourney.tech?subject=Ourney%20-%20support" translate="no">support@ourney.tech</a>.</p>
+          </section>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <img src="/assets/brand/wordmark-compact.svg" alt="ourney" width="98" height="30">
+      <div class="footer-tagline-wrap">
+        <p class="muted" data-i18n="footer_tagline">Góp tấm hình, giữ nhịp mình</p>
+        <p class="footer-subline" data-i18n="footer_subline">Một mình thong thả, có hội rôm rả</p>
+      </div>
+      <nav aria-label="Pháp lý và hỗ trợ" data-i18n-aria="footer_legal_aria">
+        <ul>
+          <li><a href="/" data-home-link data-i18n="doc_home">về trang chủ</a></li>
+          <li><a href="/privacy" data-doc-link data-i18n="footer_privacy_policy" aria-current="page">chính sách riêng tư</a></li>
+          <li><a href="/terms" data-doc-link data-i18n="footer_terms">điều khoản</a></li>
+          <li><a href="/support" data-doc-link data-i18n="footer_support">hỗ trợ</a></li>
+        </ul>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="/main.js" defer></script>
+  <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6accad2341fb415da9961f1d8b70f8e6"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
