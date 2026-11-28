@@ -95,11 +95,11 @@ void main() {
     await tester.pump();
   }
 
-  test('paceFromDigits fills m:ss from the right', () {
-    expect(paceFromDigits(''), '');
-    expect(paceFromDigits('5'), '0:05');
-    expect(paceFromDigits('504'), '5:04');
-    expect(paceFromDigits('1230'), '12:30');
+  test('existing pace keeps its minutes and seconds', () {
+    final c = PostExtrasController(initial: const CheckInExtras(pace: '5:42'));
+    addTearDown(c.dispose);
+    expect(c.paceText, '5:42');
+    expect(c.extrasFor(PersonaSkinId.aestheticFlexer).pace, '5:42');
   });
 
   testWidgets('study skin posts the picked minutes', (tester) async {
@@ -357,15 +357,16 @@ void main() {
     expect(find.text(l10n.checkin_show), findsNothing);
   }, timeout: const Timeout(Duration(seconds: 30)));
 
-  testWidgets('a hidden custom metric uses its own unit in the mask', (
+  testWidgets('a custom weight metric stays masked with hideMetric off', (
     tester,
   ) async {
     await pump(
       tester,
       testJourney(
+        templateId: TemplateId.custom,
         metricName: 'Weight',
         metricUnit: 'lb',
-        hideMetricDefault: true,
+        hideMetricDefault: false,
       ),
       initialPrefs: {'journeys.startingWeight.j1': 160.5},
     );

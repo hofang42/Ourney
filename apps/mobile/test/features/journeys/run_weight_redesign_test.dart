@@ -111,6 +111,7 @@ Future<ProviderContainer> _open(
 Journey _journey({
   bool weight = false,
   bool gym = false,
+  String weightUnit = 'kg',
   int elapsed = 21,
   int? duration = 30,
 }) => testJourney(
@@ -119,7 +120,7 @@ Journey _journey({
   startDate: testToday.addDays(1 - elapsed),
   durationDays: duration,
   metricName: weight ? 'Cân nặng' : null,
-  metricUnit: weight ? 'kg' : null,
+  metricUnit: weight ? weightUnit : null,
 ).copyWith(dna: weight ? null : {'sport': gym ? 'gym' : 'run'});
 
 List<CheckIn> _photos(Journey j) => [
@@ -218,6 +219,19 @@ void main() {
     },
     timeout: _timeout,
   );
+
+  testWidgets('trend values and change use the journey unit', (tester) async {
+    final j = _journey(weight: true, weightUnit: 'cm');
+    await _open(tester, j, _photos(j));
+    final toggle = _key('weight-trend-toggle');
+    await tester.ensureVisible(toggle);
+    await tester.tap(toggle);
+    await _frames(tester);
+    expect(find.textContaining(RegExp(r'\d+[,.]\d cm')), findsWidgets);
+    expect(find.textContaining('cm t\u1eeb ng\u00e0y 1'), findsOneWidget);
+    expect(find.textContaining('kg'), findsNothing);
+    expect(tester.takeException(), isNull);
+  }, timeout: _timeout);
 
   testWidgets(
     'weight numbers reset when the app goes inactive or another route opens',

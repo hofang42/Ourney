@@ -817,9 +817,7 @@ void main() {
       tester,
     ) async {
       journeys = FakeJourneyRepository(
-        journeys: [
-          testJourney(metricName: 'Cân nặng', hideMetricDefault: true),
-        ],
+        journeys: [testJourney(metricName: 'Minutes', hideMetricDefault: true)],
         membership: Membership(
           journeyId: 'j1',
           userId: 'me',

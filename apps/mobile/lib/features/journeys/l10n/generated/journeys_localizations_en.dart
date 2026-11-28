@@ -2079,8 +2079,8 @@ class JourneysL10nEn extends JourneysL10n {
       'A few more weigh-ins and the trend shows up.';
 
   @override
-  String journeys_trendChange(String delta) {
-    return '$delta kg since day 1';
+  String journeys_trendChange(String delta, String unit) {
+    return '$delta $unit since day 1';
   }
 
   @override

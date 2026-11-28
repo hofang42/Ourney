@@ -19,7 +19,11 @@ import 'journeys_fakes.dart';
 
 const _timeout = Timeout(Duration(seconds: 15));
 
-Future<void> _pumpDetail(WidgetTester tester, Journey journey) async {
+Future<void> _pumpDetail(
+  WidgetTester tester,
+  Journey journey, {
+  int memberCount = 5,
+}) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = const Size(420, 1000);
   tester.platformDispatcher.localesTestValue = [const Locale('en')];
@@ -63,7 +67,7 @@ Future<void> _pumpDetail(WidgetTester tester, Journey journey) async {
             role: MemberRole.owner,
             todayCheckIn: checkIn,
           ),
-          for (var i = 2; i <= 5; i++)
+          for (var i = 2; i <= memberCount; i++)
             MemberToday(
               userId: 'u$i',
               displayName: 'Member $i',
@@ -88,6 +92,16 @@ Future<void> _pumpDetail(WidgetTester tester, Journey journey) async {
 }
 
 void main() {
+  testWidgets('one-member group has no attendance pill', (tester) async {
+    await _pumpDetail(
+      tester,
+      testJourney(kind: JourneyKind.group),
+      memberCount: 1,
+    );
+    expect(find.byKey(const ValueKey('journey-workout-members')), findsNothing);
+    expect(tester.takeException(), isNull);
+  }, timeout: _timeout);
+
   for (final (sport, verb) in [('run', 'RAN'), ('gym', 'TRAINED')]) {
     testWidgets('group $sport shows one attendance pill above its stats', (
       tester,

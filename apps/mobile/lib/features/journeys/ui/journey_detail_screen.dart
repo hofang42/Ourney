@@ -406,6 +406,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen>
               )
             else if (!long)
               JourneyTimeline(
+                metricUnit: journey.metricUnit,
                 skinId: uiSkinIdFor(skinOfJourney(journey)),
                 days: shortWindow?.days ?? progress.timeline(),
                 allDays: photoLog ? index!.elapsed : null,
@@ -670,6 +671,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen>
         else
           SliverToBoxAdapter(
             child: JourneyTimeline(
+              metricUnit: journey.metricUnit,
               skinId: skin,
               days: window.days,
               allDays: skin == 'quiet' || skin == 'flexer'

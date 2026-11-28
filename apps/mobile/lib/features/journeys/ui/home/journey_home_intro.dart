@@ -152,8 +152,7 @@ class JourneyHomeIntro extends StatelessWidget {
         if (dateRange != null)
           Padding(
             padding: const EdgeInsets.only(top: UiSpace.xs),
-            child: Text(dateRange!, style: UiText.muted(color: ui.inkMuted),
-            ),
+            child: Text(dateRange!, style: UiText.muted(color: ui.inkMuted)),
           ),
         const SizedBox(height: UiSpace.xs),
         Row(

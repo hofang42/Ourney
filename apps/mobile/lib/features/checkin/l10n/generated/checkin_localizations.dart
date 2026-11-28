@@ -647,20 +647,8 @@ abstract class CheckinL10n {
   /// Post screen per-skin input.
   ///
   /// In vi, this message translates to:
-  /// **'Nhịp chạy (phút/km)'**
-  String get checkin_extraPaceLabel;
-
-  /// Post screen per-skin input.
-  ///
-  /// In vi, this message translates to:
   /// **'Nhập pace dạng phút:giây, ví dụ 5:42.'**
   String get checkin_extraPaceInvalid;
-
-  /// Post screen per-skin input.
-  ///
-  /// In vi, this message translates to:
-  /// **'Quãng đường (km)'**
-  String get checkin_extraKmLabel;
 
   /// Post screen per-skin input.
   ///
@@ -673,12 +661,6 @@ abstract class CheckinL10n {
   /// In vi, this message translates to:
   /// **'Quãng đường từ 0,1 đến 500 km, một chữ số thập phân'**
   String get checkin_extraKmInvalid;
-
-  /// Post screen per-skin input.
-  ///
-  /// In vi, this message translates to:
-  /// **'Xóa một số'**
-  String get checkin_extraBackspace;
 
   /// No description provided for @checkin_details.
   ///

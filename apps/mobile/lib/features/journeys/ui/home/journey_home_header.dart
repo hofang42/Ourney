@@ -464,7 +464,7 @@ class JourneyWorkoutMembers extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final members = ref.watch(groupMembersTodaySafeProvider(journey.id)).value ??
         const <MemberToday>[];
-    if (journey.kind != JourneyKind.group || members.isEmpty) {
+    if (journey.kind != JourneyKind.group || members.length <= 1) {
       return const SizedBox.shrink();
     }
     final done = members.where((m) => m.checkedIn).length;

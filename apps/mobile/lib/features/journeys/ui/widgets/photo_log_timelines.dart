@@ -509,6 +509,7 @@ class JourneyWeekGrid extends StatelessWidget {
 
 class QuietTimeline extends StatefulWidget {
   const QuietTimeline({
+    required this.metricUnit,
     required this.days,
     required this.onTapDay,
     this.allDays,
@@ -519,6 +520,7 @@ class QuietTimeline extends StatefulWidget {
     super.key,
   });
   final List<TimelineDay> days;
+  final String? metricUnit;
   final List<TimelineDay>? allDays;
   final ValueChanged<TimelineDay> onTapDay;
   final bool? short;
@@ -576,6 +578,7 @@ class _QuietTimelineState extends State<QuietTimeline> {
           ),
         if (hasMetric || all.every((d) => d.state != DayState.checkedIn)) ...[
           WeightTrendCard(
+            metricUnit: widget.metricUnit,
             trend: trend,
             shown: shown,
             rangeDays: short ? 30 : null,
@@ -602,12 +605,14 @@ class _QuietTimelineState extends State<QuietTimeline> {
 
 class WeightTrendCard extends StatelessWidget {
   const WeightTrendCard({
+    required this.metricUnit,
     required this.trend,
     required this.shown,
     required this.onToggle,
     this.rangeDays,
     super.key,
   });
+  final String? metricUnit;
   final WeightTrend? trend;
   final bool shown;
   final VoidCallback onToggle;
@@ -637,8 +642,10 @@ class WeightTrendCard extends StatelessWidget {
     final visible = t.trend.sublist(start);
     final raw = t.raw.sublist(start);
     final points = [...visible.nonNulls, if (shown) ...raw.nonNulls];
-    final low = (points.isEmpty ? t.latestTrend : points.reduce(math.min)) - 1;
-    final high = (points.isEmpty ? t.latestTrend : points.reduce(math.max)) + 1;
+    final low =
+        (points.isEmpty ? t.latestTrend : points.reduce(math.min)) - 0.5;
+    final high =
+        (points.isEmpty ? t.latestTrend : points.reduce(math.max)) + 0.5;
     final delta =
         '${t.changeSinceFirst < 0 ? '−' : '+'}${_decimal(context, t.changeSinceFirst.abs())}';
     final toggleLabel = shown ? l.journeys_hideNumbers : l.journeys_showNumbers;
@@ -679,11 +686,11 @@ class WeightTrendCard extends StatelessWidget {
           ),
           if (shown) ...[
             Text(
-              '${_decimal(context, t.latestTrend)} kg',
+              [_decimal(context, t.latestTrend), ?metricUnit].join(' '),
               style: UiText.display(size: 32, color: ui.ink),
             ),
             Text(
-              l.journeys_trendChange(delta),
+              l.journeys_trendChange(delta, metricUnit ?? '').trim(),
               style: UiText.muted(color: ui.inkMuted),
             ),
           ],

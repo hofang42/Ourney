@@ -20,8 +20,10 @@ import '../groups/ui/invite_sheet.dart' show showGroupInviteSheet;
 import '../journeys/data/journeys_providers.dart'
     show journeyStartingWeightPrefKey, recentTripPlacesProvider;
 import '../journeys/domain/run_stats.dart';
+import '../journeys/l10n/generated/journeys_localizations.dart';
 import '../reminders/data/reminder_scheduler.dart';
 import '../reminders/ui/reminder_permission_prompt.dart';
+import '../share_card/domain/share_card_content.dart' show isWeightMetric;
 import '../update/data/update_providers.dart' show appUpdateWorkPausedProvider;
 import '../widgets/data/widget_sync_controller.dart' show syncWidgetsNow;
 import 'captured_photo.dart';
@@ -586,7 +588,9 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
     final style = uiStyleForSkin(personaSkinOf(journey));
     final count = _caption.text.runes.length;
     final membership = ref.watch(myMembershipProvider(journey.id)).value;
-    final hideMetric = journey.templateId == TemplateId.weightLoss ||
+    final hideMetric =
+        journey.templateId == TemplateId.weightLoss ||
+        isWeightMetric(journey) ||
         (membership?.hideMetric ?? journey.hideMetricDefault);
     final template = templateFor(journey.templateId);
     final vi = Localizations.localeOf(context).languageCode == 'vi';
@@ -836,7 +840,10 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
                 fieldKey: const ValueKey('checkin-metric'),
                 label: metricLabel,
                 hint: maskMetricHint
-                    ? [vi ? '••,•' : '••.•', ?journey.metricUnit].join(' ')
+                    ? [
+                        JourneysL10n.of(context).journeys_viewerMetricHidden,
+                        ?journey.metricUnit,
+                      ].join(' ')
                     : metricHint,
                 focusNode: _metricFocus,
                 controller: _metric,

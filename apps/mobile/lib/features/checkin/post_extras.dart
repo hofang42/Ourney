@@ -14,14 +14,6 @@ const List<String> postMoodCodes = ['light', 'normal', 'tired'];
 /// Quick picks of the study-time chips (Figma squad Post).
 const List<int> postMinuteChoices = [15, 30, 45, 60];
 
-/// Pace as typed on the keypad: digits only, `504` reads `5:04`.
-String paceFromDigits(String digits) {
-  if (digits.isEmpty) return '';
-  final padded = digits.padLeft(3, '0');
-  final minutes = int.parse(padded.substring(0, padded.length - 2));
-  return '$minutes:${padded.substring(padded.length - 2)}';
-}
-
 typedef PostExtrasDraft = ({
   String? mood,
   int? minutes,
@@ -42,7 +34,7 @@ class PostExtrasController extends ChangeNotifier {
       minutes = initial.minutes,
       hearts = initial.hearts,
       cook = initial.cook,
-      _paceDigits = (initial.pace ?? '').replaceAll(':', '');
+      _paceDigits = initial.pace ?? '';
 
   final TextEditingController place = TextEditingController();
   final TextEditingController dish = TextEditingController();
@@ -84,8 +76,7 @@ class PostExtrasController extends ChangeNotifier {
   }
 
   /// `m:ss` once something is typed, otherwise empty.
-  String get paceText =>
-      _paceDigits.contains(':') ? _paceDigits : paceFromDigits(_paceDigits);
+  String get paceText => _paceDigits;
 
   void setPaceParts(String minutes, String seconds) {
     _paceDigits = minutes.isEmpty && seconds.isEmpty
@@ -134,18 +125,6 @@ class PostExtrasController extends ChangeNotifier {
 
   void pickCook(String value) {
     cook = cook == value ? null : value;
-    notifyListeners();
-  }
-
-  void typeDigit(String digit) {
-    if (_paceDigits.length >= 4) return;
-    _paceDigits = '$_paceDigits$digit';
-    notifyListeners();
-  }
-
-  void backspace() {
-    if (_paceDigits.isEmpty) return;
-    _paceDigits = _paceDigits.substring(0, _paceDigits.length - 1);
     notifyListeners();
   }
 

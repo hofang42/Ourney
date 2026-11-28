@@ -1290,10 +1290,13 @@
     }
   },
   "journeys_trendNeedMore": "A few more weigh-ins and the trend shows up.",
-  "journeys_trendChange": "{delta} kg since day 1",
+  "journeys_trendChange": "{delta} {unit} since day 1",
   "@journeys_trendChange": {
     "placeholders": {
       "delta": {
+        "type": "String"
+      },
+      "unit": {
         "type": "String"
       }
     }

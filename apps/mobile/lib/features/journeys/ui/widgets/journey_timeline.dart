@@ -40,6 +40,7 @@ class JourneyTimeline extends StatelessWidget {
     required this.days,
     required this.pal,
     required this.onTapDay,
+    this.metricUnit,
     this.selfName,
     this.partnerName,
     this.selfOnRight = false,
@@ -60,6 +61,7 @@ class JourneyTimeline extends StatelessWidget {
   final bool showOfflineStamps;
 
   /// Couple names of the journey (couple skin only).
+  final String? metricUnit;
   final String? selfName;
   final String? partnerName;
 
@@ -101,6 +103,7 @@ class JourneyTimeline extends StatelessWidget {
     final variant = days.isEmpty || days.first.coupleSlots.isEmpty ? skinId : 'couple';
     final core = switch (variant) {
       'quiet' => QuietTimeline(
+        metricUnit: metricUnit,
         days: days,
         numbersShown: weightNumbersShown,
         onNumbersChanged: onWeightNumbersChanged,

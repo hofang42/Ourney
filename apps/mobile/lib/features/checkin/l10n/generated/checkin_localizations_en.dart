@@ -342,13 +342,7 @@ class CheckinL10nEn extends CheckinL10n {
   String get checkin_coupleWaiting => 'Waiting for your partner’s photo';
 
   @override
-  String get checkin_extraPaceLabel => 'Pace (min/km)';
-
-  @override
   String get checkin_extraPaceInvalid => 'Enter pace as min:sec, e.g. 5:42.';
-
-  @override
-  String get checkin_extraKmLabel => 'Distance (km)';
 
   @override
   String get checkin_extraKmHint => 'e.g. 5.3';
@@ -356,9 +350,6 @@ class CheckinL10nEn extends CheckinL10n {
   @override
   String get checkin_extraKmInvalid =>
       'Distance must be 0.1 to 500 km, one decimal';
-
-  @override
-  String get checkin_extraBackspace => 'Delete one digit';
 
   @override
   String get checkin_details => 'Details';

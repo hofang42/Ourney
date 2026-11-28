@@ -1949,8 +1949,8 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_trendNeedMore => 'Cân thêm vài lần nữa là thấy xu hướng.';
 
   @override
-  String journeys_trendChange(String delta) {
-    return '$delta kg từ ngày 1';
+  String journeys_trendChange(String delta, String unit) {
+    return '$delta $unit từ ngày 1';
   }
 
   @override

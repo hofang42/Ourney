@@ -1817,10 +1817,13 @@
     }
   },
   "journeys_trendNeedMore": "Cân thêm vài lần nữa là thấy xu hướng.",
-  "journeys_trendChange": "{delta} kg từ ngày 1",
+  "journeys_trendChange": "{delta} {unit} từ ngày 1",
   "@journeys_trendChange": {
     "placeholders": {
       "delta": {
+        "type": "String"
+      },
+      "unit": {
         "type": "String"
       }
     }

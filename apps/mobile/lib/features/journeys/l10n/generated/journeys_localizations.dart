@@ -3419,8 +3419,8 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_trendChange.
   ///
   /// In vi, this message translates to:
-  /// **'{delta} kg từ ngày 1'**
-  String journeys_trendChange(String delta);
+  /// **'{delta} {unit} từ ngày 1'**
+  String journeys_trendChange(String delta, String unit);
 
   /// No description provided for @journeys_showNumbers.
   ///

@@ -290,16 +290,8 @@
   "@checkin_coupleWaiting": {
     "description": "Post screen status when an active partner has not posted on the captured photo’s journey-local date."
   },
-  "checkin_extraPaceLabel": "Nhịp chạy (phút/km)",
-  "@checkin_extraPaceLabel": {
-    "description": "Post screen per-skin input."
-  },
   "checkin_extraPaceInvalid": "Nhập pace dạng phút:giây, ví dụ 5:42.",
   "@checkin_extraPaceInvalid": {
-    "description": "Post screen per-skin input."
-  },
-  "checkin_extraKmLabel": "Quãng đường (km)",
-  "@checkin_extraKmLabel": {
     "description": "Post screen per-skin input."
   },
   "checkin_extraKmHint": "VD: 5,3",
@@ -308,10 +300,6 @@
   },
   "checkin_extraKmInvalid": "Quãng đường từ 0,1 đến 500 km, một chữ số thập phân",
   "@checkin_extraKmInvalid": {
-    "description": "Post screen per-skin input."
-  },
-  "checkin_extraBackspace": "Xóa một số",
-  "@checkin_extraBackspace": {
     "description": "Post screen per-skin input."
   },
   "checkin_details": "Chi tiết",

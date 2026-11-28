@@ -59,7 +59,10 @@ class UiChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(UiRadius.capsule),
       child: Container(
         constraints: BoxConstraints(minHeight: compact ? 26 : 44),
-        padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 14, vertical: compact ? 3 : 6),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 8 : 14,
+          vertical: compact ? 3 : 6,
+        ),
         decoration: BoxDecoration(
           color: accentFill ? ui.accent : ui.surface,
           borderRadius: BorderRadius.circular(UiRadius.capsule),

@@ -62,9 +62,11 @@ String wrappedShareText(
       ? l10n.journeys_wrapped_sumQuiet(stats.total)
       : wrappedSummaryTitle(l10n, journey, skin, stats);
   final weights = skin == PersonaSkinId.quietTransformer && !hideKg
-      ? _Summary._weights(stats,
+      ? _Summary._weights(
+          stats,
           locale: l10n.localeName,
-          unit: journey.metricUnit)
+          unit: journey.metricUnit,
+        )
       : null;
   final String? footer;
   if (publicAddress != null) {
@@ -647,9 +649,11 @@ class _SummaryState extends ConsumerState<_Summary> {
     final ui = context.ui;
     final quiet = skin == PersonaSkinId.quietTransformer;
     final weights = quiet
-        ? _Summary._weights(stats,
+        ? _Summary._weights(
+            stats,
             locale: l10n.localeName,
-            unit: journey.metricUnit)
+            unit: journey.metricUnit,
+          )
         : null;
     final membershipProvider = myMembershipProvider(journey.id);
     final hasBackend = ref.watch(appConfigProvider).hasBackend;
