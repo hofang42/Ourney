@@ -14,10 +14,14 @@ import '../../app/test_helpers.dart';
 import '../profile/fakes.dart';
 
 /// Pumps [OurneyApp] without settling, so the splash can be observed.
-Future<ProviderContainer> pumpUnsettled(WidgetTester tester) async {
+Future<ProviderContainer> pumpUnsettled(
+  WidgetTester tester, {
+  Locale locale = const Locale('vi'),
+  Duration elapsed = const Duration(milliseconds: 100),
+}) async {
   await tester.binding.setSurfaceSize(const Size(390, 844));
   addTearDown(() => tester.binding.setSurfaceSize(null));
-  tester.platformDispatcher.localesTestValue = [const Locale('vi')];
+  tester.platformDispatcher.localesTestValue = [locale];
   addTearDown(tester.platformDispatcher.clearLocalesTestValue);
   final prefs = await testPrefs();
   final c = ProviderContainer(
@@ -31,7 +35,7 @@ Future<ProviderContainer> pumpUnsettled(WidgetTester tester) async {
   await tester.pumpWidget(
     UncontrolledProviderScope(container: c, child: const OurneyApp()),
   );
-  await tester.pump(const Duration(milliseconds: 100));
+  await tester.pump(elapsed);
   return c;
 }
 
@@ -42,11 +46,11 @@ void main() {
     ) async {
       await tester.pumpWidget(
         testApp(
-          const SizedBox.expand(child: UiSplash(tagline: 'giữ một chuỗi.')),
+          const SizedBox.expand(child: UiSplash(tagline: 'giữ nhịp mình')),
         ),
       );
       expect(byKey('ui-splash'), findsOneWidget);
-      expect(find.text('giữ một chuỗi.'), findsOneWidget);
+      expect(find.text('giữ nhịp mình'), findsOneWidget);
       expect(find.bySemanticsLabel('Ourney'), findsOneWidget);
       expect(find.byType(UiStickerTile), findsNWidgets(6));
     });
@@ -70,12 +74,45 @@ void main() {
 
     testWidgets('the gate rotates taglines, then fades out', (tester) async {
       await pumpUnsettled(tester);
-      expect(find.text('chụp một tấm.'), findsOneWidget);
+      expect(find.text('Góp tấm hình,'), findsOneWidget);
       await tester.pump(const Duration(milliseconds: 1200));
-      expect(find.text('giữ một chuỗi.'), findsOneWidget);
+      expect(find.text('giữ nhịp mình'), findsOneWidget);
       await tester.pumpAndSettle();
       expect(byKey('ui-splash'), findsNothing);
     });
+
+    for (final language in const ['vi', 'en']) {
+      for (final ios in const [false, true]) {
+        testWidgets(
+          '$language reduced motion (${ios ? 'iOS' : 'Android'}) shows the full slogan throughout the hold',
+          (tester) async {
+            tester.platformDispatcher.accessibilityFeaturesTestValue =
+                FakeAccessibilityFeatures(
+                  disableAnimations: !ios,
+                  reduceMotion: ios,
+                );
+            addTearDown(
+              tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+            );
+            await pumpUnsettled(
+              tester,
+              locale: Locale(language),
+              elapsed: Duration.zero,
+            );
+            final slogan = language == 'vi'
+                ? 'Góp tấm hình, giữ nhịp mình'
+                : 'One photo at a time, at your own pace';
+            expect(find.text(slogan), findsOneWidget);
+            // Android scales the gate controller duration to 5%.
+            await tester.pump(Duration(milliseconds: ios ? 1200 : 60));
+            expect(find.text(slogan), findsOneWidget);
+            expect(tester.takeException(), isNull);
+            await tester.pumpAndSettle();
+            expect(byKey('ui-splash'), findsNothing);
+          },
+        );
+      }
+    }
 
     testWidgets('a tap skips the hold', (tester) async {
       await pumpUnsettled(tester);

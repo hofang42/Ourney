@@ -218,7 +218,7 @@ class _OurneyAppState extends ConsumerState<OurneyApp> {
 /// First launch ([returning] false): stickers, ransom-note wordmark and a
 /// tagline that rotates every 1.2s; it holds for 2.4s and a tap skips ahead.
 /// Returning person: wordmark and spinner for 650ms. Reduced motion keeps the
-/// first tagline and removes the rotation and fades.
+/// full slogan and removes the rotation and fades.
 class _SplashGate extends StatefulWidget {
   const _SplashGate({
     required this.returning,
@@ -357,7 +357,11 @@ class _SplashGateState extends State<_SplashGate>
                 child: UiSplash(
                   returning: widget.returning,
                   firstLaunch: !widget.returning,
-                  tagline: widget.returning ? null : taglines[index],
+                  tagline: widget.returning
+                      ? null
+                      : reduce
+                      ? '${taglines[0]} ${taglines[1]}'
+                      : taglines[index],
                 ),
               ),
             ),

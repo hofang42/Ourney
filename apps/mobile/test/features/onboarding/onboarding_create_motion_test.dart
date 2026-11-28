@@ -67,7 +67,7 @@ void main() {
             const SizedBox.expand(
               child: UiSplash(
                 firstLaunch: true,
-                tagline: 'chụp một tấm.',
+                tagline: 'Góp tấm hình,',
               ),
             ),
           ),
@@ -150,7 +150,7 @@ void main() {
             const SizedBox.expand(
               child: UiSplash(
                 firstLaunch: true,
-                tagline: 'chụp một tấm.',
+                tagline: 'Góp tấm hình,',
               ),
             ),
           ),
@@ -176,7 +176,7 @@ void main() {
             const SizedBox.expand(
               child: UiSplash(
                 firstLaunch: true,
-                tagline: 'giữ một chuỗi.',
+                tagline: 'giữ nhịp mình',
               ),
             ),
           ),
