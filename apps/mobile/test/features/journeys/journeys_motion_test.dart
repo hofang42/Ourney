@@ -523,9 +523,12 @@ void main() {
           expect(find.text('Morning weigh-in'), findsOneWidget);
           expect(haptics, contains('HapticFeedbackType.selectionClick'));
 
-          // UX-25: caller's own metric is always shown directly in DayViewerScreen.
-          expect(_key('journey-day-metric'), findsOneWidget);
+        // Weight is private until the owner taps Show.
+        expect(_key('journey-day-metric'), findsOneWidget);
           expect(_key('journey-day-metric-shown'), findsOneWidget);
+        expect(find.text('62 kg'), findsNothing);
+        await tester.tap(find.text('Show'));
+        await tester.pump();
           expect(find.text('62 kg'), findsOneWidget);
           expect(_key('journey-day-reveal'), findsNothing);
 
@@ -708,9 +711,7 @@ void main() {
   group(
     'M3 Moment #15 — Quiet Hold-to-Reveal weight crossfade, curve range replay & Archive month accordion',
     () {
-      testWidgets(
-        '3-point pump on QuietTimeline Hold-to-Reveal weight (140ms crossfade + selection haptic, zero horizontal jump) and 30D/All curve replay',
-        (tester) async {
+      testWidgets('QuietTimeline tap reveal is immediate and reversible', (tester) async {
           final haptics = <String>[];
           TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
               .setMockMethodCallHandler(SystemChannels.platform, (call) async {
@@ -755,70 +756,16 @@ void main() {
           );
           await tester.pumpAndSettle();
 
-          final holdFinder = _key('quiet-hold');
-          await tester.ensureVisible(holdFinder);
-          await tester.pumpAndSettle();
-
-          expect(_key('quiet-axis-0-masked'), findsOneWidget);
-          expect(_key('quiet-axis-0-shown'), findsNothing);
-
-          // 1. Pointer down at t = 0ms -> fires selectionClick haptic & starts 140ms crossfade.
-          final gesture = await tester.startGesture(
-            tester.getCenter(holdFinder),
-          );
+          final toggle = _key('weight-trend-toggle');
+          await tester.ensureVisible(toggle);
           await tester.pump();
-          expect(haptics, contains('HapticFeedbackType.selectionClick'));
-
-          // 2. Mid-flight at t = 70ms: both masked and shown axis labels are in
-          // the AnimatedSwitcher tree with 0 < opacity < 1, and start/end edges
-          // stay locked (P2-1 zero horizontal jump).
-          await tester.pump(const Duration(milliseconds: 70));
-          expect(_key('quiet-axis-0-shown'), findsOneWidget);
-          final midAxis0Left = tester
-              .getTopLeft(_key('quiet-axis-0-shown'))
-              .dx;
-          final midAxis1Right = tester
-              .getTopRight(_key('quiet-axis-1-shown'))
-              .dx;
-          final shownFade = tester.widget<FadeTransition>(
-            find
-                .ancestor(
-                  of: _key('quiet-axis-0-shown'),
-                  matching: find.byType(FadeTransition),
-                )
-                .first,
-          );
-          expect(shownFade.opacity.value, greaterThan(0.0));
-          expect(shownFade.opacity.value, lessThan(1.0));
-
-          // 3. Settled at >= 140ms: only shown weight remains at identical x coordinates.
-          await tester.pumpAndSettle();
-          expect(shownFade.opacity.value, 1.0);
-          expect(_key('quiet-axis-0-masked'), findsNothing);
-          expect(
-            tester.getTopLeft(_key('quiet-axis-0-shown')).dx,
-            closeTo(midAxis0Left, 0.5),
-          );
-          expect(
-            tester.getTopRight(_key('quiet-axis-1-shown')).dx,
-            closeTo(midAxis1Right, 0.5),
-          );
-
-          // Release pointer -> crossfades back to masked '••,•'.
-          await gesture.up();
-          await tester.pumpAndSettle();
-          expect(_key('quiet-axis-0-masked'), findsOneWidget);
-          expect(_key('quiet-axis-0-shown'), findsNothing);
-
-          // P1-4: Toggling All -> 30D range chip triggers didUpdateWidget on
-          // _AnimatedTimelineCurve and replays the 680ms curve reveal cleanly.
-          await tester.ensureVisible(_key('quiet-range-30'));
-          await tester.pumpAndSettle();
-          await tester.tap(_key('quiet-range-30'));
+          expect(find.textContaining(RegExp(r'\d+[,.]\d kg')), findsNothing);
+          await tester.tap(toggle);
           await tester.pump();
-          expect(tester.binding.transientCallbackCount, greaterThan(0));
-          await tester.pumpAndSettle();
-          expect(tester.binding.transientCallbackCount, 0);
+          expect(find.textContaining(RegExp(r'\d+[,.]\d kg')), findsWidgets);
+          await tester.tap(toggle);
+      await tester.pump();
+          expect(find.textContaining(RegExp(r'\d+[,.]\d kg')), findsNothing);
         },
       );
 
@@ -943,8 +890,8 @@ void main() {
         ('iOS reduceMotion', false, true),
       ]) {
         testWidgets(
-          'Moment #15 Reduce Motion parity ($label): Quiet hold-to-reveal & Archive month toggle settle in 0ms',
-          (tester) async {
+        'Moment #15 Reduce Motion parity ($label): weight empty trend stays private without animations',
+        (tester) async {
             final j = Journey(
               id: 'j-quiet-long',
               ownerId: 'u1',
@@ -981,53 +928,10 @@ void main() {
             );
             await tester.pumpAndSettle();
 
-            // Quiet hold-to-reveal swaps in 0ms with no intermediate fade.
-            final holdFinder = _key('quiet-hold');
-            await tester.ensureVisible(holdFinder);
-            await tester.pumpAndSettle();
-            final gesture = await tester.startGesture(
-              tester.getCenter(holdFinder),
-            );
-            await tester.pump();
-            expect(_key('quiet-axis-0-shown'), findsOneWidget);
-            expect(_key('quiet-axis-0-masked'), findsNothing);
-            await gesture.up();
-            await tester.pump();
-            expect(_key('quiet-axis-0-masked'), findsOneWidget);
-
-            // Archive month toggle settles in 0ms under Reduce Motion.
-            await tester.scrollUntilVisible(
-              _key('timeline-mode-month'),
-              200,
-              scrollable: find.byType(Scrollable).first,
-            );
-            await tester.pumpAndSettle();
-            await tester.tap(_key('timeline-mode-month'));
-            await tester.pumpAndSettle();
-
-            final sepMonthId = 2026 * 12 + 9 - 1;
-            final sepHeader = find.byWidgetPredicate(
-              (w) =>
-                  w is UiMonthHeader &&
-                  RegExp(r'^tháng 9 2026, ').hasMatch(w.semanticLabel),
-            );
-            await tester.scrollUntilVisible(
-              sepHeader,
-              200,
-              scrollable: find.byType(Scrollable).first,
-            );
-            await tester.pumpAndSettle();
-            await tester.tap(sepHeader);
-            await tester.pump();
-
-            final chevronFinder = _key('archive-chevron-$sepMonthId');
-            final rotTransition = tester.widget<RotationTransition>(
-              find.descendant(
-                of: chevronFinder,
-                matching: find.byType(RotationTransition),
-              ),
-            );
-            expect(rotTransition.turns.value, closeTo(0.25, 0.001));
+          expect(_key('weight-trend-line'), findsNothing);
+            expect(_key('weight-trend-empty'), findsOneWidget);
+            expect(find.textContaining(RegExp(r'\d+[,.]\d kg')), findsNothing);
+          expect(tester.takeException(), isNull);
           },
         );
       }

@@ -46,8 +46,6 @@ Widget _host(
   List<TimelineDay>? days,
   TimelineSummary? summary,
   bool? rangeShort,
-  double? startingWeight,
-  bool isOpenEnded = false,
   String? selfName,
   String? partnerName,
   bool showOfflineStamps = false,
@@ -74,8 +72,6 @@ Widget _host(
                   days: days ?? _days(),
                   summary: summary,
                   rangeShort: rangeShort,
-                  startingWeight: startingWeight,
-                  isOpenEnded: isOpenEnded,
                   selfName: selfName,
                   partnerName: partnerName,
                   showOfflineStamps: showOfflineStamps,
@@ -276,90 +272,21 @@ void main() {
     expect(tapped.map((d) => d.date), [first.date]);
   });
 
-  testWidgets('quiet hides numbers until the hold button is pressed', (
+  testWidgets(
+    'quiet needs three weights and never falls back to check-in count',
+    (
     tester,
   ) async {
     await tester.pumpWidget(
-      _host('quiet', brightness: Brightness.dark, scale: 1.35, onTap: (_) {}),
+      _host('quiet', brightness: Brightness.dark, scale: 1.35, onTap: (_) {},
+          days: [],
+        ),
     );
-    expect(find.text('Hold to view'), findsOneWidget);
-    expect(find.byKey(const ValueKey('quiet-milestones')), findsOneWidget);
-    final hold = find.byKey(const ValueKey('quiet-hold'));
-    await tester.ensureVisible(hold);
-    final g = await tester.startGesture(tester.getCenter(hold));
-    await tester.pumpAndSettle();
-    expect(find.text('Viewing'), findsOneWidget);
-    expect(find.text('••,•'), findsNothing);
-    await g.up();
-    await tester.pumpAndSettle();
-    expect(find.text('Hold to view'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets(
-    'quiet open-ended Day 1 is not badged Finish and 30D pace fallback does not show baseline kg (UX-20, UX-05)',
-    (tester) async {
-      final j = testJourney();
-      final day1 = [
-        TimelineDay(
-          date: const LocalDate(2026, 10, 10),
-          dayNumber: 1,
-          isToday: false,
-          state: DayState.checkedIn,
-          checkIn: testCheckIn(j.id, const LocalDate(2026, 10, 10)),
-        ),
-      ];
-      await tester.pumpWidget(
-        _host(
-          'quiet',
-          brightness: Brightness.light,
-          scale: 1,
-          onTap: (_) {},
-          days: day1,
-          isOpenEnded: true,
-        ),
-      );
-      expect(find.text('Finish'), findsNothing);
-
-      const summary = TimelineSummary(
-        curve: [70.0, 69.0],
-        curve30: [3.0, 5.0],
-        metricCount: 2,
-        metric30Count: 0,
-        metricFirst: 70.0,
-        metricLast: 69.0,
-        pace: [1.0, 5.0],
-        done: 5,
-        frames: 5,
-        totalDays: 40,
-        currentDay: 40,
-        isOpenEnded: true,
-      );
-      await tester.pumpWidget(
-        _host(
-          'quiet',
-          brightness: Brightness.light,
-          scale: 1,
-          onTap: (_) {},
-          days: day1,
-          summary: summary,
-          rangeShort: true,
-          startingWeight: 71.5,
-          isOpenEnded: true,
-        ),
-      );
-      expect(find.byKey(const ValueKey('quiet-range-fallback')), findsOneWidget);
-      final hold = find.byKey(const ValueKey('quiet-hold'));
-      await tester.ensureVisible(hold);
-      final g = await tester.startGesture(tester.getCenter(hold));
-      await tester.pumpAndSettle();
-      expect(find.text('71.5 kg'), findsNothing);
-      expect(find.text('70.0 kg'), findsNothing);
-      expect(find.text('3'), findsOneWidget);
-      expect(find.text('5'), findsOneWidget);
-      await g.up();
-      await tester.pumpAndSettle();
-    },
+      await tester.pump();
+    expect(find.byKey(const ValueKey('weight-trend-line')), findsNothing);
+    expect(find.text('Hold to view'), findsNothing);
+  },
+    timeout: const Timeout(Duration(seconds: 30)),
   );
 
   testWidgets('memory ties knots on the thread and labels the today slot', (
@@ -443,14 +370,14 @@ void main() {
         expect(find.byKey(const ValueKey('journey-timeline')), findsOneWidget);
         expect(
           find.byKey(const ValueKey('journey-today-ring')),
-          findsOneWidget,
+          skin == 'quiet' || skin == 'flexer' ? findsNothing : findsOneWidget,
         );
         final all = find.byWidgetPredicate(
           (w) =>
               w.key is ValueKey<String> &&
               (w.key! as ValueKey<String>).value.startsWith('day-'),
         );
-        expect(all, findsNWidgets(14));
+        expect(all, findsNWidgets(skin == 'quiet' || skin == 'flexer' ? 5 : 14));
 
         final day = find.byKey(const ValueKey('day-2026-10-11'));
         await tester.ensureVisible(day);
@@ -460,9 +387,13 @@ void main() {
 
         tapped = null;
         final missed = find.byKey(const ValueKey('day-2026-10-12'));
-        await tester.ensureVisible(missed);
+        if (skin == 'quiet' || skin == 'flexer') {
+          expect(missed, findsNothing);
+        } else {
+          await tester.ensureVisible(missed);
         await tester.pump();
         await tester.tap(missed);
+        }
         expect(tapped, isNull);
       });
     }

@@ -85,7 +85,9 @@
   "checkin_resumeDraft": "Mở lại bản nháp cho {journey}",
   "@checkin_resumeDraft": {
     "placeholders": {
-      "journey": { "type": "String" }
+      "journey": {
+        "type": "String"
+      }
     }
   },
   "checkin_draftCue": "Bản nháp · chạm để mở lại",
@@ -292,7 +294,7 @@
   "@checkin_extraPaceLabel": {
     "description": "Post screen per-skin input."
   },
-  "checkin_extraPaceInvalid": "Nhịp không hợp lệ, giây phải dưới 60",
+  "checkin_extraPaceInvalid": "Nhập pace dạng phút:giây, ví dụ 5:42.",
   "@checkin_extraPaceInvalid": {
     "description": "Post screen per-skin input."
   },
@@ -328,5 +330,13 @@
         "type": "String"
       }
     }
-  }
+  },
+  "checkin_distanceLabel": "Quãng đường",
+  "checkin_paceLabel": "Pace (phút : giây)",
+  "checkin_paceMinutes": "phút",
+  "checkin_paceSeconds": "giây",
+  "checkin_paceInvalid": "Giây chỉ từ 00 đến 59.",
+  "checkin_metricWeight": "Cân nặng",
+  "checkin_show": "Hiện",
+  "checkin_paceMinutesInvalid": "Phút phải từ 1 trở lên."
 }

@@ -801,27 +801,15 @@
   "journeys_inviteAction": "Mời bạn",
   "journeys_renameCouple": "Sửa tên",
   "journeys_renameCoupleTitle": "Sửa tên cặp đôi",
-  "journeys_quietHold": "Giữ để xem",
-  "journeys_quietHolding": "Đang xem",
-  "journeys_quietHoldHint": "Nhấn giữ để hiện số của bạn",
   "journeys_quietHidden": "Đã ẩn",
-  "journeys_quietAxis": "{value} kg",
   "journeys_quietDayTag": "NGÀY {day}",
   "journeys_quietToday": "HÔM NAY",
   "journeys_quietWeek": "TUẦN ĐẦU",
   "journeys_quietHalf": "NỬA CHẶNG",
   "journeys_quietFinish": "VỀ ĐÍCH",
-  "journeys_quietMissed": "Một ngày nghỉ không xóa hành trình.",
   "journeys_quietMilestones": "Cột mốc",
   "journeys_memoryToday": "HÔM NAY · chạm để chụp",
   "journeys_memoryEmpty": "KHUNG TRỐNG",
-  "@journeys_quietAxis": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      }
-    }
-  },
   "@journeys_quietDayTag": {
     "placeholders": {
       "day": {
@@ -840,7 +828,6 @@
   "journeys_memoryOffline": "NGOẠI TUYẾN · chờ đồng bộ",
   "journeys_dna_goal_title_weight": "mục tiêu của bạn.",
   "journeys_dna_weight_title": "cân nặng hiện tại.",
-  "journeys_dna_ghost_title": "chụp ảnh ngày 1 làm khung căn dáng.",
   "journeys_dna_goal_title_english": "mục tiêu.",
   "journeys_dna_minutes_title": "mỗi ngày bao nhiêu phút.",
   "journeys_dna_trophy_title": "đặt tên chiếc cúp ở đích.",
@@ -926,9 +913,6 @@
   "journeys_dna_weight_private": "Chỉ mình bạn thấy",
   "journeys_dna_weight_hide": "Ẩn số kg khi chia sẻ",
   "journeys_dna_weight_skip": "Bỏ qua",
-  "journeys_dna_ghost_body": "Hiện khung bóng mờ trong máy ảnh để ngày nào chụp cũng khớp một góc.",
-  "journeys_dna_ghost_now": "Bật khung căn dáng",
-  "journeys_dna_ghost_later": "Tắt đi, để bật sau.",
   "journeys_dna_trophy_label": "Tên chiếc cúp",
   "journeys_dna_trophy_hint": "Cúp 7.5",
   "journeys_dna_place_search": "Tìm điểm đến",
@@ -1039,8 +1023,6 @@
       }
     }
   },
-  "journeys_home_holdReveal": "Giữ để xem",
-  "journeys_home_viewing": "Đang xem",
   "journeys_home_chartA11y": "Đường tiến trình",
   "journeys_home_msWeek": "Tuần đầu",
   "journeys_home_msHalf": "Nửa chặng",
@@ -1449,25 +1431,6 @@
   },
   "journeys_home_pairBoth": "cả hai đã chụp hôm nay",
   "journeys_home_pairNeither": "hôm nay chưa ai chụp",
-  "journeys_home_flexSummary": "{km} KM TỔNG · {pace} /KM NHỊP TB",
-  "@journeys_home_flexSummary": {
-    "placeholders": {
-      "km": {
-        "type": "String"
-      },
-      "pace": {
-        "type": "String"
-      }
-    }
-  },
-  "journeys_home_flexKmOnly": "{km} KM TỔNG",
-  "@journeys_home_flexKmOnly": {
-    "placeholders": {
-      "km": {
-        "type": "String"
-      }
-    }
-  },
   "journeys_home_flexRan": "{done}/{total} ĐÃ CHẠY",
   "@journeys_home_flexRan": {
     "placeholders": {
@@ -1650,29 +1613,106 @@
   "journeys_timelineRecent": "Gần đây",
   "journeys_timelineByMonth": "Theo tháng",
   "journeys_monthSummary": "{checked}/{days} ngày · {photos} ảnh",
-  "@journeys_monthSummary": {"placeholders": {"checked": {"type": "int"}, "days": {"type": "int"}, "photos": {"type": "int"}}},
+  "@journeys_monthSummary": {
+    "placeholders": {
+      "checked": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      },
+      "photos": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_monthA11y": "{month}, {checked} trên {days} ngày đã check-in, {photos} ảnh",
-  "@journeys_monthA11y": {"placeholders": {"month": {"type": "String"}, "checked": {"type": "int"}, "days": {"type": "int"}, "photos": {"type": "int"}}},
+  "@journeys_monthA11y": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "checked": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      },
+      "photos": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_monthExpandHint": "Mở rộng",
   "journeys_monthCollapseHint": "Thu gọn",
   "journeys_jumpToMonth": "Đi tới {month}",
-  "@journeys_jumpToMonth": {"placeholders": {"month": {"type": "String"}}},
+  "@journeys_jumpToMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
   "journeys_jumpToYear": "Xem năm {year}",
-  "@journeys_jumpToYear": {"placeholders": {"year": {"type": "int"}}},
+  "@journeys_jumpToYear": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_jumpAnnounce": "Đang ở {month}",
-  "@journeys_jumpAnnounce": {"placeholders": {"month": {"type": "String"}}},
+  "@journeys_jumpAnnounce": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
   "journeys_earlierLink": "Trước đó: ngày 1–{to}, {checked} ngày đã check-in",
-  "@journeys_earlierLink": {"placeholders": {"to": {"type": "int"}, "checked": {"type": "int"}}},
+  "@journeys_earlierLink": {
+    "placeholders": {
+      "to": {
+        "type": "int"
+      },
+      "checked": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_earlierView": "Xem",
   "journeys_daysToGo": "Còn {days} ngày · Đích là ngày {finish}",
-  "@journeys_daysToGo": {"placeholders": {"days": {"type": "int"}, "finish": {"type": "int"}}},
+  "@journeys_daysToGo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "finish": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_range30": "30 ngày",
   "journeys_rangeAll": "Tất cả",
   "journeys_clearYear": "Bỏ lọc năm {year}",
-  "@journeys_clearYear": {"placeholders": {"year": {"type": "int"}}},
-  "journeys_range30Pace": "Ít số liệu trong 30 ngày, đang hiện số ngày check-in",
+  "@journeys_clearYear": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_startsIn": "Bắt đầu sau {days} ngày · {total} ngày",
-  "@journeys_startsIn": {"placeholders": {"days": {"type": "int"}, "total": {"type": "int"}}},
+  "@journeys_startsIn": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_dayPrevious": "Trước",
   "journeys_dayNext": "Sau",
   "journeys_dayPreviousSemantics": "Check-in trước, {date}",
@@ -1700,5 +1740,132 @@
         "type": "String"
       }
     }
-  }
+  },
+  "journeys_homeMeta": "Ngày {day} / {total} · {range}",
+  "@journeys_homeMeta": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_homeMetaOpen": "Ngày {day} · từ {start}",
+  "@journeys_homeMetaOpen": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "start": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_daysLeft": "Còn {n} ngày",
+  "@journeys_daysLeft": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_weekLabel": "Tuần {n}",
+  "@journeys_weekLabel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_weekKm": "Tuần {n} · {km} km",
+  "@journeys_weekKm": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_runTotalKm": "Tổng km",
+  "journeys_runCount": "Buổi chạy",
+  "journeys_runAvgPace": "Pace trung bình",
+  "journeys_sessionCount": "Buổi tập",
+  "journeys_weightTrend": "Xu hướng · {direction}",
+  "@journeys_weightTrend": {
+    "placeholders": {
+      "direction": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_trendDown": "đang xuống nhẹ",
+  "journeys_trendFlat": "khá đều",
+  "journeys_trendUp": "đang lên nhẹ",
+  "journeys_trendFooter": "{count} lần cân · đã làm mượt",
+  "@journeys_trendFooter": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_trendNeedMore": "Cân thêm vài lần nữa là thấy xu hướng.",
+  "journeys_trendChange": "{delta} kg từ ngày 1",
+  "@journeys_trendChange": {
+    "placeholders": {
+      "delta": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_showNumbers": "Hiện số",
+  "journeys_hideNumbers": "Ẩn số",
+  "journeys_firstLatest": "Ngày {first} và ngày {latest}",
+  "@journeys_firstLatest": {
+    "placeholders": {
+      "first": {
+        "type": "int"
+      },
+      "latest": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_viewerMetricHidden": "••,•",
+  "journeys_semRunBar": "Ngày {day}, {km} km",
+  "@journeys_semRunBar": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_semRunBarNone": "Ngày {day}, không ghi km",
+  "@journeys_semRunBarNone": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_photoLogEmpty": "Ảnh check-in sẽ ở đây.",
+  "journeys_streakOnly": "Chuỗi {n}",
+  "@journeys_streakOnly": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_runDay": "Ngày"
 }

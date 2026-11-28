@@ -371,6 +371,10 @@ class TimelineIndex {
 
   final JourneyProgress progress;
 
+  late final List<TimelineDay> elapsed = List.unmodifiable(
+    progress.range(progress.journey.startDate, progress.lastDay),
+  );
+
   /// Oldest first, up to the month of today.
   final List<MonthBucket> months;
 

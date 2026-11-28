@@ -653,7 +653,7 @@ abstract class CheckinL10n {
   /// Post screen per-skin input.
   ///
   /// In vi, this message translates to:
-  /// **'Nhịp không hợp lệ, giây phải dưới 60'**
+  /// **'Nhập pace dạng phút:giây, ví dụ 5:42.'**
   String get checkin_extraPaceInvalid;
 
   /// Post screen per-skin input.
@@ -697,6 +697,54 @@ abstract class CheckinL10n {
   /// In vi, this message translates to:
   /// **'Lần trước: {value}'**
   String checkin_metricLast(String value);
+
+  /// No description provided for @checkin_distanceLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Quãng đường'**
+  String get checkin_distanceLabel;
+
+  /// No description provided for @checkin_paceLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Pace (phút : giây)'**
+  String get checkin_paceLabel;
+
+  /// No description provided for @checkin_paceMinutes.
+  ///
+  /// In vi, this message translates to:
+  /// **'phút'**
+  String get checkin_paceMinutes;
+
+  /// No description provided for @checkin_paceSeconds.
+  ///
+  /// In vi, this message translates to:
+  /// **'giây'**
+  String get checkin_paceSeconds;
+
+  /// No description provided for @checkin_paceInvalid.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giây chỉ từ 00 đến 59.'**
+  String get checkin_paceInvalid;
+
+  /// No description provided for @checkin_metricWeight.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cân nặng'**
+  String get checkin_metricWeight;
+
+  /// No description provided for @checkin_show.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hiện'**
+  String get checkin_show;
+
+  /// No description provided for @checkin_paceMinutesInvalid.
+  ///
+  /// In vi, this message translates to:
+  /// **'Phút phải từ 1 trở lên.'**
+  String get checkin_paceMinutesInvalid;
 }
 
 class _CheckinL10nDelegate extends LocalizationsDelegate<CheckinL10n> {

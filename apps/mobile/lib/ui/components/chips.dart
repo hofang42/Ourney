@@ -17,6 +17,7 @@ class UiChip extends StatelessWidget {
     this.trailing,
     this.selected = false,
     this.fillWhenSelected = true,
+    this.compact = false,
     this.semanticHint,
     super.key,
   });
@@ -38,6 +39,9 @@ class UiChip extends StatelessWidget {
   /// Set to `false` for colour-swatch chips so the swatch dot keeps its figure-
   /// ground contrast against `ui.surface`.
   final bool fillWhenSelected;
+
+  /// Smaller visual for photo labels; interactive chips keep a 48dp target.
+  final bool compact;
   final String? semanticHint;
 
   @override
@@ -51,11 +55,11 @@ class UiChip extends StatelessWidget {
       semanticLabel: semanticHint == null ? label : '$label, $semanticHint',
       excludeChildSemantics: true,
       centerChild: true,
-      shadowOffset: UiShadow.small,
+      shadowOffset: compact ? 0 : UiShadow.small,
       borderRadius: BorderRadius.circular(UiRadius.capsule),
       child: Container(
-        constraints: const BoxConstraints(minHeight: 44),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        constraints: BoxConstraints(minHeight: compact ? 26 : 44),
+        padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 14, vertical: compact ? 3 : 6),
         decoration: BoxDecoration(
           color: accentFill ? ui.accent : ui.surface,
           borderRadius: BorderRadius.circular(UiRadius.capsule),
@@ -76,7 +80,7 @@ class UiChip extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: UiText.body(
-                  size: 13,
+                  size: compact ? 11 : 13,
                   weight: FontWeight.w700,
                   height: 1.4,
                   color: fg,

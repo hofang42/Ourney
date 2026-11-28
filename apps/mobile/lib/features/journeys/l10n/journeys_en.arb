@@ -329,27 +329,15 @@
   "journeys_inviteAction": "Invite",
   "journeys_renameCouple": "Edit names",
   "journeys_renameCoupleTitle": "Edit couple names",
-  "journeys_quietHold": "Hold to view",
-  "journeys_quietHolding": "Viewing",
-  "journeys_quietHoldHint": "Press and hold to reveal your numbers",
   "journeys_quietHidden": "Hidden",
-  "journeys_quietAxis": "{value} kg",
   "journeys_quietDayTag": "DAY {day}",
   "journeys_quietToday": "TODAY",
   "journeys_quietWeek": "FIRST WEEK",
   "journeys_quietHalf": "HALFWAY",
   "journeys_quietFinish": "FINISH",
-  "journeys_quietMissed": "A rest day doesn't erase the journey.",
   "journeys_quietMilestones": "Milestones",
   "journeys_memoryToday": "TODAY · tap to snap",
   "journeys_memoryEmpty": "EMPTY FRAME",
-  "@journeys_quietAxis": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      }
-    }
-  },
   "@journeys_quietDayTag": {
     "placeholders": {
       "day": {
@@ -368,7 +356,6 @@
   "journeys_memoryOffline": "OFFLINE · waiting to sync",
   "journeys_dna_goal_title_weight": "your goal.",
   "journeys_dna_weight_title": "current weight.",
-  "journeys_dna_ghost_title": "take a day-1 photo as your alignment frame.",
   "journeys_dna_goal_title_english": "goal.",
   "journeys_dna_minutes_title": "minutes per day.",
   "journeys_dna_trophy_title": "name the trophy at the finish.",
@@ -454,9 +441,6 @@
   "journeys_dna_weight_private": "Only you can see this",
   "journeys_dna_weight_hide": "Hide kg when sharing",
   "journeys_dna_weight_skip": "Skip",
-  "journeys_dna_ghost_body": "Show a translucent silhouette guide in the camera so every photo lines up.",
-  "journeys_dna_ghost_now": "Turn on ghost guide",
-  "journeys_dna_ghost_later": "Keep it off for now.",
   "journeys_dna_trophy_label": "Trophy name",
   "journeys_dna_trophy_hint": "Trophy 7.5",
   "journeys_dna_place_search": "Search destinations",
@@ -560,8 +544,6 @@
       }
     }
   },
-  "journeys_home_holdReveal": "Hold to reveal",
-  "journeys_home_viewing": "Viewing",
   "journeys_home_chartA11y": "Progress line",
   "journeys_home_msWeek": "First week",
   "journeys_home_msHalf": "Halfway",
@@ -970,25 +952,6 @@
   },
   "journeys_home_pairBoth": "both shot today",
   "journeys_home_pairNeither": "nobody has shot today yet",
-  "journeys_home_flexSummary": "{km} KM TOTAL · {pace} /KM AVG PACE",
-  "@journeys_home_flexSummary": {
-    "placeholders": {
-      "km": {
-        "type": "String"
-      },
-      "pace": {
-        "type": "String"
-      }
-    }
-  },
-  "journeys_home_flexKmOnly": "{km} KM TOTAL",
-  "@journeys_home_flexKmOnly": {
-    "placeholders": {
-      "km": {
-        "type": "String"
-      }
-    }
-  },
   "journeys_home_flexRan": "{done}/{total} RAN",
   "@journeys_home_flexRan": {
     "placeholders": {
@@ -1123,29 +1086,106 @@
   "journeys_timelineRecent": "Recent",
   "journeys_timelineByMonth": "By month",
   "journeys_monthSummary": "{checked}/{days} days · {photos, plural, one{1 photo} other{{photos} photos}}",
-  "@journeys_monthSummary": {"placeholders": {"checked": {"type": "int"}, "days": {"type": "int"}, "photos": {"type": "int"}}},
+  "@journeys_monthSummary": {
+    "placeholders": {
+      "checked": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      },
+      "photos": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_monthA11y": "{month}, {checked} of {days} days checked in, {photos, plural, one{1 photo} other{{photos} photos}}",
-  "@journeys_monthA11y": {"placeholders": {"month": {"type": "String"}, "checked": {"type": "int"}, "days": {"type": "int"}, "photos": {"type": "int"}}},
+  "@journeys_monthA11y": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "checked": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      },
+      "photos": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_monthExpandHint": "Expand",
   "journeys_monthCollapseHint": "Collapse",
   "journeys_jumpToMonth": "Go to {month}",
-  "@journeys_jumpToMonth": {"placeholders": {"month": {"type": "String"}}},
+  "@journeys_jumpToMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
   "journeys_jumpToYear": "Show {year}",
-  "@journeys_jumpToYear": {"placeholders": {"year": {"type": "int"}}},
+  "@journeys_jumpToYear": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_jumpAnnounce": "Showing {month}",
-  "@journeys_jumpAnnounce": {"placeholders": {"month": {"type": "String"}}},
+  "@journeys_jumpAnnounce": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
   "journeys_earlierLink": "Earlier: days 1–{to}, {checked} checked in",
-  "@journeys_earlierLink": {"placeholders": {"to": {"type": "int"}, "checked": {"type": "int"}}},
+  "@journeys_earlierLink": {
+    "placeholders": {
+      "to": {
+        "type": "int"
+      },
+      "checked": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_earlierView": "View",
   "journeys_daysToGo": "{days, plural, one{1 day} other{{days} days}} to go · Finish on day {finish}",
-  "@journeys_daysToGo": {"placeholders": {"days": {"type": "int"}, "finish": {"type": "int"}}},
+  "@journeys_daysToGo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "finish": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_range30": "30D",
   "journeys_rangeAll": "All",
   "journeys_clearYear": "Clear {year} filter",
-  "@journeys_clearYear": {"placeholders": {"year": {"type": "int"}}},
-  "journeys_range30Pace": "Few values in 30 days, showing check-ins",
+  "@journeys_clearYear": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_startsIn": "Starts in {days, plural, one{1 day} other{{days} days}} · {total, plural, one{1 day} other{{total} days}}",
-  "@journeys_startsIn": {"placeholders": {"days": {"type": "int"}, "total": {"type": "int"}}},
+  "@journeys_startsIn": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_dayPrevious": "Earlier",
   "journeys_dayNext": "Later",
   "journeys_dayPreviousSemantics": "Previous check-in, {date}",
@@ -1173,5 +1213,132 @@
         "type": "String"
       }
     }
-  }
+  },
+  "journeys_homeMeta": "Day {day} / {total} · {range}",
+  "@journeys_homeMeta": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_homeMetaOpen": "Day {day} · since {start}",
+  "@journeys_homeMetaOpen": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "start": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_daysLeft": "{n, plural, =1{1 day to go} other{{n} days to go}}",
+  "@journeys_daysLeft": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_weekLabel": "Week {n}",
+  "@journeys_weekLabel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_weekKm": "Week {n} · {km} km",
+  "@journeys_weekKm": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_runTotalKm": "Total km",
+  "journeys_runCount": "Runs",
+  "journeys_runAvgPace": "Avg pace",
+  "journeys_sessionCount": "Sessions",
+  "journeys_weightTrend": "Trend · {direction}",
+  "@journeys_weightTrend": {
+    "placeholders": {
+      "direction": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_trendDown": "easing down",
+  "journeys_trendFlat": "holding steady",
+  "journeys_trendUp": "drifting up",
+  "journeys_trendFooter": "{count} weigh-ins · smoothed",
+  "@journeys_trendFooter": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_trendNeedMore": "A few more weigh-ins and the trend shows up.",
+  "journeys_trendChange": "{delta} kg since day 1",
+  "@journeys_trendChange": {
+    "placeholders": {
+      "delta": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_showNumbers": "Show numbers",
+  "journeys_hideNumbers": "Hide numbers",
+  "journeys_firstLatest": "Day {first} and day {latest}",
+  "@journeys_firstLatest": {
+    "placeholders": {
+      "first": {
+        "type": "int"
+      },
+      "latest": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_viewerMetricHidden": "••.•",
+  "journeys_semRunBar": "Day {day}, {km} km",
+  "@journeys_semRunBar": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_semRunBarNone": "Day {day}, no distance",
+  "@journeys_semRunBarNone": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_photoLogEmpty": "Your check-in photos will appear here.",
+  "journeys_streakOnly": "{n} day streak",
+  "@journeys_streakOnly": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_runDay": "Day"
 }

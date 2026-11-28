@@ -5,6 +5,8 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../../data/group_daily_checkins_provider.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
+import '../../checkin/l10n/generated/checkin_localizations.dart';
+import '../../share_card/domain/share_card_content.dart' show isWeightMetric;
 import '../domain/day_neighbors.dart';
 import '../domain/journey_time.dart';
 import '../l10n/generated/journeys_localizations.dart';
@@ -193,7 +195,15 @@ class DayFacts extends StatelessWidget {
                 ),
               if (checkIn.metricValue != null)
                 _MetricRow(
-                  name: journey?.metricName,
+                  key: ValueKey('metric-${checkIn.id}'),
+                  hidden:
+                      journey == null ||
+                      journey!.templateId == TemplateId.weightLoss ||
+                      isWeightMetric(journey!) ||
+                      journey!.hideMetricDefault,
+                  name: journey?.templateId == TemplateId.weightLoss
+                      ? CheckinL10n.of(context).checkin_metricWeight
+                      : journey?.metricName,
                   unit: journey?.metricUnit,
                   value: checkIn.metricValue!,
                 ),
@@ -545,23 +555,59 @@ class DayEmptyState extends StatelessWidget {
   }
 }
 
-class _MetricRow extends StatelessWidget {
+class _MetricRow extends StatefulWidget {
   const _MetricRow({
     required this.name,
     required this.unit,
     required this.value,
+    required this.hidden,
+    super.key,
   });
+
+  final bool hidden;
 
   final String? name;
   final String? unit;
   final double value;
 
   @override
+  State<_MetricRow> createState() => _MetricRowState();
+}
+
+class _MetricRowState extends State<_MetricRow> with WidgetsBindingObserver {
+  bool _revealed = false;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if ((state == AppLifecycleState.inactive ||
+            state == AppLifecycleState.paused) &&
+        _revealed) {
+      setState(() => _revealed = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final number = value == value.roundToDouble()
-        ? value.toStringAsFixed(0)
-        : value.toStringAsFixed(1);
-    final shown = [number, ?unit].join(' ');
+    final number = NumberFormat(
+      widget.value == widget.value.roundToDouble() ? '0' : '0.0',
+      Localizations.localeOf(context).toString(),
+    ).format(widget.value);
+    final hidden = widget.hidden && !_revealed;
+    final shown = hidden
+        ? JourneysL10n.of(context).journeys_viewerMetricHidden
+        : number;
+    final name = widget.name;
     final strong = UiText.body(
       size: 16,
       weight: FontWeight.w700,
@@ -584,10 +630,16 @@ class _MetricRow extends StatelessWidget {
             ),
           ),
         Text(
-          shown,
+          [shown, ?widget.unit].join(' '),
           key: const ValueKey('journey-day-metric-shown'),
           style: strong,
         ),
+        if (hidden)
+          UiTextAction(
+            label: CheckinL10n.of(context).checkin_show,
+            expand: false,
+            onPressed: () => setState(() => _revealed = true),
+          ),
       ],
     );
   }
