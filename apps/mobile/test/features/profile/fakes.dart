@@ -256,7 +256,7 @@ String location(ProviderContainer c) =>
 
 Future<void> goTo(WidgetTester tester, ProviderContainer c, String path) async {
   c.read(routerProvider).go(path);
-  await tester.pumpAndSettle();
+  await pumpAppFrames(tester);
 }
 
 Finder byKey(String key) => find.byKey(ValueKey(key));
