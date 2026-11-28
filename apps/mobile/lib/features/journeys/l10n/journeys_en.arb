@@ -679,6 +679,342 @@
   "journeys_edit_saved": "Saved.",
   "journeys_edit_ownerOnly": "Only the journey owner can edit.",
   "journeys_edit_menu": "Edit journey",
+  "journeys_wrapped_eyebrowOpen": "DAY ONE · {date}",
+  "@journeys_wrapped_eyebrowOpen": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_openSpan": "{days, plural, =1{1 day} other{{days} days}}, {start} to {end}",
+  "@journeys_wrapped_openSpan": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_openReason": "On day one you wrote: \"{reason}\"",
+  "@journeys_wrapped_openReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_eyebrowFirst": "FIRST PHOTO",
+  "journeys_wrapped_firstHeadline": "Your first check-in, {date}",
+  "@journeys_wrapped_firstHeadline": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_firstHeadlineImported": "The first photo, {date}",
+  "@journeys_wrapped_firstHeadlineImported": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_firstFew": "{days, plural, =1{1 check-in day} other{{days} check-in days}}, all of them here",
+  "@journeys_wrapped_firstFew": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_eyebrowRoll": "THE WHOLE ROLL",
+  "journeys_wrapped_rollBusiest": "Busiest day: {date}, {n} photos",
+  "@journeys_wrapped_rollBusiest": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_rollMore": "+{n}",
+  "@journeys_wrapped_rollMore": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_eyebrowSignature": "THIS JOURNEY IN NUMBERS",
+  "journeys_wrapped_sigQuietWeight": "You logged your weight {n} times",
+  "@journeys_wrapped_sigQuietWeight": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigQuietWeightLess": "{delta} lighter than day one",
+  "@journeys_wrapped_sigQuietWeightLess": {
+    "placeholders": {
+      "delta": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_sigQuietRange": "From {first} to {last}",
+  "@journeys_wrapped_sigQuietRange": {
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "last": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_sigQuietMood": "{n} days you felt light",
+  "@journeys_wrapped_sigQuietMood": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_showKg": "Show kg",
+  "journeys_wrapped_showPhotos": "Show photos",
+  "journeys_wrapped_sigSquadTime": "{hours} h {minutes} min of study over {n, plural, =1{1 check-in} other{{n} check-ins}}",
+  "@journeys_wrapped_sigSquadTime": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigSquadLongest": "Longest session: {minutes} min, {date}",
+  "@journeys_wrapped_sigSquadLongest": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_sigMemoryPlaces": "{n} stops, from {first} to {last}",
+  "@journeys_wrapped_sigMemoryPlaces": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "first": {
+        "type": "String"
+      },
+      "last": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_sigCoupleDays": "{n} days you both checked in",
+  "@journeys_wrapped_sigCoupleDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigCoupleCook": "{a} cooked {x, plural, =1{once} other{{x} times}}, {b} {y, plural, =1{once} other{{y} times}}",
+  "@journeys_wrapped_sigCoupleCook": {
+    "placeholders": {
+      "a": {
+        "type": "String"
+      },
+      "x": {
+        "type": "int"
+      },
+      "b": {
+        "type": "String"
+      },
+      "y": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigCoupleHearts": "{n, plural, =1{1 dish got} other{{n} dishes got}} all 5 hearts",
+  "@journeys_wrapped_sigCoupleHearts": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigFlexerKm": "{km} km over {n, plural, =1{1 run} other{{n} runs}}",
+  "@journeys_wrapped_sigFlexerKm": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigFlexerPace": "Fastest pace {pace}/km, {date}",
+  "@journeys_wrapped_sigFlexerPace": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_sigFlexerMinutes": "{n, plural, =1{1 session} other{{n} sessions}}, {hours} h {minutes} min in total",
+  "@journeys_wrapped_sigFlexerMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigMinimalDays": "{days, plural, =1{1 check-in day} other{{days} check-in days}}",
+  "@journeys_wrapped_sigMinimalDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigMinimalDaysHabit": "{days, plural, =1{1 check-in day} other{{days} check-in days}} · {habit}",
+  "@journeys_wrapped_sigMinimalDaysHabit": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "habit": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_sigRatio": "{days}/{total} days",
+  "@journeys_wrapped_sigRatio": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigLongestStreak": "Longest streak: {n} days",
+  "@journeys_wrapped_sigLongestStreak": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigReactions": "{n, plural, =1{1 reaction} other{{n} reactions}}",
+  "@journeys_wrapped_sigReactions": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_eyebrowNote": "YOU WROTE · {date}",
+  "@journeys_wrapped_eyebrowNote": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_eyebrowFinish": "FINISH TICKET",
+  "journeys_wrapped_finishCount": "{days, plural, =1{1 check-in day} other{{days} check-in days}} · {moments, plural, =1{1 photo} other{{moments} photos}}",
+  "@journeys_wrapped_finishCount": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "moments": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_finishTrophy": "Trophy: {trophy}",
+  "@journeys_wrapped_finishTrophy": {
+    "placeholders": {
+      "trophy": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_finishDay": "DAY {n}",
+  "@journeys_wrapped_finishDay": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_finishStampButton": "Stamp it",
+  "journeys_wrapped_finishStampHint": "Tap to stamp your finish ticket",
+  "journeys_wrapped_finishStamp": "FINISHED · {date}",
+  "@journeys_wrapped_finishStamp": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_finishSlogan": "One photo at a time, at your own pace",
+  "journeys_wrapped_finishCta": "See your card",
+  "journeys_wrapped_pause": "Pause",
+  "journeys_wrapped_play": "Play",
+  "journeys_wrapped_sumMinimalCount": "{days, plural, =1{1 CHECK-IN DAY} other{{days} CHECK-IN DAYS}} · {name}",
+  "@journeys_wrapped_sumMinimalCount": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_sumSquadCount": "{days, plural, =1{1 CHECK-IN DAY} other{{days} CHECK-IN DAYS}}",
+  "@journeys_wrapped_sumSquadCount": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_wrapped_title": "Journey complete",
   "journeys_wrapped_close": "Close",
   "journeys_wrapped_step": "Step {n}",
@@ -700,80 +1036,6 @@
       }
     }
   },
-  "journeys_wrapped_streak": "{n}-day streak",
-  "@journeys_wrapped_streak": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
-  "journeys_wrapped_quietEnd": "You made it.",
-  "journeys_wrapped_checkIns": "{n, plural, =1{1 check-in} other{{n} check-ins}}",
-  "@journeys_wrapped_checkIns": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
-  "journeys_wrapped_squadEnd": "Finished, everyone!",
-  "journeys_wrapped_frames": "{n, plural, =1{1 frame} other{{n} frames}}",
-  "@journeys_wrapped_frames": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
-  "journeys_wrapped_daysTogether": "{n, plural, =1{1 day together} other{{n} days together}}",
-  "@journeys_wrapped_daysTogether": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
-  "journeys_wrapped_coupleFallback": "The moment we will remember",
-  "journeys_wrapped_km": "{km} KM",
-  "@journeys_wrapped_km": {
-    "placeholders": {
-      "km": {
-        "type": "String"
-      }
-    }
-  },
-  "journeys_wrapped_pace": "PACE {pace}",
-  "@journeys_wrapped_pace": {
-    "placeholders": {
-      "pace": {
-        "type": "String"
-      }
-    }
-  },
-  "journeys_wrapped_flexStreak": "STREAK {n}.",
-  "@journeys_wrapped_flexStreak": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
-  "journeys_wrapped_minimalLine": "{done}/{total} DAYS · {name}",
-  "@journeys_wrapped_minimalLine": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "journeys_wrapped_memoryEnd": "The roll is finished. Time to print it.",
   "journeys_wrapped_sumQuiet": "DAY 01 vs DAY {total}",
   "@journeys_wrapped_sumQuiet": {
     "placeholders": {
@@ -845,17 +1107,10 @@
   "journeys_wrapped_blurLocked": "Always on for this card style",
   "journeys_wrapped_on": "On",
   "journeys_wrapped_off": "Off",
-  "journeys_wrapped_ctaPoster": "Share the trip poster",
-  "journeys_wrapped_ctaStory": "Share our story",
-  "journeys_wrapped_ctaFlexer": "Share to Story",
-  "journeys_wrapped_ctaMinimal": "Export card",
-  "journeys_wrapped_ctaCard": "Make a card",
   "journeys_wrapped_share": "Share",
   "journeys_wrapped_editCard": "Edit card",
   "journeys_wrapped_sheetTitle": "share the card.",
   "journeys_wrapped_hideBrand": "Hide the ourney wordmark",
-  "journeys_wrapped_messages": "Messages",
-  "journeys_wrapped_otherApps": "Other apps",
   "journeys_wrapped_saveCard": "Save image",
   "journeys_wrapped_cardSaved": "Card saved.",
   "journeys_create_invitingFriend": "Will invite @{handle}",
@@ -866,7 +1121,6 @@
       }
     }
   },
-  "journeys_wrapped_open": "See the finished journey",
   "journeys_wrapped_menu": "Finish story",
   "journeys_home_squadChip": "{days, plural, =1{{title} · 1 DAY} other{{title} · {days} DAYS}}",
   "@journeys_home_squadChip": {
@@ -1360,6 +1614,58 @@
     "placeholders": {
       "count": {
         "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigSquadMinutesOnly": "{minutes} min of study over {n, plural, =1{1 check-in} other{{n} check-ins}}",
+  "@journeys_wrapped_sigSquadMinutesOnly": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigSquadHoursOnly": "{hours} h of study over {n, plural, =1{1 check-in} other{{n} check-ins}}",
+  "@journeys_wrapped_sigSquadHoursOnly": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigFlexerMinutesOnly": "{n, plural, =1{1 session} other{{n} sessions}}, {minutes} min in total",
+  "@journeys_wrapped_sigFlexerMinutesOnly": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigFlexerHoursOnly": "{n, plural, =1{1 session} other{{n} sessions}}, {hours} h in total",
+  "@journeys_wrapped_sigFlexerHoursOnly": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sigFlexerAveragePace": "Average pace {pace}/km",
+  "@journeys_wrapped_sigFlexerAveragePace": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
       }
     }
   },

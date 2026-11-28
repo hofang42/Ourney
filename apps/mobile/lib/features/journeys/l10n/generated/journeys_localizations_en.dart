@@ -1421,6 +1421,299 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_edit_menu => 'Edit journey';
 
   @override
+  String journeys_wrapped_eyebrowOpen(String date) {
+    return 'DAY ONE · $date';
+  }
+
+  @override
+  String journeys_wrapped_openSpan(int days, String start, String end) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$_temp0, $start to $end';
+  }
+
+  @override
+  String journeys_wrapped_openReason(String reason) {
+    return 'On day one you wrote: \"$reason\"';
+  }
+
+  @override
+  String get journeys_wrapped_eyebrowFirst => 'FIRST PHOTO';
+
+  @override
+  String journeys_wrapped_firstHeadline(String date) {
+    return 'Your first check-in, $date';
+  }
+
+  @override
+  String journeys_wrapped_firstHeadlineImported(String date) {
+    return 'The first photo, $date';
+  }
+
+  @override
+  String journeys_wrapped_firstFew(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days check-in days',
+      one: '1 check-in day',
+    );
+    return '$_temp0, all of them here';
+  }
+
+  @override
+  String get journeys_wrapped_eyebrowRoll => 'THE WHOLE ROLL';
+
+  @override
+  String journeys_wrapped_rollBusiest(String date, int n) {
+    return 'Busiest day: $date, $n photos';
+  }
+
+  @override
+  String journeys_wrapped_rollMore(int n) {
+    return '+$n';
+  }
+
+  @override
+  String get journeys_wrapped_eyebrowSignature => 'THIS JOURNEY IN NUMBERS';
+
+  @override
+  String journeys_wrapped_sigQuietWeight(int n) {
+    return 'You logged your weight $n times';
+  }
+
+  @override
+  String journeys_wrapped_sigQuietWeightLess(String delta) {
+    return '$delta lighter than day one';
+  }
+
+  @override
+  String journeys_wrapped_sigQuietRange(String first, String last) {
+    return 'From $first to $last';
+  }
+
+  @override
+  String journeys_wrapped_sigQuietMood(int n) {
+    return '$n days you felt light';
+  }
+
+  @override
+  String get journeys_wrapped_showKg => 'Show kg';
+
+  @override
+  String get journeys_wrapped_showPhotos => 'Show photos';
+
+  @override
+  String journeys_wrapped_sigSquadTime(int hours, int minutes, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n check-ins',
+      one: '1 check-in',
+    );
+    return '$hours h $minutes min of study over $_temp0';
+  }
+
+  @override
+  String journeys_wrapped_sigSquadLongest(int minutes, String date) {
+    return 'Longest session: $minutes min, $date';
+  }
+
+  @override
+  String journeys_wrapped_sigMemoryPlaces(int n, String first, String last) {
+    return '$n stops, from $first to $last';
+  }
+
+  @override
+  String journeys_wrapped_sigCoupleDays(int n) {
+    return '$n days you both checked in';
+  }
+
+  @override
+  String journeys_wrapped_sigCoupleCook(String a, int x, String b, int y) {
+    String _temp0 = intl.Intl.pluralLogic(
+      x,
+      locale: localeName,
+      other: '$x times',
+      one: 'once',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      y,
+      locale: localeName,
+      other: '$y times',
+      one: 'once',
+    );
+    return '$a cooked $_temp0, $b $_temp1';
+  }
+
+  @override
+  String journeys_wrapped_sigCoupleHearts(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n dishes got',
+      one: '1 dish got',
+    );
+    return '$_temp0 all 5 hearts';
+  }
+
+  @override
+  String journeys_wrapped_sigFlexerKm(String km, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n runs',
+      one: '1 run',
+    );
+    return '$km km over $_temp0';
+  }
+
+  @override
+  String journeys_wrapped_sigFlexerPace(String pace, String date) {
+    return 'Fastest pace $pace/km, $date';
+  }
+
+  @override
+  String journeys_wrapped_sigFlexerMinutes(int n, int hours, int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n sessions',
+      one: '1 session',
+    );
+    return '$_temp0, $hours h $minutes min in total';
+  }
+
+  @override
+  String journeys_wrapped_sigMinimalDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days check-in days',
+      one: '1 check-in day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String journeys_wrapped_sigMinimalDaysHabit(int days, String habit) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days check-in days',
+      one: '1 check-in day',
+    );
+    return '$_temp0 · $habit';
+  }
+
+  @override
+  String journeys_wrapped_sigRatio(int days, int total) {
+    return '$days/$total days';
+  }
+
+  @override
+  String journeys_wrapped_sigLongestStreak(int n) {
+    return 'Longest streak: $n days';
+  }
+
+  @override
+  String journeys_wrapped_sigReactions(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n reactions',
+      one: '1 reaction',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String journeys_wrapped_eyebrowNote(String date) {
+    return 'YOU WROTE · $date';
+  }
+
+  @override
+  String get journeys_wrapped_eyebrowFinish => 'FINISH TICKET';
+
+  @override
+  String journeys_wrapped_finishCount(int days, int moments) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days check-in days',
+      one: '1 check-in day',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      moments,
+      locale: localeName,
+      other: '$moments photos',
+      one: '1 photo',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String journeys_wrapped_finishTrophy(String trophy) {
+    return 'Trophy: $trophy';
+  }
+
+  @override
+  String journeys_wrapped_finishDay(String n) {
+    return 'DAY $n';
+  }
+
+  @override
+  String get journeys_wrapped_finishStampButton => 'Stamp it';
+
+  @override
+  String get journeys_wrapped_finishStampHint =>
+      'Tap to stamp your finish ticket';
+
+  @override
+  String journeys_wrapped_finishStamp(String date) {
+    return 'FINISHED · $date';
+  }
+
+  @override
+  String get journeys_wrapped_finishSlogan =>
+      'One photo at a time, at your own pace';
+
+  @override
+  String get journeys_wrapped_finishCta => 'See your card';
+
+  @override
+  String get journeys_wrapped_pause => 'Pause';
+
+  @override
+  String get journeys_wrapped_play => 'Play';
+
+  @override
+  String journeys_wrapped_sumMinimalCount(int days, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days CHECK-IN DAYS',
+      one: '1 CHECK-IN DAY',
+    );
+    return '$_temp0 · $name';
+  }
+
+  @override
+  String journeys_wrapped_sumSquadCount(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days CHECK-IN DAYS',
+      one: '1 CHECK-IN DAY',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get journeys_wrapped_title => 'Journey complete';
 
   @override
@@ -1447,77 +1740,6 @@ class JourneysL10nEn extends JourneysL10n {
     );
     return '$_temp0 over $_temp1';
   }
-
-  @override
-  String journeys_wrapped_streak(int n) {
-    return '$n-day streak';
-  }
-
-  @override
-  String get journeys_wrapped_quietEnd => 'You made it.';
-
-  @override
-  String journeys_wrapped_checkIns(int n) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other: '$n check-ins',
-      one: '1 check-in',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get journeys_wrapped_squadEnd => 'Finished, everyone!';
-
-  @override
-  String journeys_wrapped_frames(int n) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other: '$n frames',
-      one: '1 frame',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String journeys_wrapped_daysTogether(int n) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other: '$n days together',
-      one: '1 day together',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get journeys_wrapped_coupleFallback => 'The moment we will remember';
-
-  @override
-  String journeys_wrapped_km(String km) {
-    return '$km KM';
-  }
-
-  @override
-  String journeys_wrapped_pace(String pace) {
-    return 'PACE $pace';
-  }
-
-  @override
-  String journeys_wrapped_flexStreak(int n) {
-    return 'STREAK $n.';
-  }
-
-  @override
-  String journeys_wrapped_minimalLine(int done, int total, String name) {
-    return '$done/$total DAYS · $name';
-  }
-
-  @override
-  String get journeys_wrapped_memoryEnd =>
-      'The roll is finished. Time to print it.';
 
   @override
   String journeys_wrapped_sumQuiet(int total) {
@@ -1589,21 +1811,6 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_wrapped_off => 'Off';
 
   @override
-  String get journeys_wrapped_ctaPoster => 'Share the trip poster';
-
-  @override
-  String get journeys_wrapped_ctaStory => 'Share our story';
-
-  @override
-  String get journeys_wrapped_ctaFlexer => 'Share to Story';
-
-  @override
-  String get journeys_wrapped_ctaMinimal => 'Export card';
-
-  @override
-  String get journeys_wrapped_ctaCard => 'Make a card';
-
-  @override
   String get journeys_wrapped_share => 'Share';
 
   @override
@@ -1616,12 +1823,6 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_wrapped_hideBrand => 'Hide the ourney wordmark';
 
   @override
-  String get journeys_wrapped_messages => 'Messages';
-
-  @override
-  String get journeys_wrapped_otherApps => 'Other apps';
-
-  @override
   String get journeys_wrapped_saveCard => 'Save image';
 
   @override
@@ -1631,9 +1832,6 @@ class JourneysL10nEn extends JourneysL10n {
   String journeys_create_invitingFriend(String handle) {
     return 'Will invite @$handle';
   }
-
-  @override
-  String get journeys_wrapped_open => 'See the finished journey';
 
   @override
   String get journeys_wrapped_menu => 'Finish story';
@@ -2132,6 +2330,55 @@ class JourneysL10nEn extends JourneysL10n {
       one: '1 day with photos',
     );
     return '$_temp0';
+  }
+
+  @override
+  String journeys_wrapped_sigSquadMinutesOnly(int minutes, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n check-ins',
+      one: '1 check-in',
+    );
+    return '$minutes min of study over $_temp0';
+  }
+
+  @override
+  String journeys_wrapped_sigSquadHoursOnly(int hours, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n check-ins',
+      one: '1 check-in',
+    );
+    return '$hours h of study over $_temp0';
+  }
+
+  @override
+  String journeys_wrapped_sigFlexerMinutesOnly(int n, int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n sessions',
+      one: '1 session',
+    );
+    return '$_temp0, $minutes min in total';
+  }
+
+  @override
+  String journeys_wrapped_sigFlexerHoursOnly(int n, int hours) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n sessions',
+      one: '1 session',
+    );
+    return '$_temp0, $hours h in total';
+  }
+
+  @override
+  String journeys_wrapped_sigFlexerAveragePace(String pace) {
+    return 'Average pace $pace/km';
   }
 
   @override

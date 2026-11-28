@@ -227,7 +227,7 @@ void main() {
     );
     expect(card.headline, ShareCardHeadline.checkedIn);
     expect(card.number, 4);
-    expect(WrappedStats.from(p).streak, isNull);
+    expect(WrappedStats.from(p).streak, 1);
   });
   testWidgets('retold library check-in success has no zero flame', (
     tester,
@@ -368,7 +368,13 @@ void main() {
       final stats = WrappedStats.from(p);
       for (final skin in PersonaSkinId.values) {
         expect(
-          wrappedPagesFor(l10n, p.journey, skin, stats).join(' ').toLowerCase(),
+          wrappedBeatsFor(
+            l10n,
+            p.journey,
+            skin,
+            stats,
+            localeName: l10n.localeName,
+          ).map((beat) => beat.semanticsLabel).join(' ').toLowerCase(),
           isNot(contains('streak')),
         );
       }

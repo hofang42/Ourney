@@ -1,171 +1,313 @@
+import 'dart:async';
+import 'dart:math' as math;
+
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 
-import '../../../data/group_daily_checkins_provider.dart';
 import '../l10n/generated/journeys_localizations.dart';
-import 'journey_progress.dart';
 import 'journey_title.dart';
 import 'run_stats.dart';
+import 'wrapped_stats.dart';
 
-/// Numbers the end-of-journey story is built from (Figma
-/// `wrappedPagesFor`), taken from the caller's own check-ins.
-class WrappedStats {
-  const WrappedStats({
-    required this.days,
-    required this.moments,
-    required this.total,
-    required this.streak,
-    required this.totalKm,
-    required this.photos,
-    required this.lastCaption,
-    required this.lastPlace,
-    required this.pace,
-    this.weights = const [],
-    this.coupleSlots = const [],
-  });
+export 'wrapped_stats.dart';
 
-  factory WrappedStats.from(JourneyProgress p) {
-    final dates = p.checkInsByDate.keys.toList()
-      ..sort((a, b) => a.compareTo(b));
-    final perDay = [for (final d in dates) p.checkInsByDate[d]!];
-    // Every photo counts (several a day since `0014`, B-B5).
-    final every = p.allCheckIns;
-    final start = p.journey.startDate;
-    final last = p.lastDay;
-    final runStats = RunStats.from([
-      for (final date in dates)
-        if (!date.isBefore(start) && !date.isAfter(last)) p.dayAt(date),
-    ]);
-    final avgPace = runStats.avgPaceSec;
-    String? place;
-    for (final c in every) {
-      place = c.extras.place ?? place;
-    }
-    String? caption;
-    for (final c in every.reversed) {
-      if ((c.caption ?? '').trim().isNotEmpty) {
-        caption = c.caption!.trim();
-        break;
-      }
-    }
-    final coupleDate = p.couple.latestDate ?? dates.lastOrNull ?? p.today;
-    return WrappedStats(
-      days: perDay.length,
-      moments: every.length,
-      total:
-          p.totalDays ??
-          (p.elapsedDays > perDay.length
-              ? p.elapsedDays
-              : (perDay.isEmpty ? 1 : perDay.length)),
-      streak: p.journey.origin == JourneyOrigin.imported
-          ? null
-          : p.summary.best,
-      totalKm: runStats.totalKm,
-      photos: perDay,
-      lastCaption: caption,
-      lastPlace: place,
-      pace: avgPace == null ? null : formatPace(avgPace),
-      weights: [for (final d in dates) ?latestMetric(p.checkInsOn(d))],
-      coupleSlots: p.couple.slotsOn(
-        coupleDate,
-        ownPhoto: p.checkInsByDate[coupleDate],
-      ),
-    );
-  }
-
-  /// Distinct check-in days.
-  final int days;
-
-  /// Photos taken (every photo of every day).
-  final int moments;
-  final int total;
-
-  /// Best streak.
-  final int? streak;
-  final double totalKm;
-
-  /// The latest photo of each day, oldest day first.
-  final List<CheckIn> photos;
-  final List<CouplePhotoSlot> coupleSlots;
-
-  /// The latest metric value logged each day, oldest first.
-  final List<double> weights;
-  final String? lastCaption;
-  final String? lastPlace;
-  final String? pace;
-
-  int get percent => total == 0 ? 0 : (days * 100 / total).round();
-
-  String kmTextFor(String locale) =>
-      NumberFormat('0.#', locale).format(totalKm);
+enum WrappedSignatureKind {
+  weight,
+  mood,
+  minutes,
+  places,
+  couple,
+  run,
+  habit,
+  highlights,
 }
 
-/// The story pages of [journey]'s skin, in order (headline of each page).
-List<String> wrappedPagesFor(
+class WrappedBeat {
+  const WrappedBeat({
+    required this.id,
+    required this.eyebrow,
+    required this.headline,
+    this.sub,
+    this.duration,
+    this.signatureKind,
+  });
+
+  final String id;
+  final String eyebrow;
+  final String headline;
+  final String? sub;
+  final Duration? duration;
+  final WrappedSignatureKind? signatureKind;
+
+  String get semanticsLabel => [eyebrow, headline, ?sub].join('\n');
+}
+
+final _wrappedDateSymbols = initializeDateFormatting();
+
+String formatWrappedDate(LocalDate date, String localeName) {
+  // Non-widget callers can build the story before Flutter loads its delegates.
+  unawaited(_wrappedDateSymbols);
+  final pattern = Intl.shortLocale(localeName) == 'vi' ? 'dd/MM' : 'MMM d';
+  return DateFormat(
+    pattern,
+    localeName,
+  ).format(DateTime.utc(date.year, date.month, date.day));
+}
+
+List<WrappedBeat> wrappedBeatsFor(
   JourneysL10n l10n,
   Journey journey,
   PersonaSkinId skin,
-  WrappedStats s,
-) {
-  final summary = l10n.journeys_wrapped_moments(s.moments, s.days);
-  switch (skin) {
-    case PersonaSkinId.quietTransformer:
-      return [
-        summary,
-        journey.title,
-        s.streak == null
-            ? l10n.journeys_wrappedPhotoDays(s.days)
-            : l10n.journeys_wrapped_streak(s.streak!),
-        l10n.journeys_wrapped_quietEnd,
-      ];
-    case PersonaSkinId.accountabilitySquad:
-      return [
-        summary,
-        l10n.journeys_wrapped_checkIns(s.days),
-        journey.title,
-        l10n.journeys_wrapped_squadEnd,
-      ];
-    case PersonaSkinId.memoryCollectors:
-      return [
-        summary,
-        l10n.journeys_wrapped_frames(s.days),
-        _range(journey),
-        (s.lastPlace ?? '').isNotEmpty ? s.lastPlace! : journey.title,
-      ];
-    case PersonaSkinId.coupleRituals:
-      return [
-        summary,
-        journey.title,
-        l10n.journeys_wrapped_daysTogether(s.total),
-        s.lastCaption ?? l10n.journeys_wrapped_coupleFallback,
-      ];
-    case PersonaSkinId.aestheticFlexer:
-      final isRun = isRunJourney(journey);
-      return [
-        summary.toUpperCase(),
-        isRun
-            ? l10n.journeys_wrapped_km(s.kmTextFor(l10n.localeName))
-            : l10n.journeys_wrapped_checkIns(s.days).toUpperCase(),
-        (s.pace ?? '').isNotEmpty
-            ? l10n.journeys_wrapped_pace(s.pace!)
-            : journey.title,
-        s.streak == null
-            ? l10n.journeys_wrappedPhotoDays(s.days)
-            : l10n.journeys_wrapped_flexStreak(s.streak!),
-      ];
-    case PersonaSkinId.minimalistHabit:
-      return [
-        summary.toUpperCase(),
-        l10n.journeys_wrapped_minimalLine(
-          s.days,
-          s.total,
-          journey.title.toUpperCase(),
+  WrappedStats stats, {
+  required String localeName,
+  int reactionCount = 0,
+}) {
+  String date(LocalDate value) => formatWrappedDate(value, localeName);
+  final start = journey.startDate;
+  final end = stats.lastDay ?? journey.endDate ?? start;
+  final reason = _dnaText(journey, 'reason');
+  final trophy = _dnaText(journey, 'trophy');
+  final firstPhoto = stats.photos.firstOrNull;
+  final busiest = stats.busiestDay;
+  final note = stats.noteCaption;
+  final signature = _signatureBeat(
+    l10n,
+    journey,
+    skin,
+    stats,
+    date,
+    reactionCount,
+  );
+  return [
+    WrappedBeat(
+      id: 'open',
+      eyebrow: l10n.journeys_wrapped_eyebrowOpen(date(start)),
+      headline: journey.title,
+      sub: _lines([
+        l10n.journeys_wrapped_openSpan(
+          math.max(1, start.daysUntil(end) + 1),
+          date(start),
+          date(end),
         ),
-      ];
-  }
+        if (reason != null) l10n.journeys_wrapped_openReason(reason),
+      ]),
+      duration: const Duration(milliseconds: 3500),
+    ),
+    if (firstPhoto != null)
+      WrappedBeat(
+        id: 'first',
+        eyebrow: l10n.journeys_wrapped_eyebrowFirst,
+        headline: journey.origin == JourneyOrigin.imported
+            ? l10n.journeys_wrapped_firstHeadlineImported(
+                date(firstPhoto.localDate),
+              )
+            : l10n.journeys_wrapped_firstHeadline(date(firstPhoto.localDate)),
+        sub: _lines([
+          if (stats.photos.length <= 3)
+            l10n.journeys_wrapped_firstFew(stats.photos.length),
+          if (stats.firstCaption case final caption?) caption.value,
+        ]),
+        duration: const Duration(milliseconds: 4500),
+      ),
+    if (stats.photos.length >= 4)
+      WrappedBeat(
+        id: 'roll',
+        eyebrow: l10n.journeys_wrapped_eyebrowRoll,
+        headline: l10n.journeys_wrapped_moments(stats.moments, stats.days),
+        sub: busiest == null
+            ? null
+            : l10n.journeys_wrapped_rollBusiest(
+                date(busiest.date),
+                busiest.photoCount,
+              ),
+        duration: const Duration(milliseconds: 6500),
+      ),
+    ?signature,
+    if (note != null)
+      WrappedBeat(
+        id: 'note',
+        eyebrow: l10n.journeys_wrapped_eyebrowNote(date(note.date)),
+        headline: note.value,
+        duration: const Duration(seconds: 5),
+      ),
+    WrappedBeat(
+      id: 'finish',
+      eyebrow: l10n.journeys_wrapped_eyebrowFinish,
+      headline: journey.title,
+      sub: _lines([
+        if (stats.days > 0)
+          l10n.journeys_wrapped_finishCount(stats.days, stats.moments),
+        if (trophy != null) l10n.journeys_wrapped_finishTrophy(trophy),
+      ]),
+    ),
+  ];
 }
 
-/// Headline of the summary card.
+WrappedBeat? _signatureBeat(
+  JourneysL10n l10n,
+  Journey journey,
+  PersonaSkinId skin,
+  WrappedStats stats,
+  String Function(LocalDate) date,
+  int reactionCount,
+) {
+  final lines = <String>[];
+  WrappedSignatureKind? kind;
+  switch (skin) {
+    case PersonaSkinId.quietTransformer:
+      if (stats.weights.length >= 2) {
+        kind = WrappedSignatureKind.weight;
+        lines.add(l10n.journeys_wrapped_sigQuietWeight(stats.weights.length));
+      } else if (stats.moodLightDays >= 3) {
+        kind = WrappedSignatureKind.mood;
+        lines.add(l10n.journeys_wrapped_sigQuietMood(stats.moodLightDays));
+      }
+    case PersonaSkinId.accountabilitySquad:
+      if (stats.minutesTotal > 0) {
+        kind = WrappedSignatureKind.minutes;
+        lines.add(
+          stats.minutesTotal < 60
+              ? l10n.journeys_wrapped_sigSquadMinutesOnly(
+                  stats.minutesTotal,
+                  stats.minutesSessions,
+                )
+              : stats.minutesTotal % 60 == 0
+              ? l10n.journeys_wrapped_sigSquadHoursOnly(
+                  stats.minutesTotal ~/ 60,
+                  stats.minutesSessions,
+                )
+              : l10n.journeys_wrapped_sigSquadTime(
+                  stats.minutesTotal ~/ 60,
+                  stats.minutesTotal % 60,
+                  stats.minutesSessions,
+                ),
+        );
+        if (stats.minutesLongest case final longest?) {
+          lines.add(
+            l10n.journeys_wrapped_sigSquadLongest(
+              longest.value,
+              date(longest.date),
+            ),
+          );
+        }
+      }
+    case PersonaSkinId.memoryCollectors:
+      final places = stats.placesInOrder;
+      if (places.length >= 2) {
+        kind = WrappedSignatureKind.places;
+        lines.add(
+          l10n.journeys_wrapped_sigMemoryPlaces(
+            places.length,
+            places.first,
+            places.last,
+          ),
+        );
+      }
+    case PersonaSkinId.coupleRituals:
+      if (stats.couplePairedDays.length >= 2) {
+        kind = WrappedSignatureKind.couple;
+        lines.add(
+          l10n.journeys_wrapped_sigCoupleDays(stats.couplePairedDays.length),
+        );
+        if (journey.dna?['ritual'] == 'cook' && stats.coupleCookSplit != null) {
+          final split = stats.coupleCookSplit!;
+          lines.add(
+            l10n.journeys_wrapped_sigCoupleCook(
+              split.selfName,
+              split.self,
+              split.partnerName,
+              split.partner,
+            ),
+          );
+        }
+        if (stats.coupleFiveHeartDishes > 0) {
+          lines.add(
+            l10n.journeys_wrapped_sigCoupleHearts(stats.coupleFiveHeartDishes),
+          );
+        }
+      }
+    case PersonaSkinId.aestheticFlexer:
+      if (isRunJourney(journey)) {
+        if (stats.totalKm > 0) {
+          kind = WrappedSignatureKind.run;
+          lines.add(
+            l10n.journeys_wrapped_sigFlexerKm(
+              stats.kmTextFor(l10n.localeName),
+              stats.runSessions == 0 ? stats.days : stats.runSessions,
+            ),
+          );
+          if (stats.pace case final pace?) {
+            lines.add(l10n.journeys_wrapped_sigFlexerAveragePace(pace));
+          }
+          if (stats.fastestPace case final pace?) {
+            lines.add(
+              l10n.journeys_wrapped_sigFlexerPace(pace.value, date(pace.date)),
+            );
+          }
+        }
+      } else if (stats.minutesTotal > 0) {
+        kind = WrappedSignatureKind.minutes;
+        lines.add(
+          stats.minutesTotal < 60
+              ? l10n.journeys_wrapped_sigFlexerMinutesOnly(
+                  stats.minutesSessions,
+                  stats.minutesTotal,
+                )
+              : stats.minutesTotal % 60 == 0
+              ? l10n.journeys_wrapped_sigFlexerHoursOnly(
+                  stats.minutesSessions,
+                  stats.minutesTotal ~/ 60,
+                )
+              : l10n.journeys_wrapped_sigFlexerMinutes(
+                  stats.minutesSessions,
+                  stats.minutesTotal ~/ 60,
+                  stats.minutesTotal % 60,
+                ),
+        );
+      }
+    case PersonaSkinId.minimalistHabit:
+      if (stats.days > 0) {
+        kind = WrappedSignatureKind.habit;
+        final habit = _dnaText(journey, 'habit');
+        lines.add(
+          stats.showRatio
+              ? [
+                  l10n.journeys_wrapped_sigRatio(stats.days, stats.total),
+                  ?habit,
+                ].join(' · ')
+              : habit == null
+              ? l10n.journeys_wrapped_sigMinimalDays(stats.days)
+              : l10n.journeys_wrapped_sigMinimalDaysHabit(stats.days, habit),
+        );
+      }
+  }
+  if ((stats.streak ?? 0) >= 2) {
+    lines.add(l10n.journeys_wrapped_sigLongestStreak(stats.streak!));
+  }
+  if (reactionCount > 0 && (journey.kind == JourneyKind.group)) {
+    lines.add(l10n.journeys_wrapped_sigReactions(reactionCount));
+  }
+  if (lines.isEmpty) return null;
+  return WrappedBeat(
+    id: 'signature',
+    eyebrow: l10n.journeys_wrapped_eyebrowSignature,
+    headline: lines.first,
+    sub: _lines(lines.skip(1)),
+    duration: const Duration(milliseconds: 5500),
+    signatureKind: kind ?? WrappedSignatureKind.highlights,
+  );
+}
+
+String? _dnaText(Journey journey, String key) {
+  final value = journey.dna?[key];
+  return value is String && value.trim().isNotEmpty ? value.trim() : null;
+}
+
+String? _lines(Iterable<String> lines) =>
+    lines.isEmpty ? null : lines.join('\n');
+
+/// Headline of the summary card, also used by the share caption.
 String wrappedSummaryTitle(
   JourneysL10n l10n,
   Journey journey,
@@ -173,10 +315,7 @@ String wrappedSummaryTitle(
   WrappedStats s,
 ) => switch (skin) {
   PersonaSkinId.quietTransformer => l10n.journeys_wrapped_sumQuiet(s.total),
-  PersonaSkinId.accountabilitySquad => l10n.journeys_wrapped_sumSquad(
-    s.days,
-    s.total,
-  ),
+  PersonaSkinId.accountabilitySquad => _summaryCheckIns(l10n, s),
   PersonaSkinId.memoryCollectors =>
     titleStatesLength(journey.title)
         ? journey.title.toUpperCase()
@@ -186,19 +325,19 @@ String wrappedSummaryTitle(
     s.moments,
   ),
   PersonaSkinId.aestheticFlexer =>
-    isRunJourney(journey)
+    isRunJourney(journey) && s.totalKm > 0
         ? l10n.journeys_wrapped_sumFlexer(s.total, s.kmTextFor(l10n.localeName))
-        : l10n.journeys_wrapped_sumSquad(s.days, s.total),
-  PersonaSkinId.minimalistHabit => l10n.journeys_wrapped_sumMinimal(
-    s.days,
-    s.total,
-    s.percent,
-  ),
+        : _summaryCheckIns(l10n, s),
+  PersonaSkinId.minimalistHabit =>
+    s.showRatio
+        ? l10n.journeys_wrapped_sumMinimal(s.days, s.total, s.percent)
+        : l10n.journeys_wrapped_sumMinimalCount(
+            s.days,
+            journey.title.toUpperCase(),
+          ),
 };
 
-String _range(Journey j) {
-  String d(LocalDate x) =>
-      '${x.day.toString().padLeft(2, '0')}/${x.month.toString().padLeft(2, '0')}';
-  final end = j.endDate;
-  return end == null ? d(j.startDate) : '${d(j.startDate)} – ${d(end)}';
-}
+String _summaryCheckIns(JourneysL10n l10n, WrappedStats stats) =>
+    stats.showRatio
+    ? l10n.journeys_wrapped_sumSquad(stats.days, stats.total)
+    : l10n.journeys_wrapped_sumSquadCount(stats.days);

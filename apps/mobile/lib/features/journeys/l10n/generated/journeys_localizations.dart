@@ -2594,6 +2594,276 @@ abstract class JourneysL10n {
   /// **'Sửa hành trình'**
   String get journeys_edit_menu;
 
+  /// No description provided for @journeys_wrapped_eyebrowOpen.
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY ĐẦU · {date}'**
+  String journeys_wrapped_eyebrowOpen(String date);
+
+  /// No description provided for @journeys_wrapped_openSpan.
+  ///
+  /// In vi, this message translates to:
+  /// **'{days} ngày, từ {start} đến {end}'**
+  String journeys_wrapped_openSpan(int days, String start, String end);
+
+  /// No description provided for @journeys_wrapped_openReason.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày đầu bạn viết: \"{reason}\"'**
+  String journeys_wrapped_openReason(String reason);
+
+  /// No description provided for @journeys_wrapped_eyebrowFirst.
+  ///
+  /// In vi, this message translates to:
+  /// **'TẤM ĐẦU TIÊN'**
+  String get journeys_wrapped_eyebrowFirst;
+
+  /// No description provided for @journeys_wrapped_firstHeadline.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lần check-in đầu tiên, ngày {date}'**
+  String journeys_wrapped_firstHeadline(String date);
+
+  /// No description provided for @journeys_wrapped_firstHeadlineImported.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tấm ảnh đầu tiên, ngày {date}'**
+  String journeys_wrapped_firstHeadlineImported(String date);
+
+  /// No description provided for @journeys_wrapped_firstFew.
+  ///
+  /// In vi, this message translates to:
+  /// **'{days} ngày check-in, đủ cả ở đây'**
+  String journeys_wrapped_firstFew(int days);
+
+  /// No description provided for @journeys_wrapped_eyebrowRoll.
+  ///
+  /// In vi, this message translates to:
+  /// **'CẢ CUỘN ẢNH'**
+  String get journeys_wrapped_eyebrowRoll;
+
+  /// No description provided for @journeys_wrapped_rollBusiest.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày chụp nhiều nhất: {date}, {n} tấm'**
+  String journeys_wrapped_rollBusiest(String date, int n);
+
+  /// No description provided for @journeys_wrapped_rollMore.
+  ///
+  /// In vi, this message translates to:
+  /// **'+{n}'**
+  String journeys_wrapped_rollMore(int n);
+
+  /// No description provided for @journeys_wrapped_eyebrowSignature.
+  ///
+  /// In vi, this message translates to:
+  /// **'DẤU ẤN'**
+  String get journeys_wrapped_eyebrowSignature;
+
+  /// No description provided for @journeys_wrapped_sigQuietWeight.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} lần bạn ghi cân nặng'**
+  String journeys_wrapped_sigQuietWeight(int n);
+
+  /// No description provided for @journeys_wrapped_sigQuietWeightLess.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhẹ hơn {delta} so với ngày đầu'**
+  String journeys_wrapped_sigQuietWeightLess(String delta);
+
+  /// No description provided for @journeys_wrapped_sigQuietRange.
+  ///
+  /// In vi, this message translates to:
+  /// **'Từ {first} đến {last}'**
+  String journeys_wrapped_sigQuietRange(String first, String last);
+
+  /// No description provided for @journeys_wrapped_sigQuietMood.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} ngày bạn thấy người nhẹ nhõm'**
+  String journeys_wrapped_sigQuietMood(int n);
+
+  /// No description provided for @journeys_wrapped_showKg.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hiện số kg'**
+  String get journeys_wrapped_showKg;
+
+  /// No description provided for @journeys_wrapped_showPhotos.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hiện ảnh'**
+  String get journeys_wrapped_showPhotos;
+
+  /// No description provided for @journeys_wrapped_sigSquadTime.
+  ///
+  /// In vi, this message translates to:
+  /// **'{hours} giờ {minutes} phút học qua {n} lần check-in'**
+  String journeys_wrapped_sigSquadTime(int hours, int minutes, int n);
+
+  /// No description provided for @journeys_wrapped_sigSquadLongest.
+  ///
+  /// In vi, this message translates to:
+  /// **'Buổi dài nhất: {minutes} phút, ngày {date}'**
+  String journeys_wrapped_sigSquadLongest(int minutes, String date);
+
+  /// No description provided for @journeys_wrapped_sigMemoryPlaces.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} điểm dừng, từ {first} đến {last}'**
+  String journeys_wrapped_sigMemoryPlaces(int n, String first, String last);
+
+  /// No description provided for @journeys_wrapped_sigCoupleDays.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} ngày cả hai cùng check-in'**
+  String journeys_wrapped_sigCoupleDays(int n);
+
+  /// No description provided for @journeys_wrapped_sigCoupleCook.
+  ///
+  /// In vi, this message translates to:
+  /// **'{a} vào bếp {x} lần, {b} {y} lần'**
+  String journeys_wrapped_sigCoupleCook(String a, int x, String b, int y);
+
+  /// No description provided for @journeys_wrapped_sigCoupleHearts.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} món được chấm đủ 5 tim'**
+  String journeys_wrapped_sigCoupleHearts(int n);
+
+  /// No description provided for @journeys_wrapped_sigFlexerKm.
+  ///
+  /// In vi, this message translates to:
+  /// **'{km} km qua {n} buổi chạy'**
+  String journeys_wrapped_sigFlexerKm(String km, int n);
+
+  /// No description provided for @journeys_wrapped_sigFlexerPace.
+  ///
+  /// In vi, this message translates to:
+  /// **'Pace nhanh nhất {pace}/km, ngày {date}'**
+  String journeys_wrapped_sigFlexerPace(String pace, String date);
+
+  /// No description provided for @journeys_wrapped_sigFlexerMinutes.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} buổi tập, tổng {hours} giờ {minutes} phút'**
+  String journeys_wrapped_sigFlexerMinutes(int n, int hours, int minutes);
+
+  /// No description provided for @journeys_wrapped_sigMinimalDays.
+  ///
+  /// In vi, this message translates to:
+  /// **'{days} ngày check-in'**
+  String journeys_wrapped_sigMinimalDays(int days);
+
+  /// No description provided for @journeys_wrapped_sigMinimalDaysHabit.
+  ///
+  /// In vi, this message translates to:
+  /// **'{days} ngày check-in · {habit}'**
+  String journeys_wrapped_sigMinimalDaysHabit(int days, String habit);
+
+  /// No description provided for @journeys_wrapped_sigRatio.
+  ///
+  /// In vi, this message translates to:
+  /// **'{days}/{total} ngày'**
+  String journeys_wrapped_sigRatio(int days, int total);
+
+  /// No description provided for @journeys_wrapped_sigLongestStreak.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuỗi dài nhất: {n} ngày'**
+  String journeys_wrapped_sigLongestStreak(int n);
+
+  /// No description provided for @journeys_wrapped_sigReactions.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} lượt thả cảm xúc'**
+  String journeys_wrapped_sigReactions(int n);
+
+  /// No description provided for @journeys_wrapped_eyebrowNote.
+  ///
+  /// In vi, this message translates to:
+  /// **'LỜI NHẮN · {date}'**
+  String journeys_wrapped_eyebrowNote(String date);
+
+  /// No description provided for @journeys_wrapped_eyebrowFinish.
+  ///
+  /// In vi, this message translates to:
+  /// **'VÉ VỀ ĐÍCH'**
+  String get journeys_wrapped_eyebrowFinish;
+
+  /// No description provided for @journeys_wrapped_finishCount.
+  ///
+  /// In vi, this message translates to:
+  /// **'{days} ngày check-in · {moments} tấm'**
+  String journeys_wrapped_finishCount(int days, int moments);
+
+  /// No description provided for @journeys_wrapped_finishTrophy.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cúp: {trophy}'**
+  String journeys_wrapped_finishTrophy(String trophy);
+
+  /// No description provided for @journeys_wrapped_finishDay.
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {n}'**
+  String journeys_wrapped_finishDay(String n);
+
+  /// No description provided for @journeys_wrapped_finishStampButton.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đóng dấu'**
+  String get journeys_wrapped_finishStampButton;
+
+  /// No description provided for @journeys_wrapped_finishStampHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chạm để đóng dấu vé về đích'**
+  String get journeys_wrapped_finishStampHint;
+
+  /// No description provided for @journeys_wrapped_finishStamp.
+  ///
+  /// In vi, this message translates to:
+  /// **'ĐÃ VỀ ĐÍCH · {date}'**
+  String journeys_wrapped_finishStamp(String date);
+
+  /// No description provided for @journeys_wrapped_finishSlogan.
+  ///
+  /// In vi, this message translates to:
+  /// **'Góp tấm hình, giữ nhịp mình'**
+  String get journeys_wrapped_finishSlogan;
+
+  /// No description provided for @journeys_wrapped_finishCta.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem thiệp'**
+  String get journeys_wrapped_finishCta;
+
+  /// No description provided for @journeys_wrapped_pause.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạm dừng'**
+  String get journeys_wrapped_pause;
+
+  /// No description provided for @journeys_wrapped_play.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chạy tiếp'**
+  String get journeys_wrapped_play;
+
+  /// No description provided for @journeys_wrapped_sumMinimalCount.
+  ///
+  /// In vi, this message translates to:
+  /// **'{days} NGÀY CHECK-IN · {name}'**
+  String journeys_wrapped_sumMinimalCount(int days, String name);
+
+  /// No description provided for @journeys_wrapped_sumSquadCount.
+  ///
+  /// In vi, this message translates to:
+  /// **'{days} NGÀY CHECK-IN'**
+  String journeys_wrapped_sumSquadCount(int days);
+
   /// No description provided for @journeys_wrapped_title.
   ///
   /// In vi, this message translates to:
@@ -2617,78 +2887,6 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'{moments} khoảnh khắc trong {days} ngày'**
   String journeys_wrapped_moments(int moments, int days);
-
-  /// No description provided for @journeys_wrapped_streak.
-  ///
-  /// In vi, this message translates to:
-  /// **'Chuỗi {n} ngày'**
-  String journeys_wrapped_streak(int n);
-
-  /// No description provided for @journeys_wrapped_quietEnd.
-  ///
-  /// In vi, this message translates to:
-  /// **'Bạn đã về đích.'**
-  String get journeys_wrapped_quietEnd;
-
-  /// No description provided for @journeys_wrapped_checkIns.
-  ///
-  /// In vi, this message translates to:
-  /// **'{n} lần check-in'**
-  String journeys_wrapped_checkIns(int n);
-
-  /// No description provided for @journeys_wrapped_squadEnd.
-  ///
-  /// In vi, this message translates to:
-  /// **'Về đích rồi, cả nhóm!'**
-  String get journeys_wrapped_squadEnd;
-
-  /// No description provided for @journeys_wrapped_frames.
-  ///
-  /// In vi, this message translates to:
-  /// **'{n} khung hình'**
-  String journeys_wrapped_frames(int n);
-
-  /// No description provided for @journeys_wrapped_daysTogether.
-  ///
-  /// In vi, this message translates to:
-  /// **'{n} ngày bên nhau'**
-  String journeys_wrapped_daysTogether(int n);
-
-  /// No description provided for @journeys_wrapped_coupleFallback.
-  ///
-  /// In vi, this message translates to:
-  /// **'Khoảnh khắc đáng nhớ nhất'**
-  String get journeys_wrapped_coupleFallback;
-
-  /// No description provided for @journeys_wrapped_km.
-  ///
-  /// In vi, this message translates to:
-  /// **'{km} KM'**
-  String journeys_wrapped_km(String km);
-
-  /// No description provided for @journeys_wrapped_pace.
-  ///
-  /// In vi, this message translates to:
-  /// **'NHỊP ĐỘ {pace}'**
-  String journeys_wrapped_pace(String pace);
-
-  /// No description provided for @journeys_wrapped_flexStreak.
-  ///
-  /// In vi, this message translates to:
-  /// **'CHUỖI {n}.'**
-  String journeys_wrapped_flexStreak(int n);
-
-  /// No description provided for @journeys_wrapped_minimalLine.
-  ///
-  /// In vi, this message translates to:
-  /// **'{done}/{total} NGÀY · {name}'**
-  String journeys_wrapped_minimalLine(int done, int total, String name);
-
-  /// No description provided for @journeys_wrapped_memoryEnd.
-  ///
-  /// In vi, this message translates to:
-  /// **'Cuộn phim đã hết. Mang đi in thôi.'**
-  String get journeys_wrapped_memoryEnd;
 
   /// No description provided for @journeys_wrapped_sumQuiet.
   ///
@@ -2756,36 +2954,6 @@ abstract class JourneysL10n {
   /// **'Tắt'**
   String get journeys_wrapped_off;
 
-  /// No description provided for @journeys_wrapped_ctaPoster.
-  ///
-  /// In vi, this message translates to:
-  /// **'Chia sẻ poster chuyến đi'**
-  String get journeys_wrapped_ctaPoster;
-
-  /// No description provided for @journeys_wrapped_ctaStory.
-  ///
-  /// In vi, this message translates to:
-  /// **'Chia sẻ câu chuyện'**
-  String get journeys_wrapped_ctaStory;
-
-  /// No description provided for @journeys_wrapped_ctaFlexer.
-  ///
-  /// In vi, this message translates to:
-  /// **'Chia sẻ lên Story'**
-  String get journeys_wrapped_ctaFlexer;
-
-  /// No description provided for @journeys_wrapped_ctaMinimal.
-  ///
-  /// In vi, this message translates to:
-  /// **'Xuất thẻ'**
-  String get journeys_wrapped_ctaMinimal;
-
-  /// No description provided for @journeys_wrapped_ctaCard.
-  ///
-  /// In vi, this message translates to:
-  /// **'Tạo thiệp'**
-  String get journeys_wrapped_ctaCard;
-
   /// No description provided for @journeys_wrapped_share.
   ///
   /// In vi, this message translates to:
@@ -2810,18 +2978,6 @@ abstract class JourneysL10n {
   /// **'Ẩn chữ ourney'**
   String get journeys_wrapped_hideBrand;
 
-  /// No description provided for @journeys_wrapped_messages.
-  ///
-  /// In vi, this message translates to:
-  /// **'Tin nhắn'**
-  String get journeys_wrapped_messages;
-
-  /// No description provided for @journeys_wrapped_otherApps.
-  ///
-  /// In vi, this message translates to:
-  /// **'Ứng dụng khác'**
-  String get journeys_wrapped_otherApps;
-
   /// No description provided for @journeys_wrapped_saveCard.
   ///
   /// In vi, this message translates to:
@@ -2839,12 +2995,6 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Sẽ gửi lời mời tới @{handle}'**
   String journeys_create_invitingFriend(String handle);
-
-  /// No description provided for @journeys_wrapped_open.
-  ///
-  /// In vi, this message translates to:
-  /// **'Xem hành trình đã về đích'**
-  String get journeys_wrapped_open;
 
   /// No description provided for @journeys_wrapped_menu.
   ///
@@ -3487,6 +3637,36 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'{count, plural, other{{count} ngày có ảnh}}'**
   String journeys_wrappedPhotoDays(int count);
+
+  /// No description provided for @journeys_wrapped_sigSquadMinutesOnly.
+  ///
+  /// In vi, this message translates to:
+  /// **'{minutes} phút học qua {n} lần check-in'**
+  String journeys_wrapped_sigSquadMinutesOnly(int minutes, int n);
+
+  /// No description provided for @journeys_wrapped_sigSquadHoursOnly.
+  ///
+  /// In vi, this message translates to:
+  /// **'{hours} giờ học qua {n} lần check-in'**
+  String journeys_wrapped_sigSquadHoursOnly(int hours, int n);
+
+  /// No description provided for @journeys_wrapped_sigFlexerMinutesOnly.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} buổi tập, tổng {minutes} phút'**
+  String journeys_wrapped_sigFlexerMinutesOnly(int n, int minutes);
+
+  /// No description provided for @journeys_wrapped_sigFlexerHoursOnly.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} buổi tập, tổng {hours} giờ'**
+  String journeys_wrapped_sigFlexerHoursOnly(int n, int hours);
+
+  /// No description provided for @journeys_wrapped_sigFlexerAveragePace.
+  ///
+  /// In vi, this message translates to:
+  /// **'Pace trung bình {pace}/km'**
+  String journeys_wrapped_sigFlexerAveragePace(String pace);
 
   /// No description provided for @journeys_deadUploadsPolicy.
   ///

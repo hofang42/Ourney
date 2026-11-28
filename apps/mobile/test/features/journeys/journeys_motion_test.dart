@@ -942,7 +942,7 @@ void main() {
     'M3 Moment #9 — JourneyWrappedScreen, WrappedVisual telemetry & ShareCardScreen morph',
     () {
       testWidgets(
-        '3-point pump on Wrapped story: 5.0s segment progress fill, long-press pause/resume, and direction-aware slide handoff (+1 right / -1 left)',
+        '3-point pump on Wrapped story: 3.5s opening segment progress fill, long-press pause/resume, and direction-aware slide handoff (+1 right / -1 left)',
         (tester) async {
           final j = testJourney(
             id: 'j-wrap',
@@ -962,7 +962,7 @@ void main() {
             ]),
           );
 
-          // 1. Segment 0 active bar fills linearly over 5.0s.
+          // 1. Segment 0 active bar fills linearly over 3.5s.
           await tester.pump(const Duration(milliseconds: 1200));
           final seg0Fill = tester
               .widget<FractionallySizedBox>(_key('wrapped-segment-fill-0'))
@@ -987,14 +987,11 @@ void main() {
           await tester.pump();
 
           // 2. Tap right side (Next, direction +1) -> UiDirectionalSwitcher slides incoming page 1 from +dx.
-          final headlineOriginX = tester
-              .getTopLeft(_key('wrapped-headline'))
-              .dx;
           await tester.tapAt(const Offset(350, 420));
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 80));
 
-          final incomingPage1 = _key('wrapped-page-1');
+          final incomingPage1 = _key('wrapped-page-first');
           expect(incomingPage1, findsOneWidget);
           final page1MidX = tester
               .getTopLeft(
@@ -1004,17 +1001,15 @@ void main() {
                 ),
               )
               .dx;
-          expect(page1MidX, greaterThan(headlineOriginX));
-
           await tester.pump(const Duration(milliseconds: 200));
+          expect(page1MidX, greaterThan(tester.getTopLeft(_key('wrapped-headline')).dx));
 
           // 3. Tap left side (Back, direction -1) -> UiDirectionalSwitcher slides incoming page 0 from -dx.
-          final page1SettledX = tester.getTopLeft(_key('wrapped-headline')).dx;
           await tester.tapAt(const Offset(40, 420));
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 80));
 
-          final incomingPage0 = _key('wrapped-page-0');
+          final incomingPage0 = _key('wrapped-page-open');
           expect(incomingPage0, findsOneWidget);
           final page0MidX = tester
               .getTopLeft(
@@ -1024,7 +1019,8 @@ void main() {
                 ),
               )
               .dx;
-          expect(page0MidX, lessThan(page1SettledX));
+          await tester.pump(const Duration(milliseconds: 200));
+          expect(page0MidX, lessThan(tester.getTopLeft(_key('wrapped-headline')).dx));
         },
       );
 
@@ -1033,7 +1029,7 @@ void main() {
         ('iOS reduceMotion', false, true),
       ]) {
         testWidgets(
-          'Wrapped story Reduce Motion parity ($label): pauses 5.0s auto-advance timer and uses 150ms opacity-only slide handoff with 0dp dx offset',
+          'Wrapped story Reduce Motion parity ($label): pauses per-beat auto-advance timer and uses 150ms opacity-only slide handoff with 0dp dx offset',
           (tester) async {
             final j = testJourney(
               id: 'j-wrap-reduced',
@@ -1059,15 +1055,15 @@ void main() {
             // Auto-advance segment fill is not running under Reduce Motion,
             // and waiting > 5.0s stays on page 0.
             expect(_key('wrapped-segment-fill-0'), findsNothing);
-            expect(_key('wrapped-page-0'), findsOneWidget);
+            expect(_key('wrapped-page-open'), findsOneWidget);
             await tester.pump(const Duration(seconds: 6));
-            expect(_key('wrapped-page-0'), findsOneWidget);
+            expect(_key('wrapped-page-open'), findsOneWidget);
 
             // Manual tap right advances to page 1 with 0dp horizontal offset.
             await tester.tapAt(const Offset(350, 420));
             await tester.pump();
             await tester.pump(const Duration(milliseconds: 75));
-            final incomingPage1 = _key('wrapped-page-1');
+            final incomingPage1 = _key('wrapped-page-first');
             expect(incomingPage1, findsOneWidget);
             final midX = tester
                 .getTopLeft(
@@ -1085,28 +1081,28 @@ void main() {
       }
 
       testWidgets(
-        '3-point pump on WrappedVisual telemetry: _Bars staggered growth, _Chain sequential illumination, _Curve path reveal, _Trophy 32dp rise + UiCountRoll + climax-synced milestone haptic, and Reduce Motion parity',
+        'real bars, calendar and weight curve animate once and respect Reduce Motion',
         (tester) async {
-          final haptics = <String>[];
-          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-              .setMockMethodCallHandler(SystemChannels.platform, (call) async {
-                if (call.method == 'HapticFeedback.vibrate') {
-                  haptics.add(call.arguments as String? ?? '');
-                }
-                return null;
-              });
-          addTearDown(() {
-            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-                .setMockMethodCallHandler(SystemChannels.platform, null);
-          });
-
-          const stats = WrappedStats(
+          final stats = WrappedStats(
             days: 6,
             total: 10,
             moments: 6,
             streak: 4,
             totalKm: 18,
             weights: [65.0, 63.5],
+            kmPerDay: {for (var i = 0; i < 10; i++) LocalDate(2026, 10, i + 1): i + 1},
+            chainDays: [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              false,
+              false,
+              false,
+              false,
+            ],
             photos: [],
             lastCaption: null,
             lastPlace: null,
@@ -1118,24 +1114,25 @@ void main() {
             PersonaSkinId skin,
             int page, {
             bool reduced = false,
+            Widget? child,
           }) {
             return MaterialApp(
               theme: appTheme,
               themeAnimationDuration: Duration.zero,
               builder: (context, child) => MediaQuery(
-                data: MediaQuery.of(
-                  context,
-                ).copyWith(disableAnimations: reduced),
+                data: MediaQuery.of(context).copyWith(disableAnimations: reduced),
                 child: child!,
               ),
               home: Scaffold(
                 body: Center(
-                  child: WrappedVisual(
-                    key: ValueKey('host-visual-${skin.name}-$page-$reduced'),
-                    skin: skin,
-                    stats: stats,
-                    page: page,
-                  ),
+                  child:
+                      child ??
+                      WrappedVisual(
+                        key: ValueKey('host-visual-${skin.name}-$page-$reduced'),
+                        skin: skin,
+                        stats: stats,
+                        page: page,
+                      ),
                 ),
               ),
             );
@@ -1196,66 +1193,35 @@ void main() {
             closeTo(1.0, 0.001),
           );
 
-          // 3. _Trophy (accountabilitySquad page 2): rises 32dp over 560ms +
-          // UiCountRoll + double-beat milestone haptic synced to settle (~360ms & ~470ms, P2-3).
-          haptics.clear();
+          // The story draws the real weight curve; the summary has no synthetic trophy telemetry.
           await tester.pumpWidget(
-            hostVisual(PersonaSkinId.accountabilitySquad, 2),
+            hostVisual(
+              PersonaSkinId.quietTransformer,
+              0,
+              child: const WrappedCurve(
+                key: ValueKey('weight-curve'),
+                values: [65, 64, 63.5],
+              ),
+            ),
           );
-          await tester.pump();
-          // P2-3: No premature haptic at t = 0ms while invisible at +32dp.
-          expect(haptics, isEmpty);
-
-          // At t = 180ms: trophy is mid-rise (0 < dy < 32), still before 360ms settle beat.
           await tester.pump(const Duration(milliseconds: 180));
-          expect(haptics, isEmpty);
-          final trophyTransforms = tester
-              .widgetList<Transform>(
-                find.descendant(
-                  of: _key('wrapped-trophy'),
-                  matching: find.byType(Transform),
-                ),
-              )
-              .toList();
-          final trophyDy = trophyTransforms.first.transform.getTranslation().y;
-          expect(trophyDy, greaterThan(0.0));
-          expect(trophyDy, lessThan(32.0));
-
-          // At t = 370ms (>= 360ms first beat): mediumImpact fires at rise settle.
-          await tester.pump(const Duration(milliseconds: 190));
-          expect(haptics, ['HapticFeedbackType.mediumImpact']);
-
-          // At t = 480ms (>= 470ms second beat): lightImpact completes the double beat.
-          await tester.pump(const Duration(milliseconds: 110));
-          expect(haptics, [
-            'HapticFeedbackType.mediumImpact',
-            'HapticFeedbackType.lightImpact',
-          ]);
-
-          await tester.pumpAndSettle();
-          expect(
-            tester
-                .widgetList<Transform>(
-                  find.descendant(
-                    of: _key('wrapped-trophy'),
-                    matching: find.byType(Transform),
-                  ),
-                )
-                .first
-                .transform
-                .getTranslation()
-                .y,
-            closeTo(0.0, 0.01),
-          );
-          expect(find.text('6/10 · 60%'), findsOneWidget);
+          expect(find.byType(WrappedCurve), findsOneWidget);
+          expect(tester.binding.transientCallbackCount, greaterThan(0));
+          await tester.pump(const Duration(milliseconds: 700));
           expect(tester.binding.transientCallbackCount, 0);
-
-          // 4. Reduce Motion renders _Trophy immediately at resting position with zero tickers.
           await tester.pumpWidget(
-            hostVisual(PersonaSkinId.accountabilitySquad, 2, reduced: true),
+            hostVisual(
+              PersonaSkinId.quietTransformer,
+              0,
+              reduced: true,
+              child: const WrappedCurve(
+                key: ValueKey('reduced-weight-curve'),
+                values: [65, 64, 63.5],
+              ),
+            ),
           );
           await tester.pump();
-          expect(find.text('6/10 · 60%'), findsOneWidget);
+          expect(find.byType(WrappedCurve), findsOneWidget);
           expect(tester.binding.transientCallbackCount, 0);
         },
       );

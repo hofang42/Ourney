@@ -371,6 +371,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen>
                   journey: journey,
                   skin: skinOfJourney(journey),
                   day: progress.dayNumber,
+                  elapsedDays: progress.elapsedDays,
                   streak: progress.summary.current,
                   showStreak: progress.showStreak,
                   stats: index!.wrapped,

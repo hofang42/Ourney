@@ -154,7 +154,13 @@ void main() {
       final kg = locale == 'vi' ? '72,4 kg' : '72.4 kg';
       final run = testJourney();
       expect(
-        wrappedPagesFor(l, run, PersonaSkinId.aestheticFlexer, stats)[1],
+        wrappedBeatsFor(
+          l,
+          run,
+          PersonaSkinId.aestheticFlexer,
+          stats,
+          localeName: locale,
+        ).firstWhere((beat) => beat.id == 'signature').headline,
         contains(km),
       );
       expect(
