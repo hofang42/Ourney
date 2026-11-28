@@ -1405,6 +1405,207 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_edit_menu => 'Sửa hành trình';
 
   @override
+  String journeys_wrapped_eyebrowOpen(String date) {
+    return 'NGÀY ĐẦU · $date';
+  }
+
+  @override
+  String journeys_wrapped_openSpan(int days, String start, String end) {
+    return '$days ngày, từ $start đến $end';
+  }
+
+  @override
+  String journeys_wrapped_openReason(String reason) {
+    return 'Ngày đầu bạn viết: \"$reason\"';
+  }
+
+  @override
+  String get journeys_wrapped_eyebrowFirst => 'TẤM ĐẦU TIÊN';
+
+  @override
+  String journeys_wrapped_firstHeadline(String date) {
+    return 'Lần check-in đầu tiên, ngày $date';
+  }
+
+  @override
+  String journeys_wrapped_firstHeadlineImported(String date) {
+    return 'Tấm ảnh đầu tiên, ngày $date';
+  }
+
+  @override
+  String journeys_wrapped_firstFew(int days) {
+    return '$days ngày check-in, đủ cả ở đây';
+  }
+
+  @override
+  String get journeys_wrapped_eyebrowRoll => 'CẢ CUỘN ẢNH';
+
+  @override
+  String journeys_wrapped_rollBusiest(String date, int n) {
+    return 'Ngày chụp nhiều nhất: $date, $n tấm';
+  }
+
+  @override
+  String journeys_wrapped_rollMore(int n) {
+    return '+$n';
+  }
+
+  @override
+  String get journeys_wrapped_eyebrowSignature => 'DẤU ẤN CỦA CHẶNG';
+
+  @override
+  String journeys_wrapped_sigQuietWeight(int n) {
+    return '$n lần bạn ghi cân nặng';
+  }
+
+  @override
+  String journeys_wrapped_sigQuietWeightLess(String delta) {
+    return 'Nhẹ hơn $delta so với ngày đầu';
+  }
+
+  @override
+  String journeys_wrapped_sigQuietRange(String first, String last) {
+    return 'Từ $first đến $last';
+  }
+
+  @override
+  String journeys_wrapped_sigQuietMood(int n) {
+    return '$n ngày bạn thấy người nhẹ nhõm';
+  }
+
+  @override
+  String get journeys_wrapped_showKg => 'Hiện số kg';
+
+  @override
+  String get journeys_wrapped_showPhotos => 'Hiện ảnh';
+
+  @override
+  String journeys_wrapped_sigSquadTime(int hours, int minutes, int n) {
+    return '$hours giờ $minutes phút học qua $n lần check-in';
+  }
+
+  @override
+  String journeys_wrapped_sigSquadLongest(int minutes, String date) {
+    return 'Buổi dài nhất: $minutes phút, ngày $date';
+  }
+
+  @override
+  String journeys_wrapped_sigMemoryPlaces(int n, String first, String last) {
+    return '$n điểm dừng, từ $first đến $last';
+  }
+
+  @override
+  String journeys_wrapped_sigCoupleDays(int n) {
+    return '$n ngày cả hai cùng check-in';
+  }
+
+  @override
+  String journeys_wrapped_sigCoupleCook(String a, int x, String b, int y) {
+    return '$a vào bếp $x lần, $b $y lần';
+  }
+
+  @override
+  String journeys_wrapped_sigCoupleHearts(int n) {
+    return '$n món được chấm đủ 5 tim';
+  }
+
+  @override
+  String journeys_wrapped_sigFlexerKm(String km, int n) {
+    return '$km km qua $n buổi chạy';
+  }
+
+  @override
+  String journeys_wrapped_sigFlexerPace(String pace, String date) {
+    return 'Pace nhanh nhất $pace/km, ngày $date';
+  }
+
+  @override
+  String journeys_wrapped_sigFlexerMinutes(int n, int hours, int minutes) {
+    return '$n buổi tập, tổng $hours giờ $minutes phút';
+  }
+
+  @override
+  String journeys_wrapped_sigMinimalDays(int days) {
+    return '$days ngày check-in';
+  }
+
+  @override
+  String journeys_wrapped_sigMinimalDaysHabit(int days, String habit) {
+    return '$days ngày check-in · $habit';
+  }
+
+  @override
+  String journeys_wrapped_sigRatio(int days, int total) {
+    return '$days/$total ngày';
+  }
+
+  @override
+  String journeys_wrapped_sigLongestStreak(int n) {
+    return 'Chuỗi dài nhất: $n ngày';
+  }
+
+  @override
+  String journeys_wrapped_sigReactions(int n) {
+    return '$n lượt bày tỏ cảm xúc';
+  }
+
+  @override
+  String journeys_wrapped_eyebrowNote(String date) {
+    return 'BẠN ĐÃ VIẾT · $date';
+  }
+
+  @override
+  String get journeys_wrapped_eyebrowFinish => 'VÉ VỀ ĐÍCH';
+
+  @override
+  String journeys_wrapped_finishCount(int days, int moments) {
+    return '$days ngày check-in · $moments tấm';
+  }
+
+  @override
+  String journeys_wrapped_finishTrophy(String trophy) {
+    return 'Cúp: $trophy';
+  }
+
+  @override
+  String journeys_wrapped_finishDay(String n) {
+    return 'NGÀY $n';
+  }
+
+  @override
+  String get journeys_wrapped_finishStampButton => 'Đóng dấu';
+
+  @override
+  String get journeys_wrapped_finishStampHint => 'Chạm để đóng dấu vé về đích';
+
+  @override
+  String journeys_wrapped_finishStamp(String date) {
+    return 'ĐÃ VỀ ĐÍCH · $date';
+  }
+
+  @override
+  String get journeys_wrapped_finishSlogan => 'Góp tấm hình, giữ nhịp mình';
+
+  @override
+  String get journeys_wrapped_finishCta => 'Xem thiệp';
+
+  @override
+  String get journeys_wrapped_pause => 'Tạm dừng';
+
+  @override
+  String get journeys_wrapped_play => 'Chạy tiếp';
+
+  @override
+  String journeys_wrapped_sumMinimalCount(int days, String name) {
+    return '$days NGÀY CHECK-IN · $name';
+  }
+
+  @override
+  String journeys_wrapped_sumSquadCount(int days) {
+    return '$days NGÀY CHECK-IN';
+  }
+
+  @override
   String get journeys_wrapped_title => 'Hành trình đã về đích';
 
   @override
@@ -1419,58 +1620,6 @@ class JourneysL10nVi extends JourneysL10n {
   String journeys_wrapped_moments(int moments, int days) {
     return '$moments khoảnh khắc trong $days ngày';
   }
-
-  @override
-  String journeys_wrapped_streak(int n) {
-    return 'Chuỗi $n ngày';
-  }
-
-  @override
-  String get journeys_wrapped_quietEnd => 'Bạn đã về đích.';
-
-  @override
-  String journeys_wrapped_checkIns(int n) {
-    return '$n lần check-in';
-  }
-
-  @override
-  String get journeys_wrapped_squadEnd => 'Về đích rồi, cả nhóm!';
-
-  @override
-  String journeys_wrapped_frames(int n) {
-    return '$n khung hình';
-  }
-
-  @override
-  String journeys_wrapped_daysTogether(int n) {
-    return '$n ngày bên nhau';
-  }
-
-  @override
-  String get journeys_wrapped_coupleFallback => 'Khoảnh khắc đáng nhớ nhất';
-
-  @override
-  String journeys_wrapped_km(String km) {
-    return '$km KM';
-  }
-
-  @override
-  String journeys_wrapped_pace(String pace) {
-    return 'NHỊP ĐỘ $pace';
-  }
-
-  @override
-  String journeys_wrapped_flexStreak(int n) {
-    return 'CHUỖI $n.';
-  }
-
-  @override
-  String journeys_wrapped_minimalLine(int done, int total, String name) {
-    return '$done/$total NGÀY · $name';
-  }
-
-  @override
-  String get journeys_wrapped_memoryEnd => 'Cuộn phim đã hết. Mang đi in thôi.';
 
   @override
   String journeys_wrapped_sumQuiet(int total) {
@@ -1518,21 +1667,6 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_wrapped_off => 'Tắt';
 
   @override
-  String get journeys_wrapped_ctaPoster => 'Chia sẻ poster chuyến đi';
-
-  @override
-  String get journeys_wrapped_ctaStory => 'Chia sẻ câu chuyện';
-
-  @override
-  String get journeys_wrapped_ctaFlexer => 'Chia sẻ lên Story';
-
-  @override
-  String get journeys_wrapped_ctaMinimal => 'Xuất thẻ';
-
-  @override
-  String get journeys_wrapped_ctaCard => 'Tạo thiệp';
-
-  @override
   String get journeys_wrapped_share => 'Chia sẻ';
 
   @override
@@ -1545,12 +1679,6 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_wrapped_hideBrand => 'Ẩn chữ ourney';
 
   @override
-  String get journeys_wrapped_messages => 'Tin nhắn';
-
-  @override
-  String get journeys_wrapped_otherApps => 'Ứng dụng khác';
-
-  @override
   String get journeys_wrapped_saveCard => 'Lưu ảnh';
 
   @override
@@ -1560,9 +1688,6 @@ class JourneysL10nVi extends JourneysL10n {
   String journeys_create_invitingFriend(String handle) {
     return 'Sẽ gửi lời mời tới @$handle';
   }
-
-  @override
-  String get journeys_wrapped_open => 'Xem hành trình đã về đích';
 
   @override
   String get journeys_wrapped_menu => 'Câu chuyện về đích';

@@ -1,12 +1,10 @@
 import 'dart:math' as math;
-import 'dart:ui' show ClipOp;
 
 import 'package:flutter/material.dart';
 
 import '../../../../ui/ui.dart';
 
-/// Which edge of a ticket piece is a perforation seam (torn edge).
-enum _Seam { none, top, bottom, left, right }
+import 'ticket_paper.dart';
 
 /// V2 "vé khởi hành" (step 5 of journey creation): one ticket per skin.
 ///
@@ -103,14 +101,12 @@ class _DepartureTicketState extends State<DepartureTicket>
       duration: DepartureTicket.stampSettleDuration,
     );
     _ctrl = ctrl;
-    final curved = CurvedAnimation(
-      parent: ctrl,
-      curve: UiCurves.stampDecel,
-    );
+    final curved = CurvedAnimation(parent: ctrl, curve: UiCurves.stampDecel);
     _curved = curved;
-    _scale = Tween<double>(begin: UiMotion.popMinScale, end: 1.0).animate(
-      curved,
-    );
+    _scale = Tween<double>(
+      begin: UiMotion.popMinScale,
+      end: 1.0,
+    ).animate(curved);
   }
 
   @override
@@ -161,7 +157,6 @@ class _DepartureTicketState extends State<DepartureTicket>
       ui: ui,
       accent: scope.variant.accent,
       font: scope.skin.headingFont,
-      border: scope.skin.borderWidth,
       isDark: ui.isDark,
     );
     final line =
@@ -176,18 +171,12 @@ class _DepartureTicketState extends State<DepartureTicket>
     };
     Widget rotatedTicket = Padding(
       padding: const EdgeInsets.only(right: 5, bottom: 5),
-      child: Transform.rotate(
-        angle: DepartureTicket._angle,
-        child: ticket,
-      ),
+      child: Transform.rotate(angle: DepartureTicket._angle, child: ticket),
     );
     if (!reduced && _curved != null && _scale != null) {
       rotatedTicket = FadeTransition(
         opacity: _curved!,
-        child: ScaleTransition(
-          scale: _scale!,
-          child: rotatedTicket,
-        ),
+        child: ScaleTransition(scale: _scale!, child: rotatedTicket),
       );
     }
     return Center(
@@ -284,10 +273,9 @@ class _DepartureTicketState extends State<DepartureTicket>
         color: s.ui.accentText,
       ),
     );
-    return _Tear(
-      s: s,
+    return TicketPaper(
       radius: 8,
-      seam: _Seam.bottom,
+      seam: TicketSeam.bottom,
       top: Stack(
         children: [
           Positioned(
@@ -313,7 +301,10 @@ class _DepartureTicketState extends State<DepartureTicket>
                   style: s.h(25),
                 ),
                 const SizedBox(height: 4),
-                Text(widget.durationLabel, style: s.body(14, w: FontWeight.w700)),
+                Text(
+                  widget.durationLabel,
+                  style: s.body(14, w: FontWeight.w700),
+                ),
                 if (widget.datesLabel != null)
                   Text(widget.datesLabel!, style: s.body(13)),
                 const SizedBox(height: 8),
@@ -343,10 +334,9 @@ class _DepartureTicketState extends State<DepartureTicket>
   }
 
   Widget _squad(_Style s, String line) {
-    return _Tear(
-      s: s,
+    return TicketPaper(
       radius: 14,
-      seam: _Seam.none,
+      seam: TicketSeam.none,
       borderWidth: 3,
       shadow: 5,
       top: Column(
@@ -416,10 +406,9 @@ class _DepartureTicketState extends State<DepartureTicket>
 
   Widget _memory(_Style s, String line) {
     final paper = s.isDark ? s.ui.surface : s.ui.bg;
-    return _Tear(
-      s: s,
+    return TicketPaper(
       radius: 4,
-      seam: _Seam.bottom,
+      seam: TicketSeam.bottom,
       paper: paper,
       top: Padding(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
@@ -475,10 +464,9 @@ class _DepartureTicketState extends State<DepartureTicket>
 
   Widget _couple(_Style s, String line) {
     Widget half(String? name, {required bool left}) => Expanded(
-      child: _Tear(
-        s: s,
+      child: TicketPaper(
         radius: 24,
-        seam: left ? _Seam.right : _Seam.left,
+        seam: left ? TicketSeam.right : TicketSeam.left,
         top: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 238),
           child: Center(
@@ -542,7 +530,11 @@ class _DepartureTicketState extends State<DepartureTicket>
           style: s.body(14, w: FontWeight.w700),
         ),
         if (widget.datesLabel != null)
-          Text(widget.datesLabel!, textAlign: TextAlign.center, style: s.body(13)),
+          Text(
+            widget.datesLabel!,
+            textAlign: TextAlign.center,
+            style: s.body(13),
+          ),
         const SizedBox(height: 6),
         Text(widget.goalLine, textAlign: TextAlign.center, style: s.body(14)),
         if (line.isNotEmpty)
@@ -552,8 +544,9 @@ class _DepartureTicketState extends State<DepartureTicket>
   }
 
   Widget _flexer(_Style s, String line) {
-    final digits =
-        RegExp(r'^\d+').firstMatch(widget.durationLabel.trim())?.group(0);
+    final digits = RegExp(r'^\d+')
+        .firstMatch(widget.durationLabel.trim())
+        ?.group(0);
     Widget pin(Alignment a) => Align(
       alignment: a,
       child: Container(
@@ -566,10 +559,9 @@ class _DepartureTicketState extends State<DepartureTicket>
         ),
       ),
     );
-    return _Tear(
-      s: s,
+    return TicketPaper(
       radius: 0,
-      seam: _Seam.none,
+      seam: TicketSeam.none,
       borderColor: s.accent,
       shadowColor: s.accent,
       borderWidth: 3,
@@ -661,10 +653,9 @@ class _DepartureTicketState extends State<DepartureTicket>
   }
 
   Widget _minimal(_Style s) {
-    return _Tear(
-      s: s,
+    return TicketPaper(
       radius: 0,
-      seam: _Seam.none,
+      seam: TicketSeam.none,
       grid: true,
       topBar: s.accent,
       top: Padding(
@@ -710,7 +701,6 @@ class _Style {
     required this.ui,
     required this.accent,
     required this.font,
-    required this.border,
     required this.isDark,
   });
 
@@ -719,7 +709,6 @@ class _Style {
 
   /// Skin `headingFont` name (StyleGuide spelling) for [UiText.heading].
   final String font;
-  final double border;
   final bool isDark;
 
   Color get ink => ui.ink;
@@ -750,219 +739,6 @@ class _Style {
     );
     return f == null ? base : base.copyWith(fontFamily: f);
   }
-}
-
-/// A ticket made of a main piece and an optional stub (or, for couple halves,
-/// one piece with a torn edge). The seam carries a dashed line and two notches.
-class _Tear extends StatelessWidget {
-  const _Tear({
-    required this.s,
-    required this.radius,
-    required this.seam,
-    required this.top,
-    this.stub,
-    this.paper,
-    this.borderColor,
-    this.shadowColor,
-    this.borderWidth,
-    this.shadow = 4,
-    this.grid = false,
-    this.topBar,
-  });
-
-  final _Style s;
-  final double radius;
-  final _Seam seam;
-  final Widget top;
-  final Widget? stub;
-  final Color? paper;
-  final Color? borderColor;
-  final Color? shadowColor;
-  final double? borderWidth;
-  final double shadow;
-  final bool grid;
-  final Color? topBar;
-
-  @override
-  Widget build(BuildContext context) {
-    final fill = paper ?? s.ui.surface;
-    final bw = borderWidth ?? s.border;
-    Widget piece(Widget child, _Seam edge, {required bool first}) {
-      return CustomPaint(
-        painter: _PiecePainter(
-          fill: fill,
-          border: borderColor ?? s.ui.outline,
-          shadowColor: shadowColor ?? s.ui.hardShadowColor,
-          borderWidth: bw,
-          shadow: shadow,
-          radius: radius,
-          seam: edge,
-          dash: s.ink.withValues(alpha: 0.6),
-          grid: grid ? s.ink.withValues(alpha: 0.10) : null,
-          topBar: first ? topBar : null,
-        ),
-        child: Padding(padding: EdgeInsets.all(bw), child: child),
-      );
-    }
-
-    final main = piece(top, seam, first: true);
-    if (stub == null) return main;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        main,
-        piece(
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 14, 24, 16),
-            child: stub,
-          ),
-          _Seam.top,
-          first: false,
-        ),
-      ],
-    );
-  }
-}
-
-class _PiecePainter extends CustomPainter {
-  _PiecePainter({
-    required this.fill,
-    required this.border,
-    required this.shadowColor,
-    required this.borderWidth,
-    required this.shadow,
-    required this.radius,
-    required this.seam,
-    required this.dash,
-    this.grid,
-    this.topBar,
-  });
-
-  final Color fill;
-  final Color border;
-  final Color shadowColor;
-  final double borderWidth;
-  final double shadow;
-  final double radius;
-  final _Seam seam;
-  final Color dash;
-  final Color? grid;
-  final Color? topBar;
-
-  static const double _notch = 9;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    final round = Radius.circular(radius);
-    final rrect = RRect.fromRectAndCorners(
-      Offset.zero & size,
-      topLeft: seam == _Seam.top || seam == _Seam.left ? Radius.zero : round,
-      topRight: seam == _Seam.top || seam == _Seam.right ? Radius.zero : round,
-      bottomLeft: seam == _Seam.bottom || seam == _Seam.left
-          ? Radius.zero
-          : round,
-      bottomRight: seam == _Seam.bottom || seam == _Seam.right
-          ? Radius.zero
-          : round,
-    );
-    // Notch centres sit at the two ends of the seam edge.
-    final notches = switch (seam) {
-      _Seam.none => const <Offset>[],
-      _Seam.top => [Offset.zero, Offset(w, 0)],
-      _Seam.bottom => [Offset(0, h), Offset(w, h)],
-      _Seam.left => [Offset.zero, Offset(0, h)],
-      _Seam.right => [Offset(w, 0), Offset(w, h)],
-    };
-    var shape = Path()..addRRect(rrect);
-    for (final c in notches) {
-      shape = Path.combine(
-        PathOperation.difference,
-        shape,
-        Path()..addOval(Rect.fromCircle(center: c, radius: _notch)),
-      );
-    }
-    canvas.drawPath(
-      shape.shift(Offset(shadow, shadow)),
-      Paint()..color = shadowColor,
-    );
-    canvas.drawPath(shape, Paint()..color = fill);
-
-    canvas.save();
-    canvas.clipPath(shape);
-    if (grid != null) {
-      final p = Paint()
-        ..color = grid!
-        ..strokeWidth = 1;
-      for (var x = 20.0; x < w; x += 20) {
-        canvas.drawLine(Offset(x, 0), Offset(x, h), p);
-      }
-      for (var y = 20.0; y < h; y += 20) {
-        canvas.drawLine(Offset(0, y), Offset(w, y), p);
-      }
-    }
-    if (topBar != null) {
-      canvas.drawRect(Rect.fromLTWH(0, 0, w, 6), Paint()..color = topBar!);
-    }
-    // Outline (inner half of a doubled stroke), minus the straight seam
-    // segment between the notches.
-    final bw = borderWidth;
-    final gap = switch (seam) {
-      _Seam.top => Rect.fromLTRB(_notch, -bw, w - _notch, bw),
-      _Seam.bottom => Rect.fromLTRB(_notch, h - bw, w - _notch, h + bw),
-      _Seam.left => Rect.fromLTRB(-bw, _notch, bw, h - _notch),
-      _Seam.right => Rect.fromLTRB(w - bw, _notch, w + bw, h - _notch),
-      _Seam.none => null,
-    };
-    if (gap != null) canvas.clipRect(gap, clipOp: ClipOp.difference);
-    canvas.drawPath(
-      shape,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = bw * 2
-        ..color = border,
-    );
-    canvas.restore();
-
-    // Dashed perforation along the seam.
-    if (seam != _Seam.none) {
-      final horizontal = seam == _Seam.top || seam == _Seam.bottom;
-      final line = Paint()
-        ..color = dash
-        ..strokeWidth = 2;
-      final len = horizontal ? w : h;
-      final end = len - _notch - 6;
-      for (var d = _notch + 6; d < end; d += 10) {
-        final e = math.min(d + 5, end);
-        final a = switch (seam) {
-          _Seam.top => Offset(d, 1),
-          _Seam.bottom => Offset(d, h - 1),
-          _Seam.left => Offset(1, d),
-          _ => Offset(w - 1, d),
-        };
-        canvas.drawLine(
-          a,
-          horizontal ? Offset(e, a.dy) : Offset(a.dx, e),
-          line,
-        );
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_PiecePainter old) =>
-      old.fill != fill ||
-      old.border != border ||
-      old.shadowColor != shadowColor ||
-      old.borderWidth != borderWidth ||
-      old.shadow != shadow ||
-      old.radius != radius ||
-      old.seam != seam ||
-      old.dash != dash ||
-      old.grid != grid ||
-      old.topBar != topBar;
 }
 
 /// Open-ended bib mark: a drawn lemniscate (no Unicode glyph).

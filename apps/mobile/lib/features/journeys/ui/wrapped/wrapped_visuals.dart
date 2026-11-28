@@ -1,22 +1,21 @@
-import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui_;
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../../ui/ui.dart';
 import '../../domain/wrapped_story.dart';
 import '../journey_photo.dart';
 
-/// `WrappedVisual`: the drawing above a story headline, per skin. Built from
-/// the journey's own photos where the Figma shows photos, and from drawn
-/// shapes (curve, trophy path, bars, chain) elsewhere.
+/// Photo and data visuals used on the Wrapped summary card.
 class WrappedVisual extends StatelessWidget {
   const WrappedVisual({
     required this.skin,
     required this.stats,
     required this.page,
+    this.isRun,
     this.blurPhotos = false,
     this.exporting = false,
     this.hiddenPhotoIds = const {},
@@ -26,412 +25,206 @@ class WrappedVisual extends StatelessWidget {
   final PersonaSkinId skin;
   final WrappedStats stats;
   final int page;
+  final bool? isRun;
   final bool blurPhotos;
   final bool exporting;
   final Set<String> hiddenPhotoIds;
 
   @override
   Widget build(BuildContext context) {
-    final ui = context.ui;
     final layout = stats.coupleSlots.isNotEmpty
         ? PersonaSkinId.coupleRituals
         : skin;
+    final photos = [
+      for (final photo in stats.photos)
+        if (!_isHidden(photo)) photo,
+    ];
+    final visibleSlots = [
+      for (final slot in stats.coupleSlots)
+        if (!exporting || slot.isMine)
+          ?_slotPhoto(slot.checkIn, slot.isMine, photos.lastOrNull),
+    ];
     final visual = switch (layout) {
-      PersonaSkinId.quietTransformer =>
-        page == 2
-            ? _Curve(
-                key: const ValueKey('wrapped-quiet-curve'),
-                color: ui.accent,
-                points: const [
-                  Offset(0, .82),
-                  Offset(.28, .63),
-                  Offset(.43, .77),
-                  Offset(.6, .37),
-                  Offset(.84, .23),
-                  Offset(1, .1),
-                ],
-                smooth: true,
-              )
-            : _Photos(
-                key: const ValueKey('wrapped-quiet-photos'),
-                photos: _firstLast(_visiblePhotos),
-                blur: blurPhotos,
-              ),
-      PersonaSkinId.accountabilitySquad =>
-        page == 2
-            ? _Trophy(
-                key: const ValueKey('wrapped-trophy'),
-                days: stats.days,
-                total: stats.total,
-              )
-            : Row(
-                key: const ValueKey('wrapped-squad-path'),
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  for (var i = 0; i < 4; i++)
-                    Container(
-                      width: 17,
-                      height: 17,
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: ui.accent,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: ui.outline, width: 2),
-                      ),
-                    ),
-                  const OurneyIcon(name: 'trophy', size: 28, active: true),
-                ],
-              ),
-      PersonaSkinId.memoryCollectors => _Film(
-        key: const ValueKey('wrapped-memory-film'),
-        photos: _visiblePhotos.reversed.take(4).toList(),
+      PersonaSkinId.quietTransformer => _PhotoFrames(
+        key: const ValueKey('wrapped-quiet-photos'),
+        photos: [
+          if (photos.isNotEmpty) photos.first,
+          if (photos.length > 1) photos.last,
+        ],
         blur: blurPhotos,
       ),
-      PersonaSkinId.coupleRituals => Row(
-        key: const ValueKey('wrapped-couple-frame'),
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _Frame(checkIn: _couplePhoto(0), blur: blurPhotos),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: OurneyIcon(name: 'heart', size: 34, active: true),
-          ),
-          _Frame(checkIn: _couplePhoto(1), blur: blurPhotos),
-        ],
+      PersonaSkinId.accountabilitySquad => const OurneyIcon(
+        name: 'trophy',
+        size: 54,
+        active: true,
       ),
-      PersonaSkinId.aestheticFlexer =>
-        page == 2
-            ? _Curve(
-                key: const ValueKey('wrapped-flexer-chart'),
-                color: ui.accent,
-                points: const [
-                  Offset(0, .82),
-                  Offset(.14, .68),
-                  Offset(.28, .73),
-                  Offset(.4, .39),
-                  Offset(.54, .54),
-                  Offset(.68, .24),
-                  Offset(.82, .36),
-                  Offset(1, .08),
-                ],
-              )
-            : _Bars(
-                key: const ValueKey('wrapped-flexer-bars'),
-                done: stats.days,
-                total: stats.total,
-                color: ui.accent,
-              ),
-      PersonaSkinId.minimalistHabit => _Chain(
+      PersonaSkinId.memoryCollectors => _Film(
+        key: const ValueKey('wrapped-memory-film'),
+        photos: photos.reversed.take(4).toList(),
+        blur: blurPhotos,
+      ),
+      PersonaSkinId.coupleRituals => _PhotoFrames(
+        key: const ValueKey('wrapped-couple-frame'),
+        photos: stats.coupleSlots.isEmpty ? [?photos.lastOrNull] : visibleSlots,
+        blur: blurPhotos,
+        couple: true,
+      ),
+      PersonaSkinId.aestheticFlexer => WrappedBars(
+        key: const ValueKey('wrapped-flexer-bars'),
+        values: (isRun ?? stats.kmPerDay.isNotEmpty)
+            ? stats.kmPerDay
+            : stats.minutesPerDay,
+      ),
+      PersonaSkinId.minimalistHabit => WrappedChain(
         key: const ValueKey('wrapped-minimal-chain'),
-        done: stats.days,
-        total: stats.total,
-        color: ui.accent,
+        days: stats.chainDays,
+        start: stats.memberStart,
       ),
     };
     return RepaintBoundary(child: visual);
   }
 
-  List<CheckIn> get _visiblePhotos =>
-      exporting && hiddenPhotoIds.isNotEmpty
-      ? [
-          for (final c in stats.photos)
-            if (!hiddenPhotoIds.contains(c.id)) c,
-        ]
-      : stats.photos;
+  bool _isHidden(CheckIn checkIn) =>
+      exporting && hiddenPhotoIds.contains(checkIn.id);
 
-  static List<CheckIn> _firstLast(List<CheckIn> all) => all.isEmpty
-      ? const []
-      : all.length == 1
-      ? [all.first]
-      : [all.first, all.last];
-
-  CheckIn? _couplePhoto(int index) {
-    final ownPhotos = _visiblePhotos;
-    if (stats.coupleSlots.isEmpty) {
-      return index == 0 ? ownPhotos.lastOrNull : null;
-    }
-    final slot = stats.coupleSlots[index];
-    final photo = slot.checkIn;
-    if (!exporting) return photo;
-    if (!slot.isMine) return null;
-    if (photo != null && !hiddenPhotoIds.contains(photo.id)) return photo;
-    return ownPhotos.lastOrNull;
+  CheckIn? _slotPhoto(CheckIn? photo, bool isMine, CheckIn? fallback) {
+    if (photo != null && !_isHidden(photo)) return photo;
+    return isMine ? fallback : null;
   }
 }
 
-/// Climax slide trophy: rises `32dp` over `560ms` ([UiCurves.stampDecel]) with
-/// a [UiCountRoll] odometer badge and celebratory double-beat haptic.
-class _Trophy extends StatefulWidget {
-  const _Trophy({
-    required this.days,
-    required this.total,
+class _PhotoFrames extends StatelessWidget {
+  const _PhotoFrames({
+    required this.photos,
+    required this.blur,
+    this.couple = false,
     super.key,
   });
 
-  final int days;
-  final int total;
-
-  @override
-  State<_Trophy> createState() => _TrophyState();
-}
-
-class _TrophyState extends State<_Trophy>
-    with SingleTickerProviderStateMixin {
-  static const Duration _kDuration = Duration(milliseconds: 560);
-  static const Duration _kFirstBeatDelay = Duration(milliseconds: 360);
-  static const Duration _kSecondBeatDelay = Duration(milliseconds: 470);
-
-  AnimationController? _ctrl;
-  CurvedAnimation? _curved;
-  Timer? _firstBeatTimer;
-  Timer? _secondBeatTimer;
-  bool _started = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_started) {
-      _started = true;
-      if (!UiMotion.reduced(context)) {
-        final ctrl = AnimationController(vsync: this, duration: _kDuration);
-        _ctrl = ctrl;
-        _curved = CurvedAnimation(parent: ctrl, curve: UiCurves.stampDecel);
-        ctrl.forward(from: 0.0);
-        // Double-beat milestone haptic (mediumImpact + 110ms lightImpact) synced
-        // to the trophy rise settle / count climax (~360ms & ~470ms) via
-        // disposable Timers.
-        if (UiHaptics.enabled && TickerMode.valuesOf(context).enabled) {
-          _firstBeatTimer = Timer(_kFirstBeatDelay, () {
-            if (mounted &&
-                UiHaptics.enabled &&
-                TickerMode.valuesOf(context).enabled) {
-              unawaited(UiHaptics.stampImpact());
-            }
-          });
-          _secondBeatTimer = Timer(_kSecondBeatDelay, () {
-            if (mounted &&
-                UiHaptics.enabled &&
-                TickerMode.valuesOf(context).enabled) {
-              unawaited(UiHaptics.pressLight());
-            }
-          });
-        }
-      } else if (UiHaptics.enabled && TickerMode.valuesOf(context).enabled) {
-        unawaited(UiHaptics.stampImpact());
-      }
-    } else if (UiMotion.reduced(context) && (_ctrl?.isAnimating ?? false)) {
-      _firstBeatTimer?.cancel();
-      _secondBeatTimer?.cancel();
-      _ctrl?.value = 1.0;
-    }
-  }
-
-  @override
-  void dispose() {
-    _firstBeatTimer?.cancel();
-    _secondBeatTimer?.cancel();
-    _curved?.dispose();
-    _ctrl?.dispose();
-    super.dispose();
-  }
+  final List<CheckIn> photos;
+  final bool blur;
+  final bool couple;
 
   @override
   Widget build(BuildContext context) {
-    final ui = context.ui;
-    final reduced = UiMotion.reduced(context);
-    final curved = _curved;
-    final pct = widget.total <= 0
-        ? 100
-        : ((widget.days / widget.total) * 100).round().clamp(0, 100);
-    final badge = ExcludeSemantics(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const OurneyIcon(
-            name: 'trophy',
-            size: 94,
-            active: true,
-            semanticLabel: null,
-          ),
-          const SizedBox(height: UiSpace.xs),
-          UiCountRoll(
-            key: const ValueKey('wrapped-trophy-count'),
-            value: pct,
-            initialValue: math.max(0, pct - 1),
-            format: (v) => '${widget.days}/${widget.total} · $v%',
-            style: UiText.eyebrow(color: ui.inkMuted),
-          ),
-        ],
-      ),
-    );
-    if (reduced || curved == null) return badge;
-    final faded = FadeTransition(opacity: curved, child: badge);
-    return AnimatedBuilder(
-      animation: curved,
-      child: faded,
-      builder: (context, child) {
-        final dy = (1.0 - curved.value) * 32.0;
-        return Transform.translate(
-          offset: Offset(0, dy),
-          child: child,
+    if (photos.isEmpty) return const SizedBox.shrink();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final heartWidth = couple ? 50.0 : 12.0;
+        final width = math.min(
+          couple ? 120.0 : 130.0,
+          photos.length == 1
+              ? constraints.maxWidth
+              : (constraints.maxWidth - heartWidth) / 2,
+        );
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _frame(context, photos.first, width),
+            if (photos.length > 1) ...[
+              SizedBox(
+                width: heartWidth,
+                child: couple
+                    ? const OurneyIcon(name: 'heart', size: 34, active: true)
+                    : null,
+              ),
+              _frame(context, photos.last, width),
+            ],
+          ],
         );
       },
     );
   }
+
+  Widget _frame(BuildContext context, CheckIn checkIn, double width) {
+    final ui = context.ui;
+    return Container(
+      key: ValueKey('wrapped-summary-photo-${checkIn.id}'),
+      width: width,
+      height: width * 4 / 3,
+      decoration: BoxDecoration(
+        color: ui.fill,
+        borderRadius: BorderRadius.circular(UiRadius.input),
+        border: Border.all(color: ui.outline, width: couple ? 2 : 1.5),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: WrappedPhoto(checkIn: checkIn, blur: blur),
+    );
+  }
 }
 
-class _Frame extends StatelessWidget {
-  const _Frame({required this.checkIn, required this.blur});
+class _Film extends StatelessWidget {
+  const _Film({required this.photos, required this.blur, super.key});
 
-  final CheckIn? checkIn;
+  final List<CheckIn> photos;
   final bool blur;
 
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final c = checkIn;
-    return Flexible(
-      child: AspectRatio(
-        aspectRatio: 3 / 4,
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 120),
-          decoration: BoxDecoration(
-            color: ui.fill,
-            borderRadius: BorderRadius.circular(UiRadius.input),
-            border: Border.all(color: ui.outline, width: 2),
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final photo in photos)
+          Container(
+            width: 68,
+            height: 88,
+            decoration: BoxDecoration(
+              color: ui.fill,
+              border: Border.all(color: ui.outline, width: 2),
+            ),
+            clipBehavior: Clip.hardEdge,
+            child: WrappedPhoto(checkIn: photo, blur: blur),
           ),
-          clipBehavior: Clip.antiAlias,
-          child: c == null
-              ? null
-              : ImageFiltered(
-                  enabled: blur,
-                  imageFilter: ui_.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                  child: JourneyPhoto(
-                    key: ValueKey(c.id),
-                    checkIn: c,
-                    fallback: const SizedBox.shrink(),
-                  ),
-                ),
+      ],
+    );
+  }
+}
+
+/// Same bounded thumbnail source for story frames and the exported summary.
+class WrappedPhoto extends StatelessWidget {
+  const WrappedPhoto({
+    required this.checkIn,
+    required this.blur,
+    this.cacheWidth,
+    super.key,
+  });
+
+  final CheckIn checkIn;
+  final bool blur;
+  final int? cacheWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRect(
+      child: ImageFiltered(
+        enabled: blur,
+        imageFilter: ui_.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: JourneyPhoto(
+          key: ValueKey(checkIn.id),
+          checkIn: checkIn,
+          cacheWidth: cacheWidth,
+          fallback: const SizedBox.shrink(),
         ),
       ),
     );
   }
 }
 
-class _Photos extends StatelessWidget {
-  const _Photos({required this.photos, required this.blur, super.key});
+class WrappedCurve extends StatefulWidget {
+  const WrappedCurve({required this.values, this.smooth = false, super.key});
 
-  final List<CheckIn> photos;
-  final bool blur;
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    final items = photos.isEmpty ? <CheckIn?>[null, null] : photos;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        for (final c in items)
-          Flexible(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: AspectRatio(
-                aspectRatio: 3 / 4,
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 130),
-                  decoration: BoxDecoration(
-                    color: ui.fill,
-                    borderRadius: BorderRadius.circular(UiRadius.input),
-                    border: Border.all(color: ui.outline, width: 1.5),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: c == null
-                      ? null
-                      : ImageFiltered(
-                          enabled: blur,
-                          imageFilter: ui_.ImageFilter.blur(
-                            sigmaX: 14,
-                            sigmaY: 14,
-                          ),
-                          child: JourneyPhoto(
-                            checkIn: c,
-                            fallback: const SizedBox.shrink(),
-                          ),
-                        ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _Film extends StatelessWidget {
-  const _Film({required this.photos, this.blur = false, super.key});
-
-  final List<CheckIn> photos;
-  final bool blur;
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    final items = photos.isEmpty
-        ? List<CheckIn?>.filled(4, null)
-        : <CheckIn?>[...photos];
-    return Wrap(
-      alignment: WrapAlignment.center,
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final c in items)
-          SizedBox(
-            width: 68,
-            height: 88,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: ui.fill,
-                border: Border.all(color: ui.outline, width: 2),
-              ),
-              child: c == null
-                  ? null
-                  : ClipRect(
-                      child: ImageFiltered(
-                        enabled: blur,
-                        imageFilter: ui_.ImageFilter.blur(
-                          sigmaX: 14,
-                          sigmaY: 14,
-                        ),
-                        child: JourneyPhoto(
-                          checkIn: c,
-                          fallback: const SizedBox.shrink(),
-                        ),
-                      ),
-                    ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _Curve extends StatefulWidget {
-  const _Curve({
-    required this.color,
-    required this.points,
-    this.smooth = false,
-    super.key,
-  });
-
-  final Color color;
-  final List<Offset> points;
+  final List<double> values;
   final bool smooth;
 
   @override
-  State<_Curve> createState() => _CurveState();
+  State<WrappedCurve> createState() => _CurveState();
 }
 
-class _CurveState extends State<_Curve> with SingleTickerProviderStateMixin {
+class _CurveState extends State<WrappedCurve>
+    with SingleTickerProviderStateMixin {
   static const Duration _kDuration = Duration(milliseconds: 680);
 
   AnimationController? _revealCtrl;
@@ -464,6 +257,18 @@ class _CurveState extends State<_Curve> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final values = widget.values;
+    if (values.length < 2) return const SizedBox.shrink();
+    final min = values.reduce(math.min);
+    final max = values.reduce(math.max);
+    final range = max - min;
+    final points = [
+      for (var i = 0; i < values.length; i++)
+        Offset(
+          i / (values.length - 1),
+          range == 0 ? .5 : (max - values[i]) / range,
+        ),
+    ];
     final reduced = UiMotion.reduced(context);
     final progress = reduced
         ? const AlwaysStoppedAnimation<double>(1.0)
@@ -474,8 +279,8 @@ class _CurveState extends State<_Curve> with SingleTickerProviderStateMixin {
         width: double.infinity,
         child: CustomPaint(
           painter: _CurvePainter(
-            widget.color,
-            widget.points,
+            context.ui.accent,
+            points,
             widget.smooth,
             progress,
           ),
@@ -573,23 +378,17 @@ class _CurvePainter extends CustomPainter {
       old.progress != progress;
 }
 
-class _Bars extends StatefulWidget {
-  const _Bars({
-    required this.done,
-    required this.total,
-    required this.color,
-    super.key,
-  });
+class WrappedBars extends StatefulWidget {
+  const WrappedBars({required this.values, super.key});
 
-  final int done;
-  final int total;
-  final Color color;
+  final Map<LocalDate, num> values;
 
   @override
-  State<_Bars> createState() => _BarsState();
+  State<WrappedBars> createState() => _BarsState();
 }
 
-class _BarsState extends State<_Bars> with SingleTickerProviderStateMixin {
+class _BarsState extends State<WrappedBars>
+    with SingleTickerProviderStateMixin {
   static const Duration _kDuration = Duration(milliseconds: 620);
 
   AnimationController? _ctrl;
@@ -616,18 +415,44 @@ class _BarsState extends State<_Bars> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
+  List<num> _barValues() {
+    final dates = widget.values.keys.toList()..sort();
+    if (dates.isEmpty) return const [];
+    final first = dates.first;
+    final span = first.daysUntil(dates.last) + 1;
+    if (span <= 30) {
+      return [for (final date in dates) widget.values[date]!];
+    }
+
+    final weekday = DateTime.utc(first.year, first.month, first.day).weekday;
+    final monday = first.addDays(1 - weekday);
+    final weekCount = monday.daysUntil(dates.last) ~/ 7 + 1;
+    final weeksPerBar = (weekCount / 30).ceil();
+    final daysPerBar = 7 * weeksPerBar;
+    final buckets = <int, num>{};
+    for (final date in dates) {
+      final bucket = monday.daysUntil(date) ~/ daysPerBar;
+      buckets.update(
+        bucket,
+        (total) => total + widget.values[date]!,
+        ifAbsent: () => widget.values[date]!,
+      );
+    }
+    return buckets.values.toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
     final reduced = UiMotion.reduced(context);
     final ctrl = _ctrl;
-    final n = widget.total.clamp(1, 30);
-    final doneDecoration = BoxDecoration(
-      color: widget.color,
-      borderRadius: const BorderRadius.all(Radius.circular(3)),
-    );
-    final pendingDecoration = BoxDecoration(
-      color: ui.fill,
+    final values = _barValues();
+    if (values.isEmpty) return const SizedBox.shrink();
+    final peak = values.reduce(math.max);
+    if (peak <= 0) return const SizedBox.shrink();
+    final n = values.length;
+    final decoration = BoxDecoration(
+      color: ui.accent,
       borderRadius: const BorderRadius.all(Radius.circular(3)),
     );
 
@@ -646,9 +471,8 @@ class _BarsState extends State<_Bars> with SingleTickerProviderStateMixin {
                     n: n,
                     reduced: reduced,
                     ctrl: ctrl,
-                    decoration: i < widget.done
-                        ? doneDecoration
-                        : pendingDecoration,
+                    decoration: decoration,
+                    fullHeight: 96 * values[i] / peak,
                   ),
                 ),
               ),
@@ -664,8 +488,8 @@ class _BarsState extends State<_Bars> with SingleTickerProviderStateMixin {
     required bool reduced,
     required AnimationController? ctrl,
     required BoxDecoration decoration,
+    required double fullHeight,
   }) {
-    final fullHeight = 24 + ((i * 37) % 60).toDouble();
     final staticBar = SizedBox(
       width: double.infinity,
       height: fullHeight,
@@ -706,23 +530,18 @@ class _BarsState extends State<_Bars> with SingleTickerProviderStateMixin {
   }
 }
 
-class _Chain extends StatefulWidget {
-  const _Chain({
-    required this.done,
-    required this.total,
-    required this.color,
-    super.key,
-  });
+class WrappedChain extends StatefulWidget {
+  const WrappedChain({required this.days, required this.start, super.key});
 
-  final int done;
-  final int total;
-  final Color color;
+  final List<bool> days;
+  final LocalDate? start;
 
   @override
-  State<_Chain> createState() => _ChainState();
+  State<WrappedChain> createState() => _ChainState();
 }
 
-class _ChainState extends State<_Chain> with SingleTickerProviderStateMixin {
+class _ChainState extends State<WrappedChain>
+    with SingleTickerProviderStateMixin {
   static const Duration _kDuration = Duration(milliseconds: 580);
 
   AnimationController? _ctrl;
@@ -754,8 +573,11 @@ class _ChainState extends State<_Chain> with SingleTickerProviderStateMixin {
     final ui = context.ui;
     final reduced = UiMotion.reduced(context);
     final ctrl = _ctrl;
-    final n = widget.total.clamp(1, 60);
-    final completed = widget.done.clamp(0, n);
+    final n = widget.days.length;
+    final start = widget.start;
+    if (n > 60 && start != null) {
+      return ExcludeSemantics(child: _monthRows(context, start));
+    }
     final unreadBox = SizedBox(
       width: 18,
       height: 18,
@@ -771,40 +593,80 @@ class _ChainState extends State<_Chain> with SingleTickerProviderStateMixin {
       height: 18,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: widget.color,
+          color: ui.accent,
           shape: BoxShape.circle,
-          border: Border.all(color: widget.color, width: 1.5),
+          border: Border.all(color: ui.accent, width: 1.5),
         ),
       ),
     );
 
     return ExcludeSemantics(
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: 6,
-        runSpacing: 6,
-        children: [
-          for (var i = 0; i < n; i++)
-            i >= completed
-                ? unreadBox
-                : _buildDoneTile(
-                    ui: ui,
-                    i: i,
-                    completed: completed,
-                    reduced: reduced,
-                    ctrl: ctrl,
-                    unreadBox: unreadBox,
-                    doneBox: doneBox,
-                  ),
-        ],
+      child: Align(
+        child: SizedBox(
+          width: 7 * 18 + 6 * 6,
+          child: Wrap(
+            alignment: WrapAlignment.start,
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (var i = 0; i < n; i++)
+                widget.days[i]
+                    ? _buildDoneTile(
+                        ui: ui,
+                        i: i,
+                        dayCount: n,
+                        reduced: reduced,
+                        ctrl: ctrl,
+                        unreadBox: unreadBox,
+                        doneBox: doneBox,
+                      )
+                    : unreadBox,
+            ],
+          ),
+        ),
       ),
+    );
+  }
+
+  Widget _monthRows(BuildContext context, LocalDate start) {
+    final ui = context.ui;
+    final monthCounts = <DateTime, int>{};
+    for (var i = 0; i < widget.days.length; i++) {
+      final date = start.addDays(i);
+      final month = DateTime(date.year, date.month);
+      monthCounts.update(
+        month,
+        (count) => count + (widget.days[i] ? 1 : 0),
+        ifAbsent: () => widget.days[i] ? 1 : 0,
+      );
+    }
+    final locale = Localizations.localeOf(context).toString();
+    final dateFormat = DateFormat.yMMM(locale);
+    final countFormat = NumberFormat.decimalPattern(locale);
+    final style = UiText.body(size: 14, height: 1.35, color: ui.ink);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final entry in monthCounts.entries)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(dateFormat.format(entry.key), style: style),
+                ),
+                Text(countFormat.format(entry.value), style: style),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
   Widget _buildDoneTile({
     required OurneyUi ui,
     required int i,
-    required int completed,
+    required int dayCount,
     required bool reduced,
     required AnimationController? ctrl,
     required Widget unreadBox,
@@ -817,7 +679,7 @@ class _ChainState extends State<_Chain> with SingleTickerProviderStateMixin {
         child: doneBox,
       );
     }
-    final start = completed <= 1 ? 0.0 : (i / (completed - 1)) * 0.72;
+    final start = dayCount <= 1 ? 0.0 : (i / (dayCount - 1)) * 0.72;
     return AnimatedBuilder(
       animation: ctrl,
       child: doneBox,
@@ -840,12 +702,8 @@ class _ChainState extends State<_Chain> with SingleTickerProviderStateMixin {
         }
         final tileT = UiCurves.easeOutStrong.transform(raw);
         final scale = ui_.lerpDouble(0.86, 1.0, tileT)!;
-        final fillColor = Color.lerp(
-          Colors.transparent,
-          widget.color,
-          tileT,
-        )!;
-        final borderColor = Color.lerp(ui.border, widget.color, tileT)!;
+        final fillColor = Color.lerp(Colors.transparent, ui.accent, tileT)!;
+        final borderColor = Color.lerp(ui.border, ui.accent, tileT)!;
         return Transform.scale(
           key: ValueKey('wrapped-chain-tile-$i'),
           scale: scale,

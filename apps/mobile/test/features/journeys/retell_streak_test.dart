@@ -368,7 +368,13 @@ void main() {
       final stats = WrappedStats.from(p);
       for (final skin in PersonaSkinId.values) {
         expect(
-          wrappedPagesFor(l10n, p.journey, skin, stats).join(' ').toLowerCase(),
+          wrappedBeatsFor(
+            l10n,
+            p.journey,
+            skin,
+            stats,
+            localeName: l10n.localeName,
+          ).map((beat) => beat.semanticsLabel).join(' ').toLowerCase(),
           isNot(contains('streak')),
         );
       }

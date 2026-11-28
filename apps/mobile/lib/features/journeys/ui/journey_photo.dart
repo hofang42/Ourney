@@ -29,11 +29,26 @@ class JourneyPhoto extends ConsumerWidget {
   final int? cacheWidth;
   final Widget? fallback;
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final placeholder = fallback ?? const _PhotoFallback();
+  /// Resolve the same provider used by this widget for thumbnail precaching.
+  static ImageProvider? watchThumbnail(
+    CheckIn checkIn,
+    WidgetRef ref, {
+    int? cacheWidth,
+  }) {
+    final path = _watchPath(checkIn, ref, thumbnail: true, attachment: false);
+    return path == null
+        ? null
+        : ResizeImage.resizeIfNeeded(cacheWidth, null, FileImage(File(path)));
+  }
+
+  static String? _watchPath(
+    CheckIn checkIn,
+    WidgetRef ref, {
+    required bool thumbnail,
+    required bool attachment,
+  }) {
     final attachmentPath = checkIn.partnerPhotoPath;
-    if (attachment && attachmentPath == null) return placeholder;
+    if (attachment && attachmentPath == null) return null;
     final local = attachment
         ? checkIn.localPartnerPhotoFile
         : checkIn.localPhotoFile;
@@ -50,6 +65,18 @@ class JourneyPhoto extends ConsumerWidget {
       final resolved = ref.watch(mediaFileProvider(storagePath));
       path = resolved.value ?? (resolved.hasError ? local : null);
     }
+    return path;
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final placeholder = fallback ?? const _PhotoFallback();
+    final path = _watchPath(
+      checkIn,
+      ref,
+      thumbnail: thumbnail,
+      attachment: attachment,
+    );
     if (path == null) return placeholder;
     return Image.file(
       File(path),

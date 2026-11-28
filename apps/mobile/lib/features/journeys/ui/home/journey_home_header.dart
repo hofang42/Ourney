@@ -58,7 +58,7 @@ class JourneyHomeSkinHeader extends ConsumerWidget {
         journey: journey,
         streak: streak,
         showStreak: showStreak,
-        total: stats.total,
+        total: journey.durationDays ?? stats.total,
       ),
       PersonaSkinId.minimalistHabit => _Month(journeyId: journey.id),
     };

@@ -9,6 +9,7 @@ import 'package:ourney/app/router.dart';
 import 'package:ourney/data/group_daily_checkins_provider.dart';
 import 'package:ourney/features/camera/capture_services.dart'
     show appSettingsOpenerProvider;
+import 'package:ourney/features/journeys/data/journey_reaction_count_provider.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney/features/journeys/domain/wrapped_story.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
@@ -24,7 +25,7 @@ import 'package:ourney/features/sharing/data/sharing_providers.dart'
     show shareStateProvider;
 import 'package:ourney/features/social/data/social_providers.dart'
     show defaultSharePositionOrigin;
-import 'package:ourney/ui/ui.dart' show OurneyTheme, UiButton, UiBackHeader;
+import 'package:ourney/ui/ui.dart' show OurneyTheme, UiButton;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart' show testBackendConfig;
@@ -34,6 +35,29 @@ import '../share_card/share_card_fakes.dart'
 import 'journeys_fakes.dart';
 
 Finder _key(String k) => find.byKey(ValueKey(k));
+
+final _progressSegmentPattern = RegExp(r'^wrapped-segment-\d+$');
+
+Finder _progressSegments() => find.descendant(
+  of: _key('wrapped-progress'),
+  matching: find.byWidgetPredicate((widget) {
+    final key = widget.key;
+    return key is ValueKey<String> &&
+        _progressSegmentPattern.hasMatch(key.value);
+  }),
+);
+
+Future<void> _pumpTransition(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+  await tester.pump();
+}
+
+Future<void> _jumpToSummary(WidgetTester tester) async {
+  await tester.tap(_progressSegments().last);
+  await _pumpTransition(tester);
+  expect(_key('wrapped-summary'), findsOneWidget);
+}
 
 Future<JourneysHarness> _open(
   WidgetTester tester, {
@@ -64,7 +88,7 @@ Future<JourneysHarness> _open(
     tester.platformDispatcher.textScaleFactorTestValue = textScale;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
   }
-  await tester.pumpAndSettle();
+  await _pumpTransition(tester);
   return h;
 }
 
@@ -78,8 +102,8 @@ void main() {
         locale: const Locale('vi'),
         textScale: 1.35,
       );
-      final header = find.byType(UiBackHeader);
-      expect(tester.widget<UiBackHeader>(header).title, isNull);
+      final header = _key('wrapped-header');
+      expect(header, findsOneWidget);
       final routeSemantics = tester
           .widgetList<Semantics>(find.byType(Semantics))
           .where((widget) => widget.properties.label == 'Hành trình đã về đích')
@@ -87,7 +111,10 @@ void main() {
       expect(routeSemantics.properties.namesRoute, isTrue);
       expect(routeSemantics.properties.scopesRoute, isTrue);
       expect(
-        find.descendant(of: header, matching: find.byType(Text)),
+        find.descendant(
+          of: header,
+          matching: find.text(routeSemantics.properties.label!),
+        ),
         findsNothing,
       );
       expect(tester.takeException(), isNull);
@@ -104,8 +131,7 @@ void main() {
       status: JourneyStatus.ended,
     );
     await _open(tester, journey: j);
-    await tester.tap(_key('wrapped-segment-4'));
-    await tester.pumpAndSettle();
+    await _jumpToSummary(tester);
     expect(find.text('ĐÀ LẠT 7\u00A0NGÀY'), findsOneWidget);
     final caption = wrappedShareText(
       lookupJourneysL10n(const Locale('en')),
@@ -135,22 +161,20 @@ void main() {
       expect(_key('journey-wrapped'), findsOneWidget);
       expect(find.text('Journey complete'), findsNothing);
       expect(find.bySemanticsLabel('Journey complete'), findsOneWidget);
-      // Minimal skin has two pages.
-      expect(find.text('4 MOMENTS OVER 4 DAYS'), findsOneWidget);
-      expect(_key('wrapped-segment-0'), findsOneWidget);
-      expect(_key('wrapped-segment-1'), findsOneWidget);
-      // U4: the last segment is the summary page.
-      expect(_key('wrapped-segment-2'), findsOneWidget);
-      expect(_key('wrapped-segment-3'), findsNothing);
+      expect(_key('wrapped-beat-open'), findsOneWidget);
+      expect(_progressSegments(), findsNWidgets(7));
       await tester.tapAt(const Offset(380, 500));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('4/14 DAYS'), findsOneWidget);
+      await _pumpTransition(tester);
+      expect(_key('wrapped-beat-first'), findsOneWidget);
+      await tester.tap(_progressSegments().at(5));
+      await _pumpTransition(tester);
+      expect(_key('wrapped-beat-finish'), findsOneWidget);
       await tester.tapAt(const Offset(380, 500));
-      await tester.pumpAndSettle();
+      await _pumpTransition(tester);
       expect(_key('wrapped-summary'), findsOneWidget);
       expect(_key('wrapped-card-story'), findsOneWidget);
       await tester.tap(find.text('4:5'));
-      await tester.pumpAndSettle();
+      await _pumpTransition(tester);
       expect(_key('wrapped-card-feed'), findsOneWidget);
       expect(find.text('Share'), findsOneWidget);
       expect(find.text('Edit card'), findsOneWidget);
@@ -161,38 +185,80 @@ void main() {
     ) async {
       final handle = tester.ensureSemantics();
       await _open(tester);
-      final story = tester.getSemantics(_key('wrapped-headline'));
+      final storyFinder = find.ancestor(
+        of: _key('wrapped-beat-open'),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics && widget.properties.onScrollLeft != null,
+        ),
+      );
+      final story = tester.getSemantics(storyFinder);
       expect(
         story.getSemanticsData().hasAction(SemanticsAction.scrollLeft),
         isTrue,
       );
-      expect(story.label, isNotEmpty);
+      expect(
+        story.getSemanticsData().hasAction(SemanticsAction.scrollRight),
+        isTrue,
+      );
+      expect(_key('wrapped-headline'), findsOneWidget);
       // ignore: deprecated_member_use
       tester.binding.pipelineOwner.semanticsOwner!.performAction(
         story.id,
         SemanticsAction.scrollLeft,
       );
-      await tester.pumpAndSettle();
-      expect(find.textContaining('4/14 DAYS'), findsOneWidget);
+      await _pumpTransition(tester);
+      expect(_key('wrapped-beat-first'), findsOneWidget);
       await tester.tap(find.bySemanticsLabel('Back').first);
-      await tester.pumpAndSettle();
-      expect(find.text('4 MOMENTS OVER 4 DAYS'), findsOneWidget);
+      await _pumpTransition(tester);
+      expect(_key('wrapped-beat-open'), findsOneWidget);
       expect(_key('journey-wrapped'), findsOneWidget);
-      await tester.tap(_key('wrapped-segment-2'));
-      await tester.pumpAndSettle();
+      await _jumpToSummary(tester);
       expect(_key('wrapped-summary'), findsOneWidget);
       handle.dispose();
     });
 
     testWidgets('left tap goes back, segment jumps to a page', (tester) async {
       await _open(tester);
-      await tester.tap(_key('wrapped-segment-1'));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('4/14 DAYS'), findsOneWidget);
+      await tester.tap(_progressSegments().at(1));
+      await _pumpTransition(tester);
+      expect(_key('wrapped-beat-first'), findsOneWidget);
       await tester.tapAt(const Offset(40, 500));
-      await tester.pumpAndSettle();
-      expect(find.text('4 MOMENTS OVER 4 DAYS'), findsOneWidget);
+      await _pumpTransition(tester);
+      expect(_key('wrapped-beat-open'), findsOneWidget);
     });
+
+    testWidgets(
+      'a late reaction count adds the stat and preserves the summary',
+      (tester) async {
+        final j = testJourney(
+          status: JourneyStatus.ended,
+          templateId: TemplateId.englishDaily,
+        );
+        final count = Completer<int?>();
+        await pumpJourneys(
+          tester,
+          locale: const Locale('en'),
+          location: JourneysPaths.wrapped(j.id),
+          journeys: FakeJourneyRepository(journeys: [j]),
+          extraOverrides: [
+            journeyReactionCountProvider(j.id)
+                .overrideWith((_) => count.future),
+          ],
+        );
+        expect(_progressSegments(), findsNWidgets(3));
+        await _jumpToSummary(tester);
+
+        count.complete(7);
+        await _pumpTransition(tester);
+        expect(_key('wrapped-summary'), findsOneWidget);
+        expect(_progressSegments(), findsNWidgets(4));
+        await tester.tap(_progressSegments().at(1));
+        await _pumpTransition(tester);
+        expect(_key('wrapped-beat-signature'), findsOneWidget);
+        expect(find.text('7 reactions'), findsOneWidget);
+      },
+    );
 
     testWidgets('quiet summary has privacy toggles and hides the wordmark', (
       tester,
@@ -206,17 +272,14 @@ void main() {
           metricUnit: 'kg',
         ).copyWith(layout: PersonaSkinId.quietTransformer),
       );
-      for (var i = 0; i < 4; i++) {
-        await tester.tapAt(const Offset(380, 500));
-        await tester.pumpAndSettle();
-      }
+      await _jumpToSummary(tester);
       expect(_key('wrapped-hide-kg'), findsOneWidget);
       expect(_key('wrapped-blur'), findsOneWidget);
       expect(_key('wrapped-blur-note'), findsOneWidget);
       expect(find.text('Always on for this card style'), findsOneWidget);
       expect(_key('wrapped-brand'), findsNothing);
       await tester.tap(_key('wrapped-hide-kg'));
-      await tester.pumpAndSettle();
+      await _pumpTransition(tester);
       expect(_key('wrapped-weights'), findsOneWidget);
     });
 
@@ -230,13 +293,10 @@ void main() {
           metricUnit: 'lb',
         );
         await _open(tester, journey: j);
-        for (var i = 0; i < 4; i++) {
-          await tester.tapAt(const Offset(380, 500));
-          await tester.pumpAndSettle();
-        }
+        await _jumpToSummary(tester);
         expect(_key('wrapped-weights'), findsNothing);
         await tester.tap(_key('wrapped-hide-kg'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         expect(_key('wrapped-weights'), findsOneWidget);
         expect(find.text('60.0 lb  >  56.0 lb'), findsOneWidget);
       },
@@ -250,13 +310,10 @@ void main() {
         templateId: TemplateId.weightLoss,
       );
       final h = await _open(tester, journey: j);
-      for (var i = 0; i < 4; i++) {
-        await tester.tapAt(const Offset(380, 500));
-        await tester.pumpAndSettle();
-      }
+      await _jumpToSummary(tester);
       await tester.ensureVisible(_key('wrapped-edit-card'));
       await tester.tap(_key('wrapped-edit-card'));
-      await tester.pumpAndSettle();
+      await _pumpTransition(tester);
       final uri = Uri.parse(h.location);
       expect(uri.path, '/share/${j.id}');
       expect(uri.queryParameters['hideMetric'], 'true');
@@ -274,15 +331,12 @@ void main() {
         templateId: TemplateId.weightLoss,
       );
       final h = await _open(tester, journey: j);
-      for (var i = 0; i < 4; i++) {
-        await tester.tapAt(const Offset(380, 500));
-        await tester.pumpAndSettle();
-      }
+      await _jumpToSummary(tester);
       await tester.tap(_key('wrapped-hide-kg'));
-      await tester.pumpAndSettle();
+      await _pumpTransition(tester);
       await tester.ensureVisible(_key('wrapped-edit-card'));
       await tester.tap(_key('wrapped-edit-card'));
-      await tester.pumpAndSettle();
+      await _pumpTransition(tester);
       expect(Uri.parse(h.location).queryParameters['hideMetric'], 'false');
     });
 
@@ -306,7 +360,7 @@ void main() {
         await tester.pump();
         expect(_key('journey-wrapped-loading'), findsOneWidget);
         pending.add(null);
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         expect(_key('journey-wrapped-not-found'), findsOneWidget);
       },
     );
@@ -322,7 +376,7 @@ void main() {
         expect(_key('journey-wrapped-not-found'), findsOneWidget);
         expect(find.text('Journey not found.'), findsOneWidget);
         await tester.tap(find.text('Journeys'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         expect(h.location, AppRoutes.journeys);
       },
     );
@@ -353,7 +407,7 @@ void main() {
       expect(_key('journey-wrapped-error'), findsOneWidget);
       fail = false;
       await tester.tap(find.text('Retry'));
-      await tester.pumpAndSettle();
+      await _pumpTransition(tester);
       expect(_key('journey-wrapped'), findsOneWidget);
     });
 
@@ -402,15 +456,14 @@ void main() {
             appSettingsOpenerProvider.overrideWithValue(settings),
           ],
         );
-        await tester.tap(_key('wrapped-segment-2'));
-        await tester.pumpAndSettle();
+        await _jumpToSummary(tester);
         await tester.ensureVisible(_key('wrapped-share'));
         await tester.tap(_key('wrapped-share'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         expect(_key('wrapped-share-sheet'), findsOneWidget);
 
         await tester.tap(_key('wrapped-share-now'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         expect(exporter.exports, hasLength(1));
         expect(exporter.exports.single.boundarySize, const Size(360, 640));
         expect(sharer.shared, hasLength(1));
@@ -425,11 +478,11 @@ void main() {
         // Toggling "Hide the ourney wordmark" in the sheet hides the brand
         // on the card AND removes the `ourney · ` wordmark from the shared text.
         await tester.tap(_key('wrapped-share'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         await tester.tap(_key('wrapped-hide-brand'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         await tester.tap(_key('wrapped-share-now'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         expect(sharer.shared, hasLength(2));
         expect(sharer.shared.last.text, isNot(contains('ourney · ')));
         expect(
@@ -441,16 +494,16 @@ void main() {
 
         // Save image exports and saves the rendered card image.
         await tester.tap(_key('wrapped-share'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         await tester.tap(_key('wrapped-share-save'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         expect(saver.saved, isEmpty);
         expect(
           tester.widget<UiButton>(_key('wrapped-share')).onPressed,
           isNull,
         );
         saver.gate.complete();
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         expect(
           tester.widget<UiButton>(_key('wrapped-share')).onPressed,
           isNotNull,
@@ -463,19 +516,26 @@ void main() {
           message: 'denied',
         );
         await tester.tap(_key('wrapped-share'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         await tester.tap(_key('wrapped-share-save'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
+        for (
+          var i = 0;
+          i < 12 && _key('ui-toast-action').hitTestable().evaluate().isEmpty;
+          i++
+        ) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
         await tester.tap(_key('ui-toast-action'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         expect(settings.opened, 1);
 
         // A failing export shows a toast instead of an unhandled async error.
         exporter.error = const OurneyException(OurneyErrorCode.unknown);
         await tester.tap(_key('wrapped-share'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         await tester.tap(_key('wrapped-share-now'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         expect(tester.takeException(), isNull);
         expect(
           find.text('Something went wrong. Please try again.'),
@@ -493,8 +553,7 @@ void main() {
         addTearDown(() => dir!.deleteSync(recursive: true));
         final realExporter = ShareCardExporter(tempDirectory: () async => dir!);
         await _open(tester);
-        await tester.tap(_key('wrapped-segment-2'));
-        await tester.pumpAndSettle();
+        await _jumpToSummary(tester);
 
         RenderRepaintBoundary findCardBoundary(String cardKey) {
           final boundaryFinder = find.descendant(
@@ -538,7 +597,7 @@ void main() {
         expect(feedFile!.image.width, 1080);
         expect(feedFile.image.height, 1350);
         expect(feedFile.path, endsWith('ourney-j1-feed.png'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
       },
     );
 
@@ -594,11 +653,10 @@ void main() {
               .read(hideWeightOnShareProvider.notifier)
               .set(globalHide),
         );
-        await tester.tap(_key('wrapped-segment-4'));
-        await tester.pumpAndSettle();
+        await _jumpToSummary(tester);
         if (!localHide) {
           await tester.tap(_key('wrapped-hide-kg'));
-          await tester.pumpAndSettle();
+          await _pumpTransition(tester);
         }
         final showWeights =
             !globalHide && membershipHide == false && !localHide;
@@ -615,16 +673,16 @@ void main() {
         );
         await tester.ensureVisible(_key('wrapped-share'));
         await tester.tap(_key('wrapped-share'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         await tester.tap(_key('wrapped-share-now'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         for (final value in ['81.2', '78.4']) {
           expect(sharer.shared.single.text!.contains(value), showWeights);
         }
         await tester.tap(_key('wrapped-share'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         await tester.tap(_key('wrapped-share-save'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         expect(exporter.exports, hasLength(2));
         expect(saver.saved.single.path, sharer.shared.single.path);
       });
@@ -660,15 +718,17 @@ void main() {
               ),
               size: const Size(320, 640),
             );
-            for (var i = 0; i < 6; i++) {
+            final segments = _progressSegments();
+            final count = segments.evaluate().length;
+            for (var i = 1; i < count; i++) {
               expect(tester.takeException(), isNull);
-              await tester.tapAt(const Offset(300, 400));
-              await tester.pumpAndSettle();
+              await tester.tap(segments.at(i));
+              await _pumpTransition(tester);
             }
             expect(_key('wrapped-summary'), findsOneWidget);
             expect(tester.takeException(), isNull);
             await tester.tap(find.text('4:5'));
-            await tester.pumpAndSettle();
+            await _pumpTransition(tester);
             expect(tester.takeException(), isNull);
           },
         );
@@ -706,9 +766,10 @@ void main() {
             testCheckIn(j.id, const LocalDate(2026, 10, 10)),
           ]),
         );
-        await tester.tap(_key('wrapped-segment-2'));
-        await tester.pumpAndSettle();
-        expect(find.text('3/10 DAYS · 30% CONSISTENT'), findsOneWidget);
+        await _jumpToSummary(tester);
+        final title = tester.widget<Text>(_key('wrapped-summary-title')).data!;
+        expect(title, contains('3 CHECK-IN DAYS'));
+        expect(title, isNot(contains(RegExp(r'[/%]'))));
       },
     );
 
@@ -720,9 +781,9 @@ void main() {
           templateId: TemplateId.workout30,
         ).copyWith(dna: const {'sport': 'gym', 'measure': 'session'});
         await _open(tester, journey: j);
-        await tester.tap(_key('wrapped-segment-4'));
-        await tester.pumpAndSettle();
-        expect(find.text('4/14 FINISHED'), findsOneWidget);
+        await _jumpToSummary(tester);
+        // The ended-early window is Oct 10 through Oct 14: 4/5 is above 70%.
+        expect(find.text('4/5 FINISHED'), findsOneWidget);
         expect(find.textContaining('0 KM'), findsNothing);
       },
     );
@@ -736,6 +797,8 @@ void main() {
         );
         final visiblePhoto = testCheckIn(j.id, const LocalDate(2026, 10, 10));
         final hiddenPhoto = testCheckIn(j.id, const LocalDate(2026, 10, 11));
+        final pendingShareState = StreamController<JourneyShareState>();
+        addTearDown(pendingShareState.close);
         final h = await pumpJourneys(
           tester,
           config: testBackendConfig,
@@ -748,36 +811,39 @@ void main() {
           ),
           checkIns: FakeCheckInRepository([visiblePhoto, hiddenPhoto]),
           extraOverrides: [
-            shareStateProvider(j.id).overrideWith(
-              (_) => Stream.value(
-                JourneyShareState(
-                  journeyId: j.id,
-                  viewers: const [],
-                  story: const JourneyStory(),
-                  publicSettings: const PublicSettings(
-                    showCounts: false,
-                    allowPublicReactions: false,
-                    allowViewerRequests: false,
-                  ),
-                  hiddenCheckInIds: {hiddenPhoto.id},
-                ),
-              ),
-            ),
+            shareStateProvider(j.id)
+                .overrideWith((_) => pendingShareState.stream),
           ],
         );
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         await tester.runAsync(
           () => h.container.read(blurPhotosOnShareProvider.notifier).set(true),
         );
-        await tester.tap(_key('wrapped-segment-4'));
-        await tester.pumpAndSettle();
+        await _jumpToSummary(tester);
 
         final film = _key('wrapped-memory-film');
         expect(film, findsOneWidget);
+        final photos = find.descendant(
+          of: film,
+          matching: find.byType(JourneyPhoto),
+        );
+        expect(photos, findsNothing);
+        pendingShareState.add(
+          JourneyShareState(
+            journeyId: j.id,
+            viewers: const [],
+            story: const JourneyStory(),
+            publicSettings: const PublicSettings(
+              showCounts: false,
+              allowPublicReactions: false,
+              allowViewerRequests: false,
+            ),
+            hiddenCheckInIds: {hiddenPhoto.id},
+          ),
+        );
+        await _pumpTransition(tester);
         final renderedPhotos = tester
-            .widgetList<JourneyPhoto>(
-              find.descendant(of: film, matching: find.byType(JourneyPhoto)),
-            )
+            .widgetList<JourneyPhoto>(photos)
             .map((w) => w.checkIn.id)
             .toList();
         expect(renderedPhotos, [visiblePhoto.id]);
@@ -818,13 +884,12 @@ void main() {
             shareCardSharerProvider.overrideWithValue(sharer),
           ],
         );
-        await tester.tap(_key('wrapped-segment-4'));
-        await tester.pumpAndSettle();
+        await _jumpToSummary(tester);
         await tester.ensureVisible(_key('wrapped-share'));
         await tester.tap(_key('wrapped-share'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         await tester.tap(_key('wrapped-share-now'));
-        await tester.pumpAndSettle();
+        await _pumpTransition(tester);
         expect(sharer.shared, hasLength(1));
         expect(sharer.shared.single.text, isNot(contains(secretTitle)));
 
@@ -910,11 +975,19 @@ void main() {
             ),
           ),
         );
+        final frames = _key('wrapped-couple-frame');
+        final photos = find.descendant(
+          of: frames,
+          matching: find.byType(JourneyPhoto),
+        );
         final rendered = tester
-            .widgetList<JourneyPhoto>(find.byType(JourneyPhoto))
+            .widgetList<JourneyPhoto>(photos)
             .map((w) => w.checkIn.id)
             .toList();
         expect(rendered, [myPhoto.id]);
+        final frame = _key('wrapped-summary-photo-${myPhoto.id}');
+        expect(tester.getCenter(frame).dx, tester.getCenter(frames).dx);
+        expect(tester.getSize(frame), const Size(120, 160));
       },
     );
   });

@@ -34,13 +34,16 @@ import '../../../share_card/domain/share_card_content.dart'
         shareMetricHidden;
 import '../../../share_card/routes.dart' show WeightNumbersOptIn;
 import '../../../sharing/data/sharing_providers.dart' show shareStateProvider;
+import '../../data/journey_reaction_count_provider.dart';
 import '../../data/journeys_providers.dart';
 import '../../domain/journey_progress.dart';
 import '../../domain/journey_title.dart';
+import '../../domain/run_stats.dart' show isRunJourney;
 import '../../domain/wrapped_story.dart';
 import '../../journeys_paths.dart';
 import '../../l10n/generated/journeys_localizations.dart';
 import '../journey_errors.dart';
+import 'wrapped_beats.dart';
 import 'wrapped_visuals.dart';
 
 /// Builds the text caption shared from the Wrapped summary sheet (DE-17).
@@ -166,7 +169,17 @@ class JourneyWrappedScreen extends ConsumerWidget {
       now: ref.watch(journeysNowProvider),
       couple: ref.watch(groupDailySnapshotProvider(journey)),
     );
-    return _WrappedBody(journey: journey, stats: WrappedStats.from(progress));
+    final skin = personaSkinOf(journey);
+    final reactions =
+        skin == PersonaSkinId.accountabilitySquad ||
+            skin == PersonaSkinId.coupleRituals
+        ? ref.watch(journeyReactionCountProvider(journey.id)).asData?.value
+        : null;
+    return _WrappedBody(
+      journey: journey,
+      stats: WrappedStats.from(progress),
+      reactionCount: reactions ?? 0,
+    );
   }
 }
 
@@ -179,7 +192,13 @@ void _close(BuildContext context, String id) {
 }
 
 class _WrappedBody extends StatefulWidget {
-  const _WrappedBody({required this.journey, required this.stats});
+  const _WrappedBody({
+    required this.journey,
+    required this.stats,
+    this.reactionCount = 0,
+  });
+
+  final int reactionCount;
 
   final Journey journey;
   final WrappedStats stats;
@@ -198,6 +217,9 @@ class _WrappedBodyState extends State<_WrappedBody>
   int _direction = 1;
   int _storyPageCount = 0;
   bool _holding = false;
+  bool _paused = false;
+  bool _showPhotos = false;
+  List<WrappedBeat> _beats = const [];
   _Ratio _ratio = _Ratio.story;
   bool _hideKg = true;
   late bool _hideBrand =
@@ -210,7 +232,13 @@ class _WrappedBodyState extends State<_WrappedBody>
 
   void _onSegmentStatus(AnimationStatus status) {
     if (status != AnimationStatus.completed || !mounted) return;
-    if (UiMotion.reduced(context)) return;
+    if (UiMotion.reduced(context) ||
+        _paused ||
+        _holding ||
+        _page >= _beats.length ||
+        _beats[_page].duration == null) {
+      return;
+    }
     if (_page < _storyPageCount) {
       _move(1, _storyPageCount);
     }
@@ -218,32 +246,49 @@ class _WrappedBodyState extends State<_WrappedBody>
 
   void _syncSegmentTimer({required bool reduced, required int storyCount}) {
     _storyPageCount = storyCount;
-    final onSummary = _page >= storyCount;
+    final onSummary =
+        _page >= storyCount ||
+        (_beats.isNotEmpty &&
+            _page < _beats.length &&
+            _beats[_page].duration == null);
     if (reduced || onSummary || !TickerMode.valuesOf(context).enabled) {
       if (_segmentCtrl.isAnimating) _segmentCtrl.stop();
       _segmentCtrl.value = 1.0;
-    } else if (!_holding && !_segmentCtrl.isAnimating) {
-      _segmentCtrl.forward(from: 0.0);
+    } else if (!_holding && !_paused && !_segmentCtrl.isAnimating) {
+      _segmentCtrl.duration = _beats[_page].duration;
+      _segmentCtrl.forward(
+        from: _segmentCtrl.value >= 1 ? 0 : _segmentCtrl.value,
+      );
     }
   }
 
   void _restartSegmentTimer({required bool reduced, required int storyCount}) {
     _storyPageCount = storyCount;
     _holding = false;
-    final onSummary = _page >= storyCount;
+    final onSummary =
+        _page >= storyCount ||
+        (_beats.isNotEmpty &&
+            _page < _beats.length &&
+            _beats[_page].duration == null);
     if (reduced || onSummary || !TickerMode.valuesOf(context).enabled) {
       _segmentCtrl.stop();
       _segmentCtrl.value = 1.0;
     } else {
-      _segmentCtrl.forward(from: 0.0);
+      _segmentCtrl.duration = _beats[_page].duration;
+      _segmentCtrl.value = 0;
+      if (!_paused) _segmentCtrl.forward();
     }
   }
 
   void _setHolding(bool holding) {
     if (_holding == holding) return;
-    _holding = holding;
-    if (UiMotion.reduced(context) || _page >= _storyPageCount) return;
-    if (holding) {
+    setState(() => _holding = holding);
+    if (UiMotion.reduced(context) ||
+        _page >= _storyPageCount ||
+        _beats[_page].duration == null) {
+      return;
+    }
+    if (holding || _paused) {
       _segmentCtrl.stop();
     } else if (_segmentCtrl.value < 1.0) {
       _segmentCtrl.forward();
@@ -276,7 +321,15 @@ class _WrappedBodyState extends State<_WrappedBody>
     final l10n = JourneysL10n.of(context);
     final j = widget.journey;
     final skin = personaSkinOf(j);
-    return wrappedPagesFor(l10n, j, skin, widget.stats).length;
+    _beats = wrappedBeatsFor(
+      l10n,
+      j,
+      skin,
+      widget.stats,
+      localeName: l10n.localeName,
+      reactionCount: widget.reactionCount,
+    );
+    return _beats.length;
   }
 
   @override
@@ -291,10 +344,24 @@ class _WrappedBodyState extends State<_WrappedBody>
   @override
   void didUpdateWidget(covariant _WrappedBody oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _syncSegmentTimer(
-      reduced: UiMotion.reduced(context),
-      storyCount: _currentStoryCount(),
-    );
+    final oldPage = _page;
+    final onSummary = _page >= _beats.length;
+    final beatId = onSummary ? null : _beats[_page].id;
+    final count = _currentStoryCount();
+    if (onSummary) {
+      _page = count;
+    } else {
+      final index = _beats.indexWhere((beat) => beat.id == beatId);
+      _page = index < 0 ? _page.clamp(0, count) : index;
+    }
+    if (_page != oldPage) {
+      _restartSegmentTimer(
+        reduced: UiMotion.reduced(context),
+        storyCount: count,
+      );
+    } else {
+      _syncSegmentTimer(reduced: UiMotion.reduced(context), storyCount: count);
+    }
   }
 
   @override
@@ -310,7 +377,16 @@ class _WrappedBodyState extends State<_WrappedBody>
     final reduced = UiMotion.reduced(context);
     final j = widget.journey;
     final skin = personaSkinOf(j);
-    final pages = wrappedPagesFor(l10n, j, skin, widget.stats);
+    final pages = wrappedBeatsFor(
+      l10n,
+      j,
+      skin,
+      widget.stats,
+      localeName: l10n.localeName,
+      reactionCount: widget.reactionCount,
+    );
+    _beats = pages;
+    _page = _page.clamp(0, pages.length);
     _storyPageCount = pages.length;
     final summary = _page >= pages.length;
 
@@ -333,24 +409,62 @@ class _WrappedBodyState extends State<_WrappedBody>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  UiBackHeader(
-                    // U4: the arrow steps back a page; only the close button
-                    // leaves the screen.
-                    onBack: () => _page > 0
-                        ? _move(-1, pages.length)
-                        : _close(context, j.id),
-                    backLabel: l10n.journeys_back,
-                    title: null,
-                    bordered: false,
-                    trailing: UiIconButton(
-                      key: const ValueKey('wrapped-close'),
-                      glyph: const OurneyIcon(
-                        name: 'close',
-                        size: 22,
-                        flat: true,
-                      ),
-                      label: l10n.journeys_wrapped_close,
-                      onPressed: () => _close(context, j.id),
+                  SizedBox(
+                    height: 56,
+                    child: Row(
+                      key: const ValueKey('wrapped-header'),
+                      children: [
+                        UiBarIconButton(
+                          glyph: const OurneyIcon(name: 'back', size: 21),
+                          label: l10n.journeys_back,
+                          onPressed: () => _page > 0
+                              ? _move(-1, pages.length)
+                              : _close(context, j.id),
+                        ),
+                        Expanded(
+                          child: Text(
+                            summary ? '' : pages[_page].eyebrow,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: UiText.eyebrow(color: ui.ink),
+                          ),
+                        ),
+                        UiIconButton(
+                          key: const ValueKey('wrapped-pause'),
+                          glyph: CustomPaint(
+                            size: const Size(22, 22),
+                            painter: _PlaybackPainter(
+                              paused: _paused,
+                              color: ui.ink,
+                            ),
+                          ),
+                          label: _paused
+                              ? l10n.journeys_wrapped_play
+                              : l10n.journeys_wrapped_pause,
+                          onPressed: () {
+                            setState(() => _paused = !_paused);
+                            if (_paused) {
+                              _segmentCtrl.stop();
+                            } else if (!_holding &&
+                                !reduced &&
+                                !summary &&
+                                pages[_page].duration != null) {
+                              _segmentCtrl.forward();
+                            }
+                          },
+                        ),
+                        UiIconButton(
+                          key: const ValueKey('wrapped-close'),
+                          glyph: const OurneyIcon(
+                            name: 'close',
+                            size: 22,
+                            flat: true,
+                          ),
+                          label: l10n.journeys_wrapped_close,
+                          onPressed: () => _close(context, j.id),
+                        ),
+                      ],
                     ),
                   ),
                   _Segments(
@@ -365,7 +479,7 @@ class _WrappedBodyState extends State<_WrappedBody>
                   const SizedBox(height: UiSpace.lg),
                   Expanded(
                     child: UiDirectionalSwitcher(
-                      step: _page,
+                      step: summary ? 'summary' : pages[_page].id,
                       direction: _direction,
                       duration: UiMotion.medium,
                       alignment: Alignment.center,
@@ -390,17 +504,17 @@ class _WrappedBodyState extends State<_WrappedBody>
                                   setState(() => _hideBrand = v),
                             )
                           : _Story(
-                              key: ValueKey('wrapped-page-$_page'),
+                              key: ValueKey('wrapped-page-${pages[_page].id}'),
+                              journey: j,
                               skin: skin,
                               stats: widget.stats,
-                              page: _page,
-                              headline: pages[_page],
-                              footnote:
-                                  skin == PersonaSkinId.memoryCollectors &&
-                                      _page == pages.length - 1
-                                  ? l10n.journeys_wrapped_memoryEnd
-                                  : null,
-                              color: ui.ink,
+                              beat: pages[_page],
+                              paused: _paused || _holding,
+                              blurPhotos:
+                                  skin == PersonaSkinId.quietTransformer &&
+                                  !_showPhotos,
+                              onShowPhotos: () =>
+                                  setState(() => _showPhotos = true),
                               onTapSide: (forward) =>
                                   _move(forward ? 1 : -1, pages.length),
                               onHoldChanged: _setHolding,
@@ -490,88 +604,103 @@ class _Segments extends StatelessWidget {
   }
 }
 
-class _Story extends StatelessWidget {
-  const _Story({
-    required this.skin,
-    required this.stats,
-    required this.page,
-    required this.headline,
-    required this.color,
-    required this.onTapSide,
-    this.onHoldChanged,
-    this.footnote,
-    super.key,
-  });
-
-  final PersonaSkinId skin;
-  final WrappedStats stats;
-  final int page;
-  final String headline;
-  final String? footnote;
+class _PlaybackPainter extends CustomPainter {
+  const _PlaybackPainter({required this.paused, required this.color});
+  final bool paused;
   final Color color;
-  final ValueChanged<bool> onTapSide;
-  final ValueChanged<bool>? onHoldChanged;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()..color = color;
+    if (paused) {
+      canvas.drawPath(
+        Path()
+          ..moveTo(5, 2)
+          ..lineTo(20, 11)
+          ..lineTo(5, 20)
+          ..close(),
+        p,
+      );
+    } else {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          const Rect.fromLTWH(4, 3, 5, 16),
+          const Radius.circular(1),
+        ),
+        p,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          const Rect.fromLTWH(13, 3, 5, 16),
+          const Radius.circular(1),
+        ),
+        p,
+      );
+    }
+  }
 
   @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    return LayoutBuilder(
-      // U4: one labelled node with explicit next / previous actions, so a
-      // screen reader can step through the story (a double tap lands on the
-      // exact centre and used to always go back).
-      builder: (context, c) => Semantics(
-        container: true,
-        excludeSemantics: true,
-        button: true,
-        label: footnote == null ? headline : '$headline. $footnote',
-        onTap: () => onTapSide(true),
-        onScrollLeft: () => onTapSide(true),
-        onScrollRight: () => onTapSide(false),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapUp: (d) => onTapSide(d.localPosition.dx >= c.maxWidth / 2),
-          onLongPressStart: (_) => onHoldChanged?.call(true),
-          onLongPressEnd: (_) => onHoldChanged?.call(false),
-          onLongPressCancel: () => onHoldChanged?.call(false),
-          onHorizontalDragEnd: (d) {
-            final v = d.primaryVelocity ?? 0;
-            if (v.abs() > 200) onTapSide(v < 0);
-          },
-          child: SingleChildScrollView(
-            physics: const NeverScrollableScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: c.maxHeight),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  WrappedVisual(skin: skin, stats: stats, page: page),
-                  const SizedBox(height: UiSpace.xl),
-                  Text(
-                    headline,
-                    key: const ValueKey('wrapped-headline'),
-                    textAlign: TextAlign.center,
-                    style: UiText.h1(
-                      color: color,
-                      size: 34,
-                    ).copyWith(height: 1.25),
-                  ),
-                  if (footnote != null) ...[
-                    const SizedBox(height: UiSpace.md),
-                    Text(
-                      footnote!,
-                      textAlign: TextAlign.center,
-                      style: UiText.muted(color: ui.inkMuted)
-                          .copyWith(height: 1.45),
-                    ),
-                  ],
-                ],
-              ),
+  bool shouldRepaint(_PlaybackPainter old) =>
+      old.paused != paused || old.color != color;
+}
+
+class _Story extends StatelessWidget {
+  const _Story({
+    required this.journey,
+    required this.skin,
+    required this.stats,
+    required this.beat,
+    required this.paused,
+    required this.blurPhotos,
+    required this.onShowPhotos,
+    required this.onTapSide,
+    this.onHoldChanged,
+    super.key,
+  });
+  final Journey journey;
+  final PersonaSkinId skin;
+  final WrappedStats stats;
+  final WrappedBeat beat;
+  final bool paused;
+  final bool blurPhotos;
+  final VoidCallback onShowPhotos;
+  final ValueChanged<bool> onTapSide;
+  final ValueChanged<bool>? onHoldChanged;
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, c) => Semantics(
+      container: true,
+      explicitChildNodes: true,
+      onScrollLeft: () => onTapSide(true),
+      onScrollRight: () => onTapSide(false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapUp: (d) => onTapSide(d.localPosition.dx >= c.maxWidth / 2),
+        onLongPressStart: (_) => onHoldChanged?.call(true),
+        onLongPressEnd: (_) => onHoldChanged?.call(false),
+        onLongPressCancel: () => onHoldChanged?.call(false),
+        onHorizontalDragEnd: (d) {
+          final v = d.primaryVelocity ?? 0;
+          if (v.abs() > 200) onTapSide(v < 0);
+        },
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: c.maxHeight),
+            child: WrappedBeatView(
+              key: ValueKey('wrapped-beat-${beat.id}'),
+              journey: journey,
+              skin: skin,
+              stats: stats,
+              beat: beat,
+              paused: paused,
+              blurPhotos: blurPhotos,
+              onShowPhotos: onShowPhotos,
+              onNext: () => onTapSide(true),
             ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _Summary extends ConsumerStatefulWidget {
@@ -599,9 +728,11 @@ class _Summary extends ConsumerStatefulWidget {
   final ValueChanged<bool> onHideBrand;
 
   /// "65.2 kg - 62.0 kg" from the first and last logged metric, if any.
-  static String? _weights(WrappedStats s, {
+  static String? _weights(
+    WrappedStats s, {
     required String locale,
-    String? unit}) {
+    String? unit,
+  }) {
     final values = s.weights;
     if (values.length < 2) return null;
     final u = (unit == null || unit.trim().isEmpty) ? 'kg' : unit.trim();
@@ -882,6 +1013,7 @@ class _SummaryState extends ConsumerState<_Summary> {
                                       skin: skin,
                                       stats: stats,
                                       page: 3,
+                                      isRun: isRunJourney(journey),
                                       blurPhotos:
                                           quiet ||
                                           (membership?.blurMedia ?? false) ||
