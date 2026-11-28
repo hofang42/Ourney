@@ -62,7 +62,8 @@
   "@reminders_emptyTitle": {
     "description": "Empty state title when there is no active journey."
   },
-  "reminders_emptyMessage": "Tạo một hành trình rồi quay lại đây để đặt giờ nhắc.",
+  "reminders_emptyCreate": "Tạo hành trình",
+  "reminders_emptyMessage": "Có hành trình rồi thì đặt giờ nhắc ở đây.",
   "@reminders_emptyMessage": {
     "description": "Empty state message when there is no active journey."
   },

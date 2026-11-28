@@ -164,10 +164,16 @@ abstract class RemindersL10n {
   /// **'Chưa có hành trình nào'**
   String get reminders_emptyTitle;
 
+  /// No description provided for @reminders_emptyCreate.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo hành trình'**
+  String get reminders_emptyCreate;
+
   /// Empty state message when there is no active journey.
   ///
   /// In vi, this message translates to:
-  /// **'Tạo một hành trình rồi quay lại đây để đặt giờ nhắc.'**
+  /// **'Có hành trình rồi thì đặt giờ nhắc ở đây.'**
   String get reminders_emptyMessage;
 
   /// Shown when the journeys could not be loaded.

@@ -203,6 +203,10 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
                         glyph: const OurneyIcon(name: 'bell', flat: true),
                         title: l10n.reminders_emptyTitle,
                         body: l10n.reminders_emptyMessage,
+                        actionLabel: l10n.reminders_emptyCreate,
+                        actionKey: const ValueKey('reminders-empty-create'),
+                        primaryAction: true,
+                        onAction: () => context.push(AppRoutes.journeyNew),
                       )
                     : ListView(
                         padding: const EdgeInsets.only(top: UiSpace.sm),
