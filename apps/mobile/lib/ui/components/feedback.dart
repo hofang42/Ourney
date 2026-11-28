@@ -25,6 +25,7 @@ class UiEmptyState extends StatefulWidget {
     this.actionLabel,
     this.onAction,
     this.actionKey,
+    this.primaryAction = false,
     super.key,
   }) : assert(icon != null || glyph != null, 'icon or glyph is required');
 
@@ -40,6 +41,9 @@ class UiEmptyState extends StatefulWidget {
 
   /// Key of the action button.
   final Key? actionKey;
+
+  /// Gives a main next step primary emphasis; retry actions stay secondary.
+  final bool primaryAction;
 
   @override
   State<UiEmptyState> createState() => _UiEmptyStateState();
@@ -106,7 +110,8 @@ class _UiEmptyStateState extends State<UiEmptyState>
                   border: ui.stickerBorder(),
                   boxShadow: ui.hardShadow(UiShadow.small),
                 ),
-                child: widget.glyph ?? Icon(widget.icon, size: 30, color: ui.ink),
+                child:
+                    widget.glyph ?? Icon(widget.icon, size: 30, color: ui.ink),
               ),
               const SizedBox(height: UiSpace.xl),
               Semantics(
@@ -132,7 +137,10 @@ class _UiEmptyStateState extends State<UiEmptyState>
               ],
               if (widget.actionLabel != null && widget.onAction != null) ...[
                 const SizedBox(height: UiSpace.xxl),
-                UiButton.secondary(
+                UiButton(
+                  variant: widget.primaryAction
+                      ? UiButtonVariant.primary
+                      : UiButtonVariant.secondary,
                   key: widget.actionKey,
                   label: widget.actionLabel!,
                   onPressed: widget.onAction,
@@ -372,13 +380,7 @@ class _RingPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final arc = (Offset.zero & size).deflate(_stroke / 2);
     canvas.drawArc(arc, 0, math.pi * 2, false, _trackPaint);
-    canvas.drawArc(
-      arc,
-      -math.pi / 2,
-      math.pi * 2 * value,
-      false,
-      _arcPaint,
-    );
+    canvas.drawArc(arc, -math.pi / 2, math.pi * 2 * value, false, _arcPaint);
   }
 
   @override
@@ -587,8 +589,9 @@ class _UiToastMotion extends StatelessWidget {
     if (UiMotion.reduced(context)) {
       return child;
     }
-    final parentAnim =
-        context.findAncestorWidgetOfExactType<SnackBar>()?.animation;
+    final parentAnim = context
+        .findAncestorWidgetOfExactType<SnackBar>()
+        ?.animation;
     if (parentAnim == null) {
       return child;
     }

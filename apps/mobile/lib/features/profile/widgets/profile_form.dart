@@ -108,6 +108,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
     final l10n = ProfileL10n.of(context);
     final source = await showUiSheet<AvatarSource>(
       context: context,
+      compact: true,
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [

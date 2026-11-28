@@ -51,8 +51,11 @@ class RemindersL10nEn extends RemindersL10n {
   String get reminders_emptyTitle => 'No journeys yet';
 
   @override
+  String get reminders_emptyCreate => 'Create a journey';
+
+  @override
   String get reminders_emptyMessage =>
-      'Create a journey, then come back here to set a reminder.';
+      'Once you have a journey, set its reminder here.';
 
   @override
   String get reminders_loadError =>

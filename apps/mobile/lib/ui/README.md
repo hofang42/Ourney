@@ -111,3 +111,8 @@ Known gap: V2 disabled buttons use a dashed border; Flutter has no dashed `Borde
 | `UiStateCard(kind:, title:, body:, actionLabel:, onAction:)` | Kinds `empty offline error loading` (plus / cloud-off / warning icons, `UiSkeleton` for loading) |
 
 New drawn icons in `ourney_icons.dart`: type-weight/study/trip/couple/workout/custom, flame, trophy, lock, check, warning, wifi-off, cloud-off, clock, timer, image, plus, back, close, settings, share, switch-camera, lightning, calendar, heart, star.
+
+`UiSheet(compact: true)` / `showUiSheet(compact: true)` sizes short pickers to
+their content, keeping 43dp top padding and `UiSpace.md` bottom padding plus
+the safe inset (and keyboard inset). The default keeps its 292dp minimum.
+Only the profile avatar source picker opts in.
