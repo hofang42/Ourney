@@ -464,11 +464,11 @@ h3 {
   .nav-inner { min-height: 62px; }
 }
 
-/* Phone Frame */
+/* Phone Frame: height follows the 390x844 screen inside it (not the frame
+   box), so the border + padding never make object-fit crop the capture. */
 .phone {
   position: relative;
   width: 300px;
-  aspect-ratio: 390 / 844;
   padding: 8px;
   border: 3px solid var(--outline);
   border-radius: 44px;
@@ -477,8 +477,10 @@ h3 {
   flex: 0 0 auto;
 }
 .phone picture, .phone .scr-img {
+  display: block;
   width: 100%;
-  height: 100%;
+  height: auto;
+  aspect-ratio: 390 / 844;
   object-fit: cover;
   border-radius: 36px;
 }
@@ -1462,21 +1464,17 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
 }
 .step p { color: var(--muted); max-width: 46ch; }
 
-/* Mobile Cropped Top-Focused Step Phone */
+/* Mobile Step Phone: the whole screen, scaled down (a top crop sliced the
+   create screen mid-text). */
 .phone-step {
-  width: min(268px, 100%);
-  aspect-ratio: 390 / 520;
+  width: min(232px, 100%);
   margin: 20px auto 0;
-  border-radius: 36px 36px 20px 20px;
-  overflow: hidden;
+  padding: 6px;
+  border-radius: 34px;
 }
 .phone-step picture,
 .phone-step .scr-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top;
-  border-radius: 28px 28px 14px 14px;
+  border-radius: 28px;
 }
 .how-visual { display: none; }
 
@@ -1519,6 +1517,9 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
     position: sticky;
     top: max(96px, calc(50vh - 320px));
     width: 304px;
+    /* Its screens are absolutely stacked, so size the frame explicitly:
+       inner 282px wide at 390:844, plus 3px border + 8px padding a side. */
+    height: calc(282px * 844 / 390 + 22px);
     margin: 0 auto;
     transform: rotate(1.5deg);
   }
@@ -2260,6 +2261,10 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
 }
 @media (min-width: 768px) {
   .mobile-dock-cta { display: none !important; }
+}
+/* Anchor jumps and find-in-page stop above the floating dock pill. */
+@media (max-width: 767px) {
+  html { scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 }
 
 /* Footer (All links >= 48x48px hit targets) */
