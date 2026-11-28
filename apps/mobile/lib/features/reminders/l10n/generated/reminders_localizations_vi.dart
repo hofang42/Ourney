@@ -51,8 +51,11 @@ class RemindersL10nVi extends RemindersL10n {
   String get reminders_emptyTitle => 'Chưa có hành trình nào';
 
   @override
+  String get reminders_emptyCreate => 'Tạo hành trình';
+
+  @override
   String get reminders_emptyMessage =>
-      'Tạo một hành trình rồi quay lại đây để đặt giờ nhắc.';
+      'Có hành trình rồi thì đặt giờ nhắc ở đây.';
 
   @override
   String get reminders_loadError =>
