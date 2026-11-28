@@ -172,6 +172,27 @@ jobs:
       - name: Test
         run: flutter test
 
+  email-worker:
+    name: apps/email-worker (typecheck + test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/email-worker
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/email-worker/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Header filter, rate limit and handler tests (Vitest)
+        run: npm test
+
   admin:
     name: apps/admin (typecheck + lint + test + build)
     runs-on: ubuntu-latest
