@@ -1,7 +1,7 @@
 {
-  "name": "Ourney · Góp tấm hình, giữ nhịp mình",
+  "name": "Ourney",
   "short_name": "Ourney",
-  "description": "Ourney là nhật ký ảnh mỗi ngày cho việc bạn muốn làm đều: học ngoại ngữ, chạy bộ, giảm cân, đi du lịch hay đọc sách, tự lưu riêng hoặc chụp cùng hội bạn.",
+  "description": "Nhật ký ảnh cho việc bạn muốn làm đều: học tiếng Anh, chạy bộ, giảm cân, du lịch, đọc sách. Mỗi lần check-in là một tấm hình, lưu riêng hoặc cùng hội bạn.",
   "lang": "vi",
   "dir": "ltr",
   "start_url": "/",
@@ -12,18 +12,6 @@
   "categories": ["lifestyle", "productivity", "health", "photo"],
   "icons": [
     {
-      "src": "/assets/brand/favicon-16x16.png",
-      "sizes": "16x16",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/brand/favicon-32x32.png",
-      "sizes": "32x32",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
       "src": "/assets/brand/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
@@ -33,7 +21,19 @@
       "src": "/assets/brand/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/brand/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/brand/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/assets/brand/favicon.svg",

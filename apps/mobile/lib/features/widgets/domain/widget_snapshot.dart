@@ -524,15 +524,7 @@ abstract final class WidgetSnapshotBuilder {
     'CN',
   ];
 
-  static const List<String> _enWeekdays = [
-    'M',
-    'T',
-    'W',
-    'T',
-    'F',
-    'S',
-    'S',
-  ];
+  static const List<String> _enWeekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
   /// Short weekday label for [date] (`weekday` 1=Mon..7=Sun), or `'HN'` / `'TD'`
   /// when [isToday] is true (§4.3).
@@ -574,12 +566,12 @@ abstract final class WidgetSnapshotBuilder {
     Set<String> hiddenCheckInIds = const {},
     String? currentUserId,
     String? dismissedWindowKey,
-    String? defaultJourneyId,
-    String? defaultSquadId,
   }) {
     ensureTimeZonesLoaded();
     final nowUtc = now.toUtc();
-    final normalizedLocale = locale.toLowerCase().startsWith('en') ? 'en' : 'vi';
+    final normalizedLocale = locale.toLowerCase().startsWith('en')
+        ? 'en'
+        : 'vi';
     final normalizedTheme = switch (themeMode) {
       ThemeMode.light => 'light',
       ThemeMode.dark => 'dark',
@@ -689,16 +681,8 @@ abstract final class WidgetSnapshotBuilder {
       final isPinned =
           pinnedJourneyIds.contains(j.id) || (membership?.pinned ?? false);
 
-      final eveningCueUtc = wallClockToUtc(
-        zone,
-        today,
-        kWidgetEveningCueTime,
-      );
-      final streakAlertUtc = wallClockToUtc(
-        zone,
-        today,
-        kStreakAlertTime,
-      );
+      final eveningCueUtc = wallClockToUtc(zone, today, kWidgetEveningCueTime);
+      final streakAlertUtc = wallClockToUtc(zone, today, kStreakAlertTime);
       final midnightRolloverUtc = wallClockToUtc(
         zone,
         today.addDays(1),
@@ -1038,24 +1022,6 @@ abstract final class WidgetSnapshotBuilder {
       dismissedWindowKey: dismissedWindowKey,
     );
 
-    final trimmedDefaultJourneyId = defaultJourneyId?.trim();
-    final resolvedDefaultJourneyId =
-        (trimmedDefaultJourneyId != null &&
-            trimmedDefaultJourneyId.isNotEmpty &&
-            trimmedDefaultJourneyId != 'auto' &&
-            journeyItems.any((j) => j.id == trimmedDefaultJourneyId))
-        ? trimmedDefaultJourneyId
-        : null;
-
-    final trimmedDefaultSquadId = defaultSquadId?.trim();
-    final resolvedDefaultSquadId =
-        (trimmedDefaultSquadId != null &&
-            trimmedDefaultSquadId.isNotEmpty &&
-            trimmedDefaultSquadId != 'auto' &&
-            squadItems.any((s) => s.journeyId == trimmedDefaultSquadId))
-        ? trimmedDefaultSquadId
-        : null;
-
     return WidgetSnapshot(
       schemaVersion: kWidgetSnapshotSchemaVersion,
       generatedAtUtc: nowUtc.toIso8601String(),
@@ -1068,8 +1034,7 @@ abstract final class WidgetSnapshotBuilder {
         explicitRedactLockScreenTitles: explicitRedactLockScreenTitles,
         liveActivityEnabled: liveActivityEnabled,
       ),
-      defaultJourneyId: resolvedDefaultJourneyId,
-      defaultSquadId: resolvedDefaultSquadId,
+      defaultJourneyId: null,
       totals: WidgetTotalsSnapshot(
         activeCount: activeCount,
         completedTodayCount: completedTodayCount,
@@ -1113,10 +1078,7 @@ abstract final class WidgetSnapshotBuilder {
     return selected;
   }
 
-  static int _compareJourneyPriority(
-    WidgetJourneyItem a,
-    WidgetJourneyItem b,
-  ) {
+  static int _compareJourneyPriority(WidgetJourneyItem a, WidgetJourneyItem b) {
     if (a.checkedInToday != b.checkedInToday) {
       return a.checkedInToday ? 1 : -1;
     }
