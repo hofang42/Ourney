@@ -32,6 +32,7 @@ public struct StreakWidgetEntryView: View {
     let themeMode = snapshot?.themeMode ?? "system"
     let cardState = WidgetSnapshot.resolveStreakCardState(
       snapshot: snapshot,
+      pinnedId: entry.pinnedId,
       appGroupAvailable: entry.appGroupAvailable
     )
     let journey: WidgetJourneyItem? = {

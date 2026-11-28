@@ -33,6 +33,7 @@ public struct SquadWidgetEntryView: View {
     let themeMode = snapshot?.themeMode ?? "system"
     let cardState = WidgetSnapshot.resolveSquadCardState(
       snapshot: snapshot,
+      pinnedId: entry.pinnedId,
       appGroupAvailable: entry.appGroupAvailable
     )
     let squad: WidgetSquadItem? = {

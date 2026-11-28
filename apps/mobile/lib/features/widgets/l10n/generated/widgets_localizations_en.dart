@@ -180,6 +180,10 @@ class WidgetsL10nEn extends WidgetsL10n {
       'Long-press an empty area until icons jiggle, then tap Edit or Widgets.';
 
   @override
+  String get widgets_setupStep1BodyAndroid =>
+      'Touch and hold an empty area, then tap Widgets.';
+
+  @override
   String get widgets_setupStep2Title =>
       '2. Search for Ourney in the widget gallery';
 
@@ -193,57 +197,13 @@ class WidgetsL10nEn extends WidgetsL10n {
 
   @override
   String get widgets_setupStep3Body =>
-      'Every widget opens the camera for that exact journey. Tap the Switch button on any widget or change it right here in Widgets.';
+      'Each widget opens the camera for its journey. To switch journeys, press and hold the widget, then tap Edit Widget.';
 
   @override
-  String get widgets_secPlacedWidgets => 'placed widgets';
+  String get widgets_setupStep3BodyAutomatic =>
+      'The widget picks the journey that still needs today\'s check-in.';
 
   @override
-  String get widgets_secJourneyPicker => 'widget journeys';
-
-  @override
-  String get widgets_placedEmptyNote =>
-      'Once you place a widget on your Home Screen, you can switch its journey right here or tap the Switch badge on the widget\'s top-right corner.';
-
-  @override
-  String get widgets_placedTodayTitle => 'Ourney · Today';
-
-  @override
-  String get widgets_placedStreakTitle => 'Ourney · Streak Sticker';
-
-  @override
-  String get widgets_placedSquadTitle => 'Ourney · Squad Today';
-
-  @override
-  String get widgets_iosTodayStreakRowTitle => 'Today & Streak';
-
-  @override
-  String get widgets_iosSquadRowTitle => 'Squad & Couple';
-
-  @override
-  String get widgets_pickerSheetTodayTitle => 'Switch journey';
-
-  @override
-  String get widgets_pickerSheetSquadTitle => 'Switch squad';
-
-  @override
-  String get widgets_pickerSheetSubtitle =>
-      'Choose which journey appears on this widget, or leave on Automatic.';
-
-  @override
-  String get widgets_autoOptionTitle => 'Automatic';
-
-  @override
-  String get widgets_autoTodaySubtitle =>
-      'Prioritizes your next unchecked journey today';
-
-  @override
-  String get widgets_autoStreakSubtitle => 'Shows your highest active streak';
-
-  @override
-  String get widgets_autoSquadSubtitle =>
-      'Shows your active Squad or Couple journey';
-
-  @override
-  String get widgets_changeAction => 'Switch';
+  String get widgets_setupStep3BodyAndroid =>
+      'Every widget opens the camera for that exact journey. To switch journeys, tap Switch on the widget.';
 }

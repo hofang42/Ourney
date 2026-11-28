@@ -111,9 +111,7 @@ Future<void> resetAccountLocalState(
     ..invalidate(redactLockScreenTitlesPrefProvider)
     ..invalidate(redactLockScreenTitlesProvider)
     ..invalidate(liveActivityEnabledProvider)
-    ..invalidate(dismissedLiveWindowKeyProvider)
-    ..invalidate(defaultWidgetJourneyIdProvider)
-    ..invalidate(defaultWidgetSquadIdProvider);
+    ..invalidate(dismissedLiveWindowKeyProvider);
   try {
     await Future.wait(removals);
     if (updateOwner) {
@@ -162,21 +160,13 @@ final accountSessionResetProvider = Provider<void>((ref) {
       // During initial provider build, defer to the next microtask.
       unawaited(
         Future.microtask(
-          () => resetAccountLocalState(
-            ref,
-            nextOwner: next,
-            updateOwner: true,
-          ),
+          () => resetAccountLocalState(ref, nextOwner: next, updateOwner: true),
         ),
       );
     } else {
       // On live user change, invalidate per-account providers synchronously.
       unawaited(
-        resetAccountLocalState(
-          ref,
-          nextOwner: next,
-          updateOwner: true,
-        ),
+        resetAccountLocalState(ref, nextOwner: next, updateOwner: true),
       );
     }
   }

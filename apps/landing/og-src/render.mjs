@@ -307,6 +307,9 @@ async function main() {
     });
 
     const iconSizes = [
+      { size: 96, out: path.join(BRAND_OUT_DIR, 'favicon-96x96.png'), inIco: false },
+      { size: 192, out: path.join(BRAND_OUT_DIR, 'icon-maskable-192.png'), inIco: false, maskable: true },
+      { size: 512, out: path.join(BRAND_OUT_DIR, 'icon-maskable-512.png'), inIco: false, maskable: true },
       { size: 180, out: path.join(BRAND_OUT_DIR, 'apple-touch-icon.png'), inIco: false },
       { size: 192, out: path.join(BRAND_OUT_DIR, 'icon-192.png'), inIco: false },
       { size: 512, out: path.join(BRAND_OUT_DIR, 'icon-512.png'), inIco: false },
@@ -323,7 +326,7 @@ async function main() {
         deviceScaleFactor: 1,
         mobile: false,
       });
-      await cdp.send('Page.navigate', { url: `http://127.0.0.1:${port}/og-src/icon-render.html` });
+      await cdp.send('Page.navigate', { url: `http://127.0.0.1:${port}/og-src/icon-render.html${item.maskable ? "?maskable=1" : ""}` });
       await cdp.send('Runtime.evaluate', {
         expression: `new Promise(r => setTimeout(r, 80))`,
         awaitPromise: true,
