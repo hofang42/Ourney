@@ -829,6 +829,12 @@ abstract class ImportL10n {
   /// In vi, this message translates to:
   /// **'Sửa chú thích cho ảnh ngày {date}: {caption}'**
   String import_captionEdit(Object caption, Object date);
+
+  /// No description provided for @import_doneWrite.
+  ///
+  /// In vi, this message translates to:
+  /// **'Viết vài dòng cho hành trình'**
+  String get import_doneWrite;
 }
 
 class _ImportL10nDelegate extends LocalizationsDelegate<ImportL10n> {

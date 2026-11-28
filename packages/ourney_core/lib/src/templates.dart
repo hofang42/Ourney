@@ -11,6 +11,8 @@ class JourneyTemplate {
     required this.defaultDurationDays,
     required this.captionPromptVi,
     required this.captionPromptEn,
+    required this.retellCaptionPromptVi,
+    required this.retellCaptionPromptEn,
     this.metricName,
     this.metricUnit,
     this.hideMetricDefault = false,
@@ -35,6 +37,8 @@ class JourneyTemplate {
   final bool allowOpenEnded;
   final String captionPromptVi;
   final String captionPromptEn;
+  final String retellCaptionPromptVi;
+  final String retellCaptionPromptEn;
 }
 
 const List<JourneyTemplate> allTemplates = [
@@ -50,6 +54,8 @@ const List<JourneyTemplate> allTemplates = [
     hideMetricDefault: true,
     captionPromptVi: 'Cân nặng và năng lượng của bạn hôm nay ra sao?',
     captionPromptEn: 'How are your weight and energy today?',
+    retellCaptionPromptVi: 'Lúc đó cơ thể và năng lượng của bạn ra sao?',
+    retellCaptionPromptEn: 'How were your body and energy back then?',
   ),
   JourneyTemplate(
     id: TemplateId.englishDaily,
@@ -62,6 +68,8 @@ const List<JourneyTemplate> allTemplates = [
     metricUnit: 'phút',
     captionPromptVi: 'Hôm nay bạn học được gì?',
     captionPromptEn: 'What did you learn today?',
+    retellCaptionPromptVi: 'Hôm đó bạn học được gì?',
+    retellCaptionPromptEn: 'What did you learn that day?',
   ),
   JourneyTemplate(
     id: TemplateId.workout30,
@@ -72,6 +80,8 @@ const List<JourneyTemplate> allTemplates = [
     defaultDurationDays: 30,
     captionPromptVi: 'Hôm nay bạn tập gì?',
     captionPromptEn: 'What did you train today?',
+    retellCaptionPromptVi: 'Buổi tập hôm đó thế nào?',
+    retellCaptionPromptEn: 'How did that workout go?',
   ),
   JourneyTemplate(
     id: TemplateId.travel,
@@ -83,6 +93,8 @@ const List<JourneyTemplate> allTemplates = [
     allowOpenEnded: true,
     captionPromptVi: 'Hôm nay bạn đã đi đâu?',
     captionPromptEn: 'Where did you go today?',
+    retellCaptionPromptVi: 'Hôm đó bạn đã đi đâu?',
+    retellCaptionPromptEn: 'Where did you go that day?',
   ),
   JourneyTemplate(
     id: TemplateId.custom,
@@ -94,6 +106,8 @@ const List<JourneyTemplate> allTemplates = [
     allowOpenEnded: true,
     captionPromptVi: 'Hôm nay có gì mới?',
     captionPromptEn: "What's new today?",
+    retellCaptionPromptVi: 'Hôm đó có gì đáng nhớ?',
+    retellCaptionPromptEn: 'What stood out that day?',
   ),
 ];
 

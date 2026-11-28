@@ -593,5 +593,6 @@
     }
   },
   "import_captionHideKeyboard": "Đóng bàn phím",
-  "import_captionEdit": "Sửa chú thích cho ảnh ngày {date}: {caption}"
+  "import_captionEdit": "Sửa chú thích cho ảnh ngày {date}: {caption}",
+  "import_doneWrite": "Viết vài dòng cho hành trình"
 }

@@ -479,4 +479,7 @@ class ImportL10nVi extends ImportL10n {
   String import_captionEdit(Object caption, Object date) {
     return 'Sửa chú thích cho ảnh ngày $date: $caption';
   }
+
+  @override
+  String get import_doneWrite => 'Viết vài dòng cho hành trình';
 }

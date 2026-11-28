@@ -129,12 +129,21 @@ void main() {
       photoPath: checkInPhotoPath('j1', 'u1', 'c1'),
       thumbPath: checkInThumbPath('j1', 'u1', 'c1'),
       fromLibrary: false,
+      moderated: true,
       metricValue: 1,
       extras: '{"dish":"Phở","hearts":4}',
       partnerPhotoPath: checkInPartnerPhotoPath('j1', 'u1', 'c1'),
       uploaded: false,
     );
     final body = checkInToRemote(row);
+    expect(checkInFromRow(row).moderated, isTrue);
+    expect(c.moderated, const Value(false));
+    expect(
+      checkInFromRemote({...remote, 'moderated_at': '2026-10-16T02:10:00Z'})
+          .moderated,
+      const Value(true),
+    );
+    expect(body.containsKey('moderated_at'), isFalse);
     expect(body.containsKey('extras'), isFalse, reason: 'own table (0011)');
     expect(checkInExtrasToRemote(row), {
       'checkin_id': 'c1',

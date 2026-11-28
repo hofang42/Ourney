@@ -43,6 +43,7 @@ CheckIn viewerPhoto({
   String user = 'u1',
   bool library = false,
   bool uploaded = true,
+  bool moderated = false,
   String? caption,
   double? metric,
   CheckInExtras extras = CheckInExtras.empty,
@@ -60,6 +61,7 @@ CheckIn viewerPhoto({
   localPhotoFile: path,
   fromLibrary: library,
   uploaded: uploaded,
+  moderated: moderated,
   caption: caption,
   metricValue: metric,
   extras: extras,
@@ -84,12 +86,16 @@ Future<ProviderContainer> pumpDayViewer(
   String? imagePath,
   bool reduced = true,
   bool use24h = true,
+  CheckInRepository? repository,
+  bool editCaption = false,
 }) async {
   final j = journey ?? testJourney(durationDays: 30);
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
   addTearDown(tester.view.reset);
   final overrides = [
+    if (repository != null)
+      checkInRepositoryProvider.overrideWithValue(repository),
     appConfigProvider.overrideWithValue(
       localOnly
           ? const AppConfig.localOnly()
@@ -138,7 +144,11 @@ Future<ProviderContainer> pumpDayViewer(
       ),
       GoRoute(
         path: '/day',
-        builder: (_, _) => DayViewerScreen(journeyId: j.id, date: date),
+        builder: (_, _) => DayViewerScreen(
+          journeyId: j.id,
+          date: date,
+          editCaption: editCaption,
+        ),
       ),
       GoRoute(
         path: '/journey/:id',
@@ -151,19 +161,23 @@ Future<ProviderContainer> pumpDayViewer(
     ProviderScope(
       key: UniqueKey(),
       overrides: overrides,
-      child: MaterialApp.router(
-        routerConfig: router,
-        theme: buildAppTheme(brightness),
-        locale: locale,
-        localizationsDelegates: ourneyLocalizationsDelegates,
-        supportedLocales: ourneySupportedLocales,
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.linear(scale),
-            disableAnimations: reduced,
-            alwaysUse24HourFormat: use24h,
+      child: RepaintBoundary(
+        key: const ValueKey('day-viewer-test-boundary'),
+        child: MaterialApp.router(
+          debugShowCheckedModeBanner: false,
+          routerConfig: router,
+          theme: buildAppTheme(brightness),
+          locale: locale,
+          localizationsDelegates: ourneyLocalizationsDelegates,
+          supportedLocales: ourneySupportedLocales,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(scale),
+              disableAnimations: reduced,
+              alwaysUse24HourFormat: use24h,
+            ),
+            child: child!,
           ),
-          child: child!,
         ),
       ),
     ),
@@ -211,6 +225,8 @@ void main() {
       const ValueKey<(String, int, String?)>(('day-person-chip', 1, 'u1')),
     );
     expect(tester.widget<UiPressable>(partnerChip).selected, isTrue);
+    expect(dayKey('journey-day-add-caption'), findsNothing);
+    expect(dayKey('journey-day-edit-caption'), findsNothing);
     expect(
       tester.widget<JourneyPhoto>(dayKey('journey-day-photo')).checkIn.id,
       partner.id,

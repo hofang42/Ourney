@@ -26,6 +26,10 @@ class _CheckIns implements CheckInRepository {
   final List<CheckIn> all;
 
   @override
+  Future<CheckIn> updateCaption(String checkInId, String? caption) =>
+      throw UnimplementedError();
+
+  @override
   Stream<List<CheckIn>> watchForJourney(
     String journeyId, {
     String? userId,

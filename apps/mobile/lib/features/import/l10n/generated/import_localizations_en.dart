@@ -493,4 +493,7 @@ class ImportL10nEn extends ImportL10n {
   String import_captionEdit(Object caption, Object date) {
     return 'Edit caption for the photo on $date: $caption';
   }
+
+  @override
+  String get import_doneWrite => 'Add a few words to the journey';
 }

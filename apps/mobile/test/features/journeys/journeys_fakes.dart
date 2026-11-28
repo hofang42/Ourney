@@ -49,6 +49,8 @@ Journey testJourney({
   LocalDate startDate = const LocalDate(2026, 10, 10),
   int? durationDays = 14,
   JourneyStatus status = JourneyStatus.active,
+  JourneyOrigin origin = JourneyOrigin.live,
+  JourneyVisibility? visibility,
   String? metricName,
   String? metricUnit,
   bool hideMetricDefault = false,
@@ -63,7 +65,8 @@ Journey testJourney({
   startDate: startDate,
   durationDays: durationDays,
   timezone: testTz,
-  visibility: defaultVisibilityFor(kind),
+  visibility: visibility ?? defaultVisibilityFor(kind),
+  origin: origin,
   status: status,
   metricName: metricName,
   metricUnit: metricUnit,
@@ -302,7 +305,11 @@ class FakeJourneyRepository implements JourneyRepository {
     String? expectedAddress,
   }) async {
     calls.add('setPublicLink:$journeyId:$enabled');
-    publicLinkCalls.add((id: journeyId, enabled: enabled, hideWeight: hideWeight));
+    publicLinkCalls.add((
+      id: journeyId,
+      enabled: enabled,
+      hideWeight: hideWeight,
+    ));
     final token = enabled ? 'pub${'0' * 37}' : null;
     _replace(
       journeyId,
@@ -393,6 +400,34 @@ class FakeCheckInRepository implements CheckInRepository {
 
   @override
   Future<CheckIn> submit(CheckInDraft draft) => throw UnimplementedError();
+
+  @override
+  Future<CheckIn> updateCaption(String checkInId, String? caption) async {
+    final current = _all.value;
+    final index = current.indexWhere((checkIn) => checkIn.id == checkInId);
+    if (index < 0) throw const OurneyException(OurneyErrorCode.notFound);
+    final checkIn = current[index];
+    final updated = CheckIn(
+      id: checkIn.id,
+      journeyId: checkIn.journeyId,
+      userId: checkIn.userId,
+      localDate: checkIn.localDate,
+      capturedAt: checkIn.capturedAt,
+      photoPath: checkIn.photoPath,
+      thumbPath: checkIn.thumbPath,
+      fromLibrary: checkIn.fromLibrary,
+      caption: normalizeCaption(caption),
+      metricValue: checkIn.metricValue,
+      extras: checkIn.extras,
+      partnerPhotoPath: checkIn.partnerPhotoPath,
+      localPhotoFile: checkIn.localPhotoFile,
+      localPartnerPhotoFile: checkIn.localPartnerPhotoFile,
+      uploaded: checkIn.uploaded,
+      moderated: checkIn.moderated,
+    );
+    replaceAll([...current]..[index] = updated);
+    return updated;
+  }
 
   @override
   Stream<int> watchPendingUploads() => Stream.value(0);

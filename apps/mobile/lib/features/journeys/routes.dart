@@ -174,6 +174,7 @@ final List<RouteBase> journeysRoutes = [
           child: DayViewerScreen(
             journeyId: state.pathParameters['id']!,
             date: DayViewerScreen.parseDate(state.pathParameters['date']),
+            editCaption: state.uri.queryParameters['caption'] == 'edit',
           ),
         ),
       ),

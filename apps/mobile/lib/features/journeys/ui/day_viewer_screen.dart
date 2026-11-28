@@ -20,6 +20,7 @@ import '../domain/day_neighbors.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'day_photo_fullscreen.dart';
 import 'day_viewer_parts.dart';
+import 'edit_checkin_caption_sheet.dart';
 import 'journey_actions.dart';
 import 'journey_errors.dart';
 import 'journey_photo.dart';
@@ -31,11 +32,13 @@ class DayViewerScreen extends ConsumerStatefulWidget {
   const DayViewerScreen({
     required this.journeyId,
     required this.date,
+    this.editCaption = false,
     super.key,
   });
 
   final String journeyId;
   final LocalDate? date;
+  final bool editCaption;
 
   static LocalDate? parseDate(String? raw) {
     if (raw == null) return null;
@@ -61,6 +64,7 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
   final _decoded = <String>{};
   final _imagePaths = <String, String>{};
   final _imageListeners = <String, (ImageStream, ImageStreamListener)>{};
+  bool _openedCaption = false;
 
   /// Interactive vertical drag-to-dismiss state. Updates [_dragOffset] directly
   /// without full-screen [setState] and rebounds via [UiSprings.snappy].
@@ -334,6 +338,39 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
               .watch(journeyTimelineIndexProvider(widget.journeyId))
               ?.progress
               .today;
+    final canEditCaption =
+        checkIn != null &&
+        journey != null &&
+        today != null &&
+        canEditCheckInCaption(
+          c: checkIn,
+          j: journey,
+          me:
+              me ??
+              (ref.watch(appConfigProvider).localOnly
+                  ? membership?.userId
+                  : null) ??
+              '',
+          today: today,
+          membership: membership,
+        );
+    void editCaption() {
+      unawaited(
+        showEditCheckInCaptionSheet(
+          context,
+          checkIn: checkIn!,
+          journey: journey!,
+          today: today!,
+        ),
+      );
+    }
+
+    if (widget.editCaption && !_openedCaption && canEditCaption) {
+      _openedCaption = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) editCaption();
+      });
+    }
     Widget? reactions;
     if (checkIn != null &&
         journey != null &&
@@ -557,7 +594,10 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
       children: [
         if (ownMetadata) ...[
           DayFacts(checkIn: checkIn, journey: journey),
-          DayCaptionSlot(caption: checkIn.caption),
+          DayCaptionSlot(
+            caption: checkIn.caption,
+            onEdit: canEditCaption ? editCaption : null,
+          ),
         ],
         ?reactions,
       ],
