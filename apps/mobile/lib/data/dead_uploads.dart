@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 
 import 'data_context.dart';
@@ -16,12 +17,17 @@ class DeadUpload {
     required this.checkInId,
     required this.journeyId,
     this.lastError,
+    this.captionPolicy = false,
   });
 
   final int queueId;
   final String checkInId;
   final String journeyId;
   final String? lastError;
+  final bool captionPolicy;
+
+  // The outbox persists OurneyException.toString(), including its wire code.
+  bool get isContentPolicy => lastError?.contains('content_policy') ?? false;
 }
 
 /// Lets the UI surface dead check-in uploads and offer Retry / Discard.
@@ -52,6 +58,9 @@ class DeadUploads {
             checkInId: id,
             journeyId: c.journeyId,
             lastError: r.lastError,
+            captionPolicy:
+                (r.lastError?.contains('content_policy') ?? false) &&
+                _captionCanCausePolicy(c),
           ),
         );
       }
@@ -59,11 +68,45 @@ class DeadUploads {
     });
   }
 
+  static bool _captionCanCausePolicy(CheckInRow row) {
+    if (row.caption == null) return false;
+    try {
+      final extras = jsonDecode(row.extras) as Map;
+      return [
+        'mood',
+        'place',
+        'dish',
+        'cook',
+      ].every((key) => extras[key] == null || extras[key] == '');
+    } on Object {
+      return false;
+    }
+  }
+
   /// Puts [items] back in the queue and uploads them now.
   Future<void> retry(List<DeadUpload> items) async {
     final outbox = _ctx.outbox;
     if (outbox == null || items.isEmpty) return;
     await outbox.retryDead([for (final i in items) i.queueId]);
+  }
+
+  /// Clears only an unsynced caption before reviving its upload.
+  Future<void> keepPhotoOnly(DeadUpload item) async {
+    final outbox = _ctx.outbox;
+    if (outbox == null || !item.captionPolicy) return;
+    var cleared = false;
+    await outbox.exclusive(() async {
+      final row = await (_ctx.db.select(
+        _ctx.db.checkIns,
+      )..where((t) => t.id.equals(item.checkInId))).getSingleOrNull();
+      if (row == null || row.uploaded || !_captionCanCausePolicy(row)) return;
+      await (_ctx.db.update(_ctx.db.checkIns)..where(
+            (t) => t.id.equals(item.checkInId) & t.uploaded.equals(false),
+          ))
+          .write(const CheckInsCompanion(caption: Value(null)));
+      cleared = true;
+    });
+    if (cleared) await outbox.retryDead([item.queueId]);
   }
 
   /// Drops [items] and the local check-ins (and photos) they were for.

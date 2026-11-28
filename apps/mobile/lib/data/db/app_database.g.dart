@@ -5530,6 +5530,17 @@ class $ImportJobPhotosTable extends ImportJobPhotos
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $ImportJobPhotosTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _captionMeta = const VerificationMeta(
+    'caption',
+  );
+  @override
+  late final GeneratedColumn<String> caption = GeneratedColumn<String>(
+    'caption',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
@@ -5656,6 +5667,7 @@ class $ImportJobPhotosTable extends ImportJobPhotos
   );
   @override
   List<GeneratedColumn> get $columns => [
+    caption,
     id,
     jobId,
     position,
@@ -5681,6 +5693,12 @@ class $ImportJobPhotosTable extends ImportJobPhotos
   }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
+    if (data.containsKey('caption')) {
+      context.handle(
+        _captionMeta,
+        caption.isAcceptableOrUnknown(data['caption']!, _captionMeta),
+      );
+    }
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     } else if (isInserting) {
@@ -5769,6 +5787,10 @@ class $ImportJobPhotosTable extends ImportJobPhotos
   ImportJobPhotoRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return ImportJobPhotoRow(
+      caption: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}caption'],
+      ),
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -5833,6 +5855,7 @@ class $ImportJobPhotosTable extends ImportJobPhotos
 
 class ImportJobPhotoRow extends DataClass
     implements Insertable<ImportJobPhotoRow> {
+  final String? caption;
   final String id;
   final String jobId;
   final int position;
@@ -5852,6 +5875,7 @@ class ImportJobPhotoRow extends DataClass
   /// `ImportFailure.wire`.
   final String? failure;
   const ImportJobPhotoRow({
+    this.caption,
     required this.id,
     required this.jobId,
     required this.position,
@@ -5868,6 +5892,9 @@ class ImportJobPhotoRow extends DataClass
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
+    if (!nullToAbsent || caption != null) {
+      map['caption'] = Variable<String>(caption);
+    }
     map['id'] = Variable<String>(id);
     map['job_id'] = Variable<String>(jobId);
     map['position'] = Variable<int>(position);
@@ -5901,6 +5928,9 @@ class ImportJobPhotoRow extends DataClass
 
   ImportJobPhotosCompanion toCompanion(bool nullToAbsent) {
     return ImportJobPhotosCompanion(
+      caption: caption == null && nullToAbsent
+          ? const Value.absent()
+          : Value(caption),
       id: Value(id),
       jobId: Value(jobId),
       position: Value(position),
@@ -5934,6 +5964,7 @@ class ImportJobPhotoRow extends DataClass
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return ImportJobPhotoRow(
+      caption: serializer.fromJson<String?>(json['caption']),
       id: serializer.fromJson<String>(json['id']),
       jobId: serializer.fromJson<String>(json['jobId']),
       position: serializer.fromJson<int>(json['position']),
@@ -5952,6 +5983,7 @@ class ImportJobPhotoRow extends DataClass
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
+      'caption': serializer.toJson<String?>(caption),
       'id': serializer.toJson<String>(id),
       'jobId': serializer.toJson<String>(jobId),
       'position': serializer.toJson<int>(position),
@@ -5968,6 +6000,7 @@ class ImportJobPhotoRow extends DataClass
   }
 
   ImportJobPhotoRow copyWith({
+    Value<String?> caption = const Value.absent(),
     String? id,
     String? jobId,
     int? position,
@@ -5981,6 +6014,7 @@ class ImportJobPhotoRow extends DataClass
     String? state,
     Value<String?> failure = const Value.absent(),
   }) => ImportJobPhotoRow(
+    caption: caption.present ? caption.value : this.caption,
     id: id ?? this.id,
     jobId: jobId ?? this.jobId,
     position: position ?? this.position,
@@ -5998,6 +6032,7 @@ class ImportJobPhotoRow extends DataClass
   );
   ImportJobPhotoRow copyWithCompanion(ImportJobPhotosCompanion data) {
     return ImportJobPhotoRow(
+      caption: data.caption.present ? data.caption.value : this.caption,
       id: data.id.present ? data.id.value : this.id,
       jobId: data.jobId.present ? data.jobId.value : this.jobId,
       position: data.position.present ? data.position.value : this.position,
@@ -6022,6 +6057,7 @@ class ImportJobPhotoRow extends DataClass
   @override
   String toString() {
     return (StringBuffer('ImportJobPhotoRow(')
+          ..write('caption: $caption, ')
           ..write('id: $id, ')
           ..write('jobId: $jobId, ')
           ..write('position: $position, ')
@@ -6040,6 +6076,7 @@ class ImportJobPhotoRow extends DataClass
 
   @override
   int get hashCode => Object.hash(
+    caption,
     id,
     jobId,
     position,
@@ -6057,6 +6094,7 @@ class ImportJobPhotoRow extends DataClass
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ImportJobPhotoRow &&
+          other.caption == this.caption &&
           other.id == this.id &&
           other.jobId == this.jobId &&
           other.position == this.position &&
@@ -6072,6 +6110,7 @@ class ImportJobPhotoRow extends DataClass
 }
 
 class ImportJobPhotosCompanion extends UpdateCompanion<ImportJobPhotoRow> {
+  final Value<String?> caption;
   final Value<String> id;
   final Value<String> jobId;
   final Value<int> position;
@@ -6086,6 +6125,7 @@ class ImportJobPhotosCompanion extends UpdateCompanion<ImportJobPhotoRow> {
   final Value<String?> failure;
   final Value<int> rowid;
   const ImportJobPhotosCompanion({
+    this.caption = const Value.absent(),
     this.id = const Value.absent(),
     this.jobId = const Value.absent(),
     this.position = const Value.absent(),
@@ -6101,6 +6141,7 @@ class ImportJobPhotosCompanion extends UpdateCompanion<ImportJobPhotoRow> {
     this.rowid = const Value.absent(),
   });
   ImportJobPhotosCompanion.insert({
+    this.caption = const Value.absent(),
     required String id,
     required String jobId,
     required int position,
@@ -6121,6 +6162,7 @@ class ImportJobPhotosCompanion extends UpdateCompanion<ImportJobPhotoRow> {
        secondsOfDay = Value(secondsOfDay),
        state = Value(state);
   static Insertable<ImportJobPhotoRow> custom({
+    Expression<String>? caption,
     Expression<String>? id,
     Expression<String>? jobId,
     Expression<int>? position,
@@ -6136,6 +6178,7 @@ class ImportJobPhotosCompanion extends UpdateCompanion<ImportJobPhotoRow> {
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
+      if (caption != null) 'caption': caption,
       if (id != null) 'id': id,
       if (jobId != null) 'job_id': jobId,
       if (position != null) 'position': position,
@@ -6153,6 +6196,7 @@ class ImportJobPhotosCompanion extends UpdateCompanion<ImportJobPhotoRow> {
   }
 
   ImportJobPhotosCompanion copyWith({
+    Value<String?>? caption,
     Value<String>? id,
     Value<String>? jobId,
     Value<int>? position,
@@ -6168,6 +6212,7 @@ class ImportJobPhotosCompanion extends UpdateCompanion<ImportJobPhotoRow> {
     Value<int>? rowid,
   }) {
     return ImportJobPhotosCompanion(
+      caption: caption ?? this.caption,
       id: id ?? this.id,
       jobId: jobId ?? this.jobId,
       position: position ?? this.position,
@@ -6187,6 +6232,9 @@ class ImportJobPhotosCompanion extends UpdateCompanion<ImportJobPhotoRow> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
+    if (caption.present) {
+      map['caption'] = Variable<String>(caption.value);
+    }
     if (id.present) {
       map['id'] = Variable<String>(id.value);
     }
@@ -6234,6 +6282,7 @@ class ImportJobPhotosCompanion extends UpdateCompanion<ImportJobPhotoRow> {
   @override
   String toString() {
     return (StringBuffer('ImportJobPhotosCompanion(')
+          ..write('caption: $caption, ')
           ..write('id: $id, ')
           ..write('jobId: $jobId, ')
           ..write('position: $position, ')
@@ -9031,6 +9080,7 @@ typedef $$ImportJobsTableProcessedTableManager =
     >;
 typedef $$ImportJobPhotosTableCreateCompanionBuilder =
     ImportJobPhotosCompanion Function({
+      Value<String?> caption,
       required String id,
       required String jobId,
       required int position,
@@ -9047,6 +9097,7 @@ typedef $$ImportJobPhotosTableCreateCompanionBuilder =
     });
 typedef $$ImportJobPhotosTableUpdateCompanionBuilder =
     ImportJobPhotosCompanion Function({
+      Value<String?> caption,
       Value<String> id,
       Value<String> jobId,
       Value<int> position,
@@ -9071,6 +9122,11 @@ class $$ImportJobPhotosTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnFilters<String> get caption => $composableBuilder(
+    column: $table.caption,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnFilters(column),
@@ -9142,6 +9198,11 @@ class $$ImportJobPhotosTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnOrderings<String> get caption => $composableBuilder(
+    column: $table.caption,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnOrderings(column),
@@ -9212,6 +9273,9 @@ class $$ImportJobPhotosTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  GeneratedColumn<String> get caption =>
+      $composableBuilder(column: $table.caption, builder: (column) => column);
+
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
@@ -9292,6 +9356,7 @@ class $$ImportJobPhotosTableTableManager
               $$ImportJobPhotosTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
+                Value<String?> caption = const Value.absent(),
                 Value<String> id = const Value.absent(),
                 Value<String> jobId = const Value.absent(),
                 Value<int> position = const Value.absent(),
@@ -9306,6 +9371,7 @@ class $$ImportJobPhotosTableTableManager
                 Value<String?> failure = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ImportJobPhotosCompanion(
+                caption: caption,
                 id: id,
                 jobId: jobId,
                 position: position,
@@ -9322,6 +9388,7 @@ class $$ImportJobPhotosTableTableManager
               ),
           createCompanionCallback:
               ({
+                Value<String?> caption = const Value.absent(),
                 required String id,
                 required String jobId,
                 required int position,
@@ -9336,6 +9403,7 @@ class $$ImportJobPhotosTableTableManager
                 Value<String?> failure = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ImportJobPhotosCompanion.insert(
+                caption: caption,
                 id: id,
                 jobId: jobId,
                 position: position,

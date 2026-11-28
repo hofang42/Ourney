@@ -109,6 +109,9 @@ class Env {
         },
         submit: (d) async {
           submitCalls++;
+          if (validateCaption(d.caption) != null) {
+            throw const OurneyException(OurneyErrorCode.invalid);
+          }
           if (d.id == holdOnPhoto) {
             reached.complete();
             await holdSubmit!.future;
@@ -142,7 +145,7 @@ class Env {
           dedupeKey: '$id-k$i',
           order: i,
           date: LocalDate(2024, 2, 1 + i),
-        ),
+        )..caption = i == 3 ? '   ' : '  Kỷ niệm 😀 $i  ',
     ],
   );
 
@@ -165,6 +168,32 @@ void main() {
     env = Env(tmp);
   });
 
+  test('over-cap source caption is capped and the job submits', () async {
+    final photo = DraftPhoto(
+      id: 'long-photo',
+      path: env.original('long'),
+      dedupeKey: 'long',
+      order: 0,
+      date: const LocalDate(2024, 2, 1),
+    )..caption = List.filled(141, String.fromCharCode(0x1f600)).join();
+    final job = buildImportJob(
+      id: 'long',
+      ownerId: 'u1',
+      title: 'Trip',
+      type: importTypes.firstWhere((t) => t.id == 'trip'),
+      layout: 'memory',
+      continues: false,
+      timezone: testTz,
+      photos: [photo],
+      now: testNow,
+    );
+    expect(job.photos.single.caption!.runes.length, captionMax);
+    await store.create(job);
+    await env.runner(store).resumeAll();
+    expect(env.checkIns['long-photo']!.caption!.runes.length, captionMax);
+    expect((await store.get('long'))!.complete, isTrue);
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
   test('the run keeps app-owned copies of the picked photos', () async {
     final job = env.job('j1', photos: 2);
     final runner = env.runner(store);
@@ -174,6 +203,7 @@ void main() {
     await env.reached.future;
     final kept = (await store.get('j1'))!;
     for (final p in kept.photos) {
+      expect(p.caption, 'Kỷ niệm 😀 ${p.position}');
       expect(p.sourcePath, startsWith(env.jobs.path));
       expect(env.exists(p.sourcePath!), isTrue);
     }
@@ -247,6 +277,8 @@ void main() {
     env.holdOnPhoto = null;
     await env.runner(store).resumeAll();
     expect(env.checkIns.keys, ['j1-ph0', 'j1-ph1', 'j1-ph2', 'j1-ph3']);
+    expect(env.checkIns['j1-ph2']!.caption, 'Kỷ niệm 😀 2');
+    expect(env.checkIns['j1-ph3']!.caption, isNull);
     expect(env.journeys, hasLength(1));
     expect(env.createCalls, 1);
     // Photos 1-2 were saved; the one in flight and the last went out again.
@@ -327,6 +359,7 @@ void main() {
     expect(env.submitCalls, before + 1);
     saved = (await store.get('j1'))!;
     expect(saved.complete, isTrue);
+    expect(env.checkIns['j1-ph1']!.caption, 'Kỷ niệm 😀 1');
     expect(env.checkIns, hasLength(4));
   });
 
@@ -624,6 +657,7 @@ void main() {
     final before = (await store.get('j1'))!;
     final reopened = await runner.reopen('j1');
     expect(reopened!.photos, hasLength(2));
+    expect(reopened.photos.first.caption, 'Kỷ niệm 😀 0');
     expect(await store.get('j1'), isNull);
     for (final p in before.photos) {
       expect(env.exists(p.sourcePath!), isTrue);

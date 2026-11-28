@@ -366,6 +366,7 @@ class ImportJobRunner {
       );
       return ImportJobPhoto(
         id: photo.id,
+        caption: photo.caption,
         position: photo.position,
         date: photo.date,
         secondsOfDay: photo.secondsOfDay,
@@ -399,6 +400,7 @@ class ImportJobRunner {
       await submit(
         CheckInDraft(
           id: current.id,
+          caption: current.caption,
           journeyId: job.id,
           capturedAt: importCapturedAt(
             date: current.date,

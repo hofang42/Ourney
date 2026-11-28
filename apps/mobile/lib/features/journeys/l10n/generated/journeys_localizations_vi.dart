@@ -2152,4 +2152,12 @@ class JourneysL10nVi extends JourneysL10n {
   String journeys_wrapped_sigFlexerAveragePace(String pace) {
     return 'Pace trung bình $pace/km';
   }
+
+  @override
+  String journeys_deadUploadsPolicy(int count) {
+    return '$count ảnh chưa lưu được vì chú thích. Ảnh vẫn còn trên máy.';
+  }
+
+  @override
+  String get journeys_keepPhotoOnly => 'Chỉ giữ ảnh';
 }

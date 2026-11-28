@@ -66,6 +66,7 @@ class ImportJobPhoto {
     required this.position,
     required this.date,
     required this.secondsOfDay,
+    this.caption,
     this.sourcePath,
     this.photoFile,
     this.thumbFile,
@@ -77,6 +78,8 @@ class ImportJobPhoto {
 
   final String id;
   final int position;
+
+  final String? caption;
 
   /// The picked original; kept until the photo is saved (a resume re-reads it).
   final String? sourcePath;

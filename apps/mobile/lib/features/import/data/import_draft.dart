@@ -26,6 +26,9 @@ class DraftPhoto {
   /// Picking order; never reused, so sorting stays stable.
   final int order;
 
+  /// Raw editing text; normalized only when building the durable job.
+  String? caption;
+
   /// Null while the photo has no usable date (the "undated" bucket).
   LocalDate? date;
   int secondsOfDay;

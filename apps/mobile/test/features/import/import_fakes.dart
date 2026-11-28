@@ -158,6 +158,7 @@ class InMemoryImportJobStore implements ImportJobStore {
           else
             ImportJobPhoto(
               id: p.id,
+              caption: p.caption,
               position: p.position,
               date: p.date,
               secondsOfDay: p.secondsOfDay,

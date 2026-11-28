@@ -221,7 +221,7 @@ abstract class ImportL10n {
   /// Retell a past journey flow.
   ///
   /// In vi, this message translates to:
-  /// **'Ngày lấy từ ảnh. Chạm vào một ảnh để đổi ngày.'**
+  /// **'Ngày lấy từ ảnh. Chạm vào lịch để đổi ngày, chạm vào ảnh để viết vài dòng.'**
   String get import_timelineIntro;
 
   /// Retell a past journey flow.
@@ -757,6 +757,78 @@ abstract class ImportL10n {
   /// In vi, this message translates to:
   /// **'Tiếp tục'**
   String get import_discardKeep;
+
+  /// No description provided for @import_captionAddHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thêm chú thích…'**
+  String get import_captionAddHint;
+
+  /// No description provided for @import_captionSheetEyebrow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày {day} · {date}'**
+  String import_captionSheetEyebrow(int day, String date);
+
+  /// No description provided for @import_captionHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn nhớ gì về tấm ảnh này?'**
+  String get import_captionHint;
+
+  /// No description provided for @import_captionHelper.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không bắt buộc. Sửa được sau khi lưu.'**
+  String get import_captionHelper;
+
+  /// No description provided for @import_captionPrev.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh trước'**
+  String get import_captionPrev;
+
+  /// No description provided for @import_captionNext.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh tiếp'**
+  String get import_captionNext;
+
+  /// No description provided for @import_captionDone.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xong'**
+  String get import_captionDone;
+
+  /// No description provided for @import_captionEditDate.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi ngày'**
+  String get import_captionEditDate;
+
+  /// No description provided for @import_captionOpen.
+  ///
+  /// In vi, this message translates to:
+  /// **'Viết chú thích cho ảnh ngày {date}'**
+  String import_captionOpen(String date);
+
+  /// No description provided for @import_discardCaptions.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chú thích bạn đã viết cũng sẽ mất.'**
+  String get import_discardCaptions;
+
+  /// No description provided for @import_captionHideKeyboard.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đóng bàn phím'**
+  String get import_captionHideKeyboard;
+
+  /// No description provided for @import_captionEdit.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sửa chú thích cho ảnh ngày {date}: {caption}'**
+  String import_captionEdit(Object caption, Object date);
 }
 
 class _ImportL10nDelegate extends LocalizationsDelegate<ImportL10n> {
