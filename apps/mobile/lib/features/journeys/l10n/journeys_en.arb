@@ -1362,5 +1362,14 @@
         "type": "int"
       }
     }
-  }
+  },
+  "journeys_deadUploadsPolicy": "{count, plural, =1{1 photo couldn't be saved because of its caption. It's still on this device.} other{{count} photos couldn't be saved because of their captions. They're still on this device.}}",
+  "@journeys_deadUploadsPolicy": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_keepPhotoOnly": "Keep photo only"
 }

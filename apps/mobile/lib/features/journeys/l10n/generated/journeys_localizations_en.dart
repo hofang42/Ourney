@@ -2133,4 +2133,19 @@ class JourneysL10nEn extends JourneysL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String journeys_deadUploadsPolicy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count photos couldn\'t be saved because of their captions. They\'re still on this device.',
+      one: '1 photo couldn\'t be saved because of its caption. It\'s still on this device.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get journeys_keepPhotoOnly => 'Keep photo only';
 }

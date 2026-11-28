@@ -3487,6 +3487,18 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'{count, plural, other{{count} ngày có ảnh}}'**
   String journeys_wrappedPhotoDays(int count);
+
+  /// No description provided for @journeys_deadUploadsPolicy.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count} ảnh chưa lưu được vì chú thích. Ảnh vẫn còn trên máy.'**
+  String journeys_deadUploadsPolicy(int count);
+
+  /// No description provided for @journeys_keepPhotoOnly.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ giữ ảnh'**
+  String get journeys_keepPhotoOnly;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

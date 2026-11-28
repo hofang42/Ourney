@@ -2002,4 +2002,12 @@ class JourneysL10nVi extends JourneysL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String journeys_deadUploadsPolicy(int count) {
+    return '$count ảnh chưa lưu được vì chú thích. Ảnh vẫn còn trên máy.';
+  }
+
+  @override
+  String get journeys_keepPhotoOnly => 'Chỉ giữ ảnh';
 }

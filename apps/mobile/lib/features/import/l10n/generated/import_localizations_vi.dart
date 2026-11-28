@@ -99,7 +99,7 @@ class ImportL10nVi extends ImportL10n {
 
   @override
   String get import_timelineIntro =>
-      'Ngày lấy từ ảnh. Chạm vào một ảnh để đổi ngày.';
+      'Ngày lấy từ ảnh. Chạm vào lịch để đổi ngày, chạm vào ảnh để viết vài dòng.';
 
   @override
   String import_rangeLine(String range, String days) {
@@ -437,4 +437,46 @@ class ImportL10nVi extends ImportL10n {
 
   @override
   String get import_discardKeep => 'Tiếp tục';
+
+  @override
+  String get import_captionAddHint => 'Thêm chú thích…';
+
+  @override
+  String import_captionSheetEyebrow(int day, String date) {
+    return 'Ngày $day · $date';
+  }
+
+  @override
+  String get import_captionHint => 'Bạn nhớ gì về tấm ảnh này?';
+
+  @override
+  String get import_captionHelper => 'Không bắt buộc. Sửa được sau khi lưu.';
+
+  @override
+  String get import_captionPrev => 'Ảnh trước';
+
+  @override
+  String get import_captionNext => 'Ảnh tiếp';
+
+  @override
+  String get import_captionDone => 'Xong';
+
+  @override
+  String get import_captionEditDate => 'Đổi ngày';
+
+  @override
+  String import_captionOpen(String date) {
+    return 'Viết chú thích cho ảnh ngày $date';
+  }
+
+  @override
+  String get import_discardCaptions => 'Chú thích bạn đã viết cũng sẽ mất.';
+
+  @override
+  String get import_captionHideKeyboard => 'Đóng bàn phím';
+
+  @override
+  String import_captionEdit(Object caption, Object date) {
+    return 'Sửa chú thích cho ảnh ngày $date: $caption';
+  }
 }

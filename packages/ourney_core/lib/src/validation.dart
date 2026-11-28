@@ -62,6 +62,14 @@ JourneyTitleError? validateJourneyTitle(String value) {
   return null;
 }
 
+/// Trim and cap saved captions by Unicode code points.
+String? normalizeCaption(String? raw) {
+  final value = raw?.trim();
+  return value == null || value.isEmpty
+      ? null
+      : String.fromCharCodes(value.runes.take(captionMax)).trimRight();
+}
+
 CaptionError? validateCaption(String? value) {
   if (value != null && _len(value) > captionMax) return CaptionError.tooLong;
   return null;

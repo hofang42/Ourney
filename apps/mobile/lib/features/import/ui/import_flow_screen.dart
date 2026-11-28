@@ -25,6 +25,7 @@ import '../data/import_providers.dart';
 import '../data/import_types.dart';
 import '../data/photo_dates.dart';
 import '../l10n/generated/import_localizations.dart';
+import 'import_caption_sheet.dart';
 import 'import_date_sheet.dart';
 import 'import_parts.dart';
 import 'import_widgets.dart';
@@ -276,6 +277,17 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     );
   }
 
+  Future<void> _openCaption(DraftPhoto photo) async {
+    final ordered = datedSorted(_chosen);
+    await showImportCaptionSheet(
+      context,
+      ordered: ordered,
+      start: ordered.indexWhere((p) => p.id == photo.id),
+      onEditDate: _editDate,
+    );
+    if (mounted) setState(() {});
+  }
+
   Future<void> _editDate(DraftPhoto photo) async {
     final d = await _askDate(photo.date);
     if (d == null || !mounted) return;
@@ -428,7 +440,7 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
               date: p.date,
               secondsOfDay: p.secondsOfDay,
               offsetMinutes: p.offsetMinutes,
-            ),
+            )..caption = p.caption,
         ]);
       _keptPaths
         ..clear()
@@ -504,7 +516,9 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
         final leave = await showUiConfirmSheet(
           context: context,
           title: l10n.import_discardTitle,
-          message: l10n.import_discardBody,
+          message: _photos.any((p) => normalizeCaption(p.caption) != null)
+              ? '${l10n.import_discardBody} ${l10n.import_discardCaptions}'
+              : l10n.import_discardBody,
           confirmLabel: l10n.import_discardConfirm,
           cancelLabel: l10n.import_discardKeep,
           destructive: true,
@@ -937,7 +951,8 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
           dateLabel: _fmt(photo.date!),
           selecting: _selecting,
           selected: _bulk.contains(photo.id),
-          onTap: () => _selecting ? _toggleBulk(photo) : _editDate(photo),
+          onTap: () => _selecting ? _toggleBulk(photo) : _openCaption(photo),
+          onEditDate: () => _editDate(photo),
           onRemove: () => _remove([photo]),
         );
       case GapRow(:final firstDay, :final days):
