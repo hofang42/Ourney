@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:clock/clock.dart';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -294,6 +295,23 @@ class WidgetSyncController {
         return;
       }
 
+      final platform = kIsWeb ? null : defaultTargetPlatform;
+      final defaultJourneyId = platform == TargetPlatform.iOS
+          ? _ref.read(defaultWidgetJourneyIdProvider)
+          : null;
+      final defaultSquadId = platform == TargetPlatform.iOS
+          ? _ref.read(defaultWidgetSquadIdProvider)
+          : null;
+      final capabilities = defaultJourneyId != null || defaultSquadId != null
+          ? await _gateway.getCapabilities()
+          : null;
+      if (_disposed ||
+          requestEpoch != _epoch ||
+          _ref.read(authStatusProvider) != authStatus ||
+          _ref.read(currentUserIdProvider) != currentUserId) {
+        return;
+      }
+
       final snapshot = WidgetSnapshotBuilder.build(
         now: now,
         authStatus: authStatus,
@@ -312,6 +330,10 @@ class WidgetSyncController {
         hiddenCheckInIds: hiddenCheckInIds,
         currentUserId: currentUserId,
         dismissedWindowKey: dismissedWindowKey,
+        platform: platform,
+        widgetConfigMode: capabilities?.widgetConfigMode,
+        defaultJourneyId: defaultJourneyId,
+        defaultSquadId: defaultSquadId,
       );
 
       final preparedThumbs = await _thumbPreparer.prepare(
@@ -709,6 +731,12 @@ class _WidgetLifecycleHookState extends ConsumerState<WidgetLifecycleHook>
       )
       ..listen(liveActivityEnabledProvider, trigger, onError: ignoreError)
       ..listen(dismissedLiveWindowKeyProvider, trigger, onError: ignoreError);
+
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      ref
+        ..listen(defaultWidgetJourneyIdProvider, trigger, onError: ignoreError)
+        ..listen(defaultWidgetSquadIdProvider, trigger, onError: ignoreError);
+    }
 
     if (authStatus != AuthStatus.signedOut) {
       ref

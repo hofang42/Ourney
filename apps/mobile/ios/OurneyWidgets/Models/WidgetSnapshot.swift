@@ -116,7 +116,7 @@ public struct WidgetSnapshot: Codable, Equatable {
   public var locale: String
   public var themeMode: String
   public var privacy: WidgetPrivacySettings
-  // Legacy payload fields retained so Runner can detect upgrades and reset the old cycle index.
+  // Shared picker defaults for static widgets. Runner resets the Today cycle when its default changes.
   public var defaultJourneyId: String?
   public var defaultSquadId: String?
   public var totals: WidgetTotals

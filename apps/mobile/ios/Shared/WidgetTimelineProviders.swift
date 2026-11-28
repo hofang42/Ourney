@@ -61,6 +61,7 @@ public struct OurneyTimelineProvider: TimelineProvider {
         kind: kind,
         isPreview: isPreview,
         pinnedId: nil,
+        useGlobalDefault: true,
         rootDirectory: rootDirectory
       )
     )
@@ -71,6 +72,7 @@ public struct OurneyTimelineProvider: TimelineProvider {
       Self.buildTimeline(
         kind: kind,
         pinnedId: nil,
+        useGlobalDefault: true,
         rootDirectory: rootDirectory
       )
     )
@@ -84,6 +86,7 @@ public struct OurneyTimelineProvider: TimelineProvider {
     kind: String,
     isPreview: Bool,
     pinnedId: String?,
+    useGlobalDefault: Bool,
     rootDirectory: () -> URL?
   ) -> OurneyWidgetEntry {
     let now = Date()
@@ -94,11 +97,12 @@ public struct OurneyTimelineProvider: TimelineProvider {
     let root = rootDirectory()
     let snapshot = loadSnapshot(kind: kind, at: now, root: root, operation: "snapshot")
     let state = snapshot == nil ? WidgetInteractiveState() : WidgetSnapshotStore.loadState(rootDirectory: root)
+    let resolvedPin = pinnedId ?? (useGlobalDefault ? globalDefaultPin(kind: kind, snapshot: snapshot) : nil)
     return OurneyWidgetEntry(
       date: now,
       snapshot: snapshot,
       state: state,
-      pinnedId: pinnedId,
+      pinnedId: resolvedPin,
       appGroupAvailable: root != nil
     )
   }
@@ -106,6 +110,7 @@ public struct OurneyTimelineProvider: TimelineProvider {
   static func buildTimeline(
     kind: String,
     pinnedId: String?,
+    useGlobalDefault: Bool,
     rootDirectory: () -> URL?
   ) -> Timeline<OurneyWidgetEntry> {
     let now = Date()
@@ -121,6 +126,7 @@ public struct OurneyTimelineProvider: TimelineProvider {
     }
 
     let state = WidgetSnapshotStore.loadState(rootDirectory: root)
+    let resolvedPin = pinnedId ?? (useGlobalDefault ? globalDefaultPin(kind: kind, snapshot: snapshot) : nil)
     // Entries cover now, the evening cue, the streak alert, and midnight rollover.
     let dates = snapshot.scheduledTimelineDates(from: now)
     let entries = dates.map { date in
@@ -128,7 +134,7 @@ public struct OurneyTimelineProvider: TimelineProvider {
         date: date,
         snapshot: snapshot.evaluated(at: date),
         state: state,
-        pinnedId: pinnedId
+        pinnedId: resolvedPin
       )
     }
     let lastDate = dates.last ?? now
@@ -136,6 +142,13 @@ public struct OurneyTimelineProvider: TimelineProvider {
       ? lastDate.addingTimeInterval(60)
       : now.addingTimeInterval(3600)
     return Timeline(entries: entries, policy: .after(nextReload))
+  }
+
+  private static func globalDefaultPin(kind: String, snapshot: WidgetSnapshot?) -> String? {
+    if kind == OurneyWidgetKind.squad {
+      return snapshot?.defaultSquadId ?? snapshot?.defaultJourneyId
+    }
+    return snapshot?.defaultJourneyId
   }
 
   private static func loadSnapshot(kind: String, at date: Date, root: URL?, operation: String) -> WidgetSnapshot? {
@@ -184,6 +197,7 @@ public struct TodayAppIntentProvider: AppIntentTimelineProvider {
       kind: OurneyWidgetKind.today,
       isPreview: isPreview,
       pinnedId: isPreview ? nil : configuration.pinnedJourneyId,
+      useGlobalDefault: false,
       rootDirectory: rootDirectory
     )
   }
@@ -192,6 +206,7 @@ public struct TodayAppIntentProvider: AppIntentTimelineProvider {
     OurneyTimelineProvider.buildTimeline(
       kind: OurneyWidgetKind.today,
       pinnedId: configuration.pinnedJourneyId,
+      useGlobalDefault: false,
       rootDirectory: rootDirectory
     )
   }
@@ -228,6 +243,7 @@ public struct StreakAppIntentProvider: AppIntentTimelineProvider {
       kind: OurneyWidgetKind.streak,
       isPreview: isPreview,
       pinnedId: isPreview ? nil : configuration.pinnedJourneyId,
+      useGlobalDefault: false,
       rootDirectory: rootDirectory
     )
   }
@@ -236,6 +252,7 @@ public struct StreakAppIntentProvider: AppIntentTimelineProvider {
     OurneyTimelineProvider.buildTimeline(
       kind: OurneyWidgetKind.streak,
       pinnedId: configuration.pinnedJourneyId,
+      useGlobalDefault: false,
       rootDirectory: rootDirectory
     )
   }
@@ -272,6 +289,7 @@ public struct SquadAppIntentProvider: AppIntentTimelineProvider {
       kind: OurneyWidgetKind.squad,
       isPreview: isPreview,
       pinnedId: isPreview ? nil : configuration.pinnedSquadId,
+      useGlobalDefault: false,
       rootDirectory: rootDirectory
     )
   }
@@ -280,6 +298,7 @@ public struct SquadAppIntentProvider: AppIntentTimelineProvider {
     OurneyTimelineProvider.buildTimeline(
       kind: OurneyWidgetKind.squad,
       pinnedId: configuration.pinnedSquadId,
+      useGlobalDefault: false,
       rootDirectory: rootDirectory
     )
   }
@@ -316,6 +335,7 @@ public struct LockScreenAppIntentProvider: AppIntentTimelineProvider {
       kind: OurneyWidgetKind.lockScreen,
       isPreview: isPreview,
       pinnedId: isPreview ? nil : configuration.pinnedJourneyId,
+      useGlobalDefault: false,
       rootDirectory: rootDirectory
     )
   }
@@ -324,6 +344,7 @@ public struct LockScreenAppIntentProvider: AppIntentTimelineProvider {
     OurneyTimelineProvider.buildTimeline(
       kind: OurneyWidgetKind.lockScreen,
       pinnedId: configuration.pinnedJourneyId,
+      useGlobalDefault: false,
       rootDirectory: rootDirectory
     )
   }
