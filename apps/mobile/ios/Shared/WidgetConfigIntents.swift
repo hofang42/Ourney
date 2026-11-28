@@ -39,12 +39,12 @@ public struct JourneyWidgetEntity: AppEntity, Equatable {
   public var displayRepresentation: DisplayRepresentation {
     if let sub = subtitle, !sub.isEmpty {
       return DisplayRepresentation(
-        title: LocalizedStringResource(stringLiteral: title),
-        subtitle: LocalizedStringResource(stringLiteral: sub)
+        title: "\(title)",
+        subtitle: "\(sub)"
       )
     }
     return DisplayRepresentation(
-      title: LocalizedStringResource(stringLiteral: title)
+      title: "\(title)"
     )
   }
 }
@@ -115,12 +115,12 @@ public struct SquadWidgetEntity: AppEntity, Equatable {
   public var displayRepresentation: DisplayRepresentation {
     if let sub = subtitle, !sub.isEmpty {
       return DisplayRepresentation(
-        title: LocalizedStringResource(stringLiteral: title),
-        subtitle: LocalizedStringResource(stringLiteral: sub)
+        title: "\(title)",
+        subtitle: "\(sub)"
       )
     }
     return DisplayRepresentation(
-      title: LocalizedStringResource(stringLiteral: title)
+      title: "\(title)"
     )
   }
 }
@@ -176,7 +176,8 @@ public struct SelectTodayJourneyIntent: WidgetConfigurationIntent {
 
   public init() {}
 
-  public init(journey: JourneyWidgetEntity?) {
+  // Tests only. The AppIntents runtime uses the parameterless initializer.
+  internal init(journey: JourneyWidgetEntity?) {
     self.journey = journey
   }
 
@@ -195,7 +196,8 @@ public struct SelectStreakJourneyIntent: WidgetConfigurationIntent {
 
   public init() {}
 
-  public init(journey: JourneyWidgetEntity?) {
+  // Tests only. The AppIntents runtime uses the parameterless initializer.
+  internal init(journey: JourneyWidgetEntity?) {
     self.journey = journey
   }
 
@@ -214,7 +216,8 @@ public struct SelectSquadIntent: WidgetConfigurationIntent {
 
   public init() {}
 
-  public init(squad: SquadWidgetEntity?) {
+  // Tests only. The AppIntents runtime uses the parameterless initializer.
+  internal init(squad: SquadWidgetEntity?) {
     self.squad = squad
   }
 
@@ -233,7 +236,8 @@ public struct SelectLockScreenJourneyIntent: WidgetConfigurationIntent {
 
   public init() {}
 
-  public init(journey: JourneyWidgetEntity?) {
+  // Tests only. The AppIntents runtime uses the parameterless initializer.
+  internal init(journey: JourneyWidgetEntity?) {
     self.journey = journey
   }
 

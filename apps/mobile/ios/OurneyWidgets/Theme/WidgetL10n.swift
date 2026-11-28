@@ -224,8 +224,8 @@ public enum WidgetL10n {
 
   public static func autoSquadOptionSubtitle(locale: String) -> String {
     isEnglish(locale)
-      ? "Auto: active squad or couple today"
-      : "Tự động: nhóm chờ check-in hôm nay"
+      ? "Squad or couple still checking in today"
+      : "Nhóm hoặc cặp đôi chưa check-in hôm nay"
   }
 
   public static func journeyEntitySubtitle(
@@ -256,7 +256,7 @@ public enum WidgetL10n {
 
   public static func archivedEntityFallbackSubtitle(locale: String) -> String {
     isEnglish(locale)
-      ? "Falls back to Automatic when a pinned journey ends"
+      ? "Switches to an active journey"
       : "Tự động chuyển sang hành trình đang hoạt động"
   }
 

@@ -1,3 +1,6 @@
+@Timeout(Duration(seconds: 30))
+library;
+
 import 'package:flutter/foundation.dart'
     show
         TargetPlatform,
@@ -58,7 +61,7 @@ void main() {
     );
 
     await c.read(localeOverrideProvider.notifier).set(const Locale('en'));
-    await tester.pumpAndSettle();
+    await pumpAppFrames(tester);
     final englishNotice = find.text(
       'This install can’t share data with widgets. Widgets will work with the '
       'TestFlight or App Store version, or when installed through AltStore or SideStore.',
@@ -73,7 +76,7 @@ void main() {
       appGroup: true,
     );
     c.invalidate(widgetCapabilitiesProvider);
-    await tester.pumpAndSettle();
+    await pumpAppFrames(tester);
     expect(englishNotice, findsNothing);
   }, variant: const TargetPlatformVariant({TargetPlatform.iOS}));
 
@@ -104,20 +107,20 @@ void main() {
       expect(find.text(log), findsNothing);
       expect(find.text('Copy log'), findsNothing);
       await tester.tap(heading);
-      await tester.pumpAndSettle();
+      await pumpAppFrames(tester);
       expect(find.text(log), findsOneWidget);
       await tester.tap(find.text('Copy log'));
-      await tester.pumpAndSettle();
+      await pumpAppFrames(tester);
       expect(copied, log);
 
       await tester.tap(heading);
-      await tester.pumpAndSettle();
+      await pumpAppFrames(tester);
       bridge.widgetDiagnostics = const [];
       await c.read(localeOverrideProvider.notifier).set(const Locale('vi'));
-      await tester.pumpAndSettle();
+      await pumpAppFrames(tester);
       expect(find.text(log), findsNothing);
       await tester.tap(find.text('Chẩn đoán tiện ích'));
-      await tester.pumpAndSettle();
+      await pumpAppFrames(tester);
       expect(
         find.text('Chưa ghi nhận sự kiện nào của tiện ích.'),
         findsOneWidget,
@@ -160,7 +163,7 @@ void main() {
       await tester.tap(find.text('tiện ích.'));
       await tester.pump(const Duration(milliseconds: 100));
     }
-    await tester.pumpAndSettle();
+    await pumpAppFrames(tester);
     expect(find.text('Đã bật chế độ chẩn đoán'), findsOneWidget);
     expect(find.text('Chẩn đoán tiện ích'), findsOneWidget);
 
@@ -169,18 +172,18 @@ void main() {
       await tester.tap(find.text('tiện ích.'));
       await tester.pump(const Duration(milliseconds: 50));
     }
-    await tester.pumpAndSettle();
+    await pumpAppFrames(tester);
     expect(find.text('Chẩn đoán tiện ích'), findsNothing);
 
     // 5. Switch to English and unlock with 7 taps -> "Diagnostics on".
     await c.read(localeOverrideProvider.notifier).set(const Locale('en'));
-    await tester.pumpAndSettle();
+    await pumpAppFrames(tester);
     expect(find.text('Widget diagnostics'), findsNothing);
     for (var i = 0; i < 7; i++) {
       await tester.tap(find.text('widgets.'));
       await tester.pump(const Duration(milliseconds: 50));
     }
-    await tester.pumpAndSettle();
+    await pumpAppFrames(tester);
     expect(find.text('Diagnostics on'), findsOneWidget);
     expect(find.text('Widget diagnostics'), findsOneWidget);
   }, variant: const TargetPlatformVariant({TargetPlatform.iOS}));
@@ -237,9 +240,9 @@ void main() {
           // Navigate from Settings -> Widgets & Live Activities row.
           await goTo(tester, c, '/profile/settings');
           await tester.ensureVisible(byKey('settings-widgets'));
-          await tester.pumpAndSettle();
+          await pumpAppFrames(tester);
           await tester.tap(byKey('settings-widgets'));
-          await tester.pumpAndSettle();
+          await pumpAppFrames(tester);
 
           expect(location(c), AppRoutes.widgets);
           expect(byKey('widgets-screen'), findsOneWidget);
@@ -248,12 +251,12 @@ void main() {
           // Preview gallery tabs: Today -> Streak -> Squad.
           expect(byKey('widgets-preview-today-surface'), findsOneWidget);
           await tester.tap(byKey('widgets-preview-tab-streak'));
-          await tester.pumpAndSettle();
+          await pumpAppFrames(tester);
           expect(byKey('widgets-preview-streak-surface'), findsOneWidget);
           _expectNoRenderOverflowsOrTruncations(tester);
 
           await tester.tap(byKey('widgets-preview-tab-squad'));
-          await tester.pumpAndSettle();
+          await pumpAppFrames(tester);
           expect(byKey('widgets-preview-squad-surface'), findsOneWidget);
           _expectNoRenderOverflowsOrTruncations(tester);
         },
@@ -291,16 +294,16 @@ void main() {
 
       await goTo(tester, c, AppRoutes.widgets);
       expect(byKey('widgets-screen'), findsOneWidget);
-      expect(byKey('widgets-default-journey-auto'), findsNothing);
-      expect(byKey('widgets-default-journey-j-2'), findsNothing);
+      expect(find.text('đổi hành trình trên tiện ích'), findsNothing);
+      expect(find.text('tiện ích đang đặt'), findsNothing);
       expect(find.text('tiện ích.'), findsOneWidget);
 
       // 1. Photo mode defaults to smart; switch to blurred, off, clear.
       expect(c.read(widgetPhotoModeProvider), WidgetPhotoMode.smart);
       await tester.ensureVisible(byKey('widgets-photo-mode-blurred'));
-      await tester.pumpAndSettle();
+      await pumpAppFrames(tester);
       await tester.tap(byKey('widgets-photo-mode-blurred'));
-      await tester.pumpAndSettle();
+      await pumpAppFrames(tester);
       expect(c.read(widgetPhotoModeProvider), WidgetPhotoMode.blurred);
       expect(
         c.read(sharedPreferencesProvider).getString(WidgetPrefs.photoMode),
@@ -308,19 +311,19 @@ void main() {
       );
 
       await tester.tap(byKey('widgets-photo-mode-off'));
-      await tester.pumpAndSettle();
+      await pumpAppFrames(tester);
       expect(c.read(widgetPhotoModeProvider), WidgetPhotoMode.off);
 
       await tester.tap(byKey('widgets-photo-mode-clear'));
-      await tester.pumpAndSettle();
+      await pumpAppFrames(tester);
       expect(c.read(widgetPhotoModeProvider), WidgetPhotoMode.clear);
 
       // 2. Toggle Lock Screen title redaction.
       expect(c.read(redactLockScreenTitlesProvider), isFalse);
       await tester.ensureVisible(byKey('widgets-redact-lock-titles'));
-      await tester.pumpAndSettle();
+      await pumpAppFrames(tester);
       await tester.tap(byKey('widgets-redact-lock-titles'));
-      await tester.pumpAndSettle();
+      await pumpAppFrames(tester);
       expect(c.read(redactLockScreenTitlesProvider), isTrue);
       expect(
         c
@@ -332,9 +335,9 @@ void main() {
       // 3. Toggle Live Activity off and back on.
       expect(c.read(liveActivityEnabledProvider), isTrue);
       await tester.ensureVisible(byKey('widgets-live-activity-toggle'));
-      await tester.pumpAndSettle();
+      await pumpAppFrames(tester);
       await tester.tap(byKey('widgets-live-activity-toggle'));
-      await tester.pumpAndSettle();
+      await pumpAppFrames(tester);
       expect(c.read(liveActivityEnabledProvider), isFalse);
       expect(
         c
@@ -344,16 +347,15 @@ void main() {
       );
 
       await c.read(localeOverrideProvider.notifier).set(const Locale('en'));
-      await tester.pumpAndSettle();
+      await pumpAppFrames(tester);
       expect(find.text('widgets.'), findsOneWidget);
       expect(
         find.text('2. Search for Ourney in the widget gallery'),
         findsOneWidget,
       );
       expect(find.text('featured widget journey'), findsNothing);
-      expect(byKey('widgets-placed-list-card'), findsNothing);
-      expect(byKey('widgets-placed-empty-card'), findsNothing);
-      expect(byKey('widgets-ios-picker-card'), findsNothing);
+      expect(find.text('placed widgets'), findsNothing);
+      expect(find.text('switch journeys on the widget'), findsNothing);
       _expectNoRenderOverflowsOrTruncations(tester);
     },
   );
@@ -362,28 +364,74 @@ void main() {
     'Slim WidgetsScreen omits in-app journey pickers and placed-widget list and '
     'teaches OS-native journey switching in Step 3 on iOS and Android',
     (tester) async {
-      final c = await pumpOurneyApp(tester);
+      final c = await pumpOurneyApp(
+        tester,
+        overrides: [
+          widgetBridgeGatewayProvider.overrideWithValue(
+            FakeWidgetBridgeGateway(),
+          ),
+        ],
+      );
       await goTo(tester, c, AppRoutes.widgets);
 
-      expect(byKey('widgets-ios-picker-card'), findsNothing);
-      expect(byKey('widgets-placed-list-card'), findsNothing);
-      expect(byKey('widgets-placed-empty-card'), findsNothing);
+      expect(find.text('đổi hành trình trên tiện ích'), findsNothing);
+      expect(find.text('tiện ích đang đặt'), findsNothing);
+      expect(find.text('chưa có tiện ích nào'), findsNothing);
       final isAndroid = defaultTargetPlatform == TargetPlatform.android;
       expect(
         find.textContaining(
           isAndroid
               ? 'bấm Đổi trên tiện ích'
-              : 'nhấn giữ tiện ích rồi chọn Sửa tiện ích',
+              : 'chạm và giữ tiện ích rồi chọn Sửa tiện ích',
         ),
         findsOneWidget,
       );
       _expectNoRenderOverflowsOrTruncations(tester);
     },
+    timeout: const Timeout(Duration(seconds: 30)),
     variant: const TargetPlatformVariant({
       TargetPlatform.iOS,
       TargetPlatform.android,
     }),
   );
+
+  for (final configurable in [false, true]) {
+    for (final locale in ['vi', 'en']) {
+      testWidgets(
+        'iOS step 3 uses $locale copy for configurableWidgets=$configurable',
+        (tester) async {
+          final bridge = FakeWidgetBridgeGateway(
+            capabilities: WidgetCapabilities.fromMap({
+              'widgets': true,
+              'appGroup': true,
+              'configurableWidgets': configurable,
+            }),
+          );
+          final c = await pumpOurneyApp(
+            tester,
+            overrides: [widgetBridgeGatewayProvider.overrideWithValue(bridge)],
+          );
+          await c.read(localeOverrideProvider.notifier).set(Locale(locale));
+          await goTo(tester, c, AppRoutes.widgets);
+          final automatic = locale == 'vi'
+              ? 'Tiện ích tự chọn hành trình cần check-in hôm nay.'
+              : "The widget picks the journey that still needs today's check-in.";
+          final edit = locale == 'vi' ? 'Sửa tiện ích' : 'Edit Widget';
+          expect(
+            find.text(automatic),
+            configurable ? findsNothing : findsOneWidget,
+          );
+          expect(
+            find.textContaining(edit),
+            configurable ? findsOneWidget : findsNothing,
+          );
+          _expectNoRenderOverflowsOrTruncations(tester);
+        },
+        variant: const TargetPlatformVariant({TargetPlatform.iOS}),
+        timeout: const Timeout(Duration(seconds: 30)),
+      );
+    }
+  }
 
   testWidgets('UX-26: Day 1 solo journey shows real 0-day streak (no fake 6-day green '
       'strip), and Squad preview shows localized sample when no group journey exists '
@@ -441,7 +489,7 @@ void main() {
 
     // 2. Streak preview for the real Day 1 solo journey: shows 0-day streak.
     await tester.tap(byKey('widgets-preview-tab-streak'));
-    await tester.pumpAndSettle();
+    await pumpAppFrames(tester);
     expect(byKey('widgets-preview-sample-badge'), findsNothing);
     expect(find.text('0-day streak'), findsOneWidget);
 
@@ -449,7 +497,7 @@ void main() {
     //    must NOT overlay the Solo journey's title onto fake squad members;
     //    must show the sample badge, sample title, and localized 'You' (not 'Bạn').
     await tester.tap(byKey('widgets-preview-tab-squad'));
-    await tester.pumpAndSettle();
+    await pumpAppFrames(tester);
     expect(byKey('widgets-preview-sample-badge'), findsOneWidget);
     expect(
       find.descendant(
@@ -540,7 +588,7 @@ void main() {
       await c.read(localeOverrideProvider.notifier).set(const Locale('en'));
       await goTo(tester, c, AppRoutes.widgets);
       await tester.tap(byKey('widgets-preview-tab-squad'));
-      await tester.pumpAndSettle();
+      await pumpAppFrames(tester);
 
       expect(byKey('widgets-preview-sample-badge'), findsNothing);
       expect(
@@ -582,9 +630,9 @@ void main() {
         // 2. iOS: shows Live Activity & Dynamic Island, no Android launcher terms.
         debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
         await c.read(localeOverrideProvider.notifier).set(const Locale('vi'));
-        await tester.pumpAndSettle();
+        await pumpAppFrames(tester);
         await c.read(localeOverrideProvider.notifier).set(const Locale('en'));
-        await tester.pumpAndSettle();
+        await pumpAppFrames(tester);
 
         expect(find.text('Live Activity & check-in window'), findsOneWidget);
         expect(

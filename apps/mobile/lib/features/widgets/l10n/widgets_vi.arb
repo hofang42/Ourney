@@ -218,11 +218,11 @@
   "@widgets_setupStep1TitleAndroid": {
     "description": "Step 1 title of the widget setup instructions (Android)."
   },
-  "widgets_setupStep1Body": "Chạm giữ vùng trống đến khi các biểu tượng rung nhẹ, sau đó chọn Sửa hoặc Tiện ích (Widgets).",
+  "widgets_setupStep1Body": "Chạm và giữ vùng trống đến khi các biểu tượng rung nhẹ, sau đó chọn Sửa hoặc Tiện ích (Widgets).",
   "@widgets_setupStep1Body": {
     "description": "Step 1 body of the widget setup instructions (iOS)."
   },
-  "widgets_setupStep1BodyAndroid": "Nhấn giữ vùng trống rồi chọn Tiện ích (Widgets).",
+  "widgets_setupStep1BodyAndroid": "Chạm và giữ vùng trống rồi chọn Tiện ích (Widgets).",
   "@widgets_setupStep1BodyAndroid": {
     "description": "Step 1 body of the widget setup instructions (Android)."
   },
@@ -238,11 +238,15 @@
   "@widgets_setupStep3Title": {
     "description": "Step 3 title of the widget setup instructions."
   },
-  "widgets_setupStep3Body": "Mỗi tiện ích mở máy ảnh của hành trình đó. Để đổi hành trình, nhấn giữ tiện ích rồi chọn Sửa tiện ích.",
+  "widgets_setupStep3Body": "Mỗi tiện ích mở máy ảnh của hành trình đó. Để đổi hành trình, chạm và giữ tiện ích rồi chọn Sửa tiện ích.",
   "@widgets_setupStep3Body": {
     "description": "Step 3 body of the widget setup instructions (iOS)."
   },
-  "widgets_setupStep3BodyAndroid": "Mỗi tiện ích mở thẳng máy ảnh của đúng hành trình đó. Muốn đổi hành trình: bấm Đổi trên tiện ích bất kỳ lúc nào.",
+  "widgets_setupStep3BodyAutomatic": "Tiện ích tự chọn hành trình cần check-in hôm nay.",
+  "@widgets_setupStep3BodyAutomatic": {
+    "description": "Step 3 body for iOS versions without configurable widgets (iOS 15–16)."
+  },
+  "widgets_setupStep3BodyAndroid": "Mỗi tiện ích mở thẳng máy ảnh của đúng hành trình đó. Muốn đổi hành trình, bấm Đổi trên tiện ích.",
   "@widgets_setupStep3BodyAndroid": {
     "description": "Step 3 body of the widget setup instructions (Android)."
   }

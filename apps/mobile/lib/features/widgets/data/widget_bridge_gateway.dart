@@ -53,6 +53,7 @@ class WidgetCapabilities {
     required this.liveActivity,
     required this.promotedLiveUpdates,
     required this.appGroup,
+    this.configurableWidgets = false,
   });
 
   static const unsupported = WidgetCapabilities(
@@ -69,6 +70,7 @@ class WidgetCapabilities {
       liveActivity: raw['liveActivity'] == true,
       promotedLiveUpdates: raw['promotedLiveUpdates'] == true,
       appGroup: (raw['appGroupAvailable'] ?? raw['appGroup']) == true,
+      configurableWidgets: raw['configurableWidgets'] == true,
     );
   }
 
@@ -76,6 +78,7 @@ class WidgetCapabilities {
   final bool liveActivity;
   final bool promotedLiveUpdates;
   final bool appGroup;
+  final bool configurableWidgets;
 
   @override
   bool operator ==(Object other) =>
@@ -83,11 +86,17 @@ class WidgetCapabilities {
       other.widgets == widgets &&
       other.liveActivity == liveActivity &&
       other.promotedLiveUpdates == promotedLiveUpdates &&
-      other.appGroup == appGroup;
+      other.appGroup == appGroup &&
+      other.configurableWidgets == configurableWidgets;
 
   @override
-  int get hashCode =>
-      Object.hash(widgets, liveActivity, promotedLiveUpdates, appGroup);
+  int get hashCode => Object.hash(
+    widgets,
+    liveActivity,
+    promotedLiveUpdates,
+    appGroup,
+    configurableWidgets,
+  );
 }
 
 /// Injectable port for the native `MethodChannel('ourney/widgets')` bridge (§4.4).
@@ -241,6 +250,7 @@ class FakeWidgetBridgeGateway implements WidgetBridgeGateway {
       liveActivity: true,
       promotedLiveUpdates: true,
       appGroup: true,
+      configurableWidgets: true,
     ),
     this.pendingWidgetState,
   });

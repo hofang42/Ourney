@@ -101,6 +101,7 @@ class OurneyWidgetBridge(context: Context) : MethodChannel.MethodCallHandler {
     private fun handleGetCapabilities(result: MethodChannel.Result) {
         val capabilities = mapOf(
             "widgets" to true,
+            "configurableWidgets" to false,
             "liveActivity" to (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O),
             "promotedLiveUpdates" to CheckInLiveUpdateManager.canPostPromotedLiveUpdates(appContext),
             "appGroup" to true,

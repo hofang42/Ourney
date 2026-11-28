@@ -126,13 +126,23 @@ jobs:
           for bundle in "$app" "$widget"; do
             actions="$bundle/Metadata.appintents/extract.actionsdata"
             test -f "$actions" || { echo "::error::Missing $actions"; exit 1; }
-            for intent in SelectTodayJourneyIntent SelectStreakJourneyIntent SelectSquadIntent SelectLockScreenJourneyIntent; do
+            for intent in SelectTodayJourneyIntent SelectStreakJourneyIntent SelectSquadIntent SelectLockScreenJourneyIntent CycleTodayJourneyIntent; do
               jq -e --arg k "$intent" '
                 any((.actions // {}) | to_entries[];
                   (.key == $k or (.key | endswith("." + $k))) and
                   (.value.mangledTypeName | strings | length > 0))
               ' "$actions" >/dev/null || {
                 echo "::error::$intent missing or has empty mangledTypeName in $actions"
+                exit 1
+              }
+            done
+            for entity in JourneyWidgetEntity SquadWidgetEntity; do
+              jq -e --arg k "$entity" '
+                any((.entities // {}) | to_entries[];
+                  (.key == $k or (.key | endswith("." + $k))) and
+                  (.value.mangledTypeName | strings | length > 0))
+              ' "$actions" >/dev/null || {
+                echo "::error::$entity missing or has empty mangledTypeName in $actions"
                 exit 1
               }
             done
@@ -143,6 +153,7 @@ jobs:
         run: scripts/ios/package_ipa.sh apps/mobile/build/ios/iphoneos/Runner.app Ourney-unsigned.ipa
 
       - uses: actions/upload-artifact@v7
+        if: github.event_name != 'pull_request'
         with:
           name: Ourney-unsigned-ipa
           path: Ourney-unsigned.ipa
@@ -156,7 +167,12 @@ jobs:
         run: |
           flutter build ios --simulator --config-only
           device_id=$(xcrun simctl list devices available -j | jq -er \
-            '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
+            '[.devices | to_entries[] |
+              select(.key | test("^com[.]apple[.]CoreSimulator[.]SimRuntime[.]iOS-")) |
+              {version: (.key | split("iOS-")[1] | split("-") | map(tonumber)),
+               phones: [.value[] | select(.name | startswith("iPhone"))]} |
+              select(.phones | length > 0)] | sort_by(.version) | last | .phones[0].udid |
+              select(type == "string" and length > 0)')
           xcodebuild test -workspace ios/Runner.xcworkspace -scheme Runner \
             -destination "platform=iOS Simulator,id=$device_id" \
             -parallel-testing-enabled NO -only-testing:RunnerTests/WidgetAppGroupTests \

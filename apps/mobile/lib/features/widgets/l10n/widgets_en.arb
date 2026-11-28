@@ -54,5 +54,6 @@
   "widgets_setupStep2Body": "Pick Today Check-In (2×2, 4×2, 4×4), Streak Sticker (2×2), or Squad Today (4×2, 4×4).",
   "widgets_setupStep3Title": "3. Tap \"Snap now\" to open the camera directly",
   "widgets_setupStep3Body": "Each widget opens the camera for its journey. To switch journeys, press and hold the widget, then tap Edit Widget.",
-  "widgets_setupStep3BodyAndroid": "Every widget opens the camera for that exact journey. To switch journeys: tap Switch on the widget anytime."
+  "widgets_setupStep3BodyAutomatic": "The widget picks the journey that still needs today's check-in.",
+  "widgets_setupStep3BodyAndroid": "Every widget opens the camera for that exact journey. To switch journeys, tap Switch on the widget."
 }

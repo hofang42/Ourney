@@ -85,8 +85,16 @@ Future<ProviderContainer> pumpOurneyApp(
   await tester.pumpWidget(
     UncontrolledProviderScope(container: container, child: const OurneyApp()),
   );
-  await tester.pumpAndSettle();
+  await pumpAppFrames(tester);
   return container;
+}
+
+/// Allows the 2.7-second first-launch splash while bounding continuous animations.
+Future<void> pumpAppFrames(WidgetTester tester) async {
+  for (var frame = 0; frame < 50; frame++) {
+    await tester.pump(const Duration(milliseconds: 100));
+    if (!tester.binding.hasScheduledFrame) break;
+  }
 }
 
 /// Minimal controllable [AuthRepository] for router/provider tests.

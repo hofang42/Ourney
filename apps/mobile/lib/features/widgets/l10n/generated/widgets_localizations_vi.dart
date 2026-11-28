@@ -178,11 +178,11 @@ class WidgetsL10nVi extends WidgetsL10n {
 
   @override
   String get widgets_setupStep1Body =>
-      'Chạm giữ vùng trống đến khi các biểu tượng rung nhẹ, sau đó chọn Sửa hoặc Tiện ích (Widgets).';
+      'Chạm và giữ vùng trống đến khi các biểu tượng rung nhẹ, sau đó chọn Sửa hoặc Tiện ích (Widgets).';
 
   @override
   String get widgets_setupStep1BodyAndroid =>
-      'Nhấn giữ vùng trống rồi chọn Tiện ích (Widgets).';
+      'Chạm và giữ vùng trống rồi chọn Tiện ích (Widgets).';
 
   @override
   String get widgets_setupStep2Title => '2. Tìm Ourney trong thư viện tiện ích';
@@ -197,9 +197,13 @@ class WidgetsL10nVi extends WidgetsL10n {
 
   @override
   String get widgets_setupStep3Body =>
-      'Mỗi tiện ích mở máy ảnh của hành trình đó. Để đổi hành trình, nhấn giữ tiện ích rồi chọn Sửa tiện ích.';
+      'Mỗi tiện ích mở máy ảnh của hành trình đó. Để đổi hành trình, chạm và giữ tiện ích rồi chọn Sửa tiện ích.';
+
+  @override
+  String get widgets_setupStep3BodyAutomatic =>
+      'Tiện ích tự chọn hành trình cần check-in hôm nay.';
 
   @override
   String get widgets_setupStep3BodyAndroid =>
-      'Mỗi tiện ích mở thẳng máy ảnh của đúng hành trình đó. Muốn đổi hành trình: bấm Đổi trên tiện ích bất kỳ lúc nào.';
+      'Mỗi tiện ích mở thẳng máy ảnh của đúng hành trình đó. Muốn đổi hành trình, bấm Đổi trên tiện ích.';
 }

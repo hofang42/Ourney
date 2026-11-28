@@ -104,9 +104,9 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
 
     final isAndroid = defaultTargetPlatform == TargetPlatform.android;
     final isIOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
-    final showAppGroupNotice =
-        isIOS &&
-        ref.watch(widgetCapabilitiesProvider).asData?.value.appGroup == false;
+    final capabilities = ref.watch(widgetCapabilitiesProvider).asData?.value;
+    final configurableWidgets = capabilities?.configurableWidgets == true;
+    final showAppGroupNotice = isIOS && capabilities?.appGroup == false;
     final showDebugDiagnostics =
         widget.debugShowDiagnostics &&
         ref.watch(widgetDiagnosticsDebugModeProvider);
@@ -228,7 +228,9 @@ class _WidgetsScreenState extends ConsumerState<WidgetsScreen> {
                   title: l10n.widgets_setupStep3Title,
                   body: isAndroid
                       ? l10n.widgets_setupStep3BodyAndroid
-                      : l10n.widgets_setupStep3Body,
+                      : configurableWidgets
+                      ? l10n.widgets_setupStep3Body
+                      : l10n.widgets_setupStep3BodyAutomatic,
                 ),
               ],
             ),

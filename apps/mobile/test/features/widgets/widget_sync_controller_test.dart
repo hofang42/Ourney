@@ -1,3 +1,6 @@
+@Timeout(Duration(seconds: 30))
+library;
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -590,6 +593,7 @@ void main() {
                     'widgets': true,
                     'liveActivity': true,
                     'promotedLiveUpdates': false,
+                    'configurableWidgets': true,
                     'appGroup': false,
                   },
                   _ => null,
@@ -621,6 +625,7 @@ void main() {
             widgets: true,
             liveActivity: true,
             promotedLiveUpdates: false,
+            configurableWidgets: true,
             appGroup: false,
           ),
         );
@@ -1113,6 +1118,70 @@ void main() {
       await pumpEventQueue();
       expect(fakeBridge.snapshotSyncs, hasLength(3));
     });
+
+    test(
+      'syncNow removes legacy selection keys before publishing a snapshot',
+      () async {
+        final prefs = await testPrefs({
+          'widgets.defaultJourneyId.v2': 'legacy-journey',
+          'widgets.defaultSquadId.v2': 'legacy-squad',
+        });
+        final bridge = FakeWidgetBridgeGateway();
+        final container = ProviderContainer(
+          overrides: [
+            appConfigProvider.overrideWithValue(testBackendConfig),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            supabaseClientProvider.overrideWithValue(null),
+            currentUserIdProvider.overrideWith(_SignedInUser.new),
+            widgetBridgeGatewayProvider.overrideWithValue(bridge),
+            widgetThumbPreparerProvider.overrideWithValue(_NoOpThumbPreparer()),
+            journeyRepositoryProvider.overrideWithValue(
+              FakeReminderJourneyRepository([]),
+            ),
+            checkInRepositoryProvider.overrideWithValue(
+              FakeReminderCheckInRepository(),
+            ),
+            notificationGatewayProvider.overrideWithValue(
+              FakeNotificationGateway(granted: true),
+            ),
+            reminderDeviceTimezoneProvider.overrideWith(
+              (ref) async => 'Asia/Ho_Chi_Minh',
+            ),
+            widgetsClockProvider.overrideWithValue(Clock.fixed(fixedNow)),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await container.read(widgetSyncControllerProvider).syncNow();
+
+        expect(prefs.containsKey('widgets.defaultJourneyId.v2'), isFalse);
+        expect(prefs.containsKey('widgets.defaultSquadId.v2'), isFalse);
+        expect(bridge.snapshotSyncs, hasLength(1));
+        final snapshot = jsonDecode(
+          bridge.snapshotSyncs.single.snapshotJson,
+        ) as Map<String, dynamic>;
+        expect(snapshot.containsKey('defaultJourneyId'), isFalse);
+        expect(snapshot.containsKey('defaultSquadId'), isFalse);
+      },
+      timeout: const Timeout(Duration(seconds: 30)),
+    );
+
+    test(
+      'configurableWidgets defaults false when the native key is absent',
+      () {
+        expect(
+          WidgetCapabilities.fromMap({'widgets': true}).configurableWidgets,
+          isFalse,
+        );
+        expect(WidgetCapabilities.fromMap(null).configurableWidgets, isFalse);
+        expect(
+          WidgetCapabilities.fromMap({'configurableWidgets': false})
+              .configurableWidgets,
+          isFalse,
+        );
+      },
+      timeout: const Timeout(Duration(seconds: 5)),
+    );
 
     test(
       'WidgetPrefs.clearLegacyDefaultSelectionKeys one-time deletes both v1 and v2 '

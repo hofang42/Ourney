@@ -389,13 +389,13 @@ abstract class WidgetsL10n {
   /// Step 1 body of the widget setup instructions (iOS).
   ///
   /// In vi, this message translates to:
-  /// **'Chạm giữ vùng trống đến khi các biểu tượng rung nhẹ, sau đó chọn Sửa hoặc Tiện ích (Widgets).'**
+  /// **'Chạm và giữ vùng trống đến khi các biểu tượng rung nhẹ, sau đó chọn Sửa hoặc Tiện ích (Widgets).'**
   String get widgets_setupStep1Body;
 
   /// Step 1 body of the widget setup instructions (Android).
   ///
   /// In vi, this message translates to:
-  /// **'Nhấn giữ vùng trống rồi chọn Tiện ích (Widgets).'**
+  /// **'Chạm và giữ vùng trống rồi chọn Tiện ích (Widgets).'**
   String get widgets_setupStep1BodyAndroid;
 
   /// Step 2 title of the widget setup instructions.
@@ -419,13 +419,19 @@ abstract class WidgetsL10n {
   /// Step 3 body of the widget setup instructions (iOS).
   ///
   /// In vi, this message translates to:
-  /// **'Mỗi tiện ích mở máy ảnh của hành trình đó. Để đổi hành trình, nhấn giữ tiện ích rồi chọn Sửa tiện ích.'**
+  /// **'Mỗi tiện ích mở máy ảnh của hành trình đó. Để đổi hành trình, chạm và giữ tiện ích rồi chọn Sửa tiện ích.'**
   String get widgets_setupStep3Body;
+
+  /// Step 3 body for iOS versions without configurable widgets (iOS 15–16).
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiện ích tự chọn hành trình cần check-in hôm nay.'**
+  String get widgets_setupStep3BodyAutomatic;
 
   /// Step 3 body of the widget setup instructions (Android).
   ///
   /// In vi, this message translates to:
-  /// **'Mỗi tiện ích mở thẳng máy ảnh của đúng hành trình đó. Muốn đổi hành trình: bấm Đổi trên tiện ích bất kỳ lúc nào.'**
+  /// **'Mỗi tiện ích mở thẳng máy ảnh của đúng hành trình đó. Muốn đổi hành trình, bấm Đổi trên tiện ích.'**
   String get widgets_setupStep3BodyAndroid;
 }
 

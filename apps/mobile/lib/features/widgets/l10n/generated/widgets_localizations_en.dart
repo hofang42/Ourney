@@ -200,6 +200,10 @@ class WidgetsL10nEn extends WidgetsL10n {
       'Each widget opens the camera for its journey. To switch journeys, press and hold the widget, then tap Edit Widget.';
 
   @override
+  String get widgets_setupStep3BodyAutomatic =>
+      'The widget picks the journey that still needs today\'s check-in.';
+
+  @override
   String get widgets_setupStep3BodyAndroid =>
-      'Every widget opens the camera for that exact journey. To switch journeys: tap Switch on the widget anytime.';
+      'Every widget opens the camera for that exact journey. To switch journeys, tap Switch on the widget.';
 }

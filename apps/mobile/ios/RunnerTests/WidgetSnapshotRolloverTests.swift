@@ -863,6 +863,11 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
     let caps = bridge.currentCapabilities()
     XCTAssertNotNil(caps["appGroupAvailable"] as? Bool)
     XCTAssertEqual(caps["appGroup"] as? Bool, caps["appGroupAvailable"] as? Bool)
+    if #available(iOS 17.0, *) {
+      XCTAssertEqual(caps["configurableWidgets"] as? Bool, true)
+    } else {
+      XCTAssertEqual(caps["configurableWidgets"] as? Bool, false)
+    }
 
     let blockingFileURL = FileManager.default.temporaryDirectory
       .appendingPathComponent("ourney_blocking_file_\(UUID().uuidString)")

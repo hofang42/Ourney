@@ -127,6 +127,89 @@ final class WidgetTimelineProviderTests: XCTestCase {
   }
 
   @available(iOS 17.0, *)
+  func testSignedOutEntityQueriesSuggestOnlyAutomatic() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    try WidgetSnapshotStore.ensureDirectoryPrepared(root)
+
+    // Keep both lists populated to verify the signed-out guard hides any stale entries.
+    var saved = WidgetPreviewFixtures.sampleTodaySnapshot(locale: "en")
+    saved.authState = "signedOut"
+    try JSONEncoder().encode(saved).write(to: root.appendingPathComponent(OurneyWidgetConstants.snapshotFileName))
+    let snapshot = try XCTUnwrap(WidgetSnapshotStore.loadSnapshot(rootDirectory: root))
+    XCTAssertTrue(snapshot.isSignedOut)
+    XCTAssertFalse(snapshot.journeys.isEmpty)
+    XCTAssertFalse(snapshot.squads.isEmpty)
+
+    let delivered = expectation(description: "signed-out entity suggestions")
+    let queryTask = Task {
+      defer { delivered.fulfill() }
+      do {
+        let journeys = try await JourneyEntityQuery(rootDirectory: { root }).suggestedEntities()
+        let squads = try await SquadEntityQuery(rootDirectory: { root }).suggestedEntities()
+        XCTAssertEqual(journeys.map(\.id), ["auto"])
+        XCTAssertEqual(squads.map(\.id), ["auto"])
+      } catch {
+        XCTFail("Signed-out entity queries failed: \(error)")
+      }
+    }
+    defer { queryTask.cancel() }
+    wait(for: [delivered], timeout: 5)
+  }
+
+  @available(iOS 17.0, *)
+  func testPinnedLockScreenJourneyHonorsSmartModeAndTitleRedactionToggle() {
+    let delivered = expectation(description: "pinned Lock Screen title redaction")
+    DispatchQueue.global().async {
+      defer { delivered.fulfill() }
+      let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+      defer { try? FileManager.default.removeItem(at: root) }
+      let sensitive = WidgetJourneyItem(id: "weight", title: "Weight loss", skinId: "weightLoss")
+      let study = WidgetJourneyItem(id: "study", title: "Learn English", skinId: "squad")
+      let cases = [
+        (journey: sensitive, toggle: false, expectedRedaction: true),
+        (journey: sensitive, toggle: true, expectedRedaction: true),
+        (journey: study, toggle: false, expectedRedaction: false),
+        (journey: study, toggle: true, expectedRedaction: true),
+      ]
+
+      do {
+        try WidgetSnapshotStore.ensureDirectoryPrepared(root)
+        let provider = LockScreenAppIntentProvider(rootDirectory: { root })
+        let snapshotFile = root.appendingPathComponent(OurneyWidgetConstants.snapshotFileName)
+        for testCase in cases {
+          let saved = WidgetSnapshot(
+            authState: "ready",
+            privacy: WidgetPrivacySettings(photoMode: "smart", redactLockScreenTitles: testCase.toggle),
+            journeys: [study, sensitive]
+          )
+          try JSONEncoder().encode(saved).write(to: snapshotFile)
+          let pin = JourneyWidgetEntity(id: testCase.journey.id, title: testCase.journey.title)
+          let timeline = provider.timeline(for: SelectLockScreenJourneyIntent(journey: pin))
+          let entry = try XCTUnwrap(timeline.entries.first)
+          XCTAssertEqual(entry.pinnedId, pin.id)
+          let snapshot = try XCTUnwrap(entry.snapshot)
+          let cardState = WidgetSnapshot.resolveTodayCardState(
+            snapshot: snapshot,
+            pinnedId: entry.pinnedId,
+            state: entry.state,
+            appGroupAvailable: entry.appGroupAvailable
+          )
+          guard case .ready(let featured) = cardState else {
+            XCTFail("Expected a ready Lock Screen card for \(pin.id)")
+            continue
+          }
+          XCTAssertEqual(featured.id, pin.id)
+          XCTAssertEqual(snapshot.shouldRedactLockScreenTitle(for: featured), testCase.expectedRedaction)
+        }
+      } catch {
+        XCTFail("Failed to build a pinned Lock Screen timeline: \(error)")
+      }
+    }
+    wait(for: [delivered], timeout: 5)
+  }
+
+  @available(iOS 17.0, *)
   func testConcreteAppIntentProvidersPinIndependentlyAndFallbackWhenAppGroupIsUnavailable() async throws {
     // 1. When App Group is nil, all 4 concrete AppIntentTimelineProviders return a 1-entry
     //    calm fallback timeline with appGroupAvailable == false and never block or return [].
