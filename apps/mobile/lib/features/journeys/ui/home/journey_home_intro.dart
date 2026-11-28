@@ -50,6 +50,7 @@ class JourneyHomeIntro extends StatelessWidget {
     required this.streak,
     required this.today,
     this.total,
+    this.showStreak = true,
     this.offline = false,
     this.squadUploadPending = false,
     this.couple = false,
@@ -63,6 +64,7 @@ class JourneyHomeIntro extends StatelessWidget {
   final int day;
   final int? total;
   final int streak;
+  final bool showStreak;
 
   /// Today in the journey's time zone (not the device clock).
   final LocalDate today;
@@ -83,12 +85,10 @@ class JourneyHomeIntro extends StatelessWidget {
         ? l10n.journeys_home_offlineCouple
         : l10n.journeys_home_offlineSquad;
     final offlineText = switch (skin) {
-      'squad' =>
-        squadUploadPending ? pendingText : l10n.journeys_home_offline,
+      'squad' => squadUploadPending ? pendingText : l10n.journeys_home_offline,
       'memory' || 'couple' =>
         squadUploadPending ? pendingText : l10n.journeys_home_offlineMemory,
-      _ =>
-        squadUploadPending ? pendingText : l10n.journeys_home_offlineQuiet,
+      _ => squadUploadPending ? pendingText : l10n.journeys_home_offlineQuiet,
     };
     final readOnlyText = switch (skin) {
       'flexer' => l10n.journeys_home_readOnlyFlexer,
@@ -107,7 +107,11 @@ class JourneyHomeIntro extends StatelessWidget {
       },
       _ => null,
     };
-    final line = skin == 'minimal'
+    final line = !showStreak
+        ? (total == null
+              ? l10n.journeys_dayOpen(day)
+              : l10n.journeys_dayOf(day, total!))
+        : skin == 'minimal'
         ? l10n.journeys_home_monthStreak(
             streak,
             DateFormat.MMMM(locale)
@@ -157,7 +161,7 @@ class JourneyHomeIntro extends StatelessWidget {
                 style: UiText.muted(color: ui.inkMuted).copyWith(height: 1.4),
               ),
             ),
-            if (streak > 0) ...[
+            if (showStreak && streak > 0) ...[
               const SizedBox(width: UiSpace.xs),
               const OurneyIcon(name: 'flame', size: 17),
             ],

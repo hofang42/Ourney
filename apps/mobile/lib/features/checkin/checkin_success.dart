@@ -398,7 +398,11 @@ class _CheckinSuccessViewState extends ConsumerState<CheckinSuccessView>
     final skin = journey == null ? null : uiSkinIdFor(personaSkinOf(journey));
     final milestone = outcome.milestone;
     // Figma Done screens: a per-skin hero, the streak, one calm line.
-    final headline = _headline(l10n, skin, day ?? 1, outcome.streakAfter);
+    final showStreak =
+        journey?.origin != JourneyOrigin.imported || outcome.streakAfter > 0;
+    final headline = showStreak
+        ? _headline(l10n, skin, day ?? 1, outcome.streakAfter)
+        : l10n.checkin_chainKept(day ?? 1);
     final canSync = !ref.watch(appConfigProvider).localOnly;
     final deliveryMessage = _deliveryMessage(
       l10n,
@@ -488,7 +492,7 @@ class _CheckinSuccessViewState extends ConsumerState<CheckinSuccessView>
             ),
           ),
           const SizedBox(height: UiSpace.md),
-          KeyedSubtree(
+          if (showStreak) KeyedSubtree(
             key: const ValueKey('checkin-streak'),
             child: UiStreakNumber(
               value: outcome.streakAfter,

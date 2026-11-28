@@ -515,6 +515,8 @@ public struct WidgetJourneyItem: Codable, Equatable, Identifiable {
   public var totalDays: Int?
   public var currentStreak: Int
   public var bestStreak: Int
+  public var showStreak: Bool
+  public var streakCheckedInToday: Bool
   public var checkedInToday: Bool
   public var atRisk: Bool
   public var eveningCueAtUtc: String?
@@ -555,6 +557,8 @@ public struct WidgetJourneyItem: Codable, Equatable, Identifiable {
     totalDays: Int? = 30,
     currentStreak: Int = 0,
     bestStreak: Int = 0,
+    showStreak: Bool = true,
+    streakCheckedInToday: Bool? = nil,
     checkedInToday: Bool = false,
     atRisk: Bool = false,
     eveningCueAtUtc: String? = nil,
@@ -579,6 +583,8 @@ public struct WidgetJourneyItem: Codable, Equatable, Identifiable {
     self.totalDays = totalDays
     self.currentStreak = currentStreak
     self.bestStreak = bestStreak
+    self.showStreak = showStreak
+    self.streakCheckedInToday = streakCheckedInToday ?? checkedInToday
     self.checkedInToday = checkedInToday
     self.atRisk = atRisk
     self.eveningCueAtUtc = eveningCueAtUtc
@@ -605,6 +611,8 @@ public struct WidgetJourneyItem: Codable, Equatable, Identifiable {
     case totalDays
     case currentStreak
     case bestStreak
+    case showStreak
+    case streakCheckedInToday
     case checkedInToday
     case atRisk
     case eveningCueAtUtc
@@ -632,7 +640,9 @@ public struct WidgetJourneyItem: Codable, Equatable, Identifiable {
     self.totalDays = try c.decodeIfPresent(Int.self, forKey: .totalDays)
     self.currentStreak = try c.decodeIfPresent(Int.self, forKey: .currentStreak) ?? 0
     self.bestStreak = try c.decodeIfPresent(Int.self, forKey: .bestStreak) ?? 0
+    self.showStreak = try c.decodeIfPresent(Bool.self, forKey: .showStreak) ?? true
     self.checkedInToday = try c.decodeIfPresent(Bool.self, forKey: .checkedInToday) ?? false
+    self.streakCheckedInToday = try c.decodeIfPresent(Bool.self, forKey: .streakCheckedInToday) ?? self.checkedInToday
     self.atRisk = try c.decodeIfPresent(Bool.self, forKey: .atRisk) ?? false
     self.eveningCueAtUtc = try c.decodeIfPresent(String.self, forKey: .eveningCueAtUtc)
     self.streakAlertAtUtc = try c.decodeIfPresent(String.self, forKey: .streakAlertAtUtc)
@@ -698,8 +708,9 @@ public struct WidgetJourneyItem: Codable, Equatable, Identifiable {
     )
 
     var rolled = self
-    let survivedFirstMidnight = (extraDays == 1) && self.checkedInToday
+    let survivedFirstMidnight = (extraDays == 1) && self.streakCheckedInToday
     rolled.checkedInToday = false
+    rolled.streakCheckedInToday = false
     let rawNewDay = self.dayNumber + extraDays
     if let cap = self.totalDays, cap > 0 {
       rolled.dayNumber = min(rawNewDay, cap)

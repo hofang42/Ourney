@@ -488,7 +488,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_retell => 'Retell a past journey';
 
   @override
-  String get journeys_imported => 'Imported';
+  String get journeys_imported => 'Retold';
 
   @override
   String get journeys_shareCard => 'Share card';
@@ -2060,5 +2060,21 @@ class JourneysL10nEn extends JourneysL10n {
   @override
   String journeys_dayPartnerNoPhoto(String name) {
     return '$name has no photo for this day';
+  }
+
+  @override
+  String journeys_cellQuiet(int day, String date) {
+    return 'Day $day, $date: no photo';
+  }
+
+  @override
+  String journeys_wrappedPhotoDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days with photos',
+      one: '1 day with photos',
+    );
+    return '$_temp0';
   }
 }

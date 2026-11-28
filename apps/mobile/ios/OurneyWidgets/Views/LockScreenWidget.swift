@@ -53,6 +53,7 @@ public struct LockScreenWidgetEntryView: View {
     let pinnedJourney = isPinned ? featured : nil
     let bestStreak = pinnedJourney?.currentStreak
       ?? max(snapshot?.totals.bestActiveStreak ?? 0, featured?.currentStreak ?? 0)
+    let showStreak = bestStreak > 0 || featured?.showStreak != false
     let pendingCount = pinnedJourney.map { $0.checkedInToday ? 0 : 1 }
       ?? (snapshot?.totals.pendingTodayCount ?? 0)
     let activeCount = pinnedJourney == nil ? max(snapshot?.totals.activeCount ?? 1, 1) : 1
@@ -95,12 +96,14 @@ public struct LockScreenWidgetEntryView: View {
         } else if family == .accessoryCircular {
           LockScreenCircularView(
             streak: bestStreak,
+            showStreak: showStreak,
             completed: completedCount,
             total: activeCount
           )
         } else if family == .accessoryInline {
           LockScreenInlineView(
             streak: bestStreak,
+            showStreak: showStreak,
             pending: pendingCount,
             statusOverride: statusTextOverride,
             locale: locale
@@ -109,6 +112,7 @@ public struct LockScreenWidgetEntryView: View {
           LockScreenRectangularView(
             journey: featured,
             streak: bestStreak,
+            showStreak: showStreak,
             pendingCount: pendingCount,
             redactTitle: redactTitle,
             statusOverride: statusTextOverride,
@@ -128,6 +132,7 @@ public struct LockScreenWidgetEntryView: View {
 
 private struct LockScreenCircularView: View {
   let streak: Int
+  let showStreak: Bool
   let completed: Int
   let total: Int
 
@@ -147,9 +152,9 @@ private struct LockScreenCircularView: View {
         .ourneyWidgetAccentable()
 
       VStack(spacing: 0) {
-        OurneyIconView(name: "flame", size: 14, flat: true, overrideColor: .primary)
+        OurneyIconView(name: showStreak ? "flame" : "check", size: 14, flat: true, overrideColor: .primary)
           .ourneyWidgetAccentable()
-        Text("\(streak)")
+        Text("\(showStreak ? streak : completed)")
           .font(OurneyWidgetFont.display(15, weight: .bold))
           .minimumScaleFactor(0.7)
           .lineLimit(1)
@@ -162,6 +167,7 @@ private struct LockScreenCircularView: View {
 private struct LockScreenRectangularView: View {
   let journey: WidgetJourneyItem?
   let streak: Int
+  let showStreak: Bool
   let pendingCount: Int
   let redactTitle: Bool
   let statusOverride: String?
@@ -178,11 +184,13 @@ private struct LockScreenRectangularView: View {
 
     VStack(alignment: .leading, spacing: 3) {
       HStack(spacing: 4) {
-        OurneyIconView(name: "flame", size: 13, flat: true, overrideColor: .primary)
+        OurneyIconView(name: showStreak ? "flame" : "check", size: 13, flat: true, overrideColor: .primary)
           .ourneyWidgetAccentable()
-        Text("\(streak)")
-          .font(OurneyWidgetFont.display(14, weight: .bold))
-          .ourneyWidgetAccentable()
+        if showStreak {
+          Text("\(streak)")
+            .font(OurneyWidgetFont.display(14, weight: .bold))
+            .ourneyWidgetAccentable()
+        }
 
         // Never apply `.privacySensitive()` when `title` is already redacted to `"Ourney"`
         // (Rank 6.3: avoids turning the brand header into a gray placeholder bar on locked iPhones).
@@ -212,6 +220,7 @@ private struct LockScreenRectangularView: View {
 
 private struct LockScreenInlineView: View {
   let streak: Int
+  let showStreak: Bool
   let pending: Int
   let statusOverride: String?
   let locale: String
@@ -221,11 +230,13 @@ private struct LockScreenInlineView: View {
       if let overrideText = statusOverride {
         return "Ourney · \(overrideText)"
       }
-      return WidgetL10n.lockScreenInline(streak: streak, pending: pending, locale: locale)
+      return showStreak
+        ? WidgetL10n.lockScreenInline(streak: streak, pending: pending, locale: locale)
+        : WidgetL10n.lockScreenRemaining(pending: pending, locale: locale)
     }()
 
     HStack(spacing: 4) {
-      OurneyIconView(name: "flame", size: 12, flat: true, overrideColor: .primary)
+      OurneyIconView(name: showStreak ? "flame" : "check", size: 12, flat: true, overrideColor: .primary)
       Text(inlineText)
     }
   }

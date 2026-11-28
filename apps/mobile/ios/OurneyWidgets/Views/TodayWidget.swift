@@ -218,14 +218,16 @@ private struct TodaySmallView: View {
       // Bottom bar: Streak flame + numeral on left, Snap/Done pill on right
       HStack(alignment: .center, spacing: 6) {
         HStack(spacing: 3) {
-          OurneyIconView(name: "flame", size: 18, ink: theme.ink)
-            .ourneyWidgetAccentable()
-          Text("\(journey.currentStreak)")
-            .font(OurneyWidgetFont.display(18, weight: .bold))
-            .foregroundColor(theme.ink)
-            .lineLimit(1)
-            .minimumScaleFactor(0.75)
-            .ourneyWidgetAccentable()
+          if journey.showStreak {
+            OurneyIconView(name: "flame", size: 18, ink: theme.ink)
+              .ourneyWidgetAccentable()
+            Text("\(journey.currentStreak)")
+              .font(OurneyWidgetFont.display(18, weight: .bold))
+              .foregroundColor(theme.ink)
+              .lineLimit(1)
+              .minimumScaleFactor(0.75)
+              .ourneyWidgetAccentable()
+          }
         }
 
         Spacer(minLength: 2)
@@ -361,11 +363,13 @@ private struct TodayMediumView: View {
                 .privacySensitive()
 
               HStack(spacing: 3) {
-                OurneyIconView(name: "flame", size: 13, ink: theme.ink)
-                Text("\(journey.currentStreak)")
-                  .font(OurneyWidgetFont.display(13, weight: .bold))
-                  .foregroundColor(theme.ink)
-                OurneyIconView(name: "check", size: 12, flat: true, overrideColor: theme.success)
+                if journey.showStreak {
+                  OurneyIconView(name: "flame", size: 13, ink: theme.ink)
+                  Text("\(journey.currentStreak)")
+                    .font(OurneyWidgetFont.display(13, weight: .bold))
+                    .foregroundColor(theme.ink)
+                  OurneyIconView(name: "check", size: 12, flat: true, overrideColor: theme.success)
+                }
               }
             }
             .padding(5)
@@ -382,16 +386,18 @@ private struct TodayMediumView: View {
           // Streak Sticker box
           VStack(spacing: 1) {
             HStack(spacing: 4) {
-              OurneyIconView(name: "flame", size: 20, ink: theme.ink)
-                .ourneyWidgetAccentable()
-              Text("\(journey.currentStreak)")
-                .font(OurneyWidgetFont.display(22, weight: .bold))
-                .foregroundColor(theme.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-                .ourneyWidgetAccentable()
+              if journey.showStreak {
+                OurneyIconView(name: "flame", size: 20, ink: theme.ink)
+                  .ourneyWidgetAccentable()
+                Text("\(journey.currentStreak)")
+                  .font(OurneyWidgetFont.display(22, weight: .bold))
+                  .foregroundColor(theme.ink)
+                  .lineLimit(1)
+                  .minimumScaleFactor(0.75)
+                  .ourneyWidgetAccentable()
+              }
             }
-            Text(WidgetL10n.streakCountLabel(journey.currentStreak, locale: locale))
+            Text(journey.showStreak ? WidgetL10n.streakCountLabel(journey.currentStreak, locale: locale) : WidgetL10n.dayLabel(dayNumber: journey.dayNumber, totalDays: journey.totalDays, locale: locale))
               .font(OurneyWidgetFont.body(9.5, bold: true))
               .foregroundColor(theme.inkMuted)
               .lineLimit(1)
@@ -485,10 +491,12 @@ private struct TodayLargeView: View {
         }
 
         HStack(spacing: 3) {
-          OurneyIconView(name: "flame", size: 15, ink: theme.ink)
-          Text("\(max(snapshot.totals.bestActiveStreak, journey.currentStreak))")
-            .font(OurneyWidgetFont.display(14, weight: .bold))
-            .foregroundColor(theme.ink)
+          if journey.showStreak || snapshot.totals.bestActiveStreak > 0 {
+            OurneyIconView(name: "flame", size: 15, ink: theme.ink)
+            Text("\(max(snapshot.totals.bestActiveStreak, journey.currentStreak))")
+              .font(OurneyWidgetFont.display(14, weight: .bold))
+              .foregroundColor(theme.ink)
+          }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
@@ -527,12 +535,14 @@ private struct TodayLargeView: View {
           Spacer(minLength: 4)
 
           HStack(spacing: 3) {
-            OurneyIconView(name: "flame", size: 18, ink: theme.ink)
-              .ourneyWidgetAccentable()
-            Text("\(journey.currentStreak)")
-              .font(OurneyWidgetFont.display(19, weight: .bold))
-              .foregroundColor(theme.ink)
-              .ourneyWidgetAccentable()
+            if journey.showStreak {
+              OurneyIconView(name: "flame", size: 18, ink: theme.ink)
+                .ourneyWidgetAccentable()
+              Text("\(journey.currentStreak)")
+                .font(OurneyWidgetFont.display(19, weight: .bold))
+                .foregroundColor(theme.ink)
+                .ourneyWidgetAccentable()
+            }
           }
         }
 
@@ -591,10 +601,12 @@ private struct TodayLargeView: View {
                 Spacer(minLength: 4)
 
                 HStack(spacing: 2) {
-                  OurneyIconView(name: "flame", size: 14, ink: theme.ink)
-                  Text("\(item.currentStreak)")
-                    .font(OurneyWidgetFont.display(13, weight: .bold))
-                    .foregroundColor(theme.ink)
+                  if item.showStreak {
+                    OurneyIconView(name: "flame", size: 14, ink: theme.ink)
+                    Text("\(item.currentStreak)")
+                      .font(OurneyWidgetFont.display(13, weight: .bold))
+                      .foregroundColor(theme.ink)
+                  }
                 }
 
                 ZStack {

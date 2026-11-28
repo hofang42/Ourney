@@ -16,5 +16,6 @@ export 'src/paths.dart';
 export 'src/rules.dart';
 export 'src/share_card.dart';
 export 'src/streak.dart';
+export 'src/retell.dart';
 export 'src/templates.dart';
 export 'src/validation.dart';

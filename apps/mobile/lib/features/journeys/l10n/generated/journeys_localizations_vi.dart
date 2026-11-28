@@ -485,7 +485,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_retell => 'Kể lại hành trình đã qua';
 
   @override
-  String get journeys_imported => 'Đã nhập';
+  String get journeys_imported => 'Kể lại';
 
   @override
   String get journeys_shareCard => 'Tạo thẻ chia sẻ';
@@ -1937,5 +1937,20 @@ class JourneysL10nVi extends JourneysL10n {
   @override
   String journeys_dayPartnerNoPhoto(String name) {
     return '$name chưa có ảnh ngày này';
+  }
+
+  @override
+  String journeys_cellQuiet(int day, String date) {
+    return 'Ngày $day, $date: không có ảnh';
+  }
+
+  @override
+  String journeys_wrappedPhotoDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ngày có ảnh',
+    );
+    return '$_temp0';
   }
 }

@@ -339,7 +339,7 @@
   "@import_continueTitle": {
     "description": "Retell a past journey flow."
   },
-  "import_continueBody": "Giữ hành trình mở để bạn thêm ảnh mới. Chuỗi ngày bắt đầu từ ảnh chụp thật đầu tiên; ảnh kể lại không được tính.",
+  "import_continueBody": "Giữ hành trình mở để bạn check-in tiếp. Chuỗi ngày chỉ tính các check-in mới, ảnh kể lại không được tính.",
   "@import_continueBody": {
     "description": "Retell a past journey flow."
   },

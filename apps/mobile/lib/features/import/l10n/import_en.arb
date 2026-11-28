@@ -328,7 +328,7 @@
   "@import_continueTitle": {
     "description": "Retell a past journey flow."
   },
-  "import_continueBody": "Keeps the journey open so you can add new photos. The streak starts from your first live photo; retold photos do not count.",
+  "import_continueBody": "Keep the journey open so you can keep checking in. Only new check-ins count toward a streak, not retold photos.",
   "@import_continueBody": {
     "description": "Retell a past journey flow."
   },

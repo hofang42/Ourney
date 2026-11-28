@@ -318,6 +318,7 @@ public enum WidgetL10n {
 
   public static func liveActivityCelebrationTitle(streak: Int, locale: String) -> String {
     let en = isEnglish(locale)
+    if streak == 0 { return en ? "All checked in!" : "Đã hoàn thành!" }
     return en ? "All checked in! Streak \(streak)" : "Đã hoàn thành! Chuỗi \(streak) ngày"
   }
 
@@ -339,12 +340,16 @@ public enum WidgetL10n {
       let action = journey.checkedInToday
         ? "Double tap to open journey."
         : "Double tap to open camera."
-      return "\(journey.title), Day \(journey.dayNumber), \(journey.currentStreak) day streak, \(status). \(action)"
+      return journey.showStreak
+        ? "\(journey.title), Day \(journey.dayNumber), \(journey.currentStreak) day streak, \(status). \(action)"
+        : "\(journey.title), Day \(journey.dayNumber), \(status). \(action)"
     } else {
       let action = journey.checkedInToday
         ? "Chạm hai lần để xem hành trình."
         : "Chạm hai lần để mở máy ảnh."
-      return "\(journey.title), ngày \(journey.dayNumber), chuỗi \(journey.currentStreak) ngày, \(status). \(action)"
+      return journey.showStreak
+        ? "\(journey.title), ngày \(journey.dayNumber), chuỗi \(journey.currentStreak) ngày, \(status). \(action)"
+        : "\(journey.title), ngày \(journey.dayNumber), \(status). \(action)"
     }
   }
 

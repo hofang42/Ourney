@@ -40,6 +40,7 @@ String timelineDayLabel(BuildContext context, TimelineDay day) {
   return switch (day.state) {
     DayState.checkedIn => l10n.journeys_cellChecked(day.dayNumber, date),
     DayState.missed => l10n.journeys_cellMissed(day.dayNumber, date),
+    DayState.quiet => l10n.journeys_cellQuiet(day.dayNumber, date),
     DayState.today => l10n.journeys_cellToday(day.dayNumber, date),
     DayState.future => l10n.journeys_cellFuture(day.dayNumber, date),
     DayState.notCounted => l10n.journeys_cellNotCounted(day.dayNumber, date),
@@ -146,7 +147,7 @@ class TimelineTile extends StatelessWidget {
           borderRadius: radius,
         ),
       ),
-      DayState.future || DayState.notCounted => DecoratedBox(
+      DayState.future || DayState.notCounted || DayState.quiet => DecoratedBox(
         decoration: BoxDecoration(
           color: ui.fill,
           border: Border.all(color: ui.divider),
@@ -599,21 +600,21 @@ class TimelineGridCell extends StatelessWidget {
                 child: ExcludeSemantics(
                   child: Text(
                     '${day.date.day}',
-                    textScaler: MediaQuery.textScalerOf(
-                      context,
-                    ).clamp(maxScaleFactor: 1.35),
-                    style: UiText.body(
-                      size: 10,
-                      weight: FontWeight.w700,
-                      height: 1.3,
-                      color: color,
-                    ).copyWith(
-                      shadows: hasLeftPhoto
-                          ? const [
-                              Shadow(color: UiCamera.shadow, blurRadius: 3),
-                            ]
-                          : null,
-                    ),
+                    textScaler: MediaQuery.textScalerOf(context)
+                        .clamp(maxScaleFactor: 1.35),
+                    style:
+                        UiText.body(
+                          size: 10,
+                          weight: FontWeight.w700,
+                          height: 1.3,
+                          color: color,
+                        ).copyWith(
+                          shadows: hasLeftPhoto
+                              ? const [
+                                  Shadow(color: UiCamera.shadow, blurRadius: 3),
+                                ]
+                              : null,
+                        ),
                   ),
                 ),
               ),

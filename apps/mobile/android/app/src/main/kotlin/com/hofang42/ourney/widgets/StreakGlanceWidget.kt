@@ -95,7 +95,7 @@ class StreakGlanceWidget : GlanceAppWidget() {
                     OurneyGlanceTheme.neutralShellPalette(isDark)
                 }
 
-                val heroBitmap = journey?.let {
+                val heroBitmap = journey?.takeIf { it.showStreak }?.let {
                     OurneyWidgetCanvas.renderStreakHeroBadge(
                         context = context,
                         streakCount = it.currentStreak,
@@ -203,7 +203,7 @@ class StreakGlanceWidget : GlanceAppWidget() {
             else -> l10n.getString(R.string.widget_snap_cta)
         }
         val a11yDescription =
-            "${journey.title}, ${l10n.getString(R.string.widget_streak_days, journey.currentStreak)}, $statusLabel"
+            "${journey.title}, ${if (journey.showStreak) l10n.getString(R.string.widget_streak_days, journey.currentStreak) else ""}, $statusLabel"
 
         Column(
             modifier = GlanceModifier

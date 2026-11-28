@@ -123,10 +123,12 @@ class ShareCardContent {
       headline = ShareCardHeadline.day;
       value = effectiveDay;
     } else {
-      value = core.headlineNumber;
+      value = journey.origin == JourneyOrigin.imported
+          ? streak.completed
+          : core.headlineNumber;
       headline = core.milestone == Milestone.completed
           ? ShareCardHeadline.finished
-          : streak.current > 0
+          : journey.origin != JourneyOrigin.imported && streak.current > 0
           ? ShareCardHeadline.streak
           : ShareCardHeadline.checkedIn;
     }

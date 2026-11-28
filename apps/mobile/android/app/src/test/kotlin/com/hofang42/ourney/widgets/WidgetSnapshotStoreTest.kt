@@ -15,6 +15,25 @@ import java.time.Instant
 
 class WidgetSnapshotStoreTest {
 
+    @Test
+    fun retoldLibraryPhotoDoesNotPreserveCameraStreakAtMidnight() {
+        val json = org.json.JSONObject("""{
+          "id":"retold", "currentStreak":1, "bestStreak":1,
+          "checkedInToday":true, "streakCheckedInToday":false,
+          "showStreak":false, "midnightRolloverUtc":"2026-11-24T17:00:00Z"
+        }""")
+        val journey = WidgetJourneyItem.fromJson(json)
+        assertFalse(journey.showStreak)
+        assertTrue(journey.checkedInToday)
+        assertFalse(journey.streakCheckedInToday)
+        val rolled = journey.evaluateAt(Instant.parse("2026-11-24T17:05:00Z").toEpochMilli())
+        assertEquals(0, rolled.currentStreak)
+        assertFalse(rolled.atRisk)
+        val legacy = WidgetJourneyItem.fromJson(org.json.JSONObject("""{"id":"old","checkedInToday":true}"""))
+        assertTrue(legacy.showStreak)
+        assertTrue(legacy.streakCheckedInToday)
+    }
+
     @get:Rule
     val tempFolder = TemporaryFolder()
 

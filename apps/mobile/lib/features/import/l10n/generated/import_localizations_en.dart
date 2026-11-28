@@ -273,7 +273,7 @@ class ImportL10nEn extends ImportL10n {
 
   @override
   String get import_continueBody =>
-      'Keeps the journey open so you can add new photos. The streak starts from your first live photo; retold photos do not count.';
+      'Keep the journey open so you can keep checking in. Only new check-ins count toward a streak, not retold photos.';
 
   @override
   String get import_privacyNote =>

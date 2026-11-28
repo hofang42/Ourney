@@ -122,6 +122,7 @@ class JourneyRow extends ConsumerWidget {
             progress.totalDays!,
           ),
           streakLabel: l10n.journeys_cardStreak(progress.summary.current),
+          showStreak: progress.showStreak,
           onTap: open,
           onSnap: () {
             unawaited(
@@ -172,7 +173,7 @@ class JourneyRow extends ConsumerWidget {
         runSpacing: 2,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          if (progress != null && active)
+          if (progress != null && active && progress.showStreak)
             _Meta(
               icon: 'flame',
               text: '${progress.summary.current}',

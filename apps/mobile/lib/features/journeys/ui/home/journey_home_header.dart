@@ -18,6 +18,7 @@ class JourneyHomeSkinHeader extends ConsumerWidget {
     required this.skin,
     required this.day,
     required this.streak,
+    this.showStreak = true,
     required this.stats,
     required this.now,
     this.onTrophy,
@@ -29,6 +30,7 @@ class JourneyHomeSkinHeader extends ConsumerWidget {
   final int day;
   final int streak;
   final WrappedStats stats;
+  final bool showStreak;
   final DateTime now;
 
   /// Trophy tap (finish story when done, share card before).
@@ -42,6 +44,7 @@ class JourneyHomeSkinHeader extends ConsumerWidget {
       PersonaSkinId.accountabilitySquad => _Squad(
         journey: journey,
         day: day,
+        showStreak: showStreak,
         onTrophy: onTrophy,
       ),
       PersonaSkinId.memoryCollectors => _Film(
@@ -52,6 +55,7 @@ class JourneyHomeSkinHeader extends ConsumerWidget {
       PersonaSkinId.coupleRituals => _Couple(
         journey: journey,
         streak: streak,
+        showStreak: showStreak,
         total: stats.total,
       ),
       PersonaSkinId.aestheticFlexer => _Flexer(journey: journey, stats: stats),
@@ -138,10 +142,16 @@ class JourneyAvatarStack extends StatelessWidget {
 }
 
 class _Squad extends ConsumerWidget {
-  const _Squad({required this.journey, required this.day, this.onTrophy});
+  const _Squad({
+    required this.journey,
+    required this.day,
+    required this.showStreak,
+    this.onTrophy,
+  });
 
   final Journey journey;
   final int day;
+  final bool showStreak;
   final VoidCallback? onTrophy;
 
   @override
@@ -181,7 +191,8 @@ class _Squad extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  const OurneyIcon(name: 'flame', size: 17, flat: true),
+                  if (showStreak)
+                    const OurneyIcon(name: 'flame', size: 17, flat: true),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -327,11 +338,13 @@ class _Couple extends ConsumerWidget {
     required this.journey,
     required this.streak,
     required this.total,
+    this.showStreak = true,
   });
 
   final Journey journey;
   final int streak;
   final int total;
+  final bool showStreak;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -383,9 +396,11 @@ class _Couple extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 6),
-            const OurneyIcon(name: 'flame', size: 20, flat: true),
+            if (showStreak)
+              const OurneyIcon(name: 'flame', size: 20, flat: true),
             const SizedBox(width: 4),
-            Text('$streak', style: UiText.h2(color: ui.ink, size: 18)),
+            if (showStreak)
+              Text('$streak', style: UiText.h2(color: ui.ink, size: 18)),
           ],
         ),
         const SizedBox(height: UiSpace.md),
