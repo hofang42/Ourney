@@ -36,6 +36,67 @@ void _expectNoRenderOverflowsOrTruncations(WidgetTester tester) {
 }
 
 void main() {
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      'retold iOS picker shows photo days without streak in ${brightness.name}',
+      (tester) async {
+        tester.platformDispatcher.platformBrightnessTestValue = brightness;
+        addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+        final bridge = FakeWidgetBridgeGateway(
+          capabilities: const WidgetCapabilities(
+            widgets: true,
+            liveActivity: true,
+            promotedLiveUpdates: false,
+            appGroup: true,
+            widgetConfigMode: 'static',
+          ),
+        );
+        final journey = Journey(
+          id: 'retold',
+          ownerId: 'u1',
+          kind: JourneyKind.solo,
+          templateId: TemplateId.custom,
+          title: 'Retold trip',
+          emoji: '',
+          startDate: const LocalDate(2026, 10, 10),
+          timezone: 'Asia/Ho_Chi_Minh',
+          visibility: JourneyVisibility.private,
+          status: JourneyStatus.active,
+          origin: JourneyOrigin.imported,
+        );
+        final c = await pumpOurneyApp(
+          tester,
+          overrides: [
+            journeyRepositoryProvider.overrideWithValue(
+              FakeJourneyRepository(journeys: [journey]),
+            ),
+            widgetBridgeGatewayProvider.overrideWithValue(bridge),
+          ],
+        );
+        await c.read(localeOverrideProvider.notifier).set(const Locale('en'));
+        await goTo(tester, c, AppRoutes.widgets);
+        await tester.ensureVisible(byKey('widgets-ios-today-journey-row'));
+        await pumpAppFrames(tester);
+        await tester.tap(byKey('widgets-ios-today-journey-row'));
+        await pumpAppFrames(tester);
+        final option = byKey('widget-picker-option-retold');
+        expect(option, findsOneWidget);
+        expect(
+          find.descendant(of: option, matching: find.textContaining('streak')),
+          findsNothing,
+        );
+        expect(
+          find.descendant(
+            of: option,
+            matching: find.textContaining('0 days with photos'),
+          ),
+          findsOneWidget,
+        );
+      },
+      variant: const TargetPlatformVariant({TargetPlatform.iOS}),
+    );
+  }
+
   testWidgets('iOS shows a localized notice when widget data is unavailable', (
     tester,
   ) async {

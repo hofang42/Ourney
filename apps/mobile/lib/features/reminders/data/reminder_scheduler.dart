@@ -151,6 +151,11 @@ class ReminderScheduler {
         for (final c in checkIns)
           if (uid == null || c.userId == uid) c.localDate,
       ],
+      streakDates: [
+        for (final c in checkIns)
+          if ((uid == null || c.userId == uid) && countsTowardStreak(j, c))
+            c.localDate,
+      ],
       joinedLocalDate: membership == null
           ? null
           : localDateIn(j.timezone, membership.joinedAt),
@@ -173,10 +178,7 @@ class ReminderScheduler {
         final deadline = p.deadlineLocalTime(deviceTimezone);
         body = deadline == const ReminderTime(0, 0)
             ? l10n.reminders_alertBody(p.journeyTitle)
-            : l10n.reminders_alertBodyAt(
-                p.journeyTitle,
-                deadline.toString(),
-              );
+            : l10n.reminders_alertBodyAt(p.journeyTitle, deadline.toString());
       } else {
         body = l10n.reminders_notifBody(p.journeyTitle);
       }

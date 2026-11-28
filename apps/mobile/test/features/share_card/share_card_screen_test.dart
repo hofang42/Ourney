@@ -44,6 +44,15 @@ Iterable<String> _allText(WidgetTester tester) => tester
     .map((r) => r.text.toPlainText());
 
 void main() {
+  testWidgets('retold journeys hide the streak number selector', (
+    tester,
+  ) async {
+    final j = testJourney(origin: JourneyOrigin.imported);
+    await pumpShare(tester, journey: j, checkIns: streakCheckIns(j.id));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(_key('share-card-number-mode'), findsNothing);
+  });
+
   testWidgets('controls meet the 48dp tap target (U5)', (tester) async {
     final handle = tester.ensureSemantics();
     final j = testJourney();

@@ -20,6 +20,7 @@ import '../../groups/data/groups_providers.dart'
 import '../../groups/domain/group_today.dart';
 import '../../journeys/data/journeys_providers.dart';
 import '../../journeys/domain/journey_progress.dart';
+import '../../journeys/l10n/generated/journeys_localizations.dart';
 import '../../journeys/ui/journey_row.dart' show journeyTypeId;
 import '../../safety/data/safety_providers.dart' show hiddenCheckInIdsProvider;
 import '../data/widget_bridge_gateway.dart';
@@ -630,9 +631,11 @@ class _WidgetJourneyPickerSheet extends ConsumerWidget {
               final dayPart = totalDays > 0
                   ? l10n.widgets_previewDayOf(progress.dayNumber, totalDays)
                   : l10n.widgets_previewDayOpen(progress.dayNumber);
-              final streakPart = l10n.widgets_previewStreakDays(
-                progress.summary.current,
-              );
+              final streakPart = progress.showStreak
+                  ? l10n.widgets_previewStreakDays(progress.summary.current)
+                  : JourneysL10n.of(
+                      context,
+                    ).journeys_wrappedPhotoDays(progress.checkInsByDate.length);
               return _PickerOptionCard(
                 key: ValueKey('widget-picker-option-${j.id}'),
                 title: j.title,
@@ -1121,10 +1124,13 @@ class _TodayWidgetPreview extends ConsumerWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const OurneyIcon(name: 'flame', size: 16),
+                    if (progress?.showStreak ?? true)
+                      const OurneyIcon(name: 'flame', size: 16),
                     const SizedBox(width: 4),
                     Text(
-                      '$streak',
+                      (progress?.showStreak ?? true)
+                          ? '$streak'
+                          : '${progress!.checkInsByDate.length}',
                       style: UiText.display(
                         size: 15,
                         weight: 800,
@@ -1356,14 +1362,17 @@ class _StreakWidgetPreview extends ConsumerWidget {
                 _SamplePreviewPill(label: l10n.widgets_previewSampleBadge),
               Row(
                 children: [
-                  const OurneyIcon(name: 'flame', size: 28, active: true),
+                  if (progress?.showStreak ?? true)
+                    const OurneyIcon(name: 'flame', size: 28, active: true),
                   const SizedBox(width: UiSpace.sm),
                   Expanded(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: AlignmentDirectional.centerStart,
                       child: Text(
-                        '$streak',
+                        (progress?.showStreak ?? true)
+                            ? '$streak'
+                            : '${progress!.checkInsByDate.length}',
                         style: UiText.display(
                           size: 44,
                           weight: 800,
@@ -1378,7 +1387,11 @@ class _StreakWidgetPreview extends ConsumerWidget {
               ),
               const SizedBox(height: UiSpace.xs),
               Text(
-                l10n.widgets_previewStreakDays(streak),
+                (progress?.showStreak ?? true)
+                    ? l10n.widgets_previewStreakDays(streak)
+                    : JourneysL10n.of(context).journeys_wrappedPhotoDays(
+                        progress!.checkInsByDate.length,
+                      ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: UiText.body(

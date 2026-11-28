@@ -1021,7 +1021,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                 partnerPhotoFile: data.partnerPhoto,
               ),
             ),
-          if (data != null && journey != null)
+          if (data != null && journey != null && data.progress.showStreak)
             PositionedDirectional(
               end: 14,
               top: 52,

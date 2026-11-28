@@ -126,8 +126,12 @@ abstract final class LiveActivityWindowPlanner {
         'snapLabel': isEn ? 'Snap now' : 'Chụp ngay',
         'dismissLabel': isEn ? 'Dismiss' : 'Ẩn hôm nay',
         'statusText': isEn
-            ? 'All checked in! Streak ${finishedJourney.currentStreak}'
-            : 'Đã hoàn tất hôm nay! Chuỗi ${finishedJourney.currentStreak} ngày',
+            ? (finishedJourney.currentStreak > 0
+                  ? 'All checked in! Streak ${finishedJourney.currentStreak}'
+                  : 'All checked in!')
+            : (finishedJourney.currentStreak > 0
+                  ? 'Đã hoàn tất hôm nay! Chuỗi ${finishedJourney.currentStreak} ngày'
+                  : 'Đã hoàn tất hôm nay!'),
         'shortCriticalText': isEn ? 'Done' : 'Xong',
         'publicFallbackTitle': isEn
             ? 'Ourney · Check-in window'

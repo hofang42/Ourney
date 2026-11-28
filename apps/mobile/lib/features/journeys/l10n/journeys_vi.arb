@@ -447,7 +447,7 @@
   "@journeys_retell": {
     "description": "Shelf button: import an old journey from photos"
   },
-  "journeys_imported": "Đã nhập",
+  "journeys_imported": "Kể lại",
   "@journeys_imported": {
     "description": "Row tag: journey retold from past photos"
   },
@@ -1870,5 +1870,24 @@
       }
     }
   },
-  "journeys_runDay": "Ngày"
+  "journeys_runDay": "Ngày",
+  "journeys_cellQuiet": "Ngày {day}, {date}: không có ảnh",
+  "@journeys_cellQuiet": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrappedPhotoDays": "{count, plural, other{{count} ngày có ảnh}}",
+  "@journeys_wrappedPhotoDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

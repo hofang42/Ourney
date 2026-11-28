@@ -585,7 +585,9 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                 ],
                 const SizedBox(height: UiSpace.xl),
                 _SectionLabel(l10n.share_card_moreOptions),
-                if (skinId != 'memory' && skinId != 'couple') ...[
+                if (journey.origin != JourneyOrigin.imported &&
+                    skinId != 'memory' &&
+                    skinId != 'couple') ...[
                   _SectionLabel(l10n.share_card_numberLabel),
                   KeyedSubtree(
                     key: const ValueKey('share-card-number-mode'),

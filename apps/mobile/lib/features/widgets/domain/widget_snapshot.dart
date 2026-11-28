@@ -153,6 +153,8 @@ class WidgetJourneyItem {
     required this.totalDays,
     required this.currentStreak,
     required this.bestStreak,
+    this.showStreak = true,
+    this.streakCheckedInToday,
     required this.checkedInToday,
     required this.atRisk,
     required this.eveningCueAtUtc,
@@ -178,6 +180,8 @@ class WidgetJourneyItem {
   final int? totalDays;
   final int currentStreak;
   final int bestStreak;
+  final bool showStreak;
+  final bool? streakCheckedInToday;
   final bool checkedInToday;
   final bool atRisk;
   final String eveningCueAtUtc;
@@ -208,6 +212,8 @@ class WidgetJourneyItem {
     if (totalDays != null) 'totalDays': totalDays,
     'currentStreak': currentStreak,
     'bestStreak': bestStreak,
+    'showStreak': showStreak,
+    'streakCheckedInToday': streakCheckedInToday ?? checkedInToday,
     'checkedInToday': checkedInToday,
     'atRisk': atRisk,
     'eveningCueAtUtc': eveningCueAtUtc,
@@ -817,7 +823,11 @@ abstract final class WidgetSnapshotBuilder {
           totalDays: progress.totalDays,
           currentStreak: summary.current,
           bestStreak: summary.best,
-          checkedInToday: summary.checkedInToday,
+          showStreak: progress.showStreak,
+          streakCheckedInToday: input.myCheckIns.any(
+            (c) => c.localDate == today && countsTowardStreak(j, c),
+          ),
+          checkedInToday: progress.checkedInToday,
           atRisk: summary.atRisk,
           eveningCueAtUtc: eveningCueUtc.toIso8601String(),
           streakAlertAtUtc: streakAlertUtc.toIso8601String(),
@@ -977,7 +987,7 @@ abstract final class WidgetSnapshotBuilder {
                 ? squadMembers.where((member) => member.checkedInToday).length
                 : groupView.doneCount,
             memberCount: groupView.memberCount,
-            meCheckedInToday: summary.checkedInToday,
+            meCheckedInToday: progress.checkedInToday,
             midnightRolloverUtc: midnightRolloverUtc.toIso8601String(),
             members: squadMembers,
           ),

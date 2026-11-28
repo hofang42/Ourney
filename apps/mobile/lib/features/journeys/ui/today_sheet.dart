@@ -260,16 +260,23 @@ class _TodayRow extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               OurneyIcon(
-                name: 'flame',
+                name: progress.showStreak ? 'flame' : 'camera',
                 size: 15,
                 flat: true,
-                color: ui.flame,
+                color: progress.showStreak ? ui.flame : ui.inkMuted,
               ),
               const SizedBox(width: 3),
               Text(
-                '${progress.summary.current}',
-                semanticsLabel:
-                    '${progress.summary.current} ${l10n.journeys_streakDaysLabel}',
+                progress.showStreak
+                    ? '${progress.summary.current}'
+                    : l10n.journeys_wrappedPhotoDays(
+                        progress.checkInsByDate.length,
+                      ),
+                semanticsLabel: progress.showStreak
+                    ? '${progress.summary.current} ${l10n.journeys_streakDaysLabel}'
+                    : l10n.journeys_wrappedPhotoDays(
+                        progress.checkInsByDate.length,
+                      ),
                 style: UiText.body(
                   size: 13,
                   weight: FontWeight.w700,

@@ -339,6 +339,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen>
                 day: progress.dayNumber,
                 total: journey.durationDays,
                 streak: progress.summary.current,
+                showStreak: progress.showStreak,
                 today: progress.today,
                 offline: offline,
                 squadUploadPending: squadUploadPending,
@@ -371,6 +372,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen>
                   skin: skinOfJourney(journey),
                   day: progress.dayNumber,
                   streak: progress.summary.current,
+                  showStreak: progress.showStreak,
                   stats: index!.wrapped,
                   now: ref.watch(journeysNowProvider),
                   onTrophy: () => context.push(

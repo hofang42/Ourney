@@ -132,7 +132,6 @@ class _Stone extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final accentText = timelineAccentText(context);
     if (day.state == DayState.checkedIn || day.state == DayState.today) {
       return wrapTimelineDayHero(
         day,
@@ -153,7 +152,11 @@ class _Stone extends StatelessWidget {
       ),
       child: TimelineNumber(
         '${day.dayNumber}',
-        color: day.state == DayState.missed ? ui.ink : accentText,
+        color: day.state == DayState.missed
+            ? ui.ink
+            : day.state == DayState.quiet
+            ? ui.inkMuted
+            : timelineAccentText(context),
         size: 14,
       ),
     );

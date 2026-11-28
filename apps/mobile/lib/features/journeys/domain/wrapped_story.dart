@@ -57,7 +57,9 @@ class WrappedStats {
           (p.elapsedDays > perDay.length
               ? p.elapsedDays
               : (perDay.isEmpty ? 1 : perDay.length)),
-      streak: p.summary.best,
+      streak: p.journey.origin == JourneyOrigin.imported
+          ? null
+          : p.summary.best,
       totalKm: runStats.totalKm,
       photos: perDay,
       lastCaption: caption,
@@ -79,7 +81,7 @@ class WrappedStats {
   final int total;
 
   /// Best streak.
-  final int streak;
+  final int? streak;
   final double totalKm;
 
   /// The latest photo of each day, oldest day first.
@@ -111,7 +113,9 @@ List<String> wrappedPagesFor(
       return [
         summary,
         journey.title,
-        l10n.journeys_wrapped_streak(s.streak),
+        s.streak == null
+            ? l10n.journeys_wrappedPhotoDays(s.days)
+            : l10n.journeys_wrapped_streak(s.streak!),
         l10n.journeys_wrapped_quietEnd,
       ];
     case PersonaSkinId.accountabilitySquad:
@@ -145,7 +149,9 @@ List<String> wrappedPagesFor(
         (s.pace ?? '').isNotEmpty
             ? l10n.journeys_wrapped_pace(s.pace!)
             : journey.title,
-        l10n.journeys_wrapped_flexStreak(s.streak),
+        s.streak == null
+            ? l10n.journeys_wrappedPhotoDays(s.days)
+            : l10n.journeys_wrapped_flexStreak(s.streak!),
       ];
     case PersonaSkinId.minimalistHabit:
       return [
@@ -181,13 +187,8 @@ String wrappedSummaryTitle(
   ),
   PersonaSkinId.aestheticFlexer =>
     isRunJourney(journey)
-        ? l10n.journeys_wrapped_sumFlexer(
-            s.total,
-            s.kmTextFor(l10n.localeName))
-        : l10n.journeys_wrapped_sumSquad(
-            s.days,
-            s.total,
-          ),
+        ? l10n.journeys_wrapped_sumFlexer(s.total, s.kmTextFor(l10n.localeName))
+        : l10n.journeys_wrapped_sumSquad(s.days, s.total),
   PersonaSkinId.minimalistHabit => l10n.journeys_wrapped_sumMinimal(
     s.days,
     s.total,

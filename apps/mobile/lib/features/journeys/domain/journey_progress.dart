@@ -11,6 +11,9 @@ enum DayState {
   /// Past day inside the member's window with no check-in (dashed cell).
   missed,
 
+  /// Empty past day inside the retold range: neutral, without a missed mark.
+  quiet,
+
   /// Today, not checked in yet (highlighted).
   today,
 
@@ -60,7 +63,7 @@ class TimelineDay {
   CheckIn? get viewerPhoto => coupleSlots.isEmpty
       ? checkIn
       : coupleSlots.where((slot) => slot.isMine).firstOrNull?.checkIn ??
-          coupleSlots.map((slot) => slot.checkIn).nonNulls.firstOrNull;
+            coupleSlots.map((slot) => slot.checkIn).nonNulls.firstOrNull;
 
   bool get canOpen =>
       state == DayState.checkedIn ||
@@ -90,6 +93,7 @@ class JourneyProgress {
     required this.checkInsByDate,
     this._checkInsOnDate,
     this._lastDay,
+    this.retoldThrough,
     this.couple = GroupDailySnapshot.empty,
   });
 
@@ -120,17 +124,35 @@ class JourneyProgress {
       durationDays: journey.durationDays,
       joinedLocalDate: joined,
       today: today,
+      dates: checkIns
+          .where((c) => countsTowardStreak(journey, c))
+          .map((c) => c.localDate),
+    );
+    final photoSummary = computeMemberStreak(
+      journeyStart: journey.startDate,
+      durationDays: journey.durationDays,
+      joinedLocalDate: joined,
+      today: today,
       dates: byDate.keys,
     );
     return JourneyProgress(
       journey: journey,
       today: today,
       memberStart: effectiveStreakStart(journey.startDate, joined),
-      summary: summary,
+      summary: StreakSummary(
+        current: summary.current,
+        best: summary.best,
+        completed: photoSummary.completed,
+        checkedInToday: summary.checkedInToday,
+        atRisk: summary.atRisk,
+        progress: photoSummary.progress,
+        dayIndex: summary.dayIndex,
+      ),
       checkInsByDate: byDate,
       lastDay: _lastDayOf(journey, today, [...byDate.keys, ?couple.latestDate]),
       checkInsOnDate: onDate,
       couple: couple,
+      retoldThrough: lastRetoldDate(journey, checkIns),
     );
   }
 
@@ -139,6 +161,8 @@ class JourneyProgress {
 
   /// First day that counts for the caller (later of start and join date).
   final LocalDate memberStart;
+
+  /// Streak fields use eligible dates; completion/progress count every photo day.
   final StreakSummary summary;
   final GroupDailySnapshot couple;
 
@@ -181,7 +205,13 @@ class JourneyProgress {
   int? get percentComplete =>
       isOpenEnded ? null : (summary.progress * 100).round();
 
-  bool get checkedInToday => summary.checkedInToday;
+  /// Photo completion is independent of streak eligibility.
+  bool get checkedInToday => checkInsByDate.containsKey(today);
+
+  bool get showStreak =>
+      journey.origin != JourneyOrigin.imported || summary.best > 0;
+
+  final LocalDate? retoldThrough;
 
   /// Calendar cells from the journey start to its end (or, open-ended, to
   /// the later of today and the latest check-in).
@@ -256,7 +286,9 @@ class JourneyProgress {
           latest = d;
         }
       }
-      last = latest ?? (journey.startDate.isAfter(last) ? last : journey.startDate);
+      last =
+          latest ??
+          (journey.startDate.isAfter(last) ? last : journey.startDate);
     }
     return last;
   }
@@ -273,6 +305,8 @@ class JourneyProgress {
       state = DayState.notCounted;
     } else if (isToday) {
       state = DayState.today;
+    } else if (retoldThrough case final last? when !date.isAfter(last)) {
+      state = DayState.quiet;
     } else {
       state = DayState.missed;
     }

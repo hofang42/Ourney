@@ -14,6 +14,46 @@ import java.io.File
 import java.time.Instant
 
 class WidgetSnapshotStoreTest {
+    @Test
+    fun streakFlagsAcceptLegacyBooleanRepresentations() {
+        for (truthy in listOf<Any>(true, "true", 1, "1")) {
+            val json = org.json.JSONObject().put("id", "retold")
+                .put("showStreak", truthy).put("streakCheckedInToday", truthy)
+            val journey = WidgetJourneyItem.fromJson(json)
+            assertTrue(journey.showStreak)
+            assertTrue(journey.streakCheckedInToday)
+        }
+        for (falsy in listOf<Any>(false, "false", 0, "0")) {
+            val json = org.json.JSONObject().put("id", "retold")
+                .put("showStreak", falsy).put("streakCheckedInToday", falsy)
+            val journey = WidgetJourneyItem.fromJson(json)
+            assertFalse(journey.showStreak)
+            assertFalse(journey.streakCheckedInToday)
+        }
+        val legacy = WidgetJourneyItem.fromJson(org.json.JSONObject("""{"id":"old","checkedInToday":1}"""))
+        assertTrue(legacy.showStreak)
+        assertTrue(legacy.streakCheckedInToday)
+    }
+
+
+    @Test
+    fun retoldLibraryPhotoDoesNotPreserveCameraStreakAtMidnight() {
+        val json = org.json.JSONObject("""{
+          "id":"retold", "currentStreak":1, "bestStreak":1,
+          "checkedInToday":true, "streakCheckedInToday":false,
+          "showStreak":false, "midnightRolloverUtc":"2026-11-24T17:00:00Z"
+        }""")
+        val journey = WidgetJourneyItem.fromJson(json)
+        assertFalse(journey.showStreak)
+        assertTrue(journey.checkedInToday)
+        assertFalse(journey.streakCheckedInToday)
+        val rolled = journey.evaluateAt(Instant.parse("2026-11-24T17:05:00Z").toEpochMilli())
+        assertEquals(0, rolled.currentStreak)
+        assertFalse(rolled.atRisk)
+        val legacy = WidgetJourneyItem.fromJson(org.json.JSONObject("""{"id":"old","checkedInToday":true}"""))
+        assertTrue(legacy.showStreak)
+        assertTrue(legacy.streakCheckedInToday)
+    }
 
     @get:Rule
     val tempFolder = TemporaryFolder()

@@ -929,7 +929,7 @@ abstract class JourneysL10n {
   /// Row tag: journey retold from past photos
   ///
   /// In vi, this message translates to:
-  /// **'Đã nhập'**
+  /// **'Kể lại'**
   String get journeys_imported;
 
   /// Journey menu: make an image card
@@ -3475,6 +3475,18 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Ngày'**
   String get journeys_runDay;
+
+  /// No description provided for @journeys_cellQuiet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày {day}, {date}: không có ảnh'**
+  String journeys_cellQuiet(int day, String date);
+
+  /// No description provided for @journeys_wrappedPhotoDays.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count, plural, other{{count} ngày có ảnh}}'**
+  String journeys_wrappedPhotoDays(int count);
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

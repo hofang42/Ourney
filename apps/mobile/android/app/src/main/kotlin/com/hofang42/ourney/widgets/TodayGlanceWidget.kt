@@ -105,7 +105,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
                     OurneyGlanceTheme.neutralShellPalette(isDark)
                 }
 
-                val streakHeroBitmap = journey?.let {
+                val streakHeroBitmap = journey?.takeIf { it.showStreak }?.let {
                     OurneyWidgetCanvas.renderStreakHeroBadge(
                         context = context,
                         streakCount = it.currentStreak,
@@ -265,7 +265,11 @@ class TodayGlanceWidget : GlanceAppWidget() {
         val primaryAction = WidgetActions.captureAction(context, journey.id)
         val statusDesc = resolveStatusCopy(l10n, journey, nowMs)
         val a11yDescription =
-            "${journey.title}, ${l10n.getString(R.string.widget_streak_days, journey.currentStreak)}, $statusDesc"
+            listOfNotNull(
+                journey.title,
+                if (journey.showStreak) l10n.getString(R.string.widget_streak_days, journey.currentStreak) else null,
+                statusDesc,
+            ).joinToString(", ")
 
         Column(
             modifier = GlanceModifier
@@ -391,7 +395,11 @@ class TodayGlanceWidget : GlanceAppWidget() {
         val primaryAction = WidgetActions.captureAction(context, journey.id)
         val statusText = resolveStatusCopy(l10n, journey, nowMs)
         val a11yDescription =
-            "${journey.title}, ${l10n.getString(R.string.widget_streak_days, journey.currentStreak)}, $statusText"
+            listOfNotNull(
+                journey.title,
+                if (journey.showStreak) l10n.getString(R.string.widget_streak_days, journey.currentStreak) else null,
+                statusText,
+            ).joinToString(", ")
 
         Row(
             modifier = GlanceModifier
@@ -526,7 +534,11 @@ class TodayGlanceWidget : GlanceAppWidget() {
         val primaryAction = WidgetActions.captureAction(context, journey.id)
         val statusText = resolveStatusCopy(l10n, journey, nowMs)
         val a11yDescription =
-            "${journey.title}, ${l10n.getString(R.string.widget_streak_days, journey.currentStreak)}, $statusText"
+            listOfNotNull(
+                journey.title,
+                if (journey.showStreak) l10n.getString(R.string.widget_streak_days, journey.currentStreak) else null,
+                statusText,
+            ).joinToString(", ")
 
         Column(
             modifier = GlanceModifier

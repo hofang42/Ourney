@@ -130,38 +130,40 @@ private struct StreakSmallCardView: View {
 
       // Center Hero: Giant BricolageGrotesque streak numeral + Two-Tone Ourney Flame Sticker
       HStack(alignment: .center, spacing: 6) {
-        ZStack {
-          RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(journey.checkedInToday ? theme.accent : theme.surface)
-            .frame(width: 40, height: 40)
-            .ourneyStickerCard(
-              fill: journey.checkedInToday ? theme.accent : theme.surface,
-              outline: theme.outline,
-              shadow: theme.hardShadow,
-              cornerRadius: 12,
-              borderWidth: theme.borderWidth,
-              shadowOffset: 2.5
-            )
-          OurneyIconView(name: "flame", size: 25, ink: theme.ink)
-            .ourneyWidgetAccentable()
+        if journey.showStreak {
+          ZStack {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+              .fill(journey.checkedInToday ? theme.accent : theme.surface)
+              .frame(width: 40, height: 40)
+              .ourneyStickerCard(
+                fill: journey.checkedInToday ? theme.accent : theme.surface,
+                outline: theme.outline,
+                shadow: theme.hardShadow,
+                cornerRadius: 12,
+                borderWidth: theme.borderWidth,
+                shadowOffset: 2.5
+              )
+            OurneyIconView(name: "flame", size: 25, ink: theme.ink)
+              .ourneyWidgetAccentable()
+          }
+
+          VStack(alignment: .leading, spacing: 0) {
+            Text("\(journey.currentStreak)")
+              .font(OurneyWidgetFont.display(32, weight: .bold))
+              .foregroundColor(theme.ink)
+              .lineLimit(1)
+              .minimumScaleFactor(0.7)
+              .ourneyWidgetAccentable()
+
+            Text(WidgetL10n.streakCountLabel(journey.currentStreak, locale: locale).uppercased())
+              .font(OurneyWidgetFont.body(9.5, bold: true))
+              .foregroundColor(phase == .urgentAtRisk ? theme.timeCue : theme.inkMuted)
+              .lineLimit(1)
+              .minimumScaleFactor(0.75)
+          }
+
+          Spacer(minLength: 0)
         }
-
-        VStack(alignment: .leading, spacing: 0) {
-          Text("\(journey.currentStreak)")
-            .font(OurneyWidgetFont.display(32, weight: .bold))
-            .foregroundColor(theme.ink)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-            .ourneyWidgetAccentable()
-
-          Text(WidgetL10n.streakCountLabel(journey.currentStreak, locale: locale).uppercased())
-            .font(OurneyWidgetFont.body(9.5, bold: true))
-            .foregroundColor(phase == .urgentAtRisk ? theme.timeCue : theme.inkMuted)
-            .lineLimit(1)
-            .minimumScaleFactor(0.75)
-        }
-
-        Spacer(minLength: 0)
       }
 
       Spacer(minLength: 0)

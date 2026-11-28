@@ -111,8 +111,11 @@ class CheckInPoster {
     }
     final day = dayOf(journey, photo);
     final today = clock.today(journey.timezone);
-    final dates = [for (final c in mine) c.localDate];
-    final photoOfDay = dates.where((d) => d == day).length + 1;
+    final dates = [
+      for (final c in mine)
+        if (countsTowardStreak(journey, c)) c.localDate,
+    ];
+    final photoOfDay = mine.where((c) => c.localDate == day).length + 1;
     final before = memberStreak(
       journey: journey,
       membership: membership,
@@ -156,7 +159,10 @@ class CheckInPoster {
       journey: journey,
       membership: membership,
       today: today,
-      dates: [...dates, saved.localDate],
+      dates: [
+        ...dates,
+        if (countsTowardStreak(journey, saved)) saved.localDate,
+      ],
       clock: clock,
     );
     return CheckInOutcome(

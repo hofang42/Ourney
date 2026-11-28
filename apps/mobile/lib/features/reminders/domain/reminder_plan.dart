@@ -69,15 +69,17 @@ class JourneyReminderInput {
     required this.status,
     required this.streakStart,
     required this.checkedInDates,
+    Set<LocalDate>? streakDates,
     this.endDate,
     this.reminderTime,
-  });
+  }) : streakDates = streakDates ?? checkedInDates;
 
   /// Builds the input from domain objects. [joinedLocalDate] is the
   /// journey-local date of `Membership.joinedAt` (null = journey start).
   factory JourneyReminderInput.fromJourney(
     Journey journey, {
     required Iterable<LocalDate> checkedInDates,
+    Iterable<LocalDate>? streakDates,
     LocalDate? joinedLocalDate,
     ReminderTime? reminderTime,
   }) => JourneyReminderInput(
@@ -90,6 +92,7 @@ class JourneyReminderInput {
         : effectiveStreakStart(journey.startDate, joinedLocalDate),
     endDate: journey.endDate,
     checkedInDates: checkedInDates.toSet(),
+    streakDates: streakDates?.toSet(),
     reminderTime: reminderTime,
   );
 
@@ -110,6 +113,9 @@ class JourneyReminderInput {
 
   /// Journey-local dates the user already checked in on.
   final Set<LocalDate> checkedInDates;
+
+  /// Eligible camera dates on retold journeys; all dates on live journeys.
+  final Set<LocalDate> streakDates;
 
   /// Daily reminder time in the device's wall clock, null when off.
   final ReminderTime? reminderTime;
@@ -181,11 +187,7 @@ DateTime streakDeadlineUtc({
   required LocalDate journeyDate,
 }) {
   final zone = _location(journeyTimezone);
-  return wallClockToUtc(
-    zone,
-    journeyDate.addDays(1),
-    const ReminderTime(0, 0),
-  );
+  return wallClockToUtc(zone, journeyDate.addDays(1), const ReminderTime(0, 0));
 }
 
 /// Device-local wall-clock time (`HH:mm`, `'00:00'` when [deviceTimezone] has
@@ -270,7 +272,7 @@ List<PlannedNotification> planReminders({
       final journeyToday = _localDate(nowUtc, zone);
       for (var i = 0; i < windowDays; i++) {
         final day = journeyToday.addDays(i);
-        if (!inJourney(day) || j.checkedInDates.contains(day)) continue;
+        if (!inJourney(day) || j.streakDates.contains(day)) continue;
         final fireAt = wallClockToUtc(zone, day, streakAlertTime);
         if (!fireAt.isAfter(nowUtc)) continue;
         final streak = _streakAt(j, day);
@@ -322,7 +324,7 @@ int _streakAt(JourneyReminderInput j, LocalDate day) {
     start: j.streakStart,
     durationDays: end == null ? null : j.streakStart.daysUntil(end) + 1,
     today: day,
-    dates: j.checkedInDates,
+    dates: j.streakDates,
   ).current;
 }
 
