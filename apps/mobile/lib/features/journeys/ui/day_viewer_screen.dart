@@ -54,6 +54,7 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
     with SingleTickerProviderStateMixin {
   // Created once the day's photos are known: it opens on the latest one.
   PageController? _pages;
+  final _scroll = ScrollController();
   int _page = 0;
   late LocalDate? _date = widget.date;
   final _ratios = <String, double>{};
@@ -115,6 +116,7 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
     _dragOffset.dispose();
     _chromeFade?.dispose();
     _pages?.dispose();
+    _scroll.dispose();
     for (final entry in _imageListeners.values) {
       entry.$1.removeListener(entry.$2);
     }
@@ -195,6 +197,7 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
   void _selectDate(LocalDate date) {
     if (date == _date) return;
     final old = _pages;
+    if (_scroll.hasClients) _scroll.jumpTo(0);
     setState(() {
       _date = date;
       _pages = null;
@@ -227,13 +230,18 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
         });
       },
       onError: (Object error, StackTrace? stack) {
-        _ratios.remove(checkIn.id);
-        _decoded.remove(checkIn.id);
+        final hadRatio = _ratios.remove(checkIn.id) != null;
+        final wasDecoded = _decoded.remove(checkIn.id);
+        _imagePaths.remove(checkIn.id);
         stream.removeListener(listener);
         _imageListeners.remove(checkIn.id);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) setState(() {});
-        });
+        // Rebuild only if visible decode state changed; an unreadable file
+        // must not trigger an endless rebuild/retry loop. Later builds retry.
+        if (hadRatio || wasDecoded) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() {});
+          });
+        }
       },
     );
     final old = _imageListeners.remove(checkIn.id);
@@ -275,11 +283,7 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
     final selected = {for (final slot in slots) ?slot.checkIn?.id};
     final dayCheckIns = paired && date != null
         ? [
-            for (final slot in [
-              ...slots.where((s) => s.isMine),
-              ...slots.where((s) => !s.isMine),
-            ])
-              ?slot.checkIn,
+            for (final slot in slots) ?slot.checkIn,
             ...([
               for (final c in ownPhotos)
                 if (!selected.contains(c.id)) c,
@@ -358,8 +362,8 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
     }
     Widget? photoFrame;
     if (checkIn != null) {
-      void expand() {
-        if (!_decoded.contains(checkIn.id)) return;
+      void expand(CheckIn photo) {
+        if (!_decoded.contains(photo.id)) return;
         unawaited(
           Navigator.of(context, rootNavigator: true).push<void>(
             PageRouteBuilder<void>(
@@ -369,7 +373,7 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
               reverseTransitionDuration: reduced
                   ? Duration.zero
                   : const Duration(milliseconds: 180),
-              pageBuilder: (_, _, _) => DayPhotoFullscreen(checkIn: checkIn),
+              pageBuilder: (_, _, _) => DayPhotoFullscreen(checkIn: photo),
               transitionsBuilder: (_, animation, _, child) =>
                   FadeTransition(opacity: animation, child: child),
             ),
@@ -418,7 +422,9 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
                         itemBuilder: (_, i) {
                           final c = dayCheckIns[i];
                           return GestureDetector(
-                            onTap: _decoded.contains(c.id) ? expand : null,
+                            onTap: _decoded.contains(c.id)
+                                ? () => expand(c)
+                                : null,
                             child: Semantics(
                               image: true,
                               label: c.caption ?? '',
@@ -495,7 +501,7 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
                           ),
                           label: l10n.journeys_dayViewFull,
                           onPressed: _decoded.contains(checkIn.id)
-                              ? expand
+                              ? () => expand(checkIn)
                               : null,
                         ),
                       ),
@@ -627,6 +633,7 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
             : (offset.dy.abs() / 260).clamp(0.0, 1.0);
         return UiScaffold.slivers(
           key: const ValueKey('journey-day-viewer'),
+          controller: _scroll,
           background: ui.bg.withValues(alpha: lerpDouble(1, 0, progress)!),
           padTop: 0,
           safeBottom: true,

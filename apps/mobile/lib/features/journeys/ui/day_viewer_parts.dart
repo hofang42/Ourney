@@ -265,6 +265,8 @@ class DayPeopleSwitch extends StatelessWidget {
         : s.displayName ?? l10n.journeys_ticketPartner;
     String missing(CouplePhotoSlot s) => s.photoUnavailable
         ? l10n.journeys_photoUnavailable
+        : s.isMine
+        ? l10n.journeys_noCheckIn
         : l10n.journeys_dayPartnerNoPhoto(name(s));
     return Padding(
       padding: const EdgeInsets.only(bottom: UiSpace.sm),
@@ -386,13 +388,15 @@ class DayNeighborNav extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  if (before)
+                  if (before) ...[
                     OurneyIcon(
-                      name: 'back',
+                      name: 'chevron-left',
                       size: 16,
                       color: ui.ink,
                       flat: true,
                     ),
+                    const SizedBox(width: 4),
+                  ],
                   if (constraints.maxWidth >= 340) ...[
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4),
@@ -434,13 +438,15 @@ class DayNeighborNav extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (!before)
+                  if (!before) ...[
+                    const SizedBox(width: 4),
                     OurneyIcon(
                       name: 'chevron-right',
                       size: 16,
                       color: ui.ink,
                       flat: true,
                     ),
+                  ],
                 ],
               ),
             ),

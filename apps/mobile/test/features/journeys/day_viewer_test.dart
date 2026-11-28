@@ -32,6 +32,8 @@ class ViewerActiveJourney extends ActiveJourneyId {
   }
 }
 
+const viewerPixelPng =
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC';
 const viewerTimeout = Timeout(Duration(seconds: 30));
 Finder dayKey(String key) => find.byKey(ValueKey(key));
 
@@ -175,6 +177,148 @@ Future<ProviderContainer> pumpDayViewer(
 }
 
 void main() {
+  testWidgets('right-side preference keeps photo pages in chip order', (
+    tester,
+  ) async {
+    final journey = testJourney(
+      kind: JourneyKind.group,
+      maxMembers: 2,
+    ).copyWith(dna: {'side': 'right'});
+    final mine = viewerPhoto();
+    final partner = viewerPhoto(id: 'partner', user: 'u2');
+    await pumpDayViewer(
+      tester,
+      journey: journey,
+      photos: [mine],
+      couple: GroupDailySnapshot.build(
+        journey: journey,
+        allCheckIns: [mine, partner],
+        members: const [
+          MemberToday(userId: 'u1', displayName: 'An', role: MemberRole.owner),
+          MemberToday(
+            userId: 'u2',
+            displayName: 'Binh',
+            role: MemberRole.member,
+          ),
+        ],
+        myUserId: 'u1',
+      ),
+    );
+    final partnerChip = find.byKey(
+      const ValueKey<(String, int, String?)>(('day-person-chip', 0, 'u2')),
+    );
+    final ownChip = find.byKey(
+      const ValueKey<(String, int, String?)>(('day-person-chip', 1, 'u1')),
+    );
+    expect(tester.widget<UiPressable>(partnerChip).selected, isTrue);
+    expect(
+      tester.widget<JourneyPhoto>(dayKey('journey-day-photo')).checkIn.id,
+      partner.id,
+    );
+    await tester.drag(dayKey('journey-day-pages'), const Offset(-350, 0));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.widget<UiPressable>(ownChip).selected, isTrue);
+    expect(
+      tester.widget<JourneyPhoto>(dayKey('journey-day-photo')).checkIn.id,
+      mine.id,
+    );
+    expect(tester.takeException(), isNull);
+  }, timeout: viewerTimeout);
+
+  testWidgets('partner-only day has grammatical own-chip semantics', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final journey = testJourney(kind: JourneyKind.group, maxMembers: 2);
+    final partner = viewerPhoto(id: 'partner', user: 'u2');
+    await pumpDayViewer(
+      tester,
+      journey: journey,
+      locale: const Locale('en'),
+      couple: GroupDailySnapshot.build(
+        journey: journey,
+        allCheckIns: [partner],
+        members: const [
+          MemberToday(userId: 'u1', displayName: 'An', role: MemberRole.owner),
+          MemberToday(
+            userId: 'u2',
+            displayName: 'Binh',
+            role: MemberRole.member,
+          ),
+        ],
+        myUserId: 'u1',
+      ),
+    );
+    final ownChip = find.byKey(
+      const ValueKey<(String, int, String?)>(('day-person-chip', 0, 'u1')),
+    );
+    expect(tester.getSemantics(ownChip).label, 'No photo for this day');
+    expect(tester.widget<UiPressable>(ownChip).onPressed, isNull);
+    expect(
+      find.bySemanticsLabel('You has no photo for this day'),
+      findsNothing,
+    );
+    expect(dayKey('journey-day-photo'), findsOneWidget);
+    semantics.dispose();
+  }, timeout: viewerTimeout);
+
+  testWidgets('neighbor navigation resets long entry scroll to the header', (
+    tester,
+  ) async {
+    const before = LocalDate(2026, 10, 14);
+    final caption = List.filled(80, 'A long caption.').join(' ');
+    await pumpDayViewer(
+      tester,
+      photos: [
+        viewerPhoto(caption: caption),
+        viewerPhoto(id: 'before', date: before, caption: caption),
+      ],
+    );
+    final scroll = tester
+        .widget<UiScaffold>(dayKey('journey-day-viewer'))
+        .controller!;
+    scroll.jumpTo(scroll.position.maxScrollExtent);
+    await tester.pump();
+    await tester.ensureVisible(dayKey('day-previous'));
+    expect(scroll.offset, greaterThan(0));
+    await tester.tap(dayKey('day-previous'));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(scroll.offset, 0);
+    expect(tester.getTopLeft(find.byType(DayViewerHeader)).dy, closeTo(0, 1));
+    expect(
+      tester.widget<JourneyPhoto>(dayKey('journey-day-photo')).checkIn.id,
+      'before',
+    );
+    expect(tester.takeException(), isNull);
+  }, timeout: viewerTimeout);
+
+  testWidgets('system back closes fullscreen and retains the day viewer', (
+    tester,
+  ) async {
+    final dir = Directory.systemTemp.createTempSync('day-back-');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final file = File('${dir.path}/photo.png')
+      ..writeAsBytesSync(base64Decode(viewerPixelPng));
+    await tester.pumpWidget(
+      const Directionality(textDirection: TextDirection.ltr, child: SizedBox()),
+    );
+    await tester.runAsync(
+      () =>
+          precacheImage(FileImage(file), tester.element(find.byType(SizedBox))),
+    );
+    await pumpDayViewer(tester, photos: [viewerPhoto(path: file.path)]);
+    await tester.tap(dayKey('journey-day-photo'));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(DayPhotoFullscreen), findsOneWidget);
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(DayPhotoFullscreen), findsNothing);
+    expect(find.byType(DayViewerScreen), findsOneWidget);
+    expect(dayKey('journey-day-photo'), findsOneWidget);
+    expect(find.text('Journey destination'), findsNothing);
+    expect(tester.takeException(), isNull);
+  }, timeout: viewerTimeout);
+
   testWidgets('couple keeps local photos while the roster is unavailable', (
     tester,
   ) async {
@@ -290,36 +434,58 @@ void main() {
     expect(pageView.controller!.page, 1);
     expect(tester.takeException(), isNull);
   }, timeout: viewerTimeout);
-  testWidgets('unreadable image keeps portrait fallback and disables expand', (
-    tester,
-  ) async {
-    final missing =
-        '${Directory.systemTemp.path}/missing-viewer-'
-        '${DateTime.now().microsecondsSinceEpoch}.jpg';
-    await pumpDayViewer(
-      tester,
-      photos: [viewerPhoto(library: true, path: missing)],
-    );
-    // Flush file I/O and image callbacks with a bounded number of event turns.
-    for (var i = 0; i < 5; i++) {
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+  testWidgets(
+    'unreadable image disables expand and retries a repaired file at the same path',
+    (tester) async {
+      final missing =
+          '${Directory.systemTemp.path}/missing-viewer-'
+          '${DateTime.now().microsecondsSinceEpoch}.jpg';
+      final container = await pumpDayViewer(
+        tester,
+        photos: [viewerPhoto(library: true, path: missing)],
+      );
+      // Flush file I/O and image callbacks with a bounded number of event turns.
+      for (var i = 0; i < 5; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump(const Duration(milliseconds: 400));
+      }
+      final expand = tester.widget<UiIconButton>(
+        find.byWidgetPredicate(
+          (w) => w is UiIconButton && w.label == 'Xem ảnh đầy đủ',
+        ),
+      );
+      expect(expand.onPressed, isNull);
+      expect(find.text('Ảnh chưa tải được'), findsOneWidget);
+      final size = tester.getSize(dayKey('journey-day-pages'));
+      expect(size.width / size.height, closeTo(.75, .01));
+      expect(find.byType(DayPhotoFullscreen), findsNothing);
+      final file = File(missing)
+        ..writeAsBytesSync(base64Decode(viewerPixelPng));
+      addTearDown(() => file.deleteSync());
+      await tester.runAsync(() async {
+        await FileImage(file).evict();
+        await precacheImage(
+          FileImage(file),
+          tester.element(dayKey('journey-day-photo')),
+        );
+      });
+      container.invalidate(myCheckInsProvider('j1'));
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 400));
+      }
+      await tester.tap(
+        find.bySemanticsLabel('Xem \u1ea3nh \u0111\u1ea7y \u0111\u1ee7'),
       );
       await tester.pump(const Duration(milliseconds: 400));
-    }
-    final expand = tester.widget<UiIconButton>(
-      find.byWidgetPredicate(
-        (w) => w is UiIconButton && w.label == 'Xem ảnh đầy đủ',
-      ),
-    );
-    expect(expand.onPressed, isNull);
-    expect(find.text('Ảnh chưa tải được'), findsOneWidget);
-    final size = tester.getSize(dayKey('journey-day-pages'));
-    expect(size.width / size.height, closeTo(.75, .01));
-    expect(find.byType(DayPhotoFullscreen), findsNothing);
-  }, timeout: viewerTimeout);
+      expect(find.byType(DayPhotoFullscreen), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+    timeout: viewerTimeout,
+  );
   testWidgets(
-    'decoded landscape clamps ratio; photo and expand open black fullscreen',
+    'non-reduced ratio switch and double-tap animate; fullscreen stays black',
     (tester) async {
       final dir = Directory.systemTemp.createTempSync('day-viewer-');
       addTearDown(() => dir.deleteSync(recursive: true));
@@ -344,15 +510,51 @@ void main() {
       );
       await pumpDayViewer(
         tester,
-        photos: [viewerPhoto(library: true, path: file.path)],
+        reduced: false,
+        photos: [
+          viewerPhoto(library: true, path: file.path),
+          viewerPhoto(id: 'camera', hour: 13, path: file.path),
+        ],
       );
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.pump(const Duration(milliseconds: 400));
+      final portraitHeight = tester
+          .getSize(
+            find.descendant(
+              of: dayKey('journey-day-drag-surface'),
+              matching: find.byType(AnimatedSize),
+            ),
+          )
+          .height;
+      final controller = tester
+          .widget<PageView>(dayKey('journey-day-pages'))
+          .controller!;
+      controller.jumpToPage(0);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 60));
+      final middleHeight = tester
+          .getSize(
+            find.descendant(
+              of: dayKey('journey-day-drag-surface'),
+              matching: find.byType(AnimatedSize),
+            ),
+          )
+          .height;
+      await tester.pump(const Duration(milliseconds: 200));
+      final landscapeHeight = tester
+          .getSize(dayKey('journey-day-pages'))
+          .height;
+      expect(middleHeight, lessThan(portraitHeight));
+      expect(middleHeight, greaterThan(landscapeHeight));
+      expect(dayKey('journey-day-chrome-fade'), findsOneWidget);
       final size = tester.getSize(dayKey('journey-day-pages'));
       expect(size.width / size.height, closeTo(4 / 3, .02));
       await tester.tap(
-        find.bySemanticsLabel('Xem \u1ea3nh \u0111\u1ea7y \u0111\u1ee7'),
+        find.byWidgetPredicate(
+          (w) =>
+              w is UiIconButton &&
+              w.label == 'Xem \u1ea3nh \u0111\u1ea7y \u0111\u1ee7',
+        ),
       );
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.byType(DayPhotoFullscreen), findsOneWidget);
       final scaffold = tester.widget<Scaffold>(
@@ -363,15 +565,26 @@ void main() {
       );
       expect(scaffold.backgroundColor, UiCamera.bg);
       await tester.tap(find.byType(UiIconButton).last);
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.byType(DayPhotoFullscreen), findsNothing);
       await tester.tap(dayKey('journey-day-photo'));
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.byType(DayPhotoFullscreen), findsOneWidget);
       await tester.tap(find.byType(InteractiveViewer));
       await tester.pump(const Duration(milliseconds: 50));
       await tester.tap(find.byType(InteractiveViewer));
-      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 60));
+      final midScale = tester
+          .widget<InteractiveViewer>(find.byType(InteractiveViewer))
+          .transformationController!
+          .value
+          .getMaxScaleOnAxis();
+      expect(midScale, greaterThan(1));
+      expect(midScale, lessThan(2.5));
+      await tester.pump(const Duration(milliseconds: 200));
       expect(
         tester
             .widget<InteractiveViewer>(find.byType(InteractiveViewer))
@@ -386,8 +599,13 @@ void main() {
         photos: [viewerPhoto(library: true, path: file.path)],
       );
       await tester.tap(
-        find.bySemanticsLabel('Xem \u1ea3nh \u0111\u1ea7y \u0111\u1ee7'),
+        find.byWidgetPredicate(
+          (w) =>
+              w is UiIconButton &&
+              w.label == 'Xem \u1ea3nh \u0111\u1ea7y \u0111\u1ee7',
+        ),
       );
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(
         tester
