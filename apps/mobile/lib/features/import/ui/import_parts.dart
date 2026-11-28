@@ -374,6 +374,7 @@ class ImportTimelineTile extends StatelessWidget {
       PhotoDateSource.manual => l10n.import_sourceManual,
       null => null,
     };
+    final hasCaption = photo.caption?.trim().isNotEmpty ?? false;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -388,7 +389,10 @@ class ImportTimelineTile extends StatelessWidget {
                         : l10n.import_selectPhoto(dateLabel))
                   : undated
                   ? l10n.import_editDate(dateLabel)
+                  : hasCaption
+                  ? '${l10n.import_captionEdit(dateLabel)}: ${photo.caption}'
                   : l10n.import_captionOpen(dateLabel),
+              excludeChildSemantics: true,
               borderRadius: BorderRadius.circular(UiRadius.input),
               child: Container(
                 constraints: const BoxConstraints(minHeight: UiSize.tap),
@@ -426,9 +430,7 @@ class ImportTimelineTile extends StatelessWidget {
                               ),
                             ),
                           Text(
-                            source == null || undated || selecting
-                                ? dateLabel
-                                : '$dateLabel · $source',
+                            dateLabel,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: UiText.body(
@@ -438,7 +440,7 @@ class ImportTimelineTile extends StatelessWidget {
                               color: undated ? ui.warn : ui.ink,
                             ),
                           ),
-                          if ((undated || selecting) && source != null)
+                          if (source != null)
                             Text(
                               source,
                               maxLines: 1,

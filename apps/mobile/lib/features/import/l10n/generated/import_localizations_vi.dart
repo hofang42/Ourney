@@ -442,9 +442,6 @@ class ImportL10nVi extends ImportL10n {
   String get import_captionAddHint => 'Thêm chú thích…';
 
   @override
-  String get import_captionOpenAll => 'Viết chú thích';
-
-  @override
   String import_captionSheetEyebrow(int day, String date) {
     return 'Ngày $day · $date';
   }
@@ -474,4 +471,12 @@ class ImportL10nVi extends ImportL10n {
 
   @override
   String get import_discardCaptions => 'Chú thích bạn đã viết cũng sẽ mất.';
+
+  @override
+  String get import_captionHideKeyboard => 'Đóng bàn phím';
+
+  @override
+  String import_captionEdit(Object date) {
+    return 'Sửa chú thích cho ảnh ngày $date';
+  }
 }

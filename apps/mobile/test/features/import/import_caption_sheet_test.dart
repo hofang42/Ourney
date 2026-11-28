@@ -53,6 +53,66 @@ void main() {
     timeout: const Timeout(Duration(seconds: 30)),
   );
 
+  for (final action in ['next', 'done', 'back', 'scrim', 'date']) {
+    testWidgets('caps composing text when saving via $action', (t) async {
+      final photos = [
+        for (var i = 0; i < 2; i++)
+          DraftPhoto(
+            id: '$i',
+            path: 'missing.jpg',
+            dedupeKey: '$i',
+            order: i,
+            date: LocalDate(2024, 2, i + 1),
+          ),
+      ];
+      await t.pumpWidget(
+        testApp(
+          Builder(
+            builder: (context) => UiButton(
+              label: 'Open',
+              onPressed: () => showImportCaptionSheet(
+                context,
+                ordered: photos,
+                start: 0,
+                onEditDate: (_) async {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await t.tap(find.text('Open'));
+      await frames(t);
+      await t.showKeyboard(key('import-caption-field'));
+      final text = '${List.filled(139, String.fromCharCode(0x1f600)).join()}ab';
+      t.testTextInput.updateEditingValue(
+        TextEditingValue(
+          text: text,
+          selection: TextSelection.collapsed(offset: text.length),
+          composing: TextRange(start: text.length - 2, end: text.length),
+        ),
+      );
+      await frames(t);
+      if (action == 'back') {
+        Navigator.of(t.element(key('import-caption-field'))).pop();
+      } else if (action == 'scrim') {
+        await t.tapAt(const Offset(10, 10));
+      } else {
+        await t.tap(key('import-caption-$action'));
+      }
+      await frames(t);
+      expect(photos.first.caption!.runes.length, captionMax);
+      expect(validateCaption(normalizeCaption(photos.first.caption)), isNull);
+      if (action == 'next') {
+        await t.tap(key('import-caption-prev'));
+        await frames(t);
+        final field = t.widget<TextField>(key('import-caption-field'));
+        expect(field.controller!.text.runes.length, captionMax);
+      }
+      await t.pumpWidget(const SizedBox());
+      await frames(t);
+    }, timeout: const Timeout(Duration(seconds: 30)));
+  }
+
   for (final scrim in [false, true]) {
     testWidgets('dismissal saves current raw text (scrim=$scrim)', (t) async {
       final photo = DraftPhoto(

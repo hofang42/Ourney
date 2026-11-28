@@ -240,9 +240,7 @@ void main() {
     addTearDown(() => dir.deleteSync(recursive: true));
     final file = File('${dir.path}/db.sqlite');
     final initial = AppDatabase(NativeDatabase(file));
-    await initial.customStatement(
-      'drop index if exists import_job_photos_job_pos',
-    );
+    await initial.customStatement('drop index if exists import_job_photos_job_pos');
     await initial.customStatement('pragma user_version = 7');
     await initial.close();
 

@@ -456,9 +456,6 @@ class ImportL10nEn extends ImportL10n {
   String get import_captionAddHint => 'Add a caption…';
 
   @override
-  String get import_captionOpenAll => 'Add captions';
-
-  @override
   String import_captionSheetEyebrow(int day, String date) {
     return 'Day $day · $date';
   }
@@ -488,4 +485,12 @@ class ImportL10nEn extends ImportL10n {
 
   @override
   String get import_discardCaptions => 'Captions you wrote will be lost too.';
+
+  @override
+  String get import_captionHideKeyboard => 'Close the keyboard';
+
+  @override
+  String import_captionEdit(Object date) {
+    return 'Edit caption for the photo on $date';
+  }
 }

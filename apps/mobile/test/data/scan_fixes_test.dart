@@ -220,6 +220,7 @@ void main() {
         final dead = layer.deadUploads!;
         final item = (await dead.watch().first).single;
         expect(item.isContentPolicy, isTrue);
+        expect(item.captionPolicy, isTrue);
         await dead.keepPhotoOnly(item);
         expect((await db.select(db.checkIns).getSingle()).caption, isNull);
         expect((await queue()).every((r) => !r.dead), isTrue);
@@ -230,6 +231,36 @@ void main() {
       },
       timeout: const Timeout(Duration(seconds: 30)),
     );
+
+    for (final key in ['mood', 'place', 'dish', 'cook']) {
+      test('policy failure with $key preserves the clean caption', () async {
+        remote.failure = const OurneyException(OurneyErrorCode.contentPolicy);
+        final capture = fakeCapture(camera, 'extras-$key');
+        final c = await layer.checkIns.submit(CheckInDraft(
+          journeyId: jid,
+          capturedAt: DateTime.utc(2026, 10, 16, 1),
+          photoFile: capture.photo,
+          thumbFile: capture.thumb,
+          caption: 'clean caption',
+          extras: CheckInExtras.fromJson({key: 'rejected text'}),
+        ));
+        await layer.ctx.outbox!.flush(force: true);
+        final dead = layer.deadUploads!;
+        final item = (await dead.watch().first).single;
+        expect(item.checkInId, c.id);
+        expect(item.isContentPolicy, isTrue);
+        expect(item.captionPolicy, isFalse);
+        await dead.keepPhotoOnly(item);
+        expect(
+          (await db.select(db.checkIns).getSingle()).caption,
+          'clean caption',
+        );
+        expect((await queue()).single.dead, isTrue);
+        remote.failure = offline;
+        await dead.retry([item]);
+        expect((await queue()).single.dead, isFalse);
+      }, timeout: const Timeout(Duration(seconds: 30)));
+    }
 
     test('discard removes the queue item and the local check-in', () async {
       await deadCheckIn();

@@ -566,7 +566,6 @@
     "description": "Retell a past journey flow."
   },
   "import_captionAddHint": "Thêm chú thích…",
-  "import_captionOpenAll": "Viết chú thích",
   "import_captionSheetEyebrow": "Ngày {day} · {date}",
   "import_captionHint": "Bạn nhớ gì về tấm ảnh này?",
   "import_captionHelper": "Không bắt buộc. Sửa được sau khi lưu.",
@@ -592,5 +591,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "import_captionHideKeyboard": "Đóng bàn phím",
+  "import_captionEdit": "Sửa chú thích cho ảnh ngày {date}"
 }

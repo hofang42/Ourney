@@ -555,7 +555,6 @@
     "description": "Retell a past journey flow."
   },
   "import_captionAddHint": "Add a caption…",
-  "import_captionOpenAll": "Add captions",
   "import_captionSheetEyebrow": "Day {day} · {date}",
   "import_captionHint": "What do you remember about this photo?",
   "import_captionHelper": "Optional. You can edit it after saving.",
@@ -581,5 +580,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "import_captionHideKeyboard": "Close the keyboard",
+  "import_captionEdit": "Edit caption for the photo on {date}"
 }

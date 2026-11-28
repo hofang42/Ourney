@@ -79,8 +79,9 @@ class ImportJobPhoto {
   final String id;
   final int position;
 
-  /// The picked original; kept until the photo is saved (a resume re-reads it).
   final String? caption;
+
+  /// The picked original; kept until the photo is saved (a resume re-reads it).
   final String? sourcePath;
 
   /// Compressed JPEG + thumbnail in app storage, once prepared.

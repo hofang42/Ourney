@@ -29,11 +29,11 @@ class DeadUploadsBanner extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (final policy in [true, false])
-            if (items.any((i) => i.isContentPolicy == policy))
+            if (items.any((i) => i.captionPolicy == policy))
               Builder(
                 builder: (context) {
                   final subset = items
-                      .where((i) => i.isContentPolicy == policy)
+                      .where((i) => i.captionPolicy == policy)
                       .toList();
                   if (policy) {
                     return Column(

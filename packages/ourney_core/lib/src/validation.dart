@@ -62,10 +62,12 @@ JourneyTitleError? validateJourneyTitle(String value) {
   return null;
 }
 
-/// Trim on read-out, preserving raw text during editing.
+/// Trim and cap saved captions by Unicode code points.
 String? normalizeCaption(String? raw) {
   final value = raw?.trim();
-  return value == null || value.isEmpty ? null : value;
+  return value == null || value.isEmpty
+      ? null
+      : String.fromCharCodes(value.runes.take(captionMax));
 }
 
 CaptionError? validateCaption(String? value) {
@@ -101,9 +103,7 @@ DurationError? validateDurationDays(int? days) {
 /// solo+group. Group+private is accepted (the server normalises it to
 /// `group`), but `JourneyDraft` now defaults groups to `group` anyway.
 VisibilityError? validateJourneyVisibility(
-  JourneyKind kind,
-  JourneyVisibility visibility,
-) {
+    JourneyKind kind, JourneyVisibility visibility) {
   if (kind == JourneyKind.group && visibility == JourneyVisibility.link) {
     return VisibilityError.linkNotAllowedForGroup;
   }
@@ -116,6 +116,5 @@ VisibilityError? validateJourneyVisibility(
 /// The visibility the server will store for [kind]/[requested]
 /// (group → `group`; solo keeps `private`/`link`). Assumes it is valid.
 JourneyVisibility normalizedVisibility(
-  JourneyKind kind,
-  JourneyVisibility requested,
-) => kind == JourneyKind.group ? JourneyVisibility.group : requested;
+        JourneyKind kind, JourneyVisibility requested) =>
+    kind == JourneyKind.group ? JourneyVisibility.group : requested;

@@ -62,9 +62,15 @@ void main() {
           checkInId: 'c1',
           journeyId: 'j',
           lastError: 'OurneyException(content_policy)',
+          captionPolicy: true,
         ),
         if (mixed)
-          const DeadUpload(queueId: 2, checkInId: 'c2', journeyId: 'j'),
+          const DeadUpload(
+            queueId: 2,
+            checkInId: 'c2',
+            journeyId: 'j',
+            lastError: 'content_policy',
+          ),
       ];
       await tester.pumpWidget(
         ProviderScope(

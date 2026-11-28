@@ -47,7 +47,7 @@ class Env {
   String? signedIn = 'u1';
   bool policyPaused = false;
 
-  /// Where the 'OS temp dir' is: elsewhere, so picked files are copied.
+  /// Where the "OS temp dir" is: elsewhere, so picked files are copied.
   late final Directory osTemp = Directory('${tmp.path}/os_temp')..createSync();
 
   /// Copy mode (the picker's files are not in the temp dir).
@@ -109,6 +109,9 @@ class Env {
         },
         submit: (d) async {
           submitCalls++;
+          if (validateCaption(d.caption) != null) {
+            throw const OurneyException(OurneyErrorCode.invalid);
+          }
           if (d.id == holdOnPhoto) {
             reached.complete();
             await holdSubmit!.future;
@@ -164,6 +167,32 @@ void main() {
     });
     env = Env(tmp);
   });
+
+  test('over-cap source caption is capped and the job submits', () async {
+    final photo = DraftPhoto(
+      id: 'long-photo',
+      path: env.original('long'),
+      dedupeKey: 'long',
+      order: 0,
+      date: const LocalDate(2024, 2, 1),
+    )..caption = List.filled(141, String.fromCharCode(0x1f600)).join();
+    final job = buildImportJob(
+      id: 'long',
+      ownerId: 'u1',
+      title: 'Trip',
+      type: importTypes.firstWhere((t) => t.id == 'trip'),
+      layout: 'memory',
+      continues: false,
+      timezone: testTz,
+      photos: [photo],
+      now: testNow,
+    );
+    expect(job.photos.single.caption!.runes.length, captionMax);
+    await store.create(job);
+    await env.runner(store).resumeAll();
+    expect(env.checkIns['long-photo']!.caption!.runes.length, captionMax);
+    expect((await store.get('long'))!.complete, isTrue);
+  }, timeout: const Timeout(Duration(seconds: 30)));
 
   test('the run keeps app-owned copies of the picked photos', () async {
     final job = env.job('j1', photos: 2);

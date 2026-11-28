@@ -37,7 +37,8 @@ class Profiles extends Table {
   TextColumn get username => text()();
   TextColumn get displayName => text()();
   TextColumn get avatarPath => text().nullable()();
-  IntColumn get termsVersion => integer().withDefault(const Constant(0))();
+  IntColumn get termsVersion =>
+      integer().withDefault(const Constant(0))();
 
   /// Server `updated_at` (null while only local).
   TextColumn get updatedAt => text().nullable()();
@@ -374,7 +375,9 @@ class AppDatabase extends _$AppDatabase {
   Future<void> wipe() => transaction(() async {
     for (final table in allTables) {
       if (table.actualTableName == syncCursor.actualTableName) {
-        await (delete(syncCursor)..where(
+        await (delete(
+          syncCursor,
+        )..where(
               (t) =>
                   t.tableKey.equals(pendingTrashCursorKey).not() &
                   t.tableKey.like('$isolatedOutboxCursorPrefix%').not(),

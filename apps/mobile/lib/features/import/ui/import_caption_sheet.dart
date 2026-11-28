@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../ui/ui.dart';
+import '../../checkin/l10n/generated/checkin_localizations.dart';
 import '../data/import_draft.dart';
 import '../l10n/generated/import_localizations.dart';
 import 'import_widgets.dart';
@@ -43,7 +44,7 @@ class _CaptionSheetState extends State<_CaptionSheet>
   late List<DraftPhoto> _ordered = List.of(widget.ordered);
   late int _index = widget.start.clamp(0, _ordered.length - 1);
   late final TextEditingController _controller = TextEditingController(
-    text: _photo.caption ?? '',
+    text: String.fromCharCodes((_photo.caption ?? '').runes.take(captionMax)),
   );
   final FocusNode _focus = FocusNode();
   final GlobalKey _fieldKey = GlobalKey();
@@ -60,7 +61,9 @@ class _CaptionSheetState extends State<_CaptionSheet>
 
   void _changed() {
     // Also persists on swipe, scrim, back, or navigation away from the route.
-    _photo.caption = _controller.text;
+    _photo.caption = String.fromCharCodes(
+      _controller.text.runes.take(captionMax),
+    );
     setState(() {});
   }
 
@@ -72,10 +75,14 @@ class _CaptionSheetState extends State<_CaptionSheet>
   }
 
   void _step(int by) {
-    _photo.caption = _controller.text;
+    _photo.caption = String.fromCharCodes(
+      _controller.text.runes.take(captionMax),
+    );
     setState(() {
       _index += by;
-      final text = _photo.caption ?? '';
+      final text = String.fromCharCodes(
+        (_photo.caption ?? '').runes.take(captionMax),
+      );
       _controller.value = TextEditingValue(
         text: text,
         selection: TextSelection.collapsed(offset: text.length),
@@ -85,7 +92,9 @@ class _CaptionSheetState extends State<_CaptionSheet>
 
   Future<void> _editDate() async {
     final id = _photo.id;
-    _photo.caption = _controller.text;
+    _photo.caption = String.fromCharCodes(
+      _controller.text.runes.take(captionMax),
+    );
     await widget.onEditDate(_photo);
     if (!mounted) return;
     setState(() {
@@ -96,7 +105,9 @@ class _CaptionSheetState extends State<_CaptionSheet>
 
   @override
   void dispose() {
-    _photo.caption = _controller.text;
+    _photo.caption = String.fromCharCodes(
+      _controller.text.runes.take(captionMax),
+    );
     WidgetsBinding.instance.removeObserver(this);
     _controller.removeListener(_changed);
     _focus.removeListener(_changed);
@@ -124,7 +135,11 @@ class _CaptionSheetState extends State<_CaptionSheet>
       semanticLabel: l10n.import_captionHint,
       hint: l10n.import_captionHint,
       inputFormatters: const [CodePointLimitFormatter(captionMax)],
-      counter: count >= 120 ? '$count/$captionMax' : null,
+      counter: count >= 120
+          ? CheckinL10n.of(context).checkin_captionCounter(count, captionMax)
+          : null,
+      counterSemantics: CheckinL10n.of(context)
+          .checkin_captionCounterSemantics(count, captionMax),
       counterDanger: count >= captionMax,
     );
     return SingleChildScrollView(
@@ -141,10 +156,9 @@ class _CaptionSheetState extends State<_CaptionSheet>
           ),
           Align(
             alignment: AlignmentDirectional.centerStart,
-            child: UiButton.ghost(
+            child: UiChip(
               key: const ValueKey('import-caption-date'),
               label: l10n.import_captionEditDate,
-              expand: false,
               glyph: const OurneyIcon(name: 'calendar', flat: true, size: 18),
               onPressed: _editDate,
             ),
@@ -165,6 +179,10 @@ class _CaptionSheetState extends State<_CaptionSheet>
                   ),
                   child: Image.file(
                     File(_photo.path),
+                    cacheWidth:
+                        (MediaQuery.sizeOf(context).width *
+                                MediaQuery.devicePixelRatioOf(context))
+                            .round(),
                     fit: BoxFit.contain,
                     errorBuilder: (_, error, stack) =>
                         ImportThumb(path: _photo.path, height: 180),
@@ -182,7 +200,7 @@ class _CaptionSheetState extends State<_CaptionSheet>
                 child: typing
                     ? UiPressable(
                         onPressed: _focus.unfocus,
-                        semanticLabel: dateLabel,
+                        semanticLabel: l10n.import_captionHideKeyboard,
                         child: ImportThumb(path: _photo.path, height: 96),
                       )
                     : null,

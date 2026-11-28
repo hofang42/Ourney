@@ -764,12 +764,6 @@ abstract class ImportL10n {
   /// **'Thêm chú thích…'**
   String get import_captionAddHint;
 
-  /// No description provided for @import_captionOpenAll.
-  ///
-  /// In vi, this message translates to:
-  /// **'Viết chú thích'**
-  String get import_captionOpenAll;
-
   /// No description provided for @import_captionSheetEyebrow.
   ///
   /// In vi, this message translates to:
@@ -823,6 +817,18 @@ abstract class ImportL10n {
   /// In vi, this message translates to:
   /// **'Chú thích bạn đã viết cũng sẽ mất.'**
   String get import_discardCaptions;
+
+  /// No description provided for @import_captionHideKeyboard.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đóng bàn phím'**
+  String get import_captionHideKeyboard;
+
+  /// No description provided for @import_captionEdit.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sửa chú thích cho ảnh ngày {date}'**
+  String import_captionEdit(Object date);
 }
 
 class _ImportL10nDelegate extends LocalizationsDelegate<ImportL10n> {
