@@ -4,22 +4,22 @@
     "ios": "1.0.0"
   },
   "recommended": {
-    "android": "1.2.4",
-    "ios": "1.2.4"
+    "android": "1.2.5",
+    "ios": "1.2.5"
   },
   "force_on_major": true,
   "notes": {
     "vi": [
-      "Thanh điều hướng mới: chữ rõ, không bị cắt kể cả khi phóng to cỡ chữ",
-      "Widget Android có nút Đổi để chọn hành trình riêng cho từng widget; chỉnh trong Cài đặt → Tiện ích",
-      "Logo mới gọn hơn trên trang chủ và thẻ chia sẻ",
-      "Câu chữ nhẹ nhàng hơn, màu dễ đọc hơn, ảnh nháp được giữ an toàn khi gửi chưa xong"
+      "iPhone (iOS 17 trở lên): chạm và giữ tiện ích, chọn Sửa tiện ích để chọn hành trình riêng cho từng tiện ích. Tiện ích đang đặt sẽ về Tự động",
+      "Xem check-in: ảnh dọc hiện đủ khung, chạm hai lần để phóng to, theo đúng nền sáng hoặc tối",
+      "Thẻ chia sẻ: tiêu đề không lặp số ngày, thẻ chạy bộ hiện đúng số km đã ghi",
+      "Màn mở app có slogan mới: Góp tấm hình, giữ nhịp mình"
     ],
     "en": [
-      "New navigation bar: labels stay clear, even with larger text",
-      "Android widgets get a Switch button to pick a journey per widget; manage them in Settings → Widgets",
-      "Cleaner new logo on Home and share cards",
-      "Calmer wording, easier-to-read colours, and drafts kept safe while uploads finish"
+      "iPhone (iOS 17+): touch and hold a widget, then tap Edit Widget to pick its journey. Widgets already placed switch back to Automatic",
+      "Check-in view: portrait photos show in full, double-tap to zoom, and the screen follows light or dark mode",
+      "Share cards: no repeated day count in titles, and run cards show the km you logged",
+      "New slogan on the opening screen: One photo at a time, at your own pace"
     ]
   }
 }
